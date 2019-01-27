@@ -659,8 +659,8 @@ for index_SNR_cs = 1:N_SNR_cs
         setup = pulse_echo_measurements.setup_symmetric( xdc_array, FOV_cs, absorption_model, 'object_A' );
 
         excitation_voltages_common = repmat( syntheses.excitation_voltage( {physical_values.voltage( A_in_td )}, physical_values.frequency( f_s ) ), [ 128, 1 ] );
-        sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_common, e_theta' );
-%         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
+%         sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_common, e_theta' );
+        sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
         
         sequence.setup.discretize( [ 7, 1 ], setup.xdc_array.element_pitch_axis(1) * ones( 1, 2 ) / factor_interp_cs );
 
