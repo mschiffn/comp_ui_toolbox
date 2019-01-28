@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-27
-% modified: 2019-01-27
+% modified: 2019-01-28
 %
 classdef setting_rng
 
@@ -13,8 +13,8 @@ classdef setting_rng
 	properties (SetAccess = private)
 
         % independent properties
-        seed ( 1, 1 ) double { mustBeInteger, mustBeFinite }        % seed of the random number generator
-        str_name ( 1, : ) char { mustBeMember( str_name, {'twister', 'simdTwister', 'combRecursive', 'multFibonacci'} ) }	% name of the random number generator
+        seed ( 1, 1 ) double { mustBeInteger, mustBeNonnegative }	% seed of the random number generator
+        str_name ( 1, : ) char { mustBeMember( str_name, {'twister', 'simdTwister', 'combRecursive', 'multFibonacci'} ) } = 'twister'	% name of the random number generator
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -32,13 +32,13 @@ classdef setting_rng
                 return;
             end
 
-            % ensure equal sizes
-            if sum( size( seeds ) ~= size( strs_name ) )
-                errorStruct.message     = 'The sizes of seeds and strs_name must match!';
-                errorStruct.identifier	= 'setting_rng:SizeMismatch';
+            % ensure cell array
+            if ~iscell( strs_name ) || ~all( size( seeds ) == size( strs_name ) )
+                errorStruct.message     = 'strs_name must be a cell array and match the size of seeds!';
+                errorStruct.identifier	= 'setting_rng:NoCellOrSizeMismatch';
                 error( errorStruct );
             end
-            % assertion: all arguments have equal sizes
+            % assertion: strs_name is a cell array, all arguments have equal sizes
 
             % construct column vector of objects
             N_objects = numel( seeds );
@@ -48,7 +48,7 @@ classdef setting_rng
             for index_object = 1:N_objects
 
                 objects( index_object ).seed = seeds( index_object );
-                objects( index_object ).str_name = strs_name( index_object );
+                objects( index_object ).str_name = strs_name{ index_object };
             end
 
             % reshape to sizes of the arguments

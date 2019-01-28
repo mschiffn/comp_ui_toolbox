@@ -59,7 +59,7 @@ classdef measurement
 %               objects( index_meas ).u_rx = u_rx( index_meas );
 
                 % determine dependent properties
-                objects( index_meas ).set_f = frequencies.discrete_frequency_set( objects( index_meas ).interval_f, abs( objects( index_meas ).interval_t ) );
+                objects( index_meas ).set_f = discretization.discrete_frequency_set( objects( index_meas ).interval_f, abs( objects( index_meas ).interval_t ) );
             end           
         end % function objects = measurement( intervals_t, intervals_f, settings_tx, u_rx )
 

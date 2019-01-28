@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-01-26
+% modified: 2019-01-28
 %
 classdef setting_rnd_del < syntheses.setting
 
@@ -13,8 +13,8 @@ classdef setting_rnd_del < syntheses.setting
 	properties (SetAccess = private)
 
         % independent properties
-        rng_seed ( 1, 1 ) double	% seed for random number generator
-        rng_name ( 1, : ) char      % name of random number generator
+        setting_rng ( 1, 1 ) syntheses.setting_rng	% settings of the random number generator
+        e_theta ( 1, : ) double     % preferred directions of propagation (1)
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,7 +25,7 @@ classdef setting_rnd_del < syntheses.setting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_rnd_del( setup, excitation_voltages_common, settings_rng )
+        function objects = setting_rnd_del( setup, excitation_voltages_common, e_theta, settings_rng )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -37,6 +37,21 @@ classdef setting_rnd_del < syntheses.setting
                 error( errorStruct );
             end
             % assertion: setup is a single pulse_echo_measurements.setup
+
+            % ensure class syntheses.setting_rng
+            if ~isa( settings_rng, 'syntheses.setting_rng' )
+                errorStruct.message     = 'settings_rng must be syntheses.setting_rng!';
+                errorStruct.identifier	= 'setting_rnd_apo:NoSettingRng';
+                error( errorStruct );
+            end
+            % assertion: settings_rng is syntheses.setting_rng
+
+            % ensure equal number of elements
+            if numel( excitation_voltages_common ) ~= numel( settings_rng )
+                errorStruct.message     = 'Number of elements in excitation_voltages_common has to match that in settings_rng!';
+                errorStruct.identifier	= 'setting_rnd_apo:DimensionMismatch';
+                error( errorStruct );
+            end
 
             % excitation_voltages_common will be checked in superclass
 
@@ -52,6 +67,7 @@ classdef setting_rnd_del < syntheses.setting
             time_delays = cell( N_objects, 1 );
             excitation_voltages = cell( N_objects, 1 );
 
+            % iterate objects
             for index_object = 1:N_objects
 
                 %----------------------------------------------------------
@@ -71,7 +87,7 @@ classdef setting_rnd_del < syntheses.setting
                 rng( settings_rng( index_object ).seed, settings_rng( index_object ).str_name );
 
                 % compute permissible maximum time shift
-                t_shift_max = abs((pos_elements(1) - pos_elements(end)) * cos(theta_max)) / c_ref;
+                t_shift_max = sum( abs( e_theta( index_object, 1:(setup.FOV.N_dimensions - 1) ) ) .* setup.xdc_array.element_pitch_axis( 1:(setup.FOV.N_dimensions - 1) ) .* ( setup.xdc_array.N_elements_axis( 1:(setup.FOV.N_dimensions - 1) ) - 1 ), 2 ) / setup.c_avg;
 
                 % compute random time delays
                 time_delays_act = t_shift_max * ( randperm( setup.xdc_array.N_elements ) - 1 ) / ( setup.xdc_array.N_elements - 1 );
@@ -93,11 +109,11 @@ classdef setting_rnd_del < syntheses.setting
             % 4.) set independent properties
             %--------------------------------------------------------------
             for index_object = 1:N_objects
-                objects( index_object ).rng_seed = rng_seeds( index_object );
-                objects( index_object ).rng_name = rng_name( index_object );
+                objects( index_object ).setting_rng = settings_rng( index_object );
+                objects( index_object ).e_theta = e_theta( index_object, : );
             end
 
-        end % function objects = setting_rnd_del( setup, excitation_voltages_common, rng_seeds, rng_name )
+        end % function objects = setting_rnd_del( setup, excitation_voltages_common, e_theta, settings_rng )
 
 	end % methods
 
