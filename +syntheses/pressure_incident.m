@@ -170,6 +170,7 @@ classdef pressure_incident < syntheses.field
                     object.values{ index_f } = object.values{ index_f } + p_incident_summand( :, :, index_f );
                 end
             end % for index_active = 1:N_elements_active
+
         end % function object = compute_p_in( object, setup, measurement )
 
         %------------------------------------------------------------------
@@ -244,6 +245,7 @@ classdef pressure_incident < syntheses.field
                     object.values{ index_f } = object.values{ index_f } + p_incident_summand( :, :, index_f );
                 end
             end % for index_active = 1:N_elements_active
+
         end % function object = compute_p_in( object, setup, measurement )
 
 	end % methods

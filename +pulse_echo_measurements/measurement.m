@@ -19,7 +19,7 @@ classdef measurement
         u_rx %( :, : ) physical_values.voltage_phasor               % Fourier coefficients of the recorded RF voltage signals
 
         % dependent properties
-        set_f %( 1, 1 ) frequencies.discrete_frequency_set       % set of relevant discrete frequencies
+        set_f %( 1, 1 ) discretization.set_discrete_frequency       % set of relevant discrete frequencies
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,7 +59,7 @@ classdef measurement
 %               objects( index_meas ).u_rx = u_rx( index_meas );
 
                 % determine dependent properties
-                objects( index_meas ).set_f = discretization.discrete_frequency_set( objects( index_meas ).interval_f, abs( objects( index_meas ).interval_t ) );
+                objects( index_meas ).set_f = discretization.set_discrete_frequency( objects( index_meas ).interval_f, abs( objects( index_meas ).interval_t ) );
             end           
         end % function objects = measurement( intervals_t, intervals_f, settings_tx, u_rx )
 
