@@ -28,5 +28,7 @@ classdef sequence_rnd_del < pulse_echo_measurements.sequence
             %--------------------------------------------------------------
             object@pulse_echo_measurements.sequence( setup, settings_tx );
         end
+
 	end % methods
+
 end % classdef sequence_rnd_del

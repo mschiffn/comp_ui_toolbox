@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-01-28
+% modified: 2019-01-30
 %
 classdef setting_rnd_del < syntheses.setting
 
@@ -13,14 +13,14 @@ classdef setting_rnd_del < syntheses.setting
 	properties (SetAccess = private)
 
         % independent properties
-        setting_rng ( 1, 1 ) syntheses.setting_rng	% settings of the random number generator
-        e_theta ( 1, : ) double     % preferred directions of propagation (1)
+        setting_rng ( 1, 1 ) auxiliary.setting_rng      % settings of the random number generator
+        e_theta ( 1, 1 ) physical_values.unit_vector	% preferred direction of propagation (1)
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -38,13 +38,22 @@ classdef setting_rnd_del < syntheses.setting
             end
             % assertion: setup is a single pulse_echo_measurements.setup
 
-            % ensure class syntheses.setting_rng
-            if ~isa( settings_rng, 'syntheses.setting_rng' )
-                errorStruct.message     = 'settings_rng must be syntheses.setting_rng!';
+            % excitation_voltages_common will be checked in superclass
+
+            % ensure class physical_values.unit_vector
+            if ~isa( e_theta, 'physical_values.unit_vector' )
+                errorStruct.message     = 'e_theta must be physical_values.unit_vector!';
+                errorStruct.identifier	= 'setting_rnd_del:NoUnitVectors';
+                error( errorStruct );
+            end
+
+            % ensure class auxiliary.setting_rng
+            if ~isa( settings_rng, 'auxiliary.setting_rng' )
+                errorStruct.message     = 'settings_rng must be auxiliary.setting_rng!';
                 errorStruct.identifier	= 'setting_rnd_apo:NoSettingRng';
                 error( errorStruct );
             end
-            % assertion: settings_rng is syntheses.setting_rng
+            % assertion: settings_rng is auxiliary.setting_rng
 
             % ensure equal number of elements
             if numel( excitation_voltages_common ) ~= numel( settings_rng )
@@ -52,8 +61,6 @@ classdef setting_rnd_del < syntheses.setting
                 errorStruct.identifier	= 'setting_rnd_apo:DimensionMismatch';
                 error( errorStruct );
             end
-
-            % excitation_voltages_common will be checked in superclass
 
             %--------------------------------------------------------------
             % 2.) compute synthesis settings for superpositions of randomly-delayed quasi-(d-1)-spherical waves
@@ -87,10 +94,11 @@ classdef setting_rnd_del < syntheses.setting
                 rng( settings_rng( index_object ).seed, settings_rng( index_object ).str_name );
 
                 % compute permissible maximum time shift
-                t_shift_max = sum( abs( e_theta( index_object, 1:(setup.FOV.N_dimensions - 1) ) ) .* setup.xdc_array.element_pitch_axis( 1:(setup.FOV.N_dimensions - 1) ) .* ( setup.xdc_array.N_elements_axis( 1:(setup.FOV.N_dimensions - 1) ) - 1 ), 2 ) / setup.c_avg;
+                t_shift_max = sum( ( setup.xdc_array.N_elements_axis( 1:(setup.FOV.N_dimensions - 1) ) - 1 ) .* setup.xdc_array.element_pitch_axis( 1:(setup.FOV.N_dimensions - 1) ) .* abs( e_theta( index_object ).components( 1:(setup.FOV.N_dimensions - 1) ) ), 2 ) / setup.c_avg;
+                T_inc = t_shift_max / ( setup.xdc_array.N_elements - 1 );
 
                 % compute random time delays
-                time_delays_act = t_shift_max * ( randperm( setup.xdc_array.N_elements ) - 1 ) / ( setup.xdc_array.N_elements - 1 );
+                time_delays_act = ( randperm( setup.xdc_array.N_elements ) - 1 ) * T_inc;
                 time_delays{ index_object } = physical_values.time( time_delays_act );
 
                 %----------------------------------------------------------

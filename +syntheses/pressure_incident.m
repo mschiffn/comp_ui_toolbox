@@ -123,12 +123,13 @@ classdef pressure_incident < syntheses.field
             for index_active = 1:N_elements_active
 
                 % number of samples at current sampling rate
+                % TODO: use overloaded abs function
                 N_samples_t = ( measurement.interval_t.bounds(2).value - measurement.interval_t.bounds(1).value ) * measurement.settings_tx.excitation_voltages( index_active ).f_s.value;
                 axis_f_act = (0:(N_samples_t - 1)) * measurement.settings_tx.excitation_voltages( index_active ).f_s.value / N_samples_t;
                 indicator = ( axis_f_act >= measurement.interval_f.bounds(1).value ) & ( axis_f_act <= measurement.interval_f.bounds(2).value );
 
                 % compute Fourier coefficients
-                temp = sqrt( N_samples_t ) * fft( double( measurement.settings_tx.excitation_voltages( index_active ).u_tx_tilde ), N_samples_t, 1 );
+                temp = sqrt( N_samples_t ) * fft( double( measurement.settings_tx.excitation_voltages( index_active ).u_tx_tilde(:) ), N_samples_t, 1 );
                 excitation_voltages( :, index_active ) = temp( indicator );
             end
 

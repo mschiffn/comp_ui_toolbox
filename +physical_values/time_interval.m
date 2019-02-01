@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-01-21
+% modified: 2019-02-01
 %
 classdef time_interval < physical_values.interval
 
@@ -37,6 +37,7 @@ classdef time_interval < physical_values.interval
             % constructor of superclass
             obj@physical_values.interval( times );
         end
+
 	end % methods
 
 end % classdef time_interval

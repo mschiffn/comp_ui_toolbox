@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-01-21
+% modified: 2019-02-01
 %
 classdef interval
 
@@ -49,7 +49,7 @@ classdef interval
                     obj( index_interval ).bounds = bounds( index_interval, : );
                 else
 
-                    errorStruct.message     = 'bounds must be strictly monotonic increasing!';
+                    errorStruct.message     = 'bounds must increase strictly monotonic!';
                     errorStruct.identifier	= 'interval:NoIncrease';
                     error( errorStruct );
                 end
@@ -59,19 +59,11 @@ classdef interval
         %------------------------------------------------------------------
         % length (overload abs function)
         %------------------------------------------------------------------
-        function length = abs( obj )
+        function lengths = abs( objects )
 
-            % create column vector of durations
-            N_intervals = numel( obj );
-            length = zeros( N_intervals, 1 );
-
-            % compute durations
-            for index_interval = 1:N_intervals
-                length( index_interval ) = double( obj( index_interval ).bounds( 2 ) - obj( index_interval ).bounds( 1 ) );
-            end
-
-            % reshape to dimensions of the argument
-            length = reshape( length, size( obj) );
+            % compute lengths
+            lengths = [ objects.bounds ];
+            lengths = reshape( lengths( 2:2:end ) - lengths( 1:2:end ), size( objects) );
         end
 
         %------------------------------------------------------------------
@@ -79,12 +71,9 @@ classdef interval
         %------------------------------------------------------------------
         function objects = quantize( objects, deltas )
 
-            % ensure equal dimensions
-            if numel( objects ) ~= numel( deltas )
-                errorStruct.message     = 'The numbers of components in objects and deltas must match!';
-                errorStruct.identifier	= 'quantize:DimensionMismatch';
-                error( errorStruct );
-            end
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( objects, deltas )
+            % assertion: objects and deltas have equal size
 
             % create matrix of boundary indices
             N_objects = numel( objects );
@@ -94,13 +83,15 @@ classdef interval
             for index_object = 1:N_objects
 
                 % compute boundary indices
-                q_bounds( index_object, 1 ) = floor( objects( index_object ).bounds( 1 ).value / deltas( index_object ) );
-                q_bounds( index_object, 2 ) = ceil( objects( index_object ).bounds( 2 ).value / deltas( index_object ) );
+                q_bounds( index_object, 1 ) = floor( objects( index_object ).bounds( 1 ).value / deltas( index_object ).value );
+                q_bounds( index_object, 2 ) = ceil( objects( index_object ).bounds( 2 ).value / deltas( index_object ).value );
 
                 % compute quantized bounds
-                objects( index_object ).bounds = physical_values.physical_value( q_bounds( index_object, : ) * deltas( index_object ) );
+                objects( index_object ).bounds( 1 ) = q_bounds( index_object, 1 ) * deltas( index_object ).value;
+                objects( index_object ).bounds( 2 ) = q_bounds( index_object, 2 ) * deltas( index_object ).value;
             end
         end
+
 	end % methods
 
 end % classdef interval

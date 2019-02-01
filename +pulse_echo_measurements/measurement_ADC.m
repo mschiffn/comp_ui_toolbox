@@ -34,7 +34,7 @@ classdef measurement_ADC < pulse_echo_measurements.measurement
             %--------------------------------------------------------------
             % check number of arguments
             if nargin ~= 5
-                errorStruct.message     = 'The number of arguments must equal four!';
+                errorStruct.message     = 'The number of arguments must equal five!';
                 errorStruct.identifier	= 'measurement_ADC:Arguments';
                 error( errorStruct );
             end

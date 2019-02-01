@@ -60,8 +60,8 @@ classdef sequence
 
             % create pulse-echo measurements
             % TODO: check method to determine Fourier coefficients
-            f_s = 20e6;
-            obj.measurements = pulse_echo_measurements.measurement_ADC( intervals_t, intervals_f, settings_tx_quantized, [], f_s * ones( size( intervals_t ) ) );
+            f_s = physical_values.frequency( 20e6 );
+            obj.measurements = pulse_echo_measurements.measurement_ADC( intervals_t, intervals_f, settings_tx_quantized, [], repmat( f_s, size( intervals_t ) ) );
 
             % TODO: check for identical recording time intervals / identical frequency intervals
             % check for identical frequency axes identical?

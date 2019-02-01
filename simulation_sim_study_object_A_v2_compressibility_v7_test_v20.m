@@ -656,14 +656,15 @@ for index_SNR_cs = 1:N_SNR_cs
         cs_2d_mlfma_options.absorption_model = absorption_model;
         cs_2d_mlfma_options.normalize_columns_threshold_A = cs_2d_mlfma_options.normalize_columns_threshold;
         cs_2d_mlfma_options.fmm_size_group_axis_tx = [8, 8];
-        setup = pulse_echo_measurements.setup_symmetric( xdc_array, FOV_cs, absorption_model, 'object_A' );
+        setup = pulse_echo_measurements.setup_symmetric( xdc_array, FOV_cs, absorption_model, 'wire_phantom' );
 
         excitation_voltages_common = repmat( syntheses.excitation_voltage( {physical_values.voltage( A_in_td )}, physical_values.frequency( f_s ) ), [ 11, 1 ] );
 %         sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_common, e_theta' );
 %         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
-        settings_rng = syntheses.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
+        settings_rng = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
 %         sequence = pulse_echo_measurements.sequence_rnd_apo( setup, excitation_voltages_common, settings_rng );
-        sequence = pulse_echo_measurements.sequence_rnd_del( setup, excitation_voltages_common, e_theta', settings_rng );
+        e_dir = physical_values.unit_vector( e_theta' );
+        sequence = pulse_echo_measurements.sequence_rnd_del( setup, excitation_voltages_common, e_dir, settings_rng );
         sequence.setup.discretize( [ 7, 1 ], setup.xdc_array.element_pitch_axis(1) * ones( 1, 2 ) / factor_interp_cs );
 
         sequence.compute_p_incident

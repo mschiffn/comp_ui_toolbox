@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-01-22
+% modified: 2019-02-01
 %
 classdef physical_value
 
@@ -43,57 +43,92 @@ classdef physical_value
                 objects( index_element ).value = values( index_element );
             end
 
-            % reshape to dimensions of the argument
+            % reshape to size of the argument
             objects = reshape( objects, size( values ) );
         end
 
         %------------------------------------------------------------------
         % return value (overload double function)
         %------------------------------------------------------------------
-        function result = double( objects )
+        function results = double( objects )
 
+            % create results of equal size
             N_objects = numel( objects );
-            result = zeros( N_objects, 1 );
+            results = zeros( size( objects ) );
 
+            % extract values
             for index_object = 1:N_objects
-                result( index_object ) = objects( index_object ).value;
+                results( index_object ) = objects( index_object ).value;
             end
         end
 
         %------------------------------------------------------------------
         % subtraction (overload minus function)
         %------------------------------------------------------------------
-        function result = minus( obj_1, obj_2 )
+        function results = minus( objects_1, objects_2 )
 
-            result = physical_values.physical_value( double( obj_1 ) - double( obj_2 ) );
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( objects_1, objects_2 )
+            % assertion: objects_1 and objects_2 have equal size
+
+            % create results of the same class
+            results = objects_1;
+
+            % subtract the physical values
+            for index_object = 1:numel( objects_1 )
+                results( index_object ).value = objects_1( index_object ).value - objects_2( index_object ).value;
+            end
         end
 
         %------------------------------------------------------------------
         % addition (overload plus function)
         %------------------------------------------------------------------
-        function result = plus( obj_1, obj_2 )
+        function results = plus( objects_1, objects_2 )
 
-            result = physical_values.physical_value( double( obj_1 ) + double( obj_2 ) );
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( objects_1, objects_2 )
+            % assertion: objects_1 and objects_2 have equal size
+
+            % create results of the same class
+            results = objects_1;
+
+            % subtract the physical values
+            for index_object = 1:numel( objects_1 )
+                results( index_object ).value = objects_1( index_object ).value + objects_2( index_object ).value;
+            end
         end
 
         %------------------------------------------------------------------
         % comparison (overload greater than function)
         %------------------------------------------------------------------
-        function tf = gt( obj_1, obj_2 )
+        function results = gt( objects_1, objects_2 )
 
-            tf = false;
-            if obj_1.value > obj_2.value
-                tf = true;
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( objects_1, objects_2 )
+            % assertion: objects_1 and objects_2 have equal size
+
+            % initialize results
+            results = false( size( objects_1 ) );
+
+            % compare the physical values
+            for index_object = 1:numel( objects_1 )
+                if objects_1( index_object ).value > objects_2( index_object ).value
+                    results( index_object ) = true;
+                end
             end
         end
 
         %------------------------------------------------------------------
-        % quantize (overload greater than function)
+        % quantize (overload quantize function)
         %------------------------------------------------------------------
         function objects = quantize( objects, delta )
 
             % check arguments
-            % TODO: mustBeScalar( delta )
+            if ~isscalar( delta )
+                errorStruct.message     = 'delta must be a scalar!';
+                errorStruct.identifier	= 'quantize:NoScalar';
+                error( errorStruct );
+            end
             mustBePositive( delta );
 
             % quantize values
@@ -102,6 +137,7 @@ classdef physical_value
                 objects( index_object ).value = round( objects( index_object ).value / delta ) * delta;
             end
         end
+
 	end % methods
 
 end % classdef physical_value

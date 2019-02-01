@@ -50,13 +50,9 @@ classdef set_discrete_frequency
             end
             % assertion: T_rec is physical_values.time
 
-            % ensure identical sizes
-            if ~all( size( intervals_f ) == size( T_rec ) )
-                errorStruct.message     = 'intervals_f and T_rec must have the same size!';
-                errorStruct.identifier	= 'set_discrete_frequency:SizeMismatch';
-                error( errorStruct );
-            end
-            % assertion: intervals_f and T_rec have the same size
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( intervals_f, T_rec )
+            % assertion: intervals_f and T_rec have equal size            
 
             %--------------------------------------------------------------
             % 2.) compute sets of discrete frequencies
@@ -69,11 +65,12 @@ classdef set_discrete_frequency
             for index_object = 1:N_objects
 
                 % compute lower and upper bounds on the frequency index
-                l_lb = ceil( T_rec( index_object ) * double( intervals_f( index_object ).bounds( 1 ) ) );
-                l_ub = floor( T_rec( index_object ) * double( intervals_f( index_object ).bounds( 2 ) ) );
+                % TODO: overload multiplication method in time / frequency class
+                l_lb = ceil( T_rec( index_object ).value * intervals_f( index_object ).bounds( 1 ).value );
+                l_ub = floor( T_rec( index_object ).value * intervals_f( index_object ).bounds( 2 ).value );
 
                 % compute discrete frequencies
-                objects( index_object ).F_BP = physical_values.frequency( (l_lb:l_ub) / T_rec( index_object ) );
+                objects( index_object ).F_BP = (l_lb:l_ub) ./ T_rec( index_object );
             end
 
             % reshape to sizes of the arguments
