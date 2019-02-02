@@ -114,7 +114,7 @@ classdef setting_rnd_del < syntheses.setting
             %--------------------------------------------------------------
             for index_object = 1:N_objects
                 objects( index_object ).setting_rng = settings_rng( index_object );
-                objects( index_object ).e_theta = e_theta( index_object, : );
+                objects( index_object ).e_theta = e_theta( index_object );
             end
 
         end % function objects = setting_rnd_del( setup, excitation_voltages_common, e_theta, settings_rng )

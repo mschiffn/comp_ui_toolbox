@@ -13,8 +13,9 @@ classdef setting_rnd_apo_del < syntheses.setting
 	properties (SetAccess = private)
 
         % independent properties
-        rng_seed ( 1, 1 ) double	% seed for random number generator
-        rng_name ( 1, : ) char      % name of random number generator
+        setting_rng_apo ( 1, 1 ) auxiliary.setting_rng      % settings of the random number generator
+        setting_rng_del ( 1, 1 ) auxiliary.setting_rng      % settings of the random number generator
+        e_theta ( 1, 1 ) physical_values.unit_vector        % preferred direction of propagation (1)
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,7 +26,7 @@ classdef setting_rnd_apo_del < syntheses.setting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_rnd_apo_del( setup, excitation_voltages_common, settings_rng_apo, settings_rng_del )
+        function objects = setting_rnd_apo_del( setup, excitation_voltages_common, e_theta, settings_rng_apo, settings_rng_del )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -33,24 +34,42 @@ classdef setting_rnd_apo_del < syntheses.setting
             % ensure class pulse_echo_measurements.setup
             if ~isa( setup, 'pulse_echo_measurements.setup' ) || numel( setup ) ~= 1
                 errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'setting_rnd_apo_del:NoSetup';
+                errorStruct.identifier	= 'setting_rnd_del:NoSetup';
                 error( errorStruct );
             end
             % assertion: setup is a single pulse_echo_measurements.setup
 
             % excitation_voltages_common will be checked in superclass
 
+            % ensure class physical_values.unit_vector
+            if ~isa( e_theta, 'physical_values.unit_vector' )
+                errorStruct.message     = 'e_theta must be physical_values.unit_vector!';
+                errorStruct.identifier	= 'setting_rnd_del:NoUnitVectors';
+                error( errorStruct );
+            end
+
+            % ensure class auxiliary.setting_rng
+            if ~isa( settings_rng_apo, 'auxiliary.setting_rng' ) || ~isa( settings_rng_del, 'auxiliary.setting_rng' )
+                errorStruct.message     = 'settings_rng_apo and settings_rng_del must be auxiliary.setting_rng!';
+                errorStruct.identifier	= 'setting_rnd_apo:NoSettingRng';
+                error( errorStruct );
+            end
+            % assertion: settings_rng_apo and settings_rng_del are auxiliary.setting_rng
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( excitation_voltages_common, e_theta, settings_rng_apo, settings_rng_del );
+
             %--------------------------------------------------------------
             % 2.) compute synthesis settings for superpositions of randomly-apodized quasi-(d-1)-spherical waves
             %--------------------------------------------------------------
             % number of sequential syntheses
-            N_objects = size( excitation_voltages_common, 1 );
+            N_objects = numel( excitation_voltages_common );
 
             % allocate cell arrays to store synthesis settings
-            indices_active = cell( N_objects, 1 );
-            apodization_weights = cell( N_objects, 1 );
-            time_delays = cell( N_objects, 1 );
-            excitation_voltages = cell( N_objects, 1 );
+            indices_active = cell( size( excitation_voltages_common ) );
+            apodization_weights = cell( size( excitation_voltages_common ) );
+            time_delays = cell( size( excitation_voltages_common ) );
+            excitation_voltages = cell( size( excitation_voltages_common ) );
 
             for index_object = 1:N_objects
 
@@ -79,8 +98,12 @@ classdef setting_rnd_apo_del < syntheses.setting
                 % seed random number generator
                 rng( settings_rng_del( index_object ).seed, settings_rng_del( index_object ).str_name );
 
+                % compute permissible maximum time shift
+                t_shift_max = sum( ( setup.xdc_array.N_elements_axis( 1:(setup.FOV.N_dimensions - 1) ) - 1 ) .* setup.xdc_array.element_pitch_axis( 1:(setup.FOV.N_dimensions - 1) ) .* abs( e_theta( index_object ).components( 1:(setup.FOV.N_dimensions - 1) ) ), 2 ) / setup.c_avg;
+                T_inc = t_shift_max / ( setup.xdc_array.N_elements - 1 );
+
                 % compute random time delays
-                time_delays_act = t_shift_max * ( randperm( setup.xdc_array.N_elements ) - 1 ) / ( setup.xdc_array.N_elements - 1 );
+                time_delays_act = ( randperm( setup.xdc_array.N_elements ) - 1 ) * T_inc;
                 time_delays{ index_object } = physical_values.time( time_delays_act );
 
                 %----------------------------------------------------------
@@ -99,11 +122,12 @@ classdef setting_rnd_apo_del < syntheses.setting
             % 4.) set independent properties
             %--------------------------------------------------------------
             for index_object = 1:N_objects
-                objects( index_object ).rng_seed = rng_seeds( index_object );
-                objects( index_object ).rng_name = rng_name( index_object );
+                objects( index_object ).setting_rng_apo = settings_rng_apo( index_object );
+                objects( index_object ).setting_rng_del = settings_rng_del( index_object );
+                objects( index_object ).e_theta = e_theta( index_object );
             end
 
-        end % function objects = setting_rnd_apo_del( setup, excitation_voltages_common, rng_seeds, rng_name )
+        end % function objects = setting_rnd_apo_del( setup, excitation_voltages_common, e_theta, settings_rng_apo, settings_rng_del )
 
 	end % methods
 
