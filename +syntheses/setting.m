@@ -45,12 +45,8 @@ classdef setting
             end
             % assertion: all arguments are cell arrays
 
-            % ensure equal sizes of cell arrays
-            if sum( size( indices_active ) ~= size( apodization_weights ) ) || sum( size( indices_active ) ~= size( time_delays ) ) || sum( size( indices_active ) ~= size( excitation_voltages ) )
-                errorStruct.message     = 'The sizes of indices_active, apodization_weights, time_delays, and excitation_voltages must match!';
-                errorStruct.identifier	= 'setting:SizeMismatch';
-                error( errorStruct );
-            end
+            % ensure equal number of dimensions and sizes of cell arrays
+            auxiliary.mustBeEqualSize( indices_active, apodization_weights, time_delays, excitation_voltages );
             % assertion: all cell arrays have equal sizes
 
             %--------------------------------------------------------------
@@ -58,17 +54,13 @@ classdef setting
             %--------------------------------------------------------------
             % construct column vector of objects
             N_objects = numel( indices_active );
-            objects = repmat( objects, [ N_objects, 1 ] );
+            objects = repmat( objects, size( indices_active ) );
 
             % set independent properties
             for index_object = 1:N_objects
 
-                % ensure equal sizes of cell array contents
-                if sum( size( indices_active{ index_object } ) ~= size( apodization_weights{ index_object } ) ) || sum( size( indices_active{ index_object } ) ~= size( time_delays{ index_object } ) ) || sum( size( indices_active{ index_object } ) ~= size( excitation_voltages{ index_object } ) )
-                    errorStruct.message     = sprintf( 'The sizes of indices_active{ %d }, apodization_weights{ %d }, time_delays{ %d }, and excitation_voltages{ %d } must match!', index_object, index_object, index_object, index_object );
-                    errorStruct.identifier	= 'setting:SizeMismatch';
-                    error( errorStruct );
-                end
+                % ensure equal number of dimensions and sizes of cell array contents
+                auxiliary.mustBeEqualSize( indices_active{ index_object }, apodization_weights{ index_object }, time_delays{ index_object }, excitation_voltages{ index_object } );
                 % assertion: all cell array contents have equal sizes
 
                 % ensure row vectors
@@ -85,9 +77,6 @@ classdef setting
                 objects( index_object ).excitation_voltages = excitation_voltages{ index_object }( 1, : );
 
             end % for index_object = 1:N_objects
-
-            % reshape column vector to size of the cell arrays
-            objects = reshape( objects, size( indices_active ) );
 
         end % function objects = setting( indices_active, apodization_weights, time_delays, excitation_voltages )
 

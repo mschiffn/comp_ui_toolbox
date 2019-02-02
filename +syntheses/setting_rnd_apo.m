@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-01-28
+% modified: 2019-02-02
 %
 classdef setting_rnd_apo < syntheses.setting
 
@@ -13,13 +13,13 @@ classdef setting_rnd_apo < syntheses.setting
 	properties (SetAccess = private)
 
         % independent properties
-        setting_rng ( 1, 1 ) syntheses.setting_rng	% settings of the random number generator
+        setting_rng ( 1, 1 ) auxiliary.setting_rng      % settings of the random number generator
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -37,34 +37,30 @@ classdef setting_rnd_apo < syntheses.setting
             end
             % assertion: setup is a single pulse_echo_measurements.setup
 
-            % ensure class syntheses.setting_rng
-            if ~isa( settings_rng, 'syntheses.setting_rng' )
-                errorStruct.message     = 'settings_rng must be syntheses.setting_rng!';
+            % excitation_voltages_common will be checked in superclass
+
+            % ensure class auxiliary.setting_rng
+            if ~isa( settings_rng, 'auxiliary.setting_rng' )
+                errorStruct.message     = 'settings_rng must be auxiliary.setting_rng!';
                 errorStruct.identifier	= 'setting_rnd_apo:NoSettingRng';
                 error( errorStruct );
             end
-            % assertion: settings_rng is syntheses.setting_rng
+            % assertion: settings_rng is auxiliary.setting_rng
 
-            % ensure equal number of elements
-            if numel( excitation_voltages_common ) ~= numel( settings_rng )
-                errorStruct.message     = 'Number of elements in excitation_voltages_common has to match that in settings_rng!';
-                errorStruct.identifier	= 'setting_rnd_apo:DimensionMismatch';
-                error( errorStruct );
-            end
-
-            % excitation_voltages_common will be checked in superclass
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( excitation_voltages_common, settings_rng );
 
             %--------------------------------------------------------------
             % 2.) compute synthesis settings for superpositions of randomly-apodized quasi-(d-1)-spherical waves
             %--------------------------------------------------------------
             % number of sequential syntheses
-            N_objects = size( excitation_voltages_common, 1 );
+            N_objects = numel( excitation_voltages_common );
 
             % allocate cell arrays to store synthesis settings
-            indices_active = cell( N_objects, 1 );
-            apodization_weights = cell( N_objects, 1 );
-            time_delays = cell( N_objects, 1 );
-            excitation_voltages = cell( N_objects, 1 );
+            indices_active = cell( size( excitation_voltages_common ) );
+            apodization_weights = cell( size( excitation_voltages_common ) );
+            time_delays = cell( size( excitation_voltages_common ) );
+            excitation_voltages = cell( size( excitation_voltages_common ) );
 
             % iterate objects
             for index_object = 1:N_objects
