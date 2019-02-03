@@ -21,12 +21,12 @@ classdef planar_transducer_array < transducer_models.transducer_array
         % dependent geometrical properties
         element_pitch_axis ( 1, : ) double { mustBeReal, mustBePositive, mustBeFinite }     % pitches along each coordinate axis (m)
         width_axis ( 1, : ) double { mustBeReal, mustBePositive, mustBeFinite }             % width of aperture along each coordinate axis (m)
-        grid_ctr ( 1, 1 ) grids.grid                                                        % regular grid of center coordinates of the vibrating faces
+        grid_ctr ( 1, 1 ) discretization.grid                                                        % regular grid of center coordinates of the vibrating faces
 
         % dependent discretization properties
         N_points ( 1, 1 ) double { mustBeInteger, mustBePositive } = 10                     % total number of grid points (1)
         % TODO: grid_array?
-        grid ( :, 1 ) grids.grid                                                            % regular grid of points on each vibrating face
+        grid ( :, 1 ) discretization.grid                                                            % regular grid of points on each vibrating face
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -60,7 +60,7 @@ classdef planar_transducer_array < transducer_models.transducer_array
 
             % regular grid of center coordinates of the vibrating faces
             offset_axis	= ( 1 - obj.N_elements_axis ) .* obj.element_pitch_axis / 2;
-            obj.grid_ctr = grids.grid( obj.N_elements_axis, obj.element_pitch_axis, offset_axis );
+            obj.grid_ctr = discretization.grid( obj.N_elements_axis, obj.element_pitch_axis, offset_axis );
         end
 
         %------------------------------------------------------------------
@@ -85,7 +85,7 @@ classdef planar_transducer_array < transducer_models.transducer_array
             for index_element = 1:obj.N_elements
 
                 offset_axis = obj.grid_ctr.positions( index_element, :) + offset_axis_const;
-                obj.grid( index_element ) = grids.grid( N_interp_axis, delta_axis, offset_axis );
+                obj.grid( index_element ) = discretization.grid( N_interp_axis, delta_axis, offset_axis );
             end
         end
 

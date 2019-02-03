@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-01-17
+% modified: 2019-02-03
 %
 classdef orthotope < fields_of_view.field_of_view
 
@@ -17,7 +17,7 @@ classdef orthotope < fields_of_view.field_of_view
         offset_axis ( 1, : ) double { mustBeReal }                  % offset along axis (m)
 
         % dependent discretization properties
-        grid ( 1, 1 ) grids.grid                                    % regular grid
+        grid ( 1, 1 ) discretization.grid                           % regular grid
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -55,7 +55,7 @@ classdef orthotope < fields_of_view.field_of_view
 
             % positions of grid points
             grid_offset_axis = obj.offset_axis + 0.5 * obj.size_axis - M_points_axis .* delta_axis;
-            obj.grid = grids.grid( N_points_axis, delta_axis, grid_offset_axis );
+            obj.grid = discretization.grid( N_points_axis, delta_axis, grid_offset_axis );
         end
     end
 

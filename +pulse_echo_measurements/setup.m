@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2019-01-24
+% modified: 2019-02-03
 %
 classdef setup < handle
 
@@ -15,8 +15,8 @@ classdef setup < handle
 	properties (SetAccess = private)
 
         % independent properties
-        xdc_array ( 1, 1 ) transducer_models.transducer_array = transducer_models.L14_5_38          % transducer array
-        xdc_behavior                                                                                % electromechanical transfer behavior
+        xdc_array ( 1, 1 ) transducer_models.transducer_array = transducer_models.L14_5_38	% transducer array
+        xdc_behavior ( :, 1 ) pulse_echo_measurements.transfer_behavior                     % electromechanical transfer behaviors of all channels
         FOV ( 1, 1 ) fields_of_view.field_of_view = fields_of_view.orthotope( [4e-2, 4e-2], [-2e-2, 0.1] )	% field of view
         absorption_model ( 1, 1 ) absorption_models.absorption_model = absorption_models.time_causal( 0, 0.5, 1, 1540, 4e6, 1 )	% absorption model for the lossy homogeneous fluid
         c_avg = 1500;                                                                       % average small-signal sound speed
@@ -35,10 +35,11 @@ classdef setup < handle
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = setup( xdc_array, FOV, absorption_model, str_name )
+        function object = setup( xdc_array, transfer_behaviors, FOV, absorption_model, str_name )
 
             % internal properties
             object.xdc_array = xdc_array;
+            object.xdc_behavior = transfer_behaviors;
             object.FOV = FOV;
             object.absorption_model = absorption_model;
             % assertion: independent properties form valid scan configuration

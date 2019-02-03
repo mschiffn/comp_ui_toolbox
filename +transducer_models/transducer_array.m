@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-04-20
-% modified: 2019-01-17
+% modified: 2019-02-02
 %
 classdef transducer_array
 
@@ -14,7 +14,7 @@ classdef transducer_array
 
         % independent properties
         N_elements_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 1 ]	% numbers of elements along each coordinate axis (1)
-        str_name = {'default array', 'Default Corp'}                                                    % name of array
+        str_name = {'Default Array', 'Default Corp.'}                                                   % name of array
 
         % dependent properties
         N_dimensions ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 2              % number of dimensions (1)

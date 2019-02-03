@@ -60,7 +60,7 @@ classdef setting_rnd_apo_del < syntheses.setting
             auxiliary.mustBeEqualSize( excitation_voltages_common, e_theta, settings_rng_apo, settings_rng_del );
 
             %--------------------------------------------------------------
-            % 2.) compute synthesis settings for superpositions of randomly-apodized quasi-(d-1)-spherical waves
+            % 2.) compute synthesis settings for superpositions of randomly-apodized and randomly-delayed quasi-(d-1)-spherical waves
             %--------------------------------------------------------------
             % number of sequential syntheses
             N_objects = numel( excitation_voltages_common );
