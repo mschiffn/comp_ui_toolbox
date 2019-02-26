@@ -1,7 +1,9 @@
 %
 % compute d-dimensional discrete fourier transform for various options
-% author: Martin Schiffner
+%
+% author: Martin F. Schiffner
 % date: 2016-08-12
+% modified: 2019-02-23
 %
 classdef fourier < linear_transforms.orthonormal_linear_transform
 
@@ -30,22 +32,23 @@ classdef fourier < linear_transforms.orthonormal_linear_transform
 
             % constructor of superclass
             LT_fourier@linear_transforms.orthonormal_linear_transform( N_lattice, 'fourier' );
-            
+
             % internal properties
             LT_fourier.N_dimensions = N_dim;
             LT_fourier.N_lattice_axis = N_lattice_axis;
             LT_fourier.N_lattice_sqrt = sqrt( N_lattice );
         end
-       
+
         %------------------------------------------------------------------
         % overload method: forward transform (forward DFT)
         %------------------------------------------------------------------
         function y = forward_transform( LT_fourier, x )
 
             x = reshape( x, [LT_fourier.N_lattice_axis(2), LT_fourier.N_lattice_axis(1)] );
-            y = fft2( x ) / LT_fourier.N_lattice_sqrt;
+            y = fftn( x ) / LT_fourier.N_lattice_sqrt;
+
         end
-        
+
         %------------------------------------------------------------------
         % overload method: adjoint transform (inverse DFT)
         %------------------------------------------------------------------
@@ -53,7 +56,9 @@ classdef fourier < linear_transforms.orthonormal_linear_transform
 
             x = reshape( x, [LT_fourier.N_lattice_axis(2), LT_fourier.N_lattice_axis(1)] );
             y = ifft2( x ) * LT_fourier.N_lattice_sqrt;
+
         end
+
     end % methods
     
 end % classdef fourier < linear_transforms.orthonormal_linear_transform

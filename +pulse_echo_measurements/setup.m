@@ -1,11 +1,9 @@
 %
 % superclass for all pulse-echo measurement setups
 %
-% the class summarizes all constant objects
-%
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2019-02-03
+% modified: 2019-02-15
 %
 classdef setup < handle
 
@@ -15,57 +13,139 @@ classdef setup < handle
 	properties (SetAccess = private)
 
         % independent properties
-        xdc_array ( 1, 1 ) transducer_models.transducer_array = transducer_models.L14_5_38	% transducer array
-        xdc_behavior ( :, 1 ) pulse_echo_measurements.transfer_behavior                     % electromechanical transfer behaviors of all channels
-        FOV ( 1, 1 ) fields_of_view.field_of_view = fields_of_view.orthotope( [4e-2, 4e-2], [-2e-2, 0.1] )	% field of view
+        xdc_array ( 1, 1 ) transducers.array = transducers.L14_5_38     % transducer array
+        FOV ( 1, 1 ) fields_of_view.field_of_view                       % field of view
+        % TODO: properties of the lossy homogeneous fluid
         absorption_model ( 1, 1 ) absorption_models.absorption_model = absorption_models.time_causal( 0, 0.5, 1, 1540, 4e6, 1 )	% absorption model for the lossy homogeneous fluid
-        c_avg = 1500;                                                                       % average small-signal sound speed
-        f_clk = 80e6;                                                                       % frequency of the clock signal (Hz)
-        str_name                                                                            % name of scan configuration
+        c_avg = 1500;                                                   % average small-signal sound speed
+        f_clk = 80e6;                                                   % frequency of the clock signal (Hz)
+        str_name = 'default'                                            % name
 
-        % dependent properties
-        D_ctr                   % mutual distances for all array elements
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = setup( xdc_array, transfer_behaviors, FOV, absorption_model, str_name )
+        function object = setup( xdc_array, FOV, absorption_model, str_name )
 
-            % internal properties
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % set independent properties
             object.xdc_array = xdc_array;
-            object.xdc_behavior = transfer_behaviors;
             object.FOV = FOV;
             object.absorption_model = absorption_model;
-            % assertion: independent properties form valid scan configuration
-
             object.str_name = str_name;
+            % assertion: independent properties form a valid setup
 
         end % function object = setup( xdc_array, FOV, absorption_model, str_name )
 
         %------------------------------------------------------------------
-        % discretize pulse-echo measurement setup
+        % spatial discretization
         %------------------------------------------------------------------
-        function discretize( object, N_interp_axis, delta_axis )
+        function objects_out = discretize( object, options_space )
+
+            % TODO: various types of discretization / parameter objects
 
             %--------------------------------------------------------------
-            % 1.) discretize transducer array and field of view
+            % 1.) check arguments
             %--------------------------------------------------------------
-            object.xdc_array = discretize( object.xdc_array, N_interp_axis );
-            object.FOV = discretize( object.FOV, delta_axis );
+            % ensure class discretizations.options_grid
+            if ~isa( options_space, 'discretizations.options_grid')
+                errorStruct.message     = 'options_space must be discretizations.options_grid!';
+                errorStruct.identifier	= 'discretize:NoOptionsSpace';
+                error( errorStruct );
+            end
 
             %--------------------------------------------------------------
-            % 2.) compute mutual distances for array elements
+            % 2.) discretize transducer array and field of view
             %--------------------------------------------------------------
-            % center coordinates (required for windowing RF data)
-            object.D_ctr = sqrt( ( repmat( object.xdc_array.grid_ctr.positions( :, 1 ), [1, object.FOV.grid.N_points] ) - repmat( object.FOV.grid.positions( :, 1 )', [object.xdc_array.N_elements, 1] ) ).^2 + repmat( object.FOV.grid.positions( :, 2 )', [object.xdc_array.N_elements, 1] ).^2 );
+            % discretization based on regular grids
+            discretizations_elements = discretize( object.xdc_array, options_space.N_points_per_element_axis );
+            discretization_FOV = discretize( object.FOV, options_space.delta_axis );
 
-        end % function discretize( object, N_interp_axis, delta_axis )
+            %--------------------------------------------------------------
+            % 3.) construct spatial discretizations
+            %--------------------------------------------------------------
+            % TODO: check symmetry of setup and choose class accordingly            
+            if 1
+                objects_out = discretizations.spatial_grid_symmetric( discretizations_elements, discretization_FOV );
+            else
+                objects_out = discretizations.spatial_grid( discretizations_elements, discretization_FOV );
+            end
+
+        end % function objects_out = discretize( object, options_space )
+
+        %------------------------------------------------------------------
+        % lower and upper bounds on the times-of-flight
+        %------------------------------------------------------------------
+        function results = times_of_flight( object )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure planar transducer array and FOV with orthotope shape
+            if ~( isa( object.xdc_array, 'transducers.planar_transducer_array' ) && isa( object.FOV, 'fields_of_view.orthotope' ) )
+                errorStruct.message     = 'Current implementation requires planar transducer array and FOV with orthotope shape!';
+                errorStruct.identifier	= 'times_of_flight:NoPlanarOrOrthotope';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) estimate lower and upper bounds
+            %--------------------------------------------------------------
+            % vertices of the FOV
+            pos_vertices = vertices( object.FOV );
+
+            % allocate memory
+            t_tof_lbs = physical_values.time( zeros( object.xdc_array.N_elements ) );
+            t_tof_ubs = physical_values.time( zeros( object.xdc_array.N_elements ) );
+
+            % investigate all pairs of array elements
+            for index_element_tx = 1:object.xdc_array.N_elements
+
+                % center coordinates of tx element
+                pos_tx_ctr = object.xdc_array.grid_ctr.positions( index_element_tx );
+
+                for index_element_rx = index_element_tx:object.xdc_array.N_elements
+
+                    % center coordinates of rx element
+                    pos_rx_ctr = object.xdc_array.grid_ctr.positions( index_element_rx );
+
+                    % center coordinates of prolate spheroid
+                    pos_spheroid_ctr = ( pos_tx_ctr + pos_rx_ctr ) / 2;
+
+                    % distance from center coordinates to focal points
+                    dist_focus_ctr = norm( pos_rx_ctr - pos_tx_ctr ) / 2;
+
+                    %------------------------------------------------------
+                    % a) lower bound on the time-of-flight
+                    %------------------------------------------------------
+                    t_tof_lbs( index_element_tx, index_element_rx ) = physical_values.time( 2 * sqrt( dist_focus_ctr^2 + double( object.FOV.intervals( end ).bounds( 1 ) )^2 ) / object.c_avg );
+                    t_tof_lbs( index_element_rx, index_element_tx ) = t_tof_lbs( index_element_tx, index_element_rx );
+
+                    %------------------------------------------------------
+                    % b) upper bound on the time-of-flight
+                    %------------------------------------------------------
+                    % determine vertex of maximum distance
+                    [ dist_ctr_vertices_max, index_max ] = max( sqrt( sum( ( [ pos_spheroid_ctr, 0 ] - double( pos_vertices ) ).^2, 2 ) ) );
+
+                    % compute upper bound
+                    t_tof_ubs( index_element_tx, index_element_rx ) = ( norm( double( pos_vertices( index_max, : ) ) - [ pos_tx_ctr, 0 ] ) + norm( [ pos_rx_ctr, 0 ] - double( pos_vertices( index_max, : ) ) ) ) / object.c_avg;
+                    t_tof_ubs( index_element_rx, index_element_tx ) = t_tof_ubs( index_element_tx, index_element_rx );
+
+                end % for index_element_rx = index_element_tx:object.xdc_array.N_elements
+            end % for index_element_tx = 1:object.xdc_array.N_elements
+
+            % create time intervals
+            results = physical_values.interval_time( t_tof_lbs, t_tof_ubs);
+
+        end % function results = times_of_flight( object )
 
         %------------------------------------------------------------------
         % compute hash value

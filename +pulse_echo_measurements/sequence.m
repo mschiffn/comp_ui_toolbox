@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-01-24
+% modified: 2019-02-19
 %
 classdef sequence
 
@@ -13,19 +13,24 @@ classdef sequence
 	properties (SetAccess = private)
 
         % independent properties
-        setup %( 1, 1 ) pulse_echo_measurements.setup                        % pulse-echo measurement setup
-        measurements %( :, 1 ) pulse_echo_measurements.measurement             % column vector of sequential pulse-echo measurements
+        setup %( 1, 1 ) pulse_echo_measurements.setup        % pulse-echo measurement setup
+        settings %( :, : ) pulse_echo_measurements.setting	% pulse-echo measurement settings
+
+        % dependent properties
+        interval_t ( 1, 1 ) physical_values.interval_time       % hull of all recording time intervals
+        interval_f ( 1, 1 ) physical_values.interval_frequency	% hull of all frequency intervals
+
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function obj = sequence( setup, settings_tx )
+        function object = sequence( setup, settings )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -33,98 +38,160 @@ classdef sequence
             % ensure class pulse_echo_measurements.setup
             if ~isa( setup, 'pulse_echo_measurements.setup' ) || numel( setup ) ~= 1
                 errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'sequence_QPW:NoSetup';
+                errorStruct.identifier	= 'sequence:NoSingleSetup';
                 error( errorStruct );
             end
             % assertion: setup is a single pulse_echo_measurements.setup
 
-            %TODO: check symmetry of setup and choose class accordingly
+            % ensure class pulse_echo_measurements.setting
+            if ~isa( settings, 'pulse_echo_measurements.setting' )
+                errorStruct.message     = 'settings must be pulse_echo_measurements.setting!';
+                errorStruct.identifier	= 'sequence:NoSetting';
+                error( errorStruct );
+            end
+            % assertion: settings is pulse_echo_measurements.setting
+
+            %--------------------------------------------------------------
+            % 2.) set independent and dependent properties
+            %--------------------------------------------------------------
             % set independent properties
-            obj.setup	 = setup;
+            object.setup = setup;
+            object.settings = settings;
 
-            %--------------------------------------------------------------
-            % 2.) quantize tx settings
-            %--------------------------------------------------------------
-            settings_tx_quantized = quantize( settings_tx, 1 / obj.setup.f_clk );
+            % set dependent properties
+            object.interval_t = hull( [ object.settings.interval_t ] );
+            object.interval_f = hull( [ object.settings.interval_f ] );
 
-            %--------------------------------------------------------------
-            % 3.) create rx settings
-            %--------------------------------------------------------------
-            % determine recording time intervals
-            % TODO: include excitation voltages, impulse responses, etc. (pulse-echo responses)
-            T_pulse_echo = 3.3500e-06;
-            intervals_t = determine_interval_t( obj, settings_tx_quantized, T_pulse_echo );
-
-            % determine frequency intervals
-            intervals_f = determine_interval_f( obj, intervals_t );
-
-            % create pulse-echo measurements
-            % TODO: check method to determine Fourier coefficients
-            f_s = physical_values.frequency( 20e6 );
-            obj.measurements = pulse_echo_measurements.measurement_ADC( intervals_t, intervals_f, settings_tx_quantized, [], repmat( f_s, size( intervals_t ) ) );
-
-            % TODO: check for identical recording time intervals / identical frequency intervals
-            % check for identical frequency axes identical?
-%             N_objects = size( measurements, 1 );
-%             for index_object = 1:N_objects
-%                 measurements( index_object )
-%             end
-
-        end
+        end % function object = sequence( setup, settings )
 
         %------------------------------------------------------------------
-        % determine recording time intervals
+        % spatiospectral discretization
         %------------------------------------------------------------------
-        function intervals_t = determine_interval_t( obj, settings_tx, T_pulse_echo )
+        function spatiospectral = discretize( sequences, options )
+            % TODO: single sequence
 
             %--------------------------------------------------------------
-            % 1. minimum and maximum times of flight (geometric)
+            % 1.) check arguments
             %--------------------------------------------------------------
-            t_tof_lb = 2 * obj.setup.FOV.offset_axis(2) / obj.setup.c_avg;
-            t_tof_ub = 2 * sqrt( ( obj.setup.FOV.offset_axis(1) + obj.setup.FOV.size_axis(1) + obj.setup.xdc_array.width_axis(1) / 2 )^2 + ( obj.setup.FOV.offset_axis(2) + obj.setup.FOV.size_axis(2) )^2 ) / obj.setup.c_avg;
-
-            %--------------------------------------------------------------
-            % 2. maximum time delays in the syntheses
-            %--------------------------------------------------------------
-            N_incident = size( settings_tx, 1 );
-            time_delay_max = zeros( N_incident, 1 );
-            for index_incident = 1:N_incident
-                time_delay_max( index_incident ) = max( [ settings_tx( index_incident ).time_delays.value ] );
+            % ensure class discretizations.options
+            if ~isa( options, 'discretizations.options' )
+                errorStruct.message     = 'options_spectral must be discretizations.options_spectral!';
+                errorStruct.identifier	= 'discretize:NoOptionsFrequency';
+                error( errorStruct );
             end
 
-            %--------------------------------------------------------------
-            % 3. time duration of pulse-echo response
-            %--------------------------------------------------------------
-            t_lb = physical_values.time( t_tof_lb );
-            t_ub = physical_values.time( t_tof_ub + time_delay_max + T_pulse_echo );
-            % assertion: t_lb >= 0, t_ub > t_lb
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, options );
 
-            % create time intervals
-            intervals_t = physical_values.time_interval( [ repmat( t_lb, [ N_incident, 1 ] ), t_ub ] );
-        end
+            %--------------------------------------------------------------
+            % 2.) spatial discretization
+            %--------------------------------------------------------------
+            spatial = discretize( [ sequences.setup ], [ options.spatial ] );
+
+            %--------------------------------------------------------------
+            % 3.) spectral discretization
+            %--------------------------------------------------------------
+            spectral = discretize( [ sequences.settings ], [ options.spectral ] );
+
+            %--------------------------------------------------------------
+            % 4.) create spatiospectral discretization
+            %--------------------------------------------------------------
+            spatiospectral = discretizations.spatiospectral( spatial, spectral );
+
+        end % function spatiospectral = discretize( object, options )
 
         %------------------------------------------------------------------
-        % determine frequency intervals
+        % estimate recording time intervals
         %------------------------------------------------------------------
-        function intervals_f = determine_interval_f( obj, intervals_t )
+        function [ intervals_t, hulls ] = determine_interval_t( object )
 
-            %
-            N_incident = size( intervals_t, 1 );
-            f_lb = physical_values.frequency( 2.6e6 );
-            f_ub = physical_values.frequency( 5.4e6 );
-            % TODO: assertion: f_lb > 0, f_ub >= f_lb + 1 / T_rec
+            %--------------------------------------------------------------
+            % 1.) lower and upper bounds on the times-of-flight
+            %--------------------------------------------------------------
+            tof = times_of_flight( object.setup );
 
-            % create frequency intervals
-            intervals_f = physical_values.frequency_interval( repmat( [ f_lb, f_ub ], [ N_incident, 1 ] ) );
-        end
+            %--------------------------------------------------------------
+            % 2.) estimate support of each mix
+            %--------------------------------------------------------------
+            N_incident = numel( object.settings );
+            intervals_t = cell( N_incident, 1 );
+            hulls = repmat( tof( 1, 1 ), [ N_incident, 1 ] );
+
+            for index_incident = 1:N_incident
+
+                % indices of active tx elements
+                indices_tx_act = object.settings( index_incident ).tx.indices_active;
+                N_elements_tx = numel( indices_tx_act );
+
+                % determine support of each mix
+                N_mix = numel( object.settings( index_incident ).mixes );
+
+                % initialize lower and upper bounds on the support
+                t_lbs = physical_values.time( zeros( 1, N_mix ) );
+                t_ubs = physical_values.time( zeros( 1, N_mix ) );
+
+                for index_mix = 1:N_mix
+
+                    % indices of active rx elements
+                    indices_rx_act = object.settings( index_incident ).rx( index_mix ).indices_active;
+                    N_elements_rx = numel( indices_rx_act );
+
+                    % allocate memory
+                    t_lbs_all = physical_values.time( zeros( N_elements_tx, N_elements_rx ) );
+                    t_ubs_all = physical_values.time( zeros( N_elements_tx, N_elements_rx ) );
+
+                    % check all combinations of active tx and rx elements
+                    for index_tx = 1:N_elements_tx
+
+                        % index of tx array element
+                        index_element_tx = indices_tx_act( index_tx );
+
+                        % support of excitation voltage
+                        t_lb_tx_act = object.settings( index_incident ).tx.excitation_voltages( index_tx ).set_t.S( 1 ) + object.settings( index_incident ).tx.time_delays( index_tx );
+                        t_ub_tx_act = object.settings( index_incident ).tx.excitation_voltages( index_tx ).set_t.S( end ) + object.settings( index_incident ).tx.time_delays( index_tx );
+
+                        for index_rx = 1:N_elements_rx
+
+                            % index of rx array element
+                            index_element_rx = indices_rx_act( index_rx );
+
+                            % support of impulse response
+                            t_lb_rx_act = object.settings( index_incident ).rx( index_mix ).impulse_responses( index_rx ).set_t.S( 1 );
+                            t_ub_rx_act = object.settings( index_incident ).rx( index_mix ).impulse_responses( index_rx ).set_t.S( end );
+
+                            t_lbs_all( index_tx, index_rx ) = t_lb_tx_act + tof( index_element_tx, index_element_rx ).bounds( 1 ) + t_lb_rx_act;
+                            t_ubs_all( index_tx, index_rx ) = t_ub_tx_act + tof( index_element_tx, index_element_rx ).bounds( 2 ) + t_ub_rx_act;
+
+                        end % for index_rx = 1:N_elements_rx
+                    end % for index_tx = 1:N_elements_tx
+
+                    t_lbs( index_mix ) = min( t_lbs_all );
+                    t_ubs( index_mix ) = max( t_ubs_all );
+
+                end % for index_mix = 1:N_mix
+
+                % create time intervals for all mixes
+                intervals_t{ index_incident } = physical_values.interval_time( t_lbs, t_ubs );
+
+                % determine hull of time intervals
+                hulls( index_incident ) = hull( intervals_t{ index_incident } );
+
+            end % for index_incident = 1:N_incident
+
+        end % function intervals_t = determine_interval_t( object )
 
         %------------------------------------------------------------------
         % compute incident acoustic fields
         %------------------------------------------------------------------
-        function p_incident = compute_p_incident( obj )
+        function p_incident = compute_p_incident( object, discretization )
 
-            p_incident = syntheses.pressure_incident( obj.setup, obj.measurements );
-        end
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            p_incident = syntheses.pressure_incident( object.setup, object.settings, discretization );
+
+        end % function p_incident = compute_p_incident( object, discretization )
+
 	end % methods
 
 end % classdef sequence

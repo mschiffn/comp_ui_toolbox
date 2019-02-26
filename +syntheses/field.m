@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-01-24
+% modified: 2019-02-20
 %
 classdef field
 
@@ -17,6 +17,7 @@ classdef field
 
         % dependent properties
         size_bytes % ( 1, 1 ) physical_values.memory % memory consumption (B)
+
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,7 +28,7 @@ classdef field
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = field( setup, measurements )
+        function objects = field( discretization )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -37,17 +38,24 @@ classdef field
                 return;
             end
 
-            % check if pulse-echo measurement setup is discretized
-            if ~isa( setup, 'pulse_echo_measurements.setup' ) || numel( setup ) ~= 1 || isempty( setup.D_ctr )
-                errorStruct.message     = 'setup must be a single discretized pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'field:NoDiscretizedSetup';
+            % ensure class discretizations.discretization
+            if ~( isa( discretization, 'discretizations.discretization' ) && numel( discretization ) == 1 )
+                errorStruct.message     = 'discretization must be a single discretizations.discretization!';
+                errorStruct.identifier	= 'field:NoDiscretization';
                 error( errorStruct );
             end
 
-            % check if measurements are valid
-            if ~isa( measurements, 'pulse_echo_measurements.measurement' )
-                errorStruct.message     = 'measurements must be pulse_echo_measurements.measurement!';
-                errorStruct.identifier	= 'pressure_incident:WrongObjects';
+            % ensure class discretizations.spatial_grid
+            if ~isa( discretization.space, 'discretizations.spatial_grid' )
+                errorStruct.message     = 'discretization.space must be discretizations.spatial_grid!';
+                errorStruct.identifier	= 'field:NoSpatialGrid';
+                error( errorStruct );
+            end
+
+            % ensure class discretizations.set_discrete_frequency
+            if ~isa( discretization.frequency, 'discretizations.set_discrete_frequency' )
+                errorStruct.message     = 'discretization.frequency must be discretizations.set_discrete_frequency!';
+                errorStruct.identifier	= 'field:NoSetDiscreteFrequency';
                 error( errorStruct );
             end
 
@@ -55,28 +63,29 @@ classdef field
             % 2.) construct objects
             %--------------------------------------------------------------
             % construct column vector of objects
-            N_objects = size( measurements, 1 );
-            objects = repmat( objects, [ N_objects, 1 ] );
+            objects = repmat( objects, size( discretization.frequency ) );
 
             %--------------------------------------------------------------
             % 3.) initialize objects with zeros / compute memory consumption
             %--------------------------------------------------------------
-            for index_object = 1:N_objects
+            for index_object = 1:numel( discretization.frequency )
 
                 % number of discrete frequencies
-                N_samples_f = numel( [ measurements( index_object ).set_f.F_BP.value ] );
-                N_points = setup.FOV.grid.N_points;
+                N_samples_f = abs( discretization.frequency( index_object ) );
+                N_points = discretization.space.grid_FOV.N_points;
 
                 % initialize field values with zeros
                 objects( index_object ).values = cell( 1, N_samples_f );
                 for index_f = 1:N_samples_f
-                    objects( index_object ).values{ index_f } = zeros( setup.FOV.grid.N_points_axis(2), setup.FOV.grid.N_points_axis(1) );
+                    objects( index_object ).values{ index_f } = zeros( discretization.space.grid_FOV.N_points_axis( 2 ), discretization.space.grid_FOV.N_points_axis( 1 ) );
                 end
 
                 % compute memory consumption
                 objects( index_object ).size_bytes = physical_values.memory( N_samples_f * N_points * 16 );
-            end
-        end
+
+            end % for index_object = 1:numel( discretization.frequency )
+
+        end % function objects = field( discretization )
 
         %------------------------------------------------------------------
         % show (overload display function)

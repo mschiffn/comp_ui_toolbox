@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-07
-% modified: 2019-01-24
+% modified: 2019-02-03
 %
 classdef measurement
 
@@ -13,13 +13,9 @@ classdef measurement
 	properties (SetAccess = private)
 
         % independent properties
-        interval_t %( 1, 1 ) physical_values.time_interval           % recording time interval
-        interval_f %( 1, 1 ) physical_values.frequency_interval      % frequency interval
-        settings_tx %( 1, 1 ) syntheses.setting                      % synthesis settings
-        u_rx %( :, : ) physical_values.voltage_phasor               % Fourier coefficients of the recorded RF voltage signals
-
-        % dependent properties
-        set_f %( 1, 1 ) discretization.set_discrete_frequency       % set of relevant discrete frequencies
+        % TODO: incident wave
+        settings_tx ( 1, 1 ) syntheses.setting          % synthesis settings
+        u_mix ( :, 1 ) pulse_echo_measurements.mix      % mix of received RF voltage signals
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,7 +55,7 @@ classdef measurement
 %               objects( index_meas ).u_rx = u_rx( index_meas );
 
                 % determine dependent properties
-                objects( index_meas ).set_f = discretization.set_discrete_frequency( objects( index_meas ).interval_f, abs( objects( index_meas ).interval_t ) );
+                objects( index_meas ).set_f = discretizations.set_discrete_frequency( objects( index_meas ).interval_f, abs( objects( index_meas ).interval_t ) );
             end           
         end % function objects = measurement( intervals_t, intervals_f, settings_tx, u_rx )
 

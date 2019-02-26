@@ -38,7 +38,7 @@ classdef setting
             % 1.) check arguments
             %--------------------------------------------------------------
             % check type of arguments
-            if ~iscell( indices_active ) || ~iscell( apodization_weights ) || ~iscell( time_delays ) || ~iscell( excitation_voltages )
+            if ~( iscell( indices_active ) && iscell( apodization_weights ) && iscell( time_delays ) && iscell( excitation_voltages ) )
                 errorStruct.message     = 'indices_active, apodization_weights, time_delays, and excitation_voltages must be cell arrays!';
                 errorStruct.identifier	= 'setting:NoCellArrays';
                 error( errorStruct );
@@ -52,7 +52,7 @@ classdef setting
             %--------------------------------------------------------------
             % 2.) create synthesis settings
             %--------------------------------------------------------------
-            % construct column vector of objects
+            % construct objects
             N_objects = numel( indices_active );
             objects = repmat( objects, size( indices_active ) );
 

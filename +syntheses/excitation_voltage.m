@@ -15,7 +15,7 @@ classdef excitation_voltage < physical_values.signal
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = excitation_voltage( u_tx_tilde, f_s )
+        function objects = excitation_voltage( sets_t, u_tx_tilde )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -38,7 +38,7 @@ classdef excitation_voltage < physical_values.signal
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@physical_values.signal( h_tilde, f_s );
+            objects@physical_values.signal( sets_t, u_tx_tilde );
 
         end % function objects = excitation_voltage( u_tx_tilde, f_s )
 

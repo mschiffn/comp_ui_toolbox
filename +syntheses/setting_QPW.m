@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-01-25
+% modified: 2019-02-06
 %
 classdef setting_QPW < syntheses.setting
 
@@ -13,14 +13,13 @@ classdef setting_QPW < syntheses.setting
 	properties (SetAccess = private)
 
         % independent properties
-        e_theta ( 1, : ) double     % preferred directions of propagation (1)
-        c_avg ( 1, 1 ) double       % average small-signal sound speed (m/s)
+        e_theta ( 1, 1 ) physical_values.unit_vector	% preferred direction of propagation (1)
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -40,18 +39,29 @@ classdef setting_QPW < syntheses.setting
 
             % excitation_voltages_common will be checked in superclass
 
+            % ensure class physical_values.unit_vector
+            if ~isa( e_theta, 'physical_values.unit_vector' )
+                errorStruct.message     = 'e_theta must be physical_values.unit_vector!';
+                errorStruct.identifier	= 'setting_rnd_del:NoUnitVectors';
+                error( errorStruct );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( excitation_voltages_common, e_theta );
+
             %--------------------------------------------------------------
             % 2.) compute synthesis settings for QPWs
             %--------------------------------------------------------------
             % number of sequential syntheses
-            N_objects = size( e_theta, 1 );
+            N_objects = numel( excitation_voltages_common );
 
             % allocate cell arrays to store synthesis settings
-            indices_active = cell( N_objects, 1 );
-            apodization_weights = cell( N_objects, 1 );
-            time_delays = cell( N_objects, 1 );
-            excitation_voltages = cell( N_objects, 1 );
+            indices_active = cell( size( excitation_voltages_common ) );
+            apodization_weights = cell( size( excitation_voltages_common ) );
+            time_delays = cell( size( excitation_voltages_common ) );
+            excitation_voltages = cell( size( excitation_voltages_common ) );
 
+            % iterate objects
             for index_object = 1:N_objects
 
                 %----------------------------------------------------------
@@ -67,7 +77,7 @@ classdef setting_QPW < syntheses.setting
                 %----------------------------------------------------------
                 % c) compute time delays for each preferred direction of propagation
                 %----------------------------------------------------------
-                time_delays_act = e_theta( index_object, : ) * setup.xdc_array.grid_ctr.positions' / setup.c_avg;
+                time_delays_act = e_theta( index_object ).components * double( centers( setup.xdc_array ) )' / setup.c_avg;
                 time_delays_act = time_delays_act - min( time_delays_act );
                 time_delays{ index_object } = physical_values.time( time_delays_act );
 
@@ -87,8 +97,7 @@ classdef setting_QPW < syntheses.setting
             % 4.) set independent properties
             %--------------------------------------------------------------
             for index_object = 1:N_objects
-                objects( index_object ).e_theta = e_theta( index_object, : );
-                objects( index_object ).c_avg = setup.c_avg;
+                objects( index_object ).e_theta = e_theta( index_object );
             end
 
         end % function objects = setting_QPW( setup, excitation_voltages_common, e_theta )

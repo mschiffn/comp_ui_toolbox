@@ -3,16 +3,22 @@ function mustBeEqualSize( varargin )
 %
 % author: Martin F. Schiffner
 % date: 2019-02-01
-% modified: 2019-02-02
+% modified: 2019-02-11
 
-    % check number of arguments
-	if nargin < 2
-        errorStruct.message     = 'At least two arguments are required!';
+	%----------------------------------------------------------------------
+	% 1.) check arguments
+	%----------------------------------------------------------------------
+	% check number of arguments
+	if nargin < 1
+        errorStruct.message     = 'At least one argument is required!';
         errorStruct.identifier	= 'mustBeEqualSize:FewArguments';
         error( errorStruct );
     end
-    % assertion: nargin >= 2
+    % assertion: nargin >= 1
 
+	%----------------------------------------------------------------------
+	% 2.) compare number of dimensions and sizes
+	%----------------------------------------------------------------------
 	% use number of dimensions and size of first argument as reference
 	N_dimensions_ref = ndims( varargin{ 1 } );
 	size_ref = size( varargin{ 1 } );
@@ -26,5 +32,6 @@ function mustBeEqualSize( varargin )
             errorStruct.identifier	= 'mustBeEqualSize:DimensionOrSizeMismatch';
             error( errorStruct );
         end
-    end
+    end % for index_arg = 2:nargin
+
 end

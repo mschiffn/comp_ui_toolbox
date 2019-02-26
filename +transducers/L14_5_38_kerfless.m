@@ -7,7 +7,7 @@
 % date: 2017-05-03
 % modified: 2019-01-17
 %
-classdef L14_5_38_kerfless < transducer_models.planar_transducer_array
+classdef L14_5_38_kerfless < transducers.array_planar
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -64,9 +64,9 @@ classdef L14_5_38_kerfless < transducer_models.planar_transducer_array
             %--------------------------------------------------------------
             % constructor of superclass
             %--------------------------------------------------------------
-            obj@transducer_models.planar_transducer_array( N_elements_axis( 1:N_dimensions ), element_width( 1:N_dimensions ), element_kerf( 1:N_dimensions ), str_name );
+            obj@transducers.array_planar( N_elements_axis( 1:N_dimensions ), element_width( 1:N_dimensions ), element_kerf( 1:N_dimensions ), str_name );
         end
 
 	end % methods
 
-end % classdef L14_5_38_kerfless < transducer_models.planar_transducer_array
+end % classdef L14_5_38_kerfless < transducers.array_planar

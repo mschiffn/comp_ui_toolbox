@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-02-03
+% modified: 2019-02-08
 %
 classdef impulse_response < physical_values.signal
 
@@ -15,15 +15,15 @@ classdef impulse_response < physical_values.signal
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = impulse_response( h_tilde, f_s )
+        function objects = impulse_response( sets_t, h_tilde )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
-            objects@physical_values.signal( h_tilde, f_s );
+            objects@physical_values.signal( sets_t, h_tilde );
 
-        end % function objects = impulse_response( h_tilde, f_s )
+        end % function objects = impulse_response( sets_t, h_tilde )
 
-    end % methods
+	end % methods
 
 end

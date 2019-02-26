@@ -3,22 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-02-03
+% modified: 2019-02-14
 %
-classdef orthotope < fields_of_view.field_of_view
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-
-        % independent geometric properties
-        size_axis ( 1, : ) double { mustBeReal, mustBePositive }	% length of FOV (m)
-        offset_axis ( 1, : ) double { mustBeReal }                  % offset along axis (m)
-
-        % dependent discretization properties
-        grid ( 1, 1 ) discretization.grid                           % regular grid
-    end
+classdef orthotope < fields_of_view.field_of_view & physical_values.orthotope_position
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -28,35 +15,16 @@ classdef orthotope < fields_of_view.field_of_view
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function obj = orthotope( size_axis, offset_axis, varargin )
+        function objects = orthotope( varargin )
 
-            % constructor of superclass
-            obj@fields_of_view.field_of_view( numel( size_axis ) );
+            %--------------------------------------------------------------
+            % 1.) constructors of superclasses
+            %--------------------------------------------------------------
+            objects@physical_values.orthotope_position( varargin{ : } );
+            objects@fields_of_view.field_of_view( nargin );
 
-            % set independent properties
-            % TODO:  % check number of dimensions
-            obj.size_axis	= size_axis;
-            obj.offset_axis	= offset_axis;
-        end
+        end % function objects = orthotope( varargin )
 
-        %------------------------------------------------------------------
-        % discretize orthotope
-        %------------------------------------------------------------------
-        function obj = discretize( obj, delta_axis )
-
-            % ensure positive real numbers
-            mustBeReal( delta_axis );
-            mustBePositive( delta_axis );
-            % assertion: delta_axis are real-valued and positive
-
-            % create regular grid
-            N_points_axis = floor( obj.size_axis ./ delta_axis );
-            M_points_axis = ( N_points_axis - 1 ) / 2;
-
-            % positions of grid points
-            grid_offset_axis = obj.offset_axis + 0.5 * obj.size_axis - M_points_axis .* delta_axis;
-            obj.grid = discretization.grid( N_points_axis, delta_axis, grid_offset_axis );
-        end
     end
 
 end % classdef orthotope

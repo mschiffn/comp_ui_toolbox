@@ -5,6 +5,7 @@
 % date: 2019-01-30
 % modified: 2019-01-30
 %
+% TODO: use cell arrays as arguments
 classdef unit_vector
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

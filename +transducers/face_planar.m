@@ -1,22 +1,15 @@
 %
-% superclass for all synthesis sequences
-%
+% superclass for all planar vibrating faces
 % author: Martin F. Schiffner
-% date: 2019-01-14
-% modified: 2019-01-14
+% date: 2019-02-18
+% modified: 2019-02-18
 %
-classdef sequence
+classdef face_planar < transducers.face
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
-
-        % independent properties
-        settings ( :, 1 ) syntheses.setting             % vector of synthesis settings
-
-        % dependent properties
-        N_incident ( 1, 1 ) double { mustBeInteger }	% number of sequential syntheses (1) [integers, positive]
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,12 +20,15 @@ classdef sequence
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function obj = sequence( settings )
+        function objects = face_planar( varargin )
 
-            % check and set independent properties
-            obj.N_incident = numel( settings );
-            obj.settings = settings;
+            %--------------------------------------------------------------
+            % constructor of superclass
+            %--------------------------------------------------------------
+            objects@transducers.face();
+%             objects.pos_center = center( objects );
         end
-	end % methods
 
-end % classdef sequence
+    end % methods
+
+end % classdef face_planar
