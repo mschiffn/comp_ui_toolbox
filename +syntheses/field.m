@@ -38,9 +38,9 @@ classdef field
                 return;
             end
 
-            % ensure class discretizations.discretization
-            if ~( isa( discretization, 'discretizations.discretization' ) && numel( discretization ) == 1 )
-                errorStruct.message     = 'discretization must be a single discretizations.discretization!';
+            % ensure class discretizations.spatiospectral
+            if ~( isa( discretization, 'discretizations.spatiospectral' ) && numel( discretization ) == 1 )
+                errorStruct.message     = 'discretization must be a single discretizations.spatiospectral!';
                 errorStruct.identifier	= 'field:NoDiscretization';
                 error( errorStruct );
             end
@@ -52,9 +52,9 @@ classdef field
                 error( errorStruct );
             end
 
-            % ensure class discretizations.set_discrete_frequency
-            if ~isa( discretization.frequency, 'discretizations.set_discrete_frequency' )
-                errorStruct.message     = 'discretization.frequency must be discretizations.set_discrete_frequency!';
+            % ensure class discretizations.spectral_points
+            if ~isa( discretization.frequency, 'discretizations.spectral_points' )
+                errorStruct.message     = 'discretization.frequency must be discretizations.spectral_points!';
                 errorStruct.identifier	= 'field:NoSetDiscreteFrequency';
                 error( errorStruct );
             end

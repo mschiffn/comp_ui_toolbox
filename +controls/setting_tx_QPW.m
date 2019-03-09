@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-02-06
+% modified: 2019-02-26
 %
-classdef setting_QPW < syntheses.setting
+classdef setting_tx_QPW < controls.setting_tx
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % properties
@@ -14,6 +14,7 @@ classdef setting_QPW < syntheses.setting
 
         % independent properties
         e_theta ( 1, 1 ) physical_values.unit_vector	% preferred direction of propagation (1)
+
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -24,7 +25,7 @@ classdef setting_QPW < syntheses.setting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_QPW( setup, excitation_voltages_common, e_theta )
+        function objects = setting_tx_QPW( setup, excitation_voltages_common, e_theta )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -32,7 +33,7 @@ classdef setting_QPW < syntheses.setting
             % ensure class pulse_echo_measurements.setup
             if ~isa( setup, 'pulse_echo_measurements.setup' ) || numel( setup ) ~= 1
                 errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'setting_QPW:NoSetup';
+                errorStruct.identifier	= 'setting_tx_QPW:NoSetup';
                 error( errorStruct );
             end
             % assertion: setup is a single pulse_echo_measurements.setup
@@ -57,8 +58,7 @@ classdef setting_QPW < syntheses.setting
 
             % allocate cell arrays to store synthesis settings
             indices_active = cell( size( excitation_voltages_common ) );
-            apodization_weights = cell( size( excitation_voltages_common ) );
-            time_delays = cell( size( excitation_voltages_common ) );
+            impulse_responses = cell( size( excitation_voltages_common ) );
             excitation_voltages = cell( size( excitation_voltages_common ) );
 
             % iterate objects
@@ -70,19 +70,18 @@ classdef setting_QPW < syntheses.setting
                 indices_active{ index_object } = (1:setup.xdc_array.N_elements);
 
                 %----------------------------------------------------------
-                % b) unity apodization weights
+                % b) impulse responses are delays
                 %----------------------------------------------------------
-                apodization_weights{ index_object } = physical_values.apodization_weight( ones( 1, setup.xdc_array.N_elements ) );
-
-                %----------------------------------------------------------
-                % c) compute time delays for each preferred direction of propagation
-                %----------------------------------------------------------
+                % compute time delays for each preferred direction of propagation
                 time_delays_act = e_theta( index_object ).components * double( centers( setup.xdc_array ) )' / setup.c_avg;
                 time_delays_act = time_delays_act - min( time_delays_act );
-                time_delays{ index_object } = physical_values.time( time_delays_act );
+
+                % compute impulse responses
+                lbs_q = round( time_delays_act / double( setup.T_clk ) );
+                impulse_responses{ index_object } = physical_values.impulse_response_delta( lbs_q, setup.T_clk );
 
                 %----------------------------------------------------------
-                % d) identical excitation voltages for all array elements
+                % c) identical excitation voltages for all array elements
                 %----------------------------------------------------------
                 excitation_voltages{ index_object } = repmat( excitation_voltages_common( index_object ), [ 1, setup.xdc_array.N_elements ] );
 
@@ -91,7 +90,7 @@ classdef setting_QPW < syntheses.setting
             %--------------------------------------------------------------
             % 3.) constructor of superclass
             %--------------------------------------------------------------
-            objects@syntheses.setting( indices_active, apodization_weights, time_delays, excitation_voltages );
+            objects@controls.setting_tx( indices_active, impulse_responses, excitation_voltages );
 
             %--------------------------------------------------------------
             % 4.) set independent properties
@@ -100,8 +99,8 @@ classdef setting_QPW < syntheses.setting
                 objects( index_object ).e_theta = e_theta( index_object );
             end
 
-        end % function objects = setting_QPW( setup, excitation_voltages_common, e_theta )
+        end % function objects = setting_tx_QPW( setup, excitation_voltages_common, e_theta )
 
 	end % methods
 
-end % classdef setting_QPW
+end % classdef setting_tx_QPW

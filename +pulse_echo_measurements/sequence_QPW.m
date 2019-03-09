@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-02-12
+% modified: 2019-03-03
 %
 classdef sequence_QPW < pulse_echo_measurements.sequence
 
@@ -20,26 +20,27 @@ classdef sequence_QPW < pulse_echo_measurements.sequence
             %--------------------------------------------------------------
             % 1.) create synthesis settings
             %--------------------------------------------------------------
-            settings_tx = syntheses.setting_QPW( setup, excitation_voltages_common, e_theta );
+            settings_tx = controls.setting_tx_QPW( setup, excitation_voltages_common, e_theta );
 
             %--------------------------------------------------------------
-            % 2.) quantize tx settings (not necessary when using updated synthesis settings)
+            % 2.) create reception settings (estimate recording time intervals via options?)
             %--------------------------------------------------------------
-%             settings_tx_quantized = quantize( [settings.tx], 1 / object.setup.f_clk );
+            temp = controls.setting_rx_identity( setup, interval_t, interval_f );
+            indices = randperm( 128 );
+            indices = indices(1:2);
+            settings_rx = repmat( { temp( indices ) }, size( settings_tx ) );
+
             % determine frequency intervals
             % TODO: assertion: f_lb > 0, f_ub >= f_lb + 1 / T_rec
-             %--------------------------------------------------------------
-            % 3.) estimate recording time intervals
-            %--------------------------------------------------------------
 %             [ intervals_t, hulls ] = determine_interval_t( object );
 
             %--------------------------------------------------------------
-            % 2.) create pulse-echo measurement settings
+            % 3.) create pulse-echo measurement settings
             %--------------------------------------------------------------
-            settings = pulse_echo_measurements.setting_identity( setup, settings_tx, interval_t, interval_f );
+            settings = pulse_echo_measurements.setting( settings_tx, settings_rx );
 
             %--------------------------------------------------------------
-            % 3.) constructor of superclass
+            % 4.) constructor of superclass
             %--------------------------------------------------------------
             object@pulse_echo_measurements.sequence( setup, settings );
 
@@ -47,4 +48,4 @@ classdef sequence_QPW < pulse_echo_measurements.sequence
 
 	end % methods
 
-end % classdef sequence_QPW
+end % classdef sequence_QPW < pulse_echo_measurements.sequence

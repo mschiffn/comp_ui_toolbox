@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-02-25
+% modified: 2019-03-09
 %
 classdef setting
 
@@ -54,13 +54,13 @@ classdef setting
 
                 % set independent properties
                 objects( index_object ).tx = settings_tx( index_object );
-                objects( index_object ).mixes = settings_rx{ index_object };
+                objects( index_object ).rx = settings_rx{ index_object };
 
                 % set dependent properties
                 objects( index_object ).interval_t = interval_t_hull( objects( index_object ) );
                 objects( index_object ).interval_f = interval_f_hull( objects( index_object ) );
 
-            end
+            end % for index_object = 1:numel( settings_tx )
 
         end % function objects = setting( settings_tx, settings_rx )
 
@@ -68,7 +68,7 @@ classdef setting
         % spectral discretization
         %------------------------------------------------------------------
         function objects_out = discretize( settings, options_spectral )
-
+            % TODO: various types of discretization / regular vs irregular
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -82,78 +82,75 @@ classdef setting
             %--------------------------------------------------------------
             % 2.) discretize frequency intervals
             %--------------------------------------------------------------
+            % initialize cell arrays
+            spectral_points_rx = cell( size( settings ) );
+            spectral_points_tx = cell( size( settings ) );
+
             switch options_spectral
 
                 case discretizations.options_spectral.signal
 
                     %------------------------------------------------------
-                    % a) individual discretization for each mix
+                    % a) individual discretization for each recorded signal
                     %------------------------------------------------------
-                    % initialize cell arrays
-                    sets_f = cell( size( settings ) );
-                    transfer_functions_rx = cell( size( settings ) );
-                    transfer_functions_tx = cell( size( settings ) );
-                    excitation_voltages = cell( size( settings ) );
-
-                    % iterate settings
                     for index_setting = 1:numel( settings )
 
-                        % recording time intervals and frequency intervals for each received signal
+                        % time and frequency intervals
                         intervals_t = reshape( [ settings( index_setting ).rx.interval_t ], size( settings( index_setting ).rx ) );
                         intervals_f = reshape( [ settings( index_setting ).rx.interval_f ], size( settings( index_setting ).rx ) );
 
-                        %
-                        transfer_functions_rx{ index_setting } = discretize( settings( index_setting ).rx );
-                        [ excitation_voltages{ index_setting }, transfer_functions_tx{ index_setting } ] = discretize( settings( index_setting ).tx, intervals_t, intervals_f );
+                        % discretize rx and tx settings
+                        spectral_points_rx{ index_setting } = discretize( settings( index_setting ).rx );
+                        spectral_points_tx{ index_setting } = discretize( settings( index_setting ).tx, intervals_t, intervals_f );
 
                     end % for index_setting = 1:numel( settings )
 
-                    % create spectral discretizations
-                    objects_out = discretizations.spectral_points( sets_f, transfer_functions_rx, excitation_voltages, transfer_functions_tx );
-
                 case discretizations.options_spectral.setting
-                    % TODO: various types of discretization / regular vs irregular
 
                     %------------------------------------------------------
-                    % b) common discretization for all mixes
+                    % b) common discretization for all recorded signals per setting
                     %------------------------------------------------------
+                    for index_setting = 1:numel( settings )
 
-                    % compute Fourier coefficients of the impulse responses
-                    for index_object = 1:numel( settings )
+                        % discretize rx and tx settings
+                        spectral_points_rx{ index_setting } = discretize( settings( index_setting ).rx, settings( index_setting ).interval_t, settings( index_setting ).interval_f );
+                        spectral_points_tx{ index_setting } = discretize( settings( index_setting ).tx, settings( index_setting ).interval_t, settings( index_setting ).interval_f );
 
-                        excitation_voltages = fourier_coefficients( settings( index_object ).tx.excitation_voltages, settings( index_object ).interval_t, settings( index_object ).interval_f );
-
-                        % transfer functions for each mix
-                        transfer_functions = cell( size( settings( index_object ).mixes ) );
-                        for index_mix = 1:numel( settings( index_object ).mixes )
-
-                            transfer_functions{ index_mix } = fourier_transform( settings( index_object ).mixes( index_mix ).xdc_control.impulse_responses, settings( index_object ).interval_t, settings( index_object ).interval_f );
-                        end
-
-                    end % for index_object = 1:numel( settings )
+                    end % for index_setting = 1:numel( settings )
 
                 case discretizations.options_spectral.sequence
 
                     %------------------------------------------------------
-                    % b) common spectral discretization for all settings in the sequence
+                    % c) common discretization for all recorded signals
                     %------------------------------------------------------
                     % determine hull time and frequency intervals
                     interval_t_hull = hull( [ settings.interval_t ] );
                     interval_f_hull = hull( [ settings.interval_f ] );
 
-                    % discretize hull frequency interval
-                    objects_out = discretize( interval_f_hull, 1 ./ abs( interval_t_hull ) );
+                    % iterate settings
+                    for index_setting = 1:numel( settings )
+
+                        % discretize rx and tx settings
+                        spectral_points_rx{ index_setting } = discretize( settings( index_setting ).rx, interval_t_hull, interval_f_hull );
+                        spectral_points_tx{ index_setting } = discretize( settings( index_setting ).tx, interval_t_hull, interval_f_hull );
+
+                    end % for index_setting = 1:numel( settings )
 
                 otherwise
 
                     %------------------------------------------------------
-                    % c) unknown spectral discretization method
+                    % d) unknown spectral discretization method
                     %------------------------------------------------------
                     errorStruct.message     = 'discretizations.options_spectral not implemented!';
                     errorStruct.identifier	= 'discretize:UnknownMethod';
                     error( errorStruct );
 
             end % switch options_spectral
+
+            %--------------------------------------------------------------
+            % 3.) create spectral discretizations
+            %--------------------------------------------------------------
+            objects_out = discretizations.spectral_points( spectral_points_tx, spectral_points_rx );
 
         end % function objects_out = discretize( settings, options_spectral )
 
@@ -163,12 +160,12 @@ classdef setting
         function objects_out = interval_t_hull( objects_in )
 
             % create objects_out of equal size
-            objects_out = repmat( objects_in( 1 ).mixes( 1 ).interval_t, size( objects_in ) );
+            objects_out = repmat( objects_in( 1 ).rx( 1 ).interval_t, size( objects_in ) );
 
             % iterate objects_in
             for index_object = 1:numel( objects_in )
 
-                objects_out( index_object ) = hull( [ objects_in( index_object ).mixes.interval_t ] );
+                objects_out( index_object ) = hull( [ objects_in( index_object ).rx.interval_t ] );
 
             end % for index_object = 1:numel( objects_in )
 
@@ -180,12 +177,12 @@ classdef setting
         function objects_out = interval_f_hull( objects_in )
 
             % create objects_out of equal size
-            objects_out = repmat( objects_in( 1 ).mixes( 1 ).interval_f, size( objects_in ) );
+            objects_out = repmat( objects_in( 1 ).rx( 1 ).interval_f, size( objects_in ) );
 
             % iterate objects_in
             for index_object = 1:numel( objects_in )
 
-                objects_out( index_object ) = hull( [ objects_in( index_object ).mixes.interval_f ] );
+                objects_out( index_object ) = hull( [ objects_in( index_object ).rx.interval_f ] );
 
             end % for index_object = 1:numel( objects_in )
 

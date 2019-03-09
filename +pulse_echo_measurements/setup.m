@@ -18,7 +18,7 @@ classdef setup < handle
         % TODO: properties of the lossy homogeneous fluid
         absorption_model ( 1, 1 ) absorption_models.absorption_model = absorption_models.time_causal( 0, 0.5, 1, 1540, 4e6, 1 )	% absorption model for the lossy homogeneous fluid
         c_avg = 1500;                                                   % average small-signal sound speed
-        f_clk = 80e6;                                                   % frequency of the clock signal (Hz)
+        T_clk = physical_values.time( 1 / 80e6 );                       % time period of the clock signal (Hz)
         str_name = 'default'                                            % name
 
     end % properties
@@ -48,17 +48,17 @@ classdef setup < handle
         %------------------------------------------------------------------
         % spatial discretization
         %------------------------------------------------------------------
-        function objects_out = discretize( object, options_space )
+        function objects_out = discretize( setup, options_space )
 
             % TODO: various types of discretization / parameter objects
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.options_grid
-            if ~isa( options_space, 'discretizations.options_grid')
-                errorStruct.message     = 'options_space must be discretizations.options_grid!';
-                errorStruct.identifier	= 'discretize:NoOptionsSpace';
+            % ensure class discretizations.options_spatial_grid
+            if ~isa( options_space, 'discretizations.options_spatial_grid')
+                errorStruct.message     = 'options_space must be discretizations.options_spatial_grid!';
+                errorStruct.identifier	= 'discretize:NoOptionsSpatialGrid';
                 error( errorStruct );
             end
 
@@ -66,8 +66,8 @@ classdef setup < handle
             % 2.) discretize transducer array and field of view
             %--------------------------------------------------------------
             % discretization based on regular grids
-            discretizations_elements = discretize( object.xdc_array, options_space.N_points_per_element_axis );
-            discretization_FOV = discretize( object.FOV, options_space.delta_axis );
+            discretizations_elements = discretize( setup.xdc_array, options_space.N_points_per_element_axis );
+            discretization_FOV = discretize( setup.FOV, options_space.delta_axis );
 
             %--------------------------------------------------------------
             % 3.) construct spatial discretizations
@@ -79,7 +79,7 @@ classdef setup < handle
                 objects_out = discretizations.spatial_grid( discretizations_elements, discretization_FOV );
             end
 
-        end % function objects_out = discretize( object, options_space )
+        end % function objects_out = discretize( setup, options_space )
 
         %------------------------------------------------------------------
         % lower and upper bounds on the times-of-flight

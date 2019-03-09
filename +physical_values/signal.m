@@ -67,7 +67,7 @@ classdef signal
         %------------------------------------------------------------------
         % discrete Fourier transform (orthonormal)
         %------------------------------------------------------------------
-        function [sets_f, coefficients] = DFT( objects_in, intervals_t, intervals_f )
+        function [sets_f, coefficients] = DFT( signals, intervals_t, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -80,44 +80,44 @@ classdef signal
             end
 
             % multiple signals / single time interval
-            if ~isscalar( objects_in ) && isscalar( intervals_t )
-                intervals_t = repmat( intervals_t, size( objects_in ) );
+            if ~isscalar( signals ) && isscalar( intervals_t )
+                intervals_t = repmat( intervals_t, size( signals ) );
             end
 
             % multiple signals / single frequency interval
-            if ~isscalar( objects_in ) && isscalar( intervals_f )
-                intervals_f = repmat( intervals_f, size( objects_in ) );
+            if ~isscalar( signals ) && isscalar( intervals_f )
+                intervals_f = repmat( intervals_f, size( signals ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( objects_in, intervals_t, intervals_f );
-            % assertion: objects_in and intervals_f have equal size
+            auxiliary.mustBeEqualSize( signals, intervals_t, intervals_f );
+            % assertion: signals, intervals_t, and intervals_f have equal size
 
             %--------------------------------------------------------------
             % 2.) compute discrete Fourier transform  (orthonormal)
             %--------------------------------------------------------------
             % initialize cell arrays
-            sets_f = repmat( discretizations.set_discrete_frequency_regular( 0, 1, physical_values.frequency( 1 ) ), size( objects_in ) );
-            coefficients = cell( size( objects_in ) );
+            sets_f = repmat( discretizations.set_discrete_frequency_regular( 0, 1, physical_values.frequency( 1 ) ), size( signals ) );
+            coefficients = cell( size( signals ) );
 
             % check and set independent properties
-            for index_object = 1:numel( objects_in )
+            for index_object = 1:numel( signals )
 
                 % ensure class discretizations.set_discrete_time_regular
-                if ~isa( objects_in( index_object ).set_t, 'discretizations.set_discrete_time_regular' )
-                    errorStruct.message     = sprintf( 'objects_in( %d ).set_t must be discretizations.set_discrete_time_regular!', index_object );
+                if ~isa( signals( index_object ).set_t, 'discretizations.set_discrete_time_regular' )
+                    errorStruct.message     = sprintf( 'signals( %d ).set_t must be discretizations.set_discrete_time_regular!', index_object );
                     errorStruct.identifier	= 'fourier_coefficients:NoRegularSampling';
                     error( errorStruct );
                 end
 
                 % quantize recording time interval and determine duration
-                interval_t_quantized = quantize( intervals_t( index_object ), objects_in( index_object ).set_t.T_s );
+                interval_t_quantized = quantize( intervals_t( index_object ), signals( index_object ).set_t.T_s );
                 T_rec_act = abs( interval_t_quantized );
 
                 % ensure sufficient durations of intervals_t
                 N_samples_interval = double( interval_t_quantized.q_ub - interval_t_quantized.q_lb );
-                if N_samples_interval < abs( objects_in( index_object ).set_t )
-                    errorStruct.message     = sprintf( 'objects_in( %d ).set_t must be included in intervals_t( %d )!', index_object, index_object );
+                if N_samples_interval < abs( signals( index_object ).set_t )
+                    errorStruct.message     = sprintf( 'signals( %d ).set_t must be included in intervals_t( %d )!', index_object, index_object );
                     errorStruct.identifier	= 'fourier_coefficients:IntervalMismatch';
                     error( errorStruct );
                 end
@@ -128,25 +128,25 @@ classdef signal
                 indices_relevant = double( sets_f( index_object ).q_lb:sets_f( index_object ).q_ub );
 
                 % compute discrete Fourier transform (orthonormal)
-                coefficients_act = fft( double( objects_in( index_object ).samples ), N_samples_interval ) / sqrt( N_samples_interval );
+                coefficients_act = fft( double( signals( index_object ).samples ), N_samples_interval ) / sqrt( N_samples_interval );
                 coefficients{ index_object } = coefficients_act( indices_relevant );
 
                 % compute phase shift
-                samples_shift = objects_in( index_object ).set_t.q_lb - interval_t_quantized.q_lb;
+                samples_shift = signals( index_object ).set_t.q_lb - interval_t_quantized.q_lb;
                 if samples_shift ~= 0
                     axis_Omega = 2 * pi * indices_relevant / N_samples_interval;
-                    phase_shift = exp( -1j * axis_Omega * samples_shift );
+                    phase_shift = exp( -1j * axis_Omega * double( samples_shift ) );
                     coefficients{ index_object } = coefficients{ index_object } .* phase_shift;
                 end
 
-            end % for index_object = 1:numel( objects_in )
+            end % for index_object = 1:numel( signals )
 
-        end % function [sets_f, coefficients] = DFT( objects_in, intervals_t, intervals_f )
+        end % function [sets_f, coefficients] = DFT( signals, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
         % Fourier transform
         %------------------------------------------------------------------
-        function objects_out = fourier_transform( objects_in, intervals_t, intervals_f )
+        function objects_out = fourier_transform( signals, intervals_t, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -154,83 +154,77 @@ classdef signal
             % ensure classes physical_values.interval_time and physical_values.interval_frequency
             if ~( isa( intervals_t, 'physical_values.interval_time' ) && isa( intervals_f, 'physical_values.interval_frequency' ) )
                 errorStruct.message     = 'intervals_t must be physical_values.interval_time and intervals_f must be physical_values.interval_frequency!';
-                errorStruct.identifier	= 'fourier_coefficients:NoIntervals';
+                errorStruct.identifier	= 'fourier_transform:NoIntervals';
                 error( errorStruct );
             end
 
             % multiple signals / single time interval
-            if ~isscalar( objects_in ) && isscalar( intervals_t )
-                intervals_t = repmat( intervals_t, size( objects_in ) );
+            if ~isscalar( signals ) && isscalar( intervals_t )
+                intervals_t = repmat( intervals_t, size( signals ) );
             end
 
             % multiple signals / single frequency interval
-            if ~isscalar( objects_in ) && isscalar( intervals_f )
-                intervals_f = repmat( intervals_f, size( objects_in ) );
+            if ~isscalar( signals ) && isscalar( intervals_f )
+                intervals_f = repmat( intervals_f, size( signals ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( objects_in, intervals_t, intervals_f );
-            % assertion: objects_in and intervals_f have equal size
+            auxiliary.mustBeEqualSize( signals, intervals_t, intervals_f );
+            % assertion: signals, intervals_t, and intervals_f have equal size
 
             %--------------------------------------------------------------
-            % 2.) compute Fourier series coefficients
+            % 2.) compute Fourier transform samples
             %--------------------------------------------------------------
             % initialize cell arrays
-            sets_f = repmat( discretizations.set_discrete_frequency_regular( 0, 1, physical_values.frequency( 1 ) ), size( objects_in ) );
-            coefficients = cell( size( objects_in ) );
+            sets_f = repmat( discretizations.set_discrete_frequency_regular( 0, 1, physical_values.frequency( 1 ) ), size( signals ) );
+            coefficients = cell( size( signals ) );
 
             % check and set independent properties
-            for index_object = 1:numel( objects_in )
+            for index_object = 1:numel( signals )
 
                 % ensure class discretizations.set_discrete_time_regular
-                if ~isa( objects_in( index_object ).set_t, 'discretizations.set_discrete_time_regular' )
-                    errorStruct.message     = sprintf( 'objects_in( %d ).set_t must be discretizations.set_discrete_time_regular!', index_object );
-                    errorStruct.identifier	= 'fourier_coefficients:NoRegularSampling';
+                if ~isa( signals( index_object ).set_t, 'discretizations.set_discrete_time_regular' )
+                    errorStruct.message     = sprintf( 'signals( %d ).set_t must be discretizations.set_discrete_time_regular!', index_object );
+                    errorStruct.identifier	= 'fourier_transform:NoRegularSampling';
                     error( errorStruct );
                 end
 
                 % quantize recording time interval and determine duration
-                interval_t_quantized = quantize( intervals_t( index_object ), objects_in( index_object ).set_t.T_s );
+                interval_t_quantized = quantize( intervals_t( index_object ), signals( index_object ).set_t.T_s );
                 T_rec_act = abs( interval_t_quantized );
 
                 % ensure that intervals_t includes the discrete times
                 N_samples_interval = double( interval_t_quantized.q_ub - interval_t_quantized.q_lb );
-                if N_samples_interval < abs( objects_in( index_object ).set_t )
-                    errorStruct.message     = sprintf( 'objects_in( %d ).set_t must be included in intervals_t( %d )!', index_object, index_object );
-                    errorStruct.identifier	= 'fourier_coefficients:IntervalMismatch';
+                N_samples_signal = abs( signals( index_object ).set_t );
+                if N_samples_signal > N_samples_interval
+                    errorStruct.message     = sprintf( 'signals( %d ).set_t must be included in intervals_t( %d )!', index_object, index_object );
+                    errorStruct.identifier	= 'fourier_transform:IntervalMismatch';
                     error( errorStruct );
                 end
 
                 % compute axis of relevant frequencies
-                % TODO: various types of discretization / parameter objects / regular vs irregular
                 sets_f( index_object ) = discretize( intervals_f( index_object ), 1 ./ T_rec_act );
                 indices_relevant = double( sets_f( index_object ).q_lb:sets_f( index_object ).q_ub );
 
                 % compute and truncate Fourier series coefficients
-                coefficients_act = double( objects_in( index_object ).set_t.T_s ) * fft( double( objects_in( index_object ).samples ), N_samples_interval );
+                samples_shift = signals( index_object ).set_t.q_lb - interval_t_quantized.q_lb;
+                samples = circshift( [ double( signals( index_object ).samples ), zeros( 1, N_samples_interval - N_samples_signal ) ], samples_shift, 2 );
+                coefficients_act = double( signals( index_object ).set_t.T_s ) * fft( samples, N_samples_interval );
                 coefficients{ index_object } = coefficients_act( indices_relevant );
 
-                % compute phase shift
-                samples_shift = objects_in( index_object ).set_t.q_lb - interval_t_quantized.q_lb;
-                if samples_shift ~= 0
-                    axis_Omega = 2 * pi * indices_relevant / N_samples_interval;
-                    phase_shift = exp( -1j * axis_Omega * samples_shift );
-                    coefficients{ index_object } = coefficients{ index_object } .* phase_shift;
-                end
-
-            end % for index_object = 1:numel( objects_in )
+            end % for index_object = 1:numel( signals )
 
             %--------------------------------------------------------------
             % 3.) create Fourier series samples
             %--------------------------------------------------------------
             objects_out = physical_values.fourier_transform( sets_f, coefficients );
 
-        end % function objects_out = fourier_coefficients( objects_in, intervals_t, intervals_f )
+        end % function objects_out = fourier_coefficients( signals, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
         % Fourier coefficients
         %------------------------------------------------------------------
-        function objects_out = fourier_coefficients( objects_in, intervals_t, intervals_f )
+        function objects_out = fourier_coefficients( signals, intervals_t, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -243,73 +237,67 @@ classdef signal
             end
 
             % multiple signals / single time interval
-            if ~isscalar( objects_in ) && isscalar( intervals_t )
-                intervals_t = repmat( intervals_t, size( objects_in ) );
+            if ~isscalar( signals ) && isscalar( intervals_t )
+                intervals_t = repmat( intervals_t, size( signals ) );
             end
 
             % multiple signals / single frequency interval
-            if ~isscalar( objects_in ) && isscalar( intervals_f )
-                intervals_f = repmat( intervals_f, size( objects_in ) );
+            if ~isscalar( signals ) && isscalar( intervals_f )
+                intervals_f = repmat( intervals_f, size( signals ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( objects_in, intervals_t, intervals_f );
-            % assertion: objects_in and intervals_f have equal size
+            auxiliary.mustBeEqualSize( signals, intervals_t, intervals_f );
+            % assertion: signals, intervals_t, and intervals_f have equal size
 
             %--------------------------------------------------------------
             % 2.) compute Fourier series coefficients
             %--------------------------------------------------------------
             % initialize cell arrays
-            sets_f = repmat( discretizations.set_discrete_frequency_regular( 0, 1, physical_values.frequency( 1 ) ), size( objects_in ) );
-            coefficients = cell( size( objects_in ) );
+            sets_f = repmat( discretizations.set_discrete_frequency_regular( 0, 1, physical_values.frequency( 1 ) ), size( signals ) );
+            coefficients = cell( size( signals ) );
 
             % check and set independent properties
-            for index_object = 1:numel( objects_in )
+            for index_object = 1:numel( signals )
 
                 % ensure class discretizations.set_discrete_time_regular
-                if ~isa( objects_in( index_object ).set_t, 'discretizations.set_discrete_time_regular' )
-                    errorStruct.message     = sprintf( 'objects_in( %d ).set_t must be discretizations.set_discrete_time_regular!', index_object );
+                if ~isa( signals( index_object ).set_t, 'discretizations.set_discrete_time_regular' )
+                    errorStruct.message     = sprintf( 'signals( %d ).set_t must be discretizations.set_discrete_time_regular!', index_object );
                     errorStruct.identifier	= 'fourier_coefficients:NoRegularSampling';
                     error( errorStruct );
                 end
 
                 % quantize recording time interval and determine duration
-                interval_t_quantized = quantize( intervals_t( index_object ), objects_in( index_object ).set_t.T_s );
+                interval_t_quantized = quantize( intervals_t( index_object ), signals( index_object ).set_t.T_s );
                 T_rec_act = abs( interval_t_quantized );
 
                 % ensure that intervals_t includes the discrete times
                 N_samples_interval = double( interval_t_quantized.q_ub - interval_t_quantized.q_lb );
-                if N_samples_interval < abs( objects_in( index_object ).set_t )
-                    errorStruct.message     = sprintf( 'objects_in( %d ).set_t must be included in intervals_t( %d )!', index_object, index_object );
+                N_samples_signal = abs( signals( index_object ).set_t );
+                if N_samples_signal > N_samples_interval
+                    errorStruct.message     = sprintf( 'signals( %d ).set_t must be included in intervals_t( %d )!', index_object, index_object );
                     errorStruct.identifier	= 'fourier_coefficients:IntervalMismatch';
                     error( errorStruct );
                 end
 
                 % compute axis of relevant frequencies
-                % TODO: various types of discretization / parameter objects / regular vs irregular
                 sets_f( index_object ) = discretize( intervals_f( index_object ), 1 ./ T_rec_act );
                 indices_relevant = double( sets_f( index_object ).q_lb:sets_f( index_object ).q_ub );
 
                 % compute and truncate Fourier series coefficients
-                coefficients_act = sqrt( N_samples_interval ) * fft( double( objects_in( index_object ).samples ), N_samples_interval );
+                samples_shift = signals( index_object ).set_t.q_lb - interval_t_quantized.q_lb;
+                samples = circshift( [ double( signals( index_object ).samples ), zeros( 1, N_samples_interval - N_samples_signal ) ], samples_shift, 2 );
+                coefficients_act = sqrt( N_samples_interval ) * fft( samples, N_samples_interval );
                 coefficients{ index_object } = coefficients_act( indices_relevant );
 
-                % compute phase shift
-                samples_shift = objects_in( index_object ).set_t.q_lb - interval_t_quantized.q_lb;
-                if samples_shift ~= 0
-                    axis_Omega = 2 * pi * indices_relevant / N_samples_interval;
-                    phase_shift = exp( -1j * axis_Omega * samples_shift );
-                    coefficients{ index_object } = coefficients{ index_object } .* phase_shift;
-                end
-
-            end % for index_object = 1:numel( objects_in )
+            end % for index_object = 1:numel( signals )
 
             %--------------------------------------------------------------
             % 3.) create Fourier series coefficients
             %--------------------------------------------------------------
             objects_out = physical_values.fourier_series_truncated( sets_f, coefficients );
 
-        end % function objects_out = fourier_coefficients( objects_in, intervals_t, intervals_f )
+        end % function objects_out = fourier_coefficients( signals, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
         % 2-D line plot (overload plot function)

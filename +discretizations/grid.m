@@ -250,12 +250,17 @@ classdef grid
         %------------------------------------------------------------------
         % mutual distances
         %------------------------------------------------------------------
-        function D = mutual_distances( grids_1, grids_2 )
+        function [ D, differences ] = mutual_distances( grids_1, grids_2 )
 
             %--------------------------------------------------------------
             % 1.) mutual differences
             %--------------------------------------------------------------
             differences = mutual_differences( grids_1, grids_2 );
+
+            % ensure cell array
+            if ~iscell( differences )
+                differences = { differences };
+            end
 
             %--------------------------------------------------------------
             % 2.) compute mutual distances for each pair of grids
@@ -272,9 +277,10 @@ classdef grid
             % avoid cell array for single pair of grids
             if numel( grids_1 ) == 1
                 D = D{ 1 };
+                differences = differences{ 1 };
             end
 
-        end % function D = mutual_distances( grids_1, grids_2 )
+        end % function [ D, differences ] = mutual_distances( grids_1, grids_2 )
 
         %------------------------------------------------------------------
         % mutual unit vectors
@@ -282,21 +288,29 @@ classdef grid
         function [ e_1_minus_2, D ] = mutual_unit_vectors( grids_1, grids_2 )
 
             %--------------------------------------------------------------
-            % 1.) mutual differences
+            % 1.) mutual distances
             %--------------------------------------------------------------
-            differences = mutual_differences( grids_1, grids_2 );
+            [ D, differences ] = mutual_distances( grids_1, grids_2 );
+
+            % ensure cell array for D
+            if ~iscell( D )
+                D = { D };
+            end
+
+            % ensure cell array for differences
+            if ~iscell( differences )
+                differences = { differences };
+            end
 
             %--------------------------------------------------------------
             % 2.) compute mutual unit vectors for each pair of grids
             %--------------------------------------------------------------
             e_1_minus_2 = cell( size( differences ) );
-            D = cell( size( differences ) );
 
             for index_object = 1:numel( differences )
 
                 % compute unit vectors
-                D{ index_object } = sqrt( sum( differences{ index_object }.^2, 3 ) );
-                e_1_minus_2{ index_object } = differences ./ D{ index_object };
+                e_1_minus_2{ index_object } = differences{ index_object } ./ D{ index_object };
 
             end % for index_object = 1:numel( differences )
 
@@ -306,7 +320,7 @@ classdef grid
                 e_1_minus_2 = e_1_minus_2{ 1 };
             end
 
-        end % function D = mutual_unit_vectors( grids_1, grids_2 )
+        end % function [ e_1_minus_2, D ] = mutual_unit_vectors( grids_1, grids_2 )
 
     end % methods
 
