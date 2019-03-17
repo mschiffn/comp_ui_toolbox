@@ -1,9 +1,9 @@
 %
-% superclass for all spatial discretizations
+% superclass for all spatial discretizations based on regular grids
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-02-25
+% modified: 2019-03-12
 %
 classdef spatial_grid < discretizations.spatial
 
@@ -71,13 +71,29 @@ classdef spatial_grid < discretizations.spatial
                 objects( index_object ).grids_elements = grids_elements{ index_object };
                 objects( index_object ).grid_FOV = grid_FOV( index_object );
 
-                % center coordinates (required for windowing RF data)
-%                 objects( index_object ).D_ctr = sqrt( ( repmat( objects( index_object ).xdc_array.grid_ctr.positions( :, 1 ), [1, objects( index_object ).FOV.grid.N_points] ) - repmat( objects( index_object ).FOV.grid.positions( :, 1 )', [objects( index_object ).xdc_array.N_elements, 1] ) ).^2 + repmat( objects( index_object ).FOV.grid.positions( :, 2 )', [objects( index_object ).xdc_array.N_elements, 1] ).^2 );
-
             end % for index_object = 1:numel( objects )
 
-        end % function objects = spatial_grid( )
+        end % function objects = spatial_grid( grids_elements, grid_FOV )
+
+        %------------------------------------------------------------------
+        % spatial transfer function
+        %------------------------------------------------------------------
+        function h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % TODO: check for wavenumbers, element
+
+            %--------------------------------------------------------------
+            % 2.) compute spatial transfer function
+            %--------------------------------------------------------------
+            h_tx = discretizations.greens_function( axis_k_tilde, spatial_grid.grids_elements( index_element ), spatial_grid.grid_FOV );
+            h_tx = reshape( squeeze( sum( h_tx, 1 ) ), [ spatial_grid.grid_FOV.N_points_axis(2), spatial_grid.grid_FOV.N_points_axis(1), numel( axis_k_tilde ) ] );
+            h_tx = -2 * spatial_grid.grids_elements( 1 ).delta_V * h_tx;
+
+        end % function h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element )
 
 	end % methods
 
-end % classdef spatial_grid
+end % classdef spatial_grid < discretizations.spatial

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-02-20
+% modified: 2019-03-11
 %
 classdef field
 
@@ -16,7 +16,7 @@ classdef field
         values % phasors of the acoustic value for each grid point in the FOV
 
         % dependent properties
-        size_bytes % ( 1, 1 ) physical_values.memory % memory consumption (B)
+        size_bytes ( 1, 1 ) physical_values.memory	% memory consumption (B)
 
     end % properties
 
@@ -28,7 +28,7 @@ classdef field
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = field( discretization )
+        function objects = field( spatiospectral )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -39,23 +39,23 @@ classdef field
             end
 
             % ensure class discretizations.spatiospectral
-            if ~( isa( discretization, 'discretizations.spatiospectral' ) && numel( discretization ) == 1 )
-                errorStruct.message     = 'discretization must be a single discretizations.spatiospectral!';
+            if ~( isa( spatiospectral, 'discretizations.spatiospectral' ) && numel( spatiospectral ) == 1 )
+                errorStruct.message     = 'spatiospectral must be a single discretizations.spatiospectral!';
                 errorStruct.identifier	= 'field:NoDiscretization';
                 error( errorStruct );
             end
 
             % ensure class discretizations.spatial_grid
-            if ~isa( discretization.space, 'discretizations.spatial_grid' )
-                errorStruct.message     = 'discretization.space must be discretizations.spatial_grid!';
+            if ~isa( spatiospectral.spatial, 'discretizations.spatial_grid' )
+                errorStruct.message     = 'spatiospectral.spatial must be discretizations.spatial_grid!';
                 errorStruct.identifier	= 'field:NoSpatialGrid';
                 error( errorStruct );
             end
 
             % ensure class discretizations.spectral_points
-            if ~isa( discretization.frequency, 'discretizations.spectral_points' )
-                errorStruct.message     = 'discretization.frequency must be discretizations.spectral_points!';
-                errorStruct.identifier	= 'field:NoSetDiscreteFrequency';
+            if ~isa( spatiospectral.spectral, 'discretizations.spectral_points' )
+                errorStruct.message     = 'spatiospectral.spectral must be discretizations.spectral_points!';
+                errorStruct.identifier	= 'field:NoSpectralPoints';
                 error( errorStruct );
             end
 
@@ -63,32 +63,33 @@ classdef field
             % 2.) construct objects
             %--------------------------------------------------------------
             % construct column vector of objects
-            objects = repmat( objects, size( discretization.frequency ) );
+            objects = repmat( objects, size( spatiospectral.spectral ) );
 
             %--------------------------------------------------------------
             % 3.) initialize objects with zeros / compute memory consumption
             %--------------------------------------------------------------
-            for index_object = 1:numel( discretization.frequency )
+            for index_object = 1:numel( spatiospectral.spectral )
 
-                % number of discrete frequencies
-                N_samples_f = abs( discretization.frequency( index_object ) );
-                N_points = discretization.space.grid_FOV.N_points;
+                % number of unique discrete frequencies
+                N_samples_f = abs( spatiospectral.spectral( index_object ).tx_unique.excitation_voltages( 1 ).set_f );
+                N_points = spatiospectral.spatial.grid_FOV.N_points;
 
                 % initialize field values with zeros
+                % TODO: generalize to three-dimensional geometry
                 objects( index_object ).values = cell( 1, N_samples_f );
                 for index_f = 1:N_samples_f
-                    objects( index_object ).values{ index_f } = zeros( discretization.space.grid_FOV.N_points_axis( 2 ), discretization.space.grid_FOV.N_points_axis( 1 ) );
+                    objects( index_object ).values{ index_f } = zeros( spatiospectral.spatial.grid_FOV.N_points_axis( 2 ), spatiospectral.spatial.grid_FOV.N_points_axis( 1 ) );
                 end
 
                 % compute memory consumption
                 objects( index_object ).size_bytes = physical_values.memory( N_samples_f * N_points * 16 );
 
-            end % for index_object = 1:numel( discretization.frequency )
+            end % for index_object = 1:numel( spatiospectral.spectral )
 
-        end % function objects = field( discretization )
+        end % function objects = field( spatiospectral )
 
         %------------------------------------------------------------------
-        % show (overload display function)
+        % show
         %------------------------------------------------------------------
         function hdl = show( objects )
 

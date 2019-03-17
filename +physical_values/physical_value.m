@@ -53,13 +53,13 @@ classdef physical_value
         function results = double( objects )
 
             % create results of equal size
-            N_objects = numel( objects );
             results = zeros( size( objects ) );
 
             % extract values
-            for index_object = 1:N_objects
+            for index_object = 1:numel( objects )
                 results( index_object ) = objects( index_object ).value;
             end
+
         end % function results = double( objects )
 
         %------------------------------------------------------------------
@@ -210,6 +210,7 @@ classdef physical_value
             for index_objects = 1:numel( objects_in )
                 objects_out( index_objects ).value = objects_in( index_objects ).value * numbers_in( index_objects );
             end
+
         end % function objects_out = times( inputs_1, inputs_2 )
 
         %------------------------------------------------------------------
@@ -352,7 +353,21 @@ classdef physical_value
             for index_object = 1:N_objects
                 objects( index_object ).value = round( objects( index_object ).value / delta ) * delta;
             end
-        end
+        end % function objects = quantize( objects, delta )
+
+        %------------------------------------------------------------------
+        % unique values in array (overload unique function)
+        %------------------------------------------------------------------
+        function [ objects_out, ia, ic ] = unique( physical_values )
+
+            [ C, ia, ic ] = unique( double( physical_values ) );
+
+            objects_out = repmat( physical_values( 1 ), size( C ) );
+            for index_object = 1:numel( objects_out )
+                objects_out( index_object ).value = C( index_object );
+            end
+
+        end % function [ objects_out, ia, ic ] = unique( physical_values )
 
         %------------------------------------------------------------------
         % display value of variable (overload disp function)

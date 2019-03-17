@@ -76,6 +76,7 @@ classdef setting_rx < controls.setting
             %--------------------------------------------------------------
             % 2.) compute transfer functions
             %--------------------------------------------------------------
+            indices_active = cell( size( settings_rx ) );
             transfer_functions = cell( size( settings_rx ) );
             for index_object = 1:numel( settings_rx )
 
@@ -87,12 +88,15 @@ classdef setting_rx < controls.setting
                     interval_f_act = varargin{ 2 };
                 end
 
+                indices_active{ index_object } = settings_rx( index_object ).indices_active;
                 transfer_functions{ index_object } = fourier_transform( settings_rx( index_object ).impulse_responses, interval_t_act, interval_f_act );
 
             end % for index_object = 1:numel( settings_rx )
 
-            % create spectral discretizations of the recording settings
-            objects_out = discretizations.spectral_points_rx( transfer_functions );
+            %--------------------------------------------------------------
+            % 3.) create spectral discretizations of the recording settings
+            %--------------------------------------------------------------
+            objects_out = discretizations.spectral_points_rx( indices_active, transfer_functions );
 
         end % function objects_out = discretize( settings_rx, varargin )
 

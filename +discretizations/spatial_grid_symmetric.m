@@ -1,9 +1,9 @@
 %
-% superclass for all spatial discretizations
+% superclass for all spatial discretizations based on symmetric regular grids
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-02-19
+% modified: 2019-03-13
 %
 classdef spatial_grid_symmetric < discretizations.spatial_grid
 
@@ -76,4 +76,4 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
 
 	end % methods
 
-end % classdef spatial_grid_symmetric
+end % classdef spatial_grid_symmetric < discretizations.spatial_grid

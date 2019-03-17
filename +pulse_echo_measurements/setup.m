@@ -150,12 +150,12 @@ classdef setup < handle
         %------------------------------------------------------------------
         % compute hash value
         %------------------------------------------------------------------
-        function str_hash = hash( object )
+        function str_hash = hash( setups )
 
             % use DataHash function to compute hash value
-            str_hash = auxiliary.DataHash( object );
+            str_hash = auxiliary.DataHash( setups );
 
-        end % function str_hash = hash( object )
+        end % function str_hash = hash( setups )
 
     end % methods
 

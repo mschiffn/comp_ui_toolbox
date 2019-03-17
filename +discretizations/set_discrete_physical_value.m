@@ -14,6 +14,7 @@ classdef set_discrete_physical_value
 
         % independent properties
         S ( 1, : ) physical_values.physical_value	% set consists of multiple physical values
+
 	end % properties
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-08
-% modified: 2019-03-09
+% modified: 2019-03-11
 %
 classdef spectral_points_rx < discretizations.spectral_points_base
 
@@ -15,14 +15,14 @@ classdef spectral_points_rx < discretizations.spectral_points_base
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = spectral_points_rx( transfer_functions )
+        function objects = spectral_points_rx( indices_active, transfer_functions )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.spectral_points_base( transfer_functions );
+            objects@discretizations.spectral_points_base( indices_active, transfer_functions );
 
-        end % function objects = spectral_points_rx( transfer_functions )
+        end % function objects = spectral_points_rx( indices_active, transfer_functions )
 
 	end % methods
 

@@ -17,7 +17,7 @@ classdef spatiospectral
         spectral %( :, : ) discretizations.spectral      % spectral discretization
 
         % dependent properties
-        set_f_unique ( 1, 1 ) discretizations.set_discrete_frequency
+%         set_f_unique ( 1, 1 ) discretizations.set_discrete_frequency
 
     end % properties
 
@@ -60,13 +60,10 @@ classdef spatiospectral
                 objects( index_object ).spatial = spatial( index_object );
                 objects( index_object ).spectral = spectral{ index_object };
 
-                % determine unique frequencies
-                for index_spectral = 1:numel( spectral{ index_object } )
-            end % for index_object = 1:numel( spatial )
+                % set dependent properties
+%                 objects( index_object ).set_f_unique = union( [ objects( index_object ).spectral.set_f_unique ] );
 
-           
-            
-%             [C,ia,ic] = unique( A )
+            end % for index_object = 1:numel( spatial )
 
         end % function objects = spatiospectral( spatial, spectral )
 

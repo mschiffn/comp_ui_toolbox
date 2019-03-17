@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-02-21
+% modified: 2019-03-11
 %
 classdef set_discrete_frequency < discretizations.set_discrete_physical_value
 
@@ -46,6 +46,17 @@ classdef set_discrete_frequency < discretizations.set_discrete_physical_value
 
         end % function objects = set_discrete_frequency( input )
 
+        %------------------------------------------------------------------
+        % union
+        %------------------------------------------------------------------
+        function [ set_out, ia, ic ] = union( sets_in )
+
+            % retain unique discrete frequencies
+            [ S, ia, ic ] = unique( [ sets_in.S ] );
+            set_out = discretizations.set_discrete_frequency( S );
+
+        end % function [ set_out, ia, ic ] = union( sets_in )
+
 	end % methods
 
-end % classdef set_discrete_frequency
+end % classdef set_discrete_frequency < discretizations.set_discrete_physical_value

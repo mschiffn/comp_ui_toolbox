@@ -25,10 +25,10 @@ classdef sequence_QPW < pulse_echo_measurements.sequence
             %--------------------------------------------------------------
             % 2.) create reception settings (estimate recording time intervals via options?)
             %--------------------------------------------------------------
-            temp = controls.setting_rx_identity( setup, interval_t, interval_f );
-            indices = randperm( 128 );
-            indices = indices(1:2);
-            settings_rx = repmat( { temp( indices ) }, size( settings_tx ) );
+            settings_rx = repmat( { controls.setting_rx_identity( setup, interval_t, interval_f ) }, size( settings_tx ) );
+%             indices = randperm( 128 );
+%             indices = indices(1:2);
+%             settings_rx = repmat( { temp( indices ) }, size( settings_tx ) );
 
             % determine frequency intervals
             % TODO: assertion: f_lb > 0, f_ub >= f_lb + 1 / T_rec

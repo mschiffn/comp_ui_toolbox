@@ -183,14 +183,14 @@ classdef sequence
         %------------------------------------------------------------------
         % compute incident acoustic fields
         %------------------------------------------------------------------
-        function p_incident = compute_p_incident( object, discretization )
+        function p_incident = compute_p_incident( object, spatiospectral )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            p_incident = syntheses.pressure_incident( object.setup, object.settings, discretization );
+            p_incident = syntheses.pressure_incident( object.setup, spatiospectral );
 
-        end % function p_incident = compute_p_incident( object, discretization )
+        end % function p_incident = compute_p_incident( object, spatiospectral )
 
 	end % methods
 

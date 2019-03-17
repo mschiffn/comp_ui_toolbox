@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-03-09
+% modified: 2019-03-11
 %
 classdef spectral_points < discretizations.spectral
 
@@ -17,7 +17,7 @@ classdef spectral_points < discretizations.spectral
         rx ( :, : ) discretizations.spectral_points_rx
 
         % dependent properties
-        set_f_unique ( 1, 1 ) discretizations.set_discrete_frequency
+        tx_unique ( :, : ) discretizations.spectral_points_tx
 
     end % properties
 
@@ -68,14 +68,17 @@ classdef spectral_points < discretizations.spectral
 %                     error( errorStruct );
 %                 end
                 if ~( numel( tx{ index_object } ) == 1 || numel( tx{ index_object } ) == numel( rx{ index_object } ) )
-                    errorStruct.message     = 'options_spectral must be discretizations.options_spectral!';
-                    errorStruct.identifier	= 'discretize:NoOptionsFrequency';
+                    errorStruct.message     = 'Number of elements in tx must be one or match rx!';
+                    errorStruct.identifier	= 'spectral_points:SizeMismatch';
                     error( errorStruct );
                 end
 
                 % set independent properties
                 objects( index_object ).tx = tx{ index_object };
                 objects( index_object ).rx = rx{ index_object };
+
+                % set dependent properties
+                objects( index_object ).tx_unique = union( objects( index_object ).tx );
 
             end % for index_object = 1:numel( tx )
 

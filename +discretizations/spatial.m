@@ -33,6 +33,16 @@ classdef spatial
 
         end % function objects = spatial( )
 
+        %------------------------------------------------------------------
+        % compute hash value
+        %------------------------------------------------------------------
+        function str_hash = hash( object )
+
+            % use DataHash function to compute hash value
+            str_hash = auxiliary.DataHash( object );
+
+        end % function str_hash = hash( object )
+
 	end % methods
 
 end % classdef spatial
