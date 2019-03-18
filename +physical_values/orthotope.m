@@ -171,7 +171,7 @@ classdef orthotope
                 mustBePositive( delta_axis{ index_object } );
 
                 % number of grid points along each axis
-                % TODO: check rounding errors
+                % TODO: check rounding errors: abs( intervals_act ) slightly deviates from specs
                 intervals_act = orthotopes( index_object ).intervals;
                 N_points_axis{ index_object } = floor( double( abs( intervals_act ) ) ./ delta_axis{ index_object } );
 

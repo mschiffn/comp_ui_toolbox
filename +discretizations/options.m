@@ -13,7 +13,7 @@ classdef options
 	properties (SetAccess = private)
 
         % independent properties
-        spatial ( 1, 1 ) discretizations.options_spatial_grid = discretizations.options_spatial_grid	% spatial discretization
+        spatial ( 1, 1 ) discretizations.options_spatial = discretizations.options_spatial_grid         % spatial discretization
         spectral ( 1, 1 ) discretizations.options_spectral = discretizations.options_spectral.signal	% spectral discretization
 
     end % properties
@@ -31,15 +31,27 @@ classdef options
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % return if no input argument
             if nargin == 0
                 return;
             end
 
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( spatial, spectral );
+
             %--------------------------------------------------------------
-            % 2.) set independent properties
+            % 2.) create spatiospectral discretization options
             %--------------------------------------------------------------
-            objects.spatial = spatial;
-            objects.spectral = spectral;
+            % create objects
+            objects = repmat( objects, size( spatial ) );
+
+            for index_object = 1:numel( spatial )
+
+                % set independent properties
+                objects( index_object ).spatial = spatial( index_object );
+                objects( index_object ).spectral = spectral( index_object );
+
+            end % for index_object = 1:numel( spatial )
 
         end % function objects = options( spatial, spectral )
 
