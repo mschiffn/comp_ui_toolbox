@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-05-03
-% modified: 2019-02-18
+% modified: 2019-03-18
 %
 classdef L14_5_38 < transducers.array_planar
 
@@ -22,19 +22,19 @@ classdef L14_5_38 < transducers.array_planar
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % specify two-dimensional transducer array as default
-            N_dimensions = 2;
-
-            % process optional argument
-            if numel( varargin ) > 0
-
-                % ensure correct number of dimensions
-                if ~( ( varargin{ 1 } == 1 ) || ( varargin{ 1 } == 2 ) )
-                    errorStruct.message     = 'Number of dimensions N_dimensions must equal either 1 or 2!';
-                    errorStruct.identifier	= 'L14_5_38:DimensionMismatch';
-                    error( errorStruct );
-                end
+            % ensure nonempty N_dimensions
+            if nargin >= 1 && ~isempty( varargin{ 1 } )
                 N_dimensions = varargin{ 1 };
+            else
+                % specify two-dimensional transducer array as default
+                N_dimensions = 2;
+            end
+
+            % ensure correct number of dimensions
+            if ~( ( N_dimensions == 1 ) || ( N_dimensions == 2 ) )
+                errorStruct.message     = 'Number of dimensions must equal either 1 or 2!';
+                errorStruct.identifier	= 'L14_5_38:InvalidNumberOfDimensions';
+                error( errorStruct );
             end
             % assertion: N_dimensions == 1 || N_dimensions == 2
 
@@ -46,7 +46,7 @@ classdef L14_5_38 < transducers.array_planar
             %--------------------------------------------------------------
             % 3.) constructor of superclass
             %--------------------------------------------------------------
-            object@transducers.array_planar( N_dimensions, parameters );
+            object@transducers.array_planar( parameters, N_dimensions );
 
         end % function object = L14_5_38( varargin )
 

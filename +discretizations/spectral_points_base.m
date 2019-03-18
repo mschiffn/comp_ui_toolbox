@@ -1,5 +1,5 @@
 %
-% superclass for all spectral discretizations
+% superclass for all spectral discretizations based on pointwise sampling
 %
 % author: Martin F. Schiffner
 % date: 2019-03-09
@@ -71,6 +71,16 @@ classdef spectral_points_base
             end % for index_object = 1:numel( indices_active )
 
         end % function objects = spectral_points_base( indices_active, transfer_functions )
+
+        %------------------------------------------------------------------
+        % unique active indices
+        %------------------------------------------------------------------
+        function [ indices_unique, ia, ic ] = unique_indices( objects_in )
+
+            % extract unique physical values
+            [ indices_unique, ia, ic ] = unique( [ objects_in.indices_active ] );
+
+        end % function [ indices_unique, ia, ic ] = unique_indices( objects_in )
 
         %------------------------------------------------------------------
         % compute hash value

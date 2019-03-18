@@ -2,7 +2,7 @@
 % material parameter: compressibility
 %
 % author: Martin Schiffner
-% date: 2015-07-06
+% date: 2019-01-10
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -19,7 +19,7 @@ addpath( genpath( sprintf('%s/toolbox/spgl1-1.8/', matlabroot) ) );
 %% physical parameters of linear array L14-5/38
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-xdc_array = transducers.L14_5_38( 1 );
+xdc_array = transducers.L14_5_38( 2 );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% signal processing parameters, load and process plane wave data
@@ -36,7 +36,7 @@ f_tx = physical_values.frequency( 4e6 );
 T_s = physical_values.time( 1 / 20e6 );
 
 theta_incident = (77.5:2.5:102.5) * pi / 180;
-e_theta = physical_values.unit_vector( [ cos( theta_incident(:) ), sin( theta_incident(:) ) ] );
+e_theta = physical_values.unit_vector( [ cos( theta_incident(:) ), zeros( numel( theta_incident ), 1 ), sin( theta_incident(:) ) ] );
 
 % specify bandwidth to perform simulation in
 frac_bw = 0.7;                   % fractional bandwidth of incident pulse
@@ -55,11 +55,12 @@ absorption_model = absorption_models.time_causal( 0, 2.17e-3, 2, c_ref, double( 
 %% define lattice
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-FOV_size_axis = physical_values.position( xdc_array.N_elements_axis(1) * xdc_array.element_pitch_axis(1) * ones( 1, 2 ) );
-FOV_interval_lateral = physical_values.interval_position( - FOV_size_axis( 1 ) ./ 2, FOV_size_axis( 1 ) ./ 2 );
+FOV_size_axis = physical_values.position( xdc_array.N_elements_axis(1) * xdc_array.element_pitch_axis(1) * ones( 1, 3 ) );
+FOV_size_axis(2) = physical_values.position( 76.5e-6 );
+FOV_intervals_lateral = physical_values.interval_position( - FOV_size_axis( 1:2 ) ./ 2, FOV_size_axis( 1:2 ) ./ 2 );
 FOV_interval_axial = physical_values.interval_position( physical_values.position( 0 ), FOV_size_axis( 1 ) );
 
-FOV_cs = fields_of_view.orthotope( FOV_interval_lateral, FOV_interval_axial );
+FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral(1), FOV_intervals_lateral(2), FOV_interval_axial );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% reconstruct material parameters with CS ((quasi) plane waves)
@@ -79,7 +80,7 @@ setup = pulse_echo_measurements.setup( xdc_array, FOV_cs, absorption_model, 'wir
 excitation_voltages_common = syntheses.excitation_voltage( axis_t, { physical_values.voltage( u_tx_tilde ) } );
 
 % create pulse-echo measurement sequence
-sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_common, e_theta(7), interval_t, interval_f );
+sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_common, e_theta(1), interval_t, interval_f );
 %         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
 %         settings_rng_apo = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
 %         settings_rng_del = auxiliary.setting_rng( 3 * ones(1, 1), repmat({'twister'}, [ 1, 1 ]) );
@@ -90,6 +91,13 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_comm
 options = scattering.options;
 
 operator_born = scattering.operator_born( sequence, options );
+
+theta = zeros(512^2, 1);
+theta(128*512+128) = 1;
+theta(256*512+256) = 1;
+theta(384*512+384) = 1;
+
+u_rx = operator_born * theta;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% compute tranform point spread function (TPSF, (quasi) plane waves)

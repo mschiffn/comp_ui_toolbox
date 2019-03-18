@@ -1,9 +1,9 @@
 %
-% superclass for all spectral discretizations
+% superclass for all spectral discretizations based on pointwise sampling
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-03-11
+% modified: 2019-03-17
 %
 classdef spectral_points < discretizations.spectral
 
@@ -18,6 +18,9 @@ classdef spectral_points < discretizations.spectral
 
         % dependent properties
         tx_unique ( :, : ) discretizations.spectral_points_tx
+        indices_f_to_unique
+        indices_unique_to_f
+        indices_active
 
     end % properties
 
@@ -54,7 +57,7 @@ classdef spectral_points < discretizations.spectral
             objects = repmat( objects, size( tx ) );
 
             %--------------------------------------------------------------
-            % 3.) set independent properties
+            % 3.) set independent and dependent properties
             %--------------------------------------------------------------
             for index_object = 1:numel( tx )
 
@@ -78,7 +81,8 @@ classdef spectral_points < discretizations.spectral
                 objects( index_object ).rx = rx{ index_object };
 
                 % set dependent properties
-                objects( index_object ).tx_unique = union( objects( index_object ).tx );
+                [ objects( index_object ).tx_unique, objects( index_object ).indices_unique_to_f, objects( index_object ).indices_f_to_unique ] = unique( objects( index_object ).tx );
+                objects( index_object ).indices_active = unique_indices( objects( index_object ).rx );
 
             end % for index_object = 1:numel( tx )
 

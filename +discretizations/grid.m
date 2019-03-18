@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-01-17
+% modified: 2019-03-18
 %
 classdef grid
 
@@ -202,7 +202,7 @@ classdef grid
         %------------------------------------------------------------------
         % mutual differences
         %------------------------------------------------------------------
-        function differences = mutual_differences( grids_1, grids_2 )
+        function differences = mutual_differences( grids_1, grids_2, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -214,12 +214,53 @@ classdef grid
                 error( errorStruct );
             end
 
+            % ensure nonempty indices_1
+            if nargin >= 3 && ~isempty( varargin{ 1 } )
+                indices_1 = varargin{ 1 };
+            else
+                indices_1 = cell( size( grids_1 ) );
+                for index_object = 1:numel( grids_1 )
+                    indices_1{ index_object } = (1:grids_1( index_object ).N_points);
+                end
+            end
+
+            % ensure cell array for indices_1
+            if ~iscell( indices_1 )
+                indices_1 = { indices_1 };
+            end
+
+            % ensure nonempty indices_2
+            if nargin >= 4 && ~isempty( varargin{ 2 } )
+                indices_2 = varargin{ 2 };
+            else
+                indices_2 = cell( size( grids_2 ) );
+                for index_object = 1:numel( grids_2 )
+                    indices_2{ index_object } = (1:grids_2( index_object ).N_points);
+                end
+            end
+
+            % ensure cell array for indices_2
+            if ~iscell( indices_2 )
+                indices_2 = { indices_2 };
+            end
+
+            % multiple grids_1 / single indices_1
+            if ~isscalar( grids_1 ) && isscalar( indices_1)
+                indices_1 = repmat( indices_1, size( grids_1 ) );
+            end
+
+            % multiple grids_2 / single indices_2
+            if ~isscalar( grids_2 ) && isscalar( indices_2)
+                indices_2 = repmat( indices_2, size( grids_2 ) );
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( grids_1, grids_2 );
+            auxiliary.mustBeEqualSize( grids_1, grids_2, indices_1, indices_2 );
 
             %--------------------------------------------------------------
             % 2.) compute mutual differences for each pair of grids
             %--------------------------------------------------------------
+            % specify cell array
             differences = cell( size( grids_1 ) );
 
             for index_object = 1:numel( grids_1 )
@@ -227,13 +268,17 @@ classdef grid
                 % maximum number of dimensions
                 N_dimensions_max = max( [ grids_1( index_object ).N_dimensions, grids_2( index_object ).N_dimensions ] );
 
-                % inflate positions to correct dimension
-                positions_1 = [ grids_1( index_object ).positions, zeros( grids_1( index_object ).N_points, N_dimensions_max - grids_1( index_object ).N_dimensions ) ];
-                positions_2 = [ grids_2( index_object ).positions, zeros( grids_2( index_object ).N_points, N_dimensions_max - grids_2( index_object ).N_dimensions ) ];
+                % numbers of relevant grid points
+                N_points_1 = numel( indices_1{ index_object } );
+                N_points_2 = numel( indices_2{ index_object } );
 
-                % reshape positions to compute mutual distances
-                positions_1 = repmat( reshape( positions_1, [ grids_1( index_object ).N_points, 1, N_dimensions_max ] ), [ 1, grids_2( index_object ).N_points, 1] );
-                positions_2 = repmat( reshape( positions_2, [ 1, grids_2( index_object ).N_points, N_dimensions_max ] ), [ grids_1( index_object ).N_points, 1, 1] );
+                % inflate relevant positions to correct dimension
+                positions_1 = [ grids_1( index_object ).positions( indices_1{ index_object }, : ), zeros( N_points_1, N_dimensions_max - grids_1( index_object ).N_dimensions ) ];
+                positions_2 = [ grids_2( index_object ).positions( indices_2{ index_object }, : ), zeros( N_points_2, N_dimensions_max - grids_2( index_object ).N_dimensions ) ];
+
+                % reshape relevant positions to compute mutual distances
+                positions_1 = repmat( reshape( positions_1, [ N_points_1, 1, N_dimensions_max ] ), [ 1, N_points_2, 1] );
+                positions_2 = repmat( reshape( positions_2, [ 1, N_points_2, N_dimensions_max ] ), [ N_points_1, 1, 1] );
 
                 % compute differences
                 differences{ index_object } = positions_1 - positions_2;
@@ -245,17 +290,17 @@ classdef grid
                 differences = differences{ 1 };
             end
 
-        end % function differences = mutual_differences( grids_1, grids_2 )
+        end % function differences = mutual_differences( grids_1, grids_2, varargin )
 
         %------------------------------------------------------------------
         % mutual distances
         %------------------------------------------------------------------
-        function [ D, differences ] = mutual_distances( grids_1, grids_2 )
+        function [ D, differences ] = mutual_distances( grids_1, grids_2, varargin )
 
             %--------------------------------------------------------------
             % 1.) mutual differences
             %--------------------------------------------------------------
-            differences = mutual_differences( grids_1, grids_2 );
+            differences = mutual_differences( grids_1, grids_2, varargin{ : } );
 
             % ensure cell array
             if ~iscell( differences )
@@ -280,17 +325,17 @@ classdef grid
                 differences = differences{ 1 };
             end
 
-        end % function [ D, differences ] = mutual_distances( grids_1, grids_2 )
+        end % function [ D, differences ] = mutual_distances( grids_1, grids_2, varargin )
 
         %------------------------------------------------------------------
         % mutual unit vectors
         %------------------------------------------------------------------
-        function [ e_1_minus_2, D ] = mutual_unit_vectors( grids_1, grids_2 )
+        function [ e_1_minus_2, D ] = mutual_unit_vectors( grids_1, grids_2, varargin )
 
             %--------------------------------------------------------------
             % 1.) mutual distances
             %--------------------------------------------------------------
-            [ D, differences ] = mutual_distances( grids_1, grids_2 );
+            [ D, differences ] = mutual_distances( grids_1, grids_2, varargin{ : } );
 
             % ensure cell array for D
             if ~iscell( D )
@@ -320,7 +365,7 @@ classdef grid
                 e_1_minus_2 = e_1_minus_2{ 1 };
             end
 
-        end % function [ e_1_minus_2, D ] = mutual_unit_vectors( grids_1, grids_2 )
+        end % function [ e_1_minus_2, D ] = mutual_unit_vectors( grids_1, grids_2, varargin )
 
     end % methods
 

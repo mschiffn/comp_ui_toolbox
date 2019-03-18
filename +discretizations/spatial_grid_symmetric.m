@@ -3,21 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-03-13
+% modified: 2019-03-18
 %
 classdef spatial_grid_symmetric < discretizations.spatial_grid
-
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-
-        % dependent properties
-        D_ref                   % reference distances for first array element
-        e_r_minus_r_s_ref_x     % reference unit vectors for first array element
-        e_r_minus_r_s_ref_z     % reference unit vectors for first array element
-
-	end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -56,21 +44,6 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
                 errorStruct.identifier	= 'spatial_grid_symmetric:NoIntegerFraction';
                 error( errorStruct );
             end
-
-            %--------------------------------------------------------------
-            % 4.) compute mutual distances for reference array element
-            %--------------------------------------------------------------
-            for index_object = 1:numel( objects )
-
-                % compute reference distances for first array element (required for prefactors and scattering terms; N_interp_rx x FOV_N_points)
-                objects( index_object ).D_ref = mutual_distances( objects( index_object ).grids_elements( 1 ), objects( index_object ).grid_FOV );
-
-                % compute reference unit vectors for first array element
-                % mutual_unit_vectors( objects( index_object ).grid_FOV, objects( index_object ).grids_elements( 1 ) );
-                objects( index_object ).e_r_minus_r_s_ref_x = ( repmat( objects( index_object ).grid_FOV.positions( :, 1 )', [objects( index_object ).grids_elements( 1 ).N_points, 1] ) - repmat( objects( index_object ).grids_elements( 1 ).positions( :, 1 ), [1, objects( index_object ).grid_FOV.N_points] ) ) ./ objects( index_object ).D_ref;
-                objects( index_object ).e_r_minus_r_s_ref_z = repmat( objects( index_object ).grid_FOV.positions( :, 2 )', [objects( index_object ).grids_elements( 1 ).N_points, 1] ) ./ objects( index_object ).D_ref;
-
-            end % for index_object = 1:numel( objects )
 
         end % function objects = spatial_grid_symmetric( grids_elements, grid_FOV )
 

@@ -15,6 +15,7 @@ classdef unit_vector
 
         % independent properties
         components ( 1, : ) double { mustBeReal, mustBeFinite, mustBeNonempty } = [0, 1]	% unit vector
+
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

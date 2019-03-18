@@ -14,6 +14,7 @@ classdef physical_value
 
         % independent properties
         value ( 1, 1 ) double { mustBeReal, mustBeFinite }	% physical value
+
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -26,29 +27,32 @@ classdef physical_value
         %------------------------------------------------------------------
         function objects = physical_value( values )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
             % check number of arguments
             if nargin ~= 1
                 return;
             end
 
-            % prevent emptyness of the argument
+            % ensure nonemptyness of the argument
             mustBeNonempty( values );
 
-            % construct column vector of objects
-            N_elements = numel( values );
-            objects = repmat( objects, [ N_elements, 1 ] );
+            %--------------------------------------------------------------
+            % 2.) create physical values
+            %--------------------------------------------------------------
+            % create objects
+            objects = repmat( objects, size( values ) );
 
             % set independent properties
-            for index_element = 1:N_elements
-                objects( index_element ).value = values( index_element );
+            for index_object = 1:numel( values )
+                objects( index_object ).value = values( index_object );
             end
 
-            % reshape to size of the argument
-            objects = reshape( objects, size( values ) );
-        end
+        end % function objects = physical_value( values )
 
         %------------------------------------------------------------------
-        % return value (overload double function)
+        % double-precision arrays (overload double function)
         %------------------------------------------------------------------
         function results = double( objects )
 
@@ -360,9 +364,13 @@ classdef physical_value
         %------------------------------------------------------------------
         function [ objects_out, ia, ic ] = unique( physical_values )
 
+            % extract unique physical values
             [ C, ia, ic ] = unique( double( physical_values ) );
 
+            % create physical values
             objects_out = repmat( physical_values( 1 ), size( C ) );
+
+            % set independent properties
             for index_object = 1:numel( objects_out )
                 objects_out( index_object ).value = C( index_object );
             end

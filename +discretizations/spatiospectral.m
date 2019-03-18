@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-02-25
+% modified: 2019-03-18
 %
 classdef spatiospectral
 
@@ -15,9 +15,6 @@ classdef spatiospectral
         % independent properties
         spatial ( 1, 1 ) discretizations.spatial        % spatial discretization
         spectral %( :, : ) discretizations.spectral      % spectral discretization
-
-        % dependent properties
-%         set_f_unique ( 1, 1 ) discretizations.set_discrete_frequency
 
     end % properties
 
@@ -46,7 +43,6 @@ classdef spatiospectral
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( spatial, spectral );
-            % assertion: spatial and spectral have equal sizes
 
             %--------------------------------------------------------------
             % 2.) create spatiospectral discretizations

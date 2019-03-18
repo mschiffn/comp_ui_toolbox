@@ -1,9 +1,9 @@
 %
-% superclass for all spectral discretizations
+% superclass for all spectral discretizations based on pointwise sampling
 %
 % author: Martin F. Schiffner
 % date: 2019-03-08
-% modified: 2019-03-12
+% modified: 2019-03-17
 %
 classdef spectral_points_tx < discretizations.spectral_points_base
 
@@ -68,9 +68,9 @@ classdef spectral_points_tx < discretizations.spectral_points_base
         end % function objects = spectral_points_tx( transfer_functions, excitation_voltages )
 
         %------------------------------------------------------------------
-        % union
+        % unique values in array (overload unique function)
         %------------------------------------------------------------------
-        function object_out = union( spectral_points_tx )
+        function [ object_out, indices_unique_to_f, indices_f_to_unique ] = unique( spectral_points_tx )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -83,7 +83,7 @@ classdef spectral_points_tx < discretizations.spectral_points_base
             % TODO: check matching dimensions
 
             %--------------------------------------------------------------
-            % 2.) check arguments
+            % 2.) extract transfer functions and excitation voltages for unique frequencies
             %--------------------------------------------------------------
             % extract sets of discrete frequencies
             sets_f = repmat( spectral_points_tx( 1 ).excitation_voltages( 1 ).set_f, size( spectral_points_tx ) );
@@ -91,12 +91,9 @@ classdef spectral_points_tx < discretizations.spectral_points_base
                 sets_f( index_object ) = spectral_points_tx( index_object ).excitation_voltages( 1 ).set_f;
             end
 
-            N_samples_f = abs( sets_f );
-            N_samples_f_cs = [ 0, cumsum( N_samples_f ) ];
-
-            % get unique discrete frequencies
-            [ set_f_unique, ia, ic ] = union( sets_f );
-            N_samples_f_unique = numel( ia );
+            % extract set of unique discrete frequencies
+            [ set_f_unique, indices_unique_to_f, indices_f_to_unique ] = unique( sets_f );
+            N_samples_f_unique = numel( indices_unique_to_f );
 
             % initialize cell arrays
             coefficients = cell( size( spectral_points_tx( 1 ).indices_active ) );
@@ -104,14 +101,17 @@ classdef spectral_points_tx < discretizations.spectral_points_base
 
             for index_active = 1:numel( spectral_points_tx( 1 ).indices_active )
 
+                % initialize coefficients and samples with zeros
                 coefficients{ index_active } = zeros( 1, N_samples_f_unique );
                 samples{ index_active } = zeros( 1, N_samples_f_unique );
 
                 for index_f_unique = 1:N_samples_f_unique
 
-                    index_object = sum( ( ia( index_f_unique ) - N_samples_f_cs ) > 0 );
-                    index_f = ia( index_f_unique ) - N_samples_f_cs( index_object );
+                    % map unique frequencies to object and frequency index
+                    index_object = indices_unique_to_f( index_f_unique ).index_object;
+                    index_f = indices_unique_to_f( index_f_unique ).index_f;
 
+                    % extract coefficients and samples
                     coefficients{ index_active }( index_f_unique ) = spectral_points_tx( index_object ).excitation_voltages( index_active ).coefficients( index_f );
                     samples{ index_active }( index_f_unique ) = spectral_points_tx( index_object ).transfer_functions( index_active ).samples( index_f );
 
@@ -119,16 +119,18 @@ classdef spectral_points_tx < discretizations.spectral_points_base
 
             end % for index_active = 1:numel( spectral_points_tx( 1 ).indices_active )
 
+            % create transfer functions and excitation voltages
             indices_active = spectral_points_tx( 1 ).indices_active;
-            transfer_functions = physical_values.fourier_transform( repmat( set_f_unique, size( spectral_points_tx( 1 ).indices_active ) ), samples );
-            excitation_voltages = physical_values.fourier_series_truncated( repmat( set_f_unique, size( spectral_points_tx( 1 ).indices_active ) ), coefficients );
+            sets_f_unique = repmat( set_f_unique, size( indices_active ) );
+            transfer_functions = physical_values.fourier_transform( sets_f_unique, samples );
+            excitation_voltages = physical_values.fourier_series_truncated( sets_f_unique, coefficients );
 
             %--------------------------------------------------------------
             % 3.) create objects
             %--------------------------------------------------------------
             object_out = discretizations.spectral_points_tx( indices_active, transfer_functions, excitation_voltages );
 
-        end % function object_out = union( spectral_points_tx )
+        end % function [ object_out, indices_unique_to_f, indices_f_to_unique ] = unique( spectral_points_tx )
 
 	end % methods
 

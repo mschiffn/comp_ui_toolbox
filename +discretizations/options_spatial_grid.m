@@ -13,8 +13,8 @@ classdef options_spatial_grid
 	properties (SetAccess = private)
 
         % independent properties
-        N_points_per_element_axis ( 1, 1 ) { mustBeInteger, mustBeNonempty } = 7;
-        delta_axis = 3.0480e-04 * ones(1,2) / 4;
+        N_points_per_element_axis ( 1, : ) { mustBeInteger, mustBeNonempty } = [ 4, 10 ];
+        delta_axis = 3.0480e-04 * ones(1,3) / 4;
 
     end % properties
 

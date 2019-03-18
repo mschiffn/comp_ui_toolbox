@@ -1,5 +1,5 @@
 %
-% superclass for all spectral discretizations
+% superclass for all spectral discretizations based on pointwise sampling
 %
 % author: Martin F. Schiffner
 % date: 2019-03-08

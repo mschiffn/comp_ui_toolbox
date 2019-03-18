@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-11
-% modified: 2019-02-14
+% modified: 2019-03-18
 %
 classdef orthotope
 
@@ -135,7 +135,7 @@ classdef orthotope
         %------------------------------------------------------------------
         % discretize
         %------------------------------------------------------------------
-        function objects_out = discretize( objects_in, delta_axis )
+        function objects_out = discretize( orthotopes, delta_axis )
 
             % TODO: various types of discretization / parameter objects
             %--------------------------------------------------------------
@@ -146,49 +146,47 @@ classdef orthotope
                 delta_axis = { delta_axis };
             end
 
-            % multiple objects, single delta_axis
-            if ~isscalar( objects_in ) && isscalar( delta_axis )
-                delta_axis = repmat( delta_axis, size( objects_in ) );
+            % multiple orthotopes / single delta_axis
+            if ~isscalar( orthotopes ) && isscalar( delta_axis )
+                delta_axis = repmat( delta_axis, size( orthotopes ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( objects_in, delta_axis );
-            % assertion: objects_in and delta_axis have the same size
+            auxiliary.mustBeEqualSize( orthotopes, delta_axis );
 
             %--------------------------------------------------------------
             % 2.) compute parameters for regular grids
             %--------------------------------------------------------------
             % initialize parameter cell arrays
-            N_points_axis = cell( size( objects_in ) );
-            grid_offset_axis = cell( size( objects_in ) );
+            N_points_axis = cell( size( orthotopes ) );
+            grid_offset_axis = cell( size( orthotopes ) );
 
-            for index_object = 1:numel( objects_in )
+            for index_object = 1:numel( orthotopes )
 
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( objects_in( index_object ).intervals, delta_axis{ index_object } );
-                % assertion: objects_in( index_object ).intervals and delta_axis{ index_object } have the same size
+                auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, delta_axis{ index_object } );
 
                 % ensure positive real numbers
                 mustBeReal( delta_axis{ index_object } );
                 mustBePositive( delta_axis{ index_object } );
-                % assertion: delta_axis{ index_object } are real-valued and positive
 
                 % number of grid points along each axis
-                intervals_act = objects_in( index_object ).intervals;
+                % TODO: check rounding errors
+                intervals_act = orthotopes( index_object ).intervals;
                 N_points_axis{ index_object } = floor( double( abs( intervals_act ) ) ./ delta_axis{ index_object } );
 
                 % offset along each axis
                 M_points_axis = ( N_points_axis{ index_object } - 1 ) / 2;
-                grid_offset_axis{ index_object } = double( center( objects_in( index_object ) ) ) - M_points_axis .* delta_axis{ index_object };
+                grid_offset_axis{ index_object } = double( center( orthotopes( index_object ) ) ) - M_points_axis .* delta_axis{ index_object };
 
-            end % for index_object = 1:numel( objects_in )
+            end % for index_object = 1:numel( orthotopes )
 
             %--------------------------------------------------------------
             % 3.) create regular grids
             %--------------------------------------------------------------
             objects_out = discretizations.grid( N_points_axis, delta_axis, grid_offset_axis );
 
-        end % function objects_out = discretize( objects_in, delta_axis )
+        end % function objects_out = discretize( orthotopes, delta_axis )
 
     end % methods
 

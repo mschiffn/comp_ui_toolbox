@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-04-19
-% modified: 2019-02-18
+% modified: 2019-03-18
 %
 classdef array_planar < transducers.array
 
@@ -30,7 +30,7 @@ classdef array_planar < transducers.array
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = array_planar( N_dimensions, parameters_planar )
+        function objects = array_planar( parameters_planar, N_dimensions )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -41,12 +41,11 @@ classdef array_planar < transducers.array
                 errorStruct.identifier	= 'array_planar:NoParametersPlanar';
                 error( errorStruct );
             end
-            % assertion: parameters_planar is transducers.parameters_planar
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@transducers.array( N_dimensions, parameters_planar );
+            objects@transducers.array( parameters_planar, N_dimensions );
 
             %--------------------------------------------------------------
             % 3.) create planar transducer arrays
@@ -58,7 +57,6 @@ classdef array_planar < transducers.array
                 %----------------------------------------------------------
                 objects( index_object ).element_width_axis = parameters_planar( index_object ).element_width_axis( 1:objects( index_object ).N_dimensions );
                 objects( index_object ).element_kerf_axis = parameters_planar( index_object ).element_kerf_axis( 1:objects( index_object ).N_dimensions );
-                % assertion: independent geometrical properties specify valid planar transducer array
 
                 %----------------------------------------------------------
                 % b) set dependent properties
@@ -91,54 +89,82 @@ classdef array_planar < transducers.array
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = array_planar( N_dimensions, parameters_planar )
+        end % function objects = array_planar( parameters_planar, N_dimensions )
 
         %------------------------------------------------------------------
         % centers
         %------------------------------------------------------------------
-        function objects_out = centers( objects_in )
+        function objects_out = centers( arrays_planar )
 
             % initialize output
-            objects_out = cell( size( objects_in ) );
+            objects_out = cell( size( arrays_planar ) );
 
-            % iterate objects
-            for index_object = 1:numel( objects_in )
+            % iterate planar transducer arrays
+            for index_object = 1:numel( arrays_planar )
 
-                % compute center coordinates
-                temp = center( objects_in( index_object ).aperture );
-                pos_center = physical_values.position( zeros( numel( objects_in( index_object ).aperture ), objects_in( index_object ).N_dimensions + 1 ) );
-                pos_center( :, 1 ) = [ temp{ : } ];
-                objects_out{ index_object } = pos_center;
+                % initialize results
+                objects_out{ index_object } = physical_values.position( zeros( arrays_planar( index_object ).N_elements, arrays_planar( index_object ).N_dimensions + 1 ) );
 
-            end % for index_object = 1:numel( objects_in )
+                % extract and augment center coordinates
+                pos_center = reshape( [ arrays_planar( index_object ).aperture.pos_center ], [ arrays_planar( index_object ).N_dimensions, arrays_planar( index_object ).N_elements ] )';
+                objects_out{ index_object }( :, 1:arrays_planar( index_object ).N_dimensions ) = pos_center;
+
+            end % for index_object = 1:numel( arrays_planar )
 
             % do not return cell array for single object
-            if numel( objects_in ) == 1
+            if numel( arrays_planar ) == 1
                 objects_out = objects_out{ 1 };
             end
 
-        end % function objects_out = centers( objects_in )
+        end % function objects_out = centers( arrays_planar )
 
         %------------------------------------------------------------------
         % discretize planar transducer array
         %------------------------------------------------------------------
-        function objects_out = discretize( objects_in, N_interp_axis )
+        function objects_out = discretize( arrays_planar, N_points_per_element_axis )
 
-            objects_out = cell( size( objects_in ) );
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for N_points_per_element_axis
+            if ~iscell( N_points_per_element_axis )
+                N_points_per_element_axis = { N_points_per_element_axis };
+            end
 
-            for index_object = 1:numel( objects_in )
-                % TODO: check dimensions
-                delta_axis = objects_in( index_object ).element_width_axis ./ N_interp_axis;
-                objects_out{ index_object } = discretize( objects_in( index_object ).aperture, delta_axis );
+            % multiple arrays_planar / single N_points_per_element_axis
+            if ~isscalar( arrays_planar ) && isscalar( N_points_per_element_axis )
+                N_points_per_element_axis = repmat( N_points_per_element_axis, size( arrays_planar ) );
+            end
 
-            end % for index_object = 1:numel( objects_in )
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( arrays_planar, N_points_per_element_axis );
+
+            %--------------------------------------------------------------
+            % 2.) create regular grids
+            %--------------------------------------------------------------
+            % initialize output
+            objects_out = cell( size( arrays_planar ) );
+
+            % iterate planar transducer arrays
+            for index_object = 1:numel( arrays_planar )
+
+                % ensure equal number of dimensions and sizes
+                auxiliary.mustBeEqualSize( arrays_planar( index_object ).element_width_axis, N_points_per_element_axis{ index_object } );
+
+                % compute spacing
+                delta_axis = arrays_planar( index_object ).element_width_axis ./ N_points_per_element_axis{ index_object };
+
+                % discretize aperture
+                objects_out{ index_object } = discretize( arrays_planar( index_object ).aperture, delta_axis );
+
+            end % for index_object = 1:numel( arrays_planar )
 
             % do not return cell array for single object
-            if numel( objects_in ) == 1
+            if numel( arrays_planar ) == 1
                 objects_out = objects_out{ 1 };
             end
 
-        end % function objects_out = discretize( objects_in, N_interp_axis )
+        end % function objects_out = discretize( arrays_planar, N_points_per_element_axis )
 
 	end % methods
 

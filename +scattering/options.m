@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-15
-% modified: 2019-02-25
+% modified: 2019-03-18
 %
 classdef options
 
@@ -14,6 +14,7 @@ classdef options
 
         % independent properties
         discretization ( 1, 1 ) discretizations.options = discretizations.options % spatiospectral discretization
+        spatial_aliasing
 
     end % properties
 

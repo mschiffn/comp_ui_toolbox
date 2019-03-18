@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-04-20
-% modified: 2019-02-18
+% modified: 2019-03-18
 %
 classdef array
 
@@ -31,18 +31,11 @@ classdef array
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = array( N_dimensions, parameters )
+        function objects = array( parameters, N_dimensions )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure positive integers
-            if ~all( N_dimensions(:) >= 1 && abs( N_dimensions(:) - floor( N_dimensions(:) ) ) < eps )
-                errorStruct.message     = 'N_dimensions must be positive integers!';
-                errorStruct.identifier	= 'array:NoPositiveIntegers';
-                error( errorStruct );
-            end
-
             % ensure class transducers.parameters
             if ~isa( parameters, 'transducers.parameters' )
                 errorStruct.message     = 'parameters must be transducers.parameters!';
@@ -50,18 +43,31 @@ classdef array
                 error( errorStruct );
             end
 
+            % ensure positive integers
+            if ~all( N_dimensions(:) >= 1 && abs( N_dimensions(:) - floor( N_dimensions(:) ) ) < eps )
+                errorStruct.message     = 'N_dimensions must be positive integers!';
+                errorStruct.identifier	= 'array:NoPositiveIntegers';
+                error( errorStruct );
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( N_dimensions, parameters );
-            % assertion: N_dimensions and parameters have equal sizes
+            auxiliary.mustBeEqualSize( parameters, N_dimensions );
 
             %--------------------------------------------------------------
             % 2.) create transducer arrays
             %--------------------------------------------------------------
             % create objects
-            objects = repmat( objects, size( N_dimensions ) );
+            objects = repmat( objects, size( parameters ) );
 
             % set independent and dependent properties
             for index_object = 1:numel( objects )
+
+                % consider maximum number of dimensions in parameters
+                if N_dimensions( index_object ) > numel( parameters( index_object ).N_elements_axis )
+                    errorStruct.message     = sprintf( 'N_dimensions( %d ) exceeds number of specified dimensions in parameters( %d )!', index_object, index_object );
+                    errorStruct.identifier	= 'array:NoPositiveIntegers';
+                    error( errorStruct );
+                end
 
                 % set independent properties
                 objects( index_object ).N_dimensions = N_dimensions( index_object );
@@ -74,7 +80,7 @@ classdef array
 
             end % for index_object = 1:numel( objects )
 
-        end
+        end % function objects = array( parameters, N_dimensions )
 
 	end % methods
 

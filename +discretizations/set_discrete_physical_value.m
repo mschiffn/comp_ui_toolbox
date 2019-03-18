@@ -71,6 +71,7 @@ classdef set_discrete_physical_value
             % initialize results with zeros
             results = zeros( size( objects ) );
 
+            % extract number of elements
             for index_object = 1:numel( objects )
                 results( index_object ) = numel( objects( index_object ).S );
             end

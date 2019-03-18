@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-03-12
+% modified: 2019-03-18
 %
 classdef spatial_grid < discretizations.spatial
 
@@ -78,7 +78,7 @@ classdef spatial_grid < discretizations.spatial
         %------------------------------------------------------------------
         % spatial transfer function
         %------------------------------------------------------------------
-        function h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element )
+        function h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -88,11 +88,12 @@ classdef spatial_grid < discretizations.spatial
             %--------------------------------------------------------------
             % 2.) compute spatial transfer function
             %--------------------------------------------------------------
-            h_tx = discretizations.greens_function( axis_k_tilde, spatial_grid.grids_elements( index_element ), spatial_grid.grid_FOV );
-            h_tx = reshape( squeeze( sum( h_tx, 1 ) ), [ spatial_grid.grid_FOV.N_points_axis(2), spatial_grid.grid_FOV.N_points_axis(1), numel( axis_k_tilde ) ] );
+            % TODO: prevent swapping for three-dimensional FOVs
+            h_tx = discretizations.greens_function( axis_k_tilde, spatial_grid.grids_elements( index_element ), spatial_grid.grid_FOV, varargin{ : } );
+            h_tx = reshape( squeeze( sum( h_tx, 1 ) ), [ spatial_grid.grid_FOV.N_points_axis, numel( axis_k_tilde ) ] );
             h_tx = -2 * spatial_grid.grids_elements( 1 ).delta_V * h_tx;
 
-        end % function h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element )
+        end % function h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element, varargin )
 
 	end % methods
 

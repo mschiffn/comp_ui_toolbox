@@ -40,14 +40,13 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % TODO: map unique frequencies to local frequencies
             % TODO: compute rx signals for active elements for unique frequencies
 
             %--------------------------------------------------------------
             % 2.) set independent properties
             %--------------------------------------------------------------
             % detect occupied grid points
-            indicator_occupied = abs( fluctuations ) > eps;
+            indices_occupied = find( abs( fluctuations ) > eps );
 
             u_M = cell( size( operator_born.discretization.spectral ) );
 
@@ -70,11 +69,17 @@ classdef operator_born < scattering.operator
                     axis_f_unique = double( operator_born.discretization.spectral( index_measurement ).tx_unique.transfer_functions( 1 ).set_f.S );
                     axis_k_tilde_unique = operator_born.sequence.setup.absorption_model.compute_wavenumbers( axis_f_unique );
 
-                    % spatial transfer function for unique frequencies
-                    % TODO: only occupied grid points
-                    h_rx_ref = spatial_transfer_function( operator_born.discretization.spatial, axis_k_tilde_unique, 1 );
+                    % spatial transfer function for unique frequencies and occupied grid points
+                    h_rx_ref = spatial_transfer_function( operator_born.discretization.spatial, axis_k_tilde_unique, 1, [], indices_occupied );
 
-                end              
+                end
+
+                %----------------------------------------------------------
+                % 3.) compute rx signals for active elements for unique frequencies
+                %----------------------------------------------------------
+                % check if mixes have identical frequency axes
+                if isa( operator_born.options, '' )
+                end
 
                 % iterate received signals
 %                 sets_f = [];
@@ -86,6 +91,7 @@ classdef operator_born < scattering.operator
                     sets_f( index_mix ) = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).transfer_functions( 1 ).set_f;
                     N_samples_f = abs( sets_f( index_mix ) );
                     axis_k_tilde = operator_born.sequence.setup.absorption_model.compute_wavenumbers( double( sets_f( index_mix ).S ) );
+                    indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique{ index_mix };
 
                     %------------------------------------------------------
                     % 2.) 
@@ -120,7 +126,7 @@ classdef operator_born < scattering.operator
                             % compute summand for the incident pressure field
                             index_start = operator_born.discretization.spatial.grid_FOV.N_points_axis(1) - ( operator_born.sequence.setup.xdc_array.N_elements - 1 ) * factor_interp_tx + 1;
                             index_stop = index_start + delta_lattice_points - 1;
-                            h_rx = [ h_rx_ref( :, index_stop:-1:index_start, : ), h_rx_ref( :, 1:(end - delta_lattice_points), : ) ];
+                            h_rx = [ h_rx_ref( :, index_stop:-1:index_start, indices_f_to_unique ), h_rx_ref( :, 1:(end - delta_lattice_points), indices_f_to_unique ) ];
 
                         else
 
@@ -128,7 +134,7 @@ classdef operator_born < scattering.operator
                             % b) arbitrary grid
                             %----------------------------------------------
                             % spatial impulse response of the active array element
-                            h_rx = spatial_transfer_function( operator_born.discretization.spatial, axis_k_tilde, index_element );
+                            h_rx = spatial_transfer_function( operator_born.discretization.spatial, axis_k_tilde, index_element, [], indices_occupied );
 
                         end
 
@@ -136,9 +142,8 @@ classdef operator_born < scattering.operator
 %                         indicator_aliasing = flag > real( axis_k_tilde( index_f ) );
 %                         indicator_aliasing = indicator_aliasing .* ( 1 - ( real( axis_k_tilde( index_f ) ) ./ flag).^2 );
 
-                        % TODO: extract correct frequencies for current mix from unique frequencies
                         for index_f = 1:N_samples_f
-                            Phi_act = 2 * delta_A * delta_V * axis_k_tilde( index_f ).^2 .* transfer_function_rx.samples( index_f ) .* h_rx( :, :, index_f ) .* operator_born.p_incident( index_measurement ).values{ index_f };
+                            Phi_act = 2 * delta_A * delta_V * axis_k_tilde( index_f ).^2 .* transfer_function_rx.samples( index_f ) .* h_rx( :, :, index_f ) .* operator_born.p_incident( index_measurement ).values{ indices_f_to_unique( index_f ) };
                             u_act( index_active, index_f ) = Phi_act( : ).' * fluctuations;
                         end
 

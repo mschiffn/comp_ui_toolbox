@@ -36,19 +36,28 @@ classdef setup < handle
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure matching number of dimensions
+            if xdc_array.N_dimensions ~= ( FOV.N_dimensions - 1 )
+                errorStruct.message     = 'parameters must be transducers.parameters!';
+                errorStruct.identifier	= 'array:NoParameters';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) set independent properties
+            %--------------------------------------------------------------
             % set independent properties
             object.xdc_array = xdc_array;
             object.FOV = FOV;
             object.absorption_model = absorption_model;
             object.str_name = str_name;
-            % assertion: independent properties form a valid setup
 
         end % function object = setup( xdc_array, FOV, absorption_model, str_name )
 
         %------------------------------------------------------------------
         % spatial discretization
         %------------------------------------------------------------------
-        function objects_out = discretize( setup, options_space )
+        function objects_out = discretize( setup, options_spatial )
 
             % TODO: various types of discretization / parameter objects
 
@@ -56,8 +65,8 @@ classdef setup < handle
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class discretizations.options_spatial_grid
-            if ~isa( options_space, 'discretizations.options_spatial_grid')
-                errorStruct.message     = 'options_space must be discretizations.options_spatial_grid!';
+            if ~isa( options_spatial, 'discretizations.options_spatial_grid')
+                errorStruct.message     = 'options_spatial must be discretizations.options_spatial_grid!';
                 errorStruct.identifier	= 'discretize:NoOptionsSpatialGrid';
                 error( errorStruct );
             end
@@ -66,8 +75,8 @@ classdef setup < handle
             % 2.) discretize transducer array and field of view
             %--------------------------------------------------------------
             % discretization based on regular grids
-            discretizations_elements = discretize( setup.xdc_array, options_space.N_points_per_element_axis );
-            discretization_FOV = discretize( setup.FOV, options_space.delta_axis );
+            discretizations_elements = discretize( setup.xdc_array, options_spatial.N_points_per_element_axis );
+            discretization_FOV = discretize( setup.FOV, options_spatial.delta_axis );
 
             %--------------------------------------------------------------
             % 3.) construct spatial discretizations
@@ -79,7 +88,7 @@ classdef setup < handle
                 objects_out = discretizations.spatial_grid( discretizations_elements, discretization_FOV );
             end
 
-        end % function objects_out = discretize( setup, options_space )
+        end % function objects_out = discretize( setup, options_spatial )
 
         %------------------------------------------------------------------
         % lower and upper bounds on the times-of-flight

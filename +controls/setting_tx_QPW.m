@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-02-26
+% modified: 2019-03-18
 %
 classdef setting_tx_QPW < controls.setting_tx
 
@@ -103,4 +103,4 @@ classdef setting_tx_QPW < controls.setting_tx
 
 	end % methods
 
-end % classdef setting_tx_QPW
+end % classdef setting_tx_QPW < controls.setting_tx

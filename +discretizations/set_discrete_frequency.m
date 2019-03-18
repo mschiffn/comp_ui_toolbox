@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-03-11
+% modified: 2019-03-17
 %
 classdef set_discrete_frequency < discretizations.set_discrete_physical_value
 
@@ -47,15 +47,55 @@ classdef set_discrete_frequency < discretizations.set_discrete_physical_value
         end % function objects = set_discrete_frequency( input )
 
         %------------------------------------------------------------------
-        % union
+        % unique values in array (overload unique function)
         %------------------------------------------------------------------
-        function [ set_out, ia, ic ] = union( sets_in )
+        function [ set_out, indices_unique_to_f, indices_f_to_unique ] = unique( sets_in )
 
-            % retain unique discrete frequencies
+            %--------------------------------------------------------------
+            % 1.) numbers of discrete frequencies and cumulative sum
+            %--------------------------------------------------------------
+            N_samples_f = abs( sets_in(:) );
+            N_samples_f_cs = [ 0; cumsum( N_samples_f ) ];
+
+            %--------------------------------------------------------------
+            % 2.) create set of unique discrete frequencies
+            %--------------------------------------------------------------
+            % extract unique discrete frequencies
             [ S, ia, ic ] = unique( [ sets_in.S ] );
+            N_samples_f_unique = numel( S );
+
+            % create set of unique discrete frequencies
             set_out = discretizations.set_discrete_frequency( S );
 
-        end % function [ set_out, ia, ic ] = union( sets_in )
+            %--------------------------------------------------------------
+            % 3.) map unique frequencies to those in each set
+            %--------------------------------------------------------------
+            % object and frequency indices for each unique frequency
+            indices_object = sum( ( repmat( ia, [ 1, numel( N_samples_f_cs ) ] ) - repmat( N_samples_f_cs(:)', [ N_samples_f_unique, 1 ] ) ) > 0, 2 );
+            indices_f = ia - N_samples_f_cs( indices_object );
+
+            % create structures with object and frequency indices for each unique frequency
+            indices_unique_to_f( N_samples_f_unique ).index_object = indices_object( N_samples_f_unique );
+            indices_unique_to_f( N_samples_f_unique ).index_f = indices_f( N_samples_f_unique );
+            for index_f_unique = 1:(N_samples_f_unique-1)
+                indices_unique_to_f( index_f_unique ).index_object = indices_object( index_f_unique );
+                indices_unique_to_f( index_f_unique ).index_f = indices_f( index_f_unique );
+            end
+
+            %--------------------------------------------------------------
+            % 4.) map frequencies in each set to the unique frequencies
+            %--------------------------------------------------------------
+            indices_f_to_unique = cell( size( sets_in ) );
+
+            for index_set = 1:numel( sets_in )
+
+                index_start = N_samples_f_cs( index_set ) + 1;
+                index_stop = index_start + N_samples_f( index_set ) - 1;
+
+                indices_f_to_unique{ index_set } = ic( index_start:index_stop );
+            end
+
+        end % function [ set_out, indices_unique_to_f, indices_f_to_unique ] = unique( sets_in )
 
 	end % methods
 
