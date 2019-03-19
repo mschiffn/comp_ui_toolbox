@@ -159,6 +159,7 @@ classdef pressure_incident < syntheses.field
 
                 % index of active array element
                 index_element = spectral_points_tx.indices_active( index_active );
+                % TODO: indices_axis
 
                 % spatial transfer function of the active array element
                 if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
@@ -182,13 +183,14 @@ classdef pressure_incident < syntheses.field
                     % spatial impulse response of the active array element
                     h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element );
 
-                end
+                end % if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
 
                 % compute summand for the incident pressure field
-                p_incident_summand = h_tx .* repmat( reshape( v_d( index_active ).coefficients, [ 1, 1, N_samples_f ] ), [ spatial_grid.grid_FOV.N_points_axis(2), spatial_grid.grid_FOV.N_points_axis(1), 1 ] );
+                p_incident_summand = h_tx .* repmat( reshape( v_d( index_active ).coefficients, [ ones( 1, spatial_grid.grid_FOV.N_dimensions ), N_samples_f ] ), [ spatial_grid.grid_FOV.N_points_axis, 1 ] );
 
                 for index_f = 1:N_samples_f
-                    object.values{ index_f } = object.values{ index_f } + p_incident_summand( :, :, index_f );
+                    % TODO: generalize for arbitrary dimensions
+                    object.values{ index_f } = object.values{ index_f } + p_incident_summand( :, :, :, index_f );
                 end
 
                 show( object );

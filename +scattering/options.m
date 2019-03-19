@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-15
-% modified: 2019-03-18
+% modified: 2019-03-19
 %
 classdef options
 
@@ -28,25 +28,24 @@ classdef options
         %------------------------------------------------------------------
         function object = options( varargin )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
             % check number of arguments
             if nargin ~= 1
                 return;
             end
 
             %--------------------------------------------------------------
-            % 1.) check arguments
+            % 2.) parse arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.method
-            if ~isa( method, 'discretizations.method' ) || numel( method ) ~= 1
-                errorStruct.message     = 'method must be a single discretizations.method!';
-                errorStruct.identifier	= 'scattering_operator:NoSingleMethod';
-                error( errorStruct );
-            end
-            % assertion: method is a single discretizations.method
+            for index_arg = 1:nargin
 
-            %--------------------------------------------------------------
-            % 2.) set independent properties
-            %--------------------------------------------------------------
+                if isa( varargin{ index_arg }, 'discretizations.options' )
+                    object.discretization = varargin{ index_arg };
+                end
+
+            end % for index_arg = 1:nargin
 
         end % function object = options( varargin )
 

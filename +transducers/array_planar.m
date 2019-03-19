@@ -121,23 +121,23 @@ classdef array_planar < transducers.array
         %------------------------------------------------------------------
         % discretize planar transducer array
         %------------------------------------------------------------------
-        function objects_out = discretize( arrays_planar, N_points_per_element_axis )
+        function objects_out = discretize( arrays_planar, options_elements )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for N_points_per_element_axis
-            if ~iscell( N_points_per_element_axis )
-                N_points_per_element_axis = { N_points_per_element_axis };
+            % ensure cell array for options_elements
+            if ~iscell( options_elements )
+                options_elements = { options_elements };
             end
 
-            % multiple arrays_planar / single N_points_per_element_axis
-            if ~isscalar( arrays_planar ) && isscalar( N_points_per_element_axis )
-                N_points_per_element_axis = repmat( N_points_per_element_axis, size( arrays_planar ) );
+            % multiple arrays_planar / single options_elements
+            if ~isscalar( arrays_planar ) && isscalar( options_elements )
+                options_elements = repmat( options_elements, size( arrays_planar ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( arrays_planar, N_points_per_element_axis );
+            auxiliary.mustBeEqualSize( arrays_planar, options_elements );
 
             %--------------------------------------------------------------
             % 2.) create regular grids
@@ -148,14 +148,8 @@ classdef array_planar < transducers.array
             % iterate planar transducer arrays
             for index_object = 1:numel( arrays_planar )
 
-                % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( arrays_planar( index_object ).element_width_axis, N_points_per_element_axis{ index_object } );
-
-                % compute spacing
-                delta_axis = arrays_planar( index_object ).element_width_axis ./ N_points_per_element_axis{ index_object };
-
                 % discretize aperture
-                objects_out{ index_object } = discretize( arrays_planar( index_object ).aperture, delta_axis );
+                objects_out{ index_object } = discretize( arrays_planar( index_object ).aperture, options_elements{ index_object } );
 
             end % for index_object = 1:numel( arrays_planar )
 
@@ -164,7 +158,7 @@ classdef array_planar < transducers.array
                 objects_out = objects_out{ 1 };
             end
 
-        end % function objects_out = discretize( arrays_planar, N_points_per_element_axis )
+        end % function objects_out = discretize( arrays_planar, options_elements )
 
 	end % methods
 

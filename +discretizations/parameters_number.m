@@ -1,11 +1,11 @@
 %
-% superclass for all grid options
+% superclass for all discretization parameters using numbers
 %
 % author: Martin F. Schiffner
-% date: 2019-02-19
+% date: 2019-03-19
 % modified: 2019-03-19
 %
-classdef options_spatial_grid < discretizations.options_spatial
+classdef parameters_number < discretizations.parameters
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % properties
@@ -13,51 +13,47 @@ classdef options_spatial_grid < discretizations.options_spatial
 	properties (SetAccess = private)
 
         % independent properties
-        options_elements ( 1, : ) discretizations.parameters = discretizations.parameters_number
-        options_FOV ( 1, 1 ) discretizations.parameters = discretizations.parameters_distance
+        values ( 1, : ) double { mustBeInteger } = [ 2, 4 ];
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods
+    methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_spatial_grid( options_FOV, options_elements )
+        function objects = parameters_number( values )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % specify default values
+            % specify default values if no arguments
             if nargin == 0
+                values = [ 4, 10 ];
             end
 
-            % ensure cell array for options_elements
-            if ~iscell( options_elements )
-                options_elements = { options_elements };
+            % ensure cell array for values
+            if ~iscell( values )
+                values = { values };
             end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options_FOV, options_elements );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.options_spatial( options_FOV );
+            objects@discretizations.parameters( values );
 
             %--------------------------------------------------------------
             % 3.) set independent properties
             %--------------------------------------------------------------
             for index_object = 1:numel( objects )
-                objects( index_object ).options_FOV = options_FOV( index_object );
-                objects( index_object ).options_elements = options_elements{ index_object };
+                objects( index_object ).values = values{ index_object };
             end
 
-        end % function objects = options_spatial_grid( options_FOV, options_elements )
+        end % function objects = parameters_number( values )
 
 	end % methods
 
-end % classdef options_spatial_grid < discretizations.options_spatial
+end % classdef parameters_number < discretizations.parameters

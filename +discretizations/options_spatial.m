@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-20
-% modified: 2019-02-20
+% modified: 2019-03-19
 %
 classdef options_spatial
 
@@ -15,17 +15,21 @@ classdef options_spatial
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = options_spatial( varargin )
+        function objects = options_spatial( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            if nargin == 0
+                return;
+            end
 
             %--------------------------------------------------------------
             % 2.) set independent properties
             %--------------------------------------------------------------
+            objects = repmat( objects, size( varargin{ 1 } ) );
 
-        end % function object = options_spatial( varargin )
+        end % function objects = options_spatial( varargin )
 
 	end % methods
 

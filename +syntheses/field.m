@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-03-11
+% modified: 2019-03-19
 %
 classdef field
 
@@ -75,10 +75,9 @@ classdef field
                 N_points = spatiospectral.spatial.grid_FOV.N_points;
 
                 % initialize field values with zeros
-                % TODO: generalize to three-dimensional geometry
                 objects( index_object ).values = cell( 1, N_samples_f );
                 for index_f = 1:N_samples_f
-                    objects( index_object ).values{ index_f } = zeros( spatiospectral.spatial.grid_FOV.N_points_axis( 2 ), spatiospectral.spatial.grid_FOV.N_points_axis( 1 ) );
+                    objects( index_object ).values{ index_f } = zeros( spatiospectral.spatial.grid_FOV.N_points_axis );                   
                 end
 
                 % compute memory consumption
@@ -91,30 +90,78 @@ classdef field
         %------------------------------------------------------------------
         % show
         %------------------------------------------------------------------
-        function hdl = show( objects )
+        function hdl = show( fields )
 
-            N_objects = size( objects, 1 );
-            hdl = zeros( N_objects, 1 );
-            for index_object = 1:N_objects
+            %--------------------------------------------------------------
+            % 1.) display fields
+            %--------------------------------------------------------------
+            hdl = zeros( size( fields ) );
+            for index_object = 1:numel( fields )
 
-                N_samples_f = numel( objects( index_object ).values );
+                N_samples_f = numel( fields( index_object ).values );
                 index_ctr = round( N_samples_f / 2 );
 
                 hdl( index_object ) = figure( index_object );
-                subplot( 2, 3, 1);
-                imagesc( abs( objects( index_object ).values{ 1 } ) );
-                subplot( 2, 3, 2);
-                imagesc( abs( objects( index_object ).values{ index_ctr } ) );
-                subplot( 2, 3, 3);
-                imagesc( abs( objects( index_object ).values{ end } ) );
-                subplot( 2, 3, 4);
-                imagesc( angle( objects( index_object ).values{ 1 } ) );
-                subplot( 2, 3, 5);
-                imagesc( angle( objects( index_object ).values{ index_ctr } ) );
-                subplot( 2, 3, 6);
-                imagesc( angle( objects( index_object ).values{ end } ) );
-            end
-        end % function hdl = show( objects )
+
+                % check number of spatial dimensions
+                switch ndims( fields( index_object ).values{ 1 } )
+
+                    case 2
+
+                        %--------------------------------------------------
+                        % a) two-dimensional Euclidean space
+                        %--------------------------------------------------
+                        subplot( 2, 3, 1);
+                        imagesc( abs( fields( index_object ).values{ 1 } ) );
+                        subplot( 2, 3, 2);
+                        imagesc( abs( fields( index_object ).values{ index_ctr } ) );
+                        subplot( 2, 3, 3);
+                        imagesc( abs( fields( index_object ).values{ end } ) );
+                        subplot( 2, 3, 4);
+                        imagesc( angle( fields( index_object ).values{ 1 } ) );
+                        subplot( 2, 3, 5);
+                        imagesc( angle( fields( index_object ).values{ index_ctr } ) );
+                        subplot( 2, 3, 6);
+                        imagesc( angle( fields( index_object ).values{ end } ) );
+
+                    case 3
+
+                        %--------------------------------------------------
+                        % b) three-dimensional Euclidean space
+                        %--------------------------------------------------
+                        subplot( 3, 3, 1);
+                        imagesc( abs( squeeze( fields( index_object ).values{ 1 }( :, 1, :) ) ) );
+                        subplot( 3, 3, 2);
+                        imagesc( abs( squeeze( fields( index_object ).values{ index_ctr }( :, 1, :) ) ) );
+                        subplot( 3, 3, 3);
+                        imagesc( abs( squeeze( fields( index_object ).values{ end }( :, 1, :) ) ) );
+                        subplot( 3, 3, 4);
+                        imagesc( abs( squeeze( fields( index_object ).values{ 1 }( :, :, 1) ) ) );
+                        subplot( 3, 3, 5);
+                        imagesc( abs( squeeze( fields( index_object ).values{ index_ctr }( :, :, 1) ) ) );
+                        subplot( 3, 3, 6);
+                        imagesc( abs( squeeze( fields( index_object ).values{ end }( :, :, 1) ) ) );
+                        subplot( 3, 3, 7);
+                        imagesc( abs( squeeze( fields( index_object ).values{ 1 }( 1, :, :) ) ) );
+                        subplot( 3, 3, 8);
+                        imagesc( abs( squeeze( fields( index_object ).values{ index_ctr }( 1, :, :) ) ) );
+                        subplot( 3, 3, 9);
+                        imagesc( abs( squeeze( fields( index_object ).values{ end }( 1, :, :) ) ) );
+
+                    otherwise
+
+                        %--------------------------------------------------
+                        % c) dimensionality not implemented
+                        %--------------------------------------------------
+                        errorStruct.message     = 'Number of dimensions not implemented!';
+                        errorStruct.identifier	= 'show:UnknownDimensions';
+                        error( errorStruct );
+
+                end % switch ndims( fields( index_object ).values{ 1 } )
+                
+            end % for index_object = 1:numel( fields )
+
+        end % function hdl = show( fields )
 
 	end % methods
 

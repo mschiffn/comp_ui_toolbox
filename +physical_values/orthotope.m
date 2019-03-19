@@ -135,45 +135,68 @@ classdef orthotope
         %------------------------------------------------------------------
         % discretize
         %------------------------------------------------------------------
-        function objects_out = discretize( orthotopes, delta_axis )
+        function objects_out = discretize( orthotopes, parameters )
 
             % TODO: various types of discretization / parameter objects
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array
-            if ~iscell( delta_axis )
-                delta_axis = { delta_axis };
+            % ensure class discretizations.parameters
+            if ~isa( parameters, 'discretizations.parameters' )
+                errorStruct.message     = 'parameters must be discretizations.parameters!';
+                errorStruct.identifier	= 'discretize:NoParameters';
+                error( errorStruct );
             end
 
-            % multiple orthotopes / single delta_axis
-            if ~isscalar( orthotopes ) && isscalar( delta_axis )
-                delta_axis = repmat( delta_axis, size( orthotopes ) );
+            % multiple orthotopes / single parameters
+            if ~isscalar( orthotopes ) && isscalar( parameters )
+                parameters = repmat( parameters, size( orthotopes ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( orthotopes, delta_axis );
+            auxiliary.mustBeEqualSize( orthotopes, parameters );
 
             %--------------------------------------------------------------
             % 2.) compute parameters for regular grids
             %--------------------------------------------------------------
             % initialize parameter cell arrays
             N_points_axis = cell( size( orthotopes ) );
+            delta_axis = cell( size( orthotopes ) );
             grid_offset_axis = cell( size( orthotopes ) );
 
             for index_object = 1:numel( orthotopes )
 
-                % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, delta_axis{ index_object } );
+                switch class( parameters( index_object ) )
 
-                % ensure positive real numbers
-                mustBeReal( delta_axis{ index_object } );
-                mustBePositive( delta_axis{ index_object } );
+                    case 'discretizations.parameters_number'
 
-                % number of grid points along each axis
-                % TODO: check rounding errors: abs( intervals_act ) slightly deviates from specs
-                intervals_act = orthotopes( index_object ).intervals;
-                N_points_axis{ index_object } = floor( double( abs( intervals_act ) ) ./ delta_axis{ index_object } );
+                        % number of grid points along each axis
+                        N_points_axis{ index_object } = parameters( index_object ).values;
+
+                        % ensure equal number of dimensions and sizes
+                        auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, N_points_axis{ index_object } );
+
+                        % distances between adjacent grid points along each axis
+                        delta_axis{ index_object } = double( abs( orthotopes( index_object ).intervals ) ) ./ N_points_axis{ index_object };
+
+                    case 'discretizations.parameters_distance'
+
+                        % distances between adjacent grid points along each axis
+                        delta_axis{ index_object } = parameters( index_object ).values;
+
+                        % ensure equal number of dimensions and sizes
+                        auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, delta_axis{ index_object } );
+
+                        % number of grid points along each axis
+                        N_points_axis{ index_object } = floor( double( abs( orthotopes( index_object ).intervals ) ) ./ delta_axis{ index_object } );
+
+                    otherwise
+
+                        errorStruct.message     = sprintf( 'Unknown class of parameters( %d )!', index_object );
+                        errorStruct.identifier	= 'discretize:UnknownParameters';
+                        error( errorStruct );
+
+                end % switch class( parameters( index_object ) )
 
                 % offset along each axis
                 M_points_axis = ( N_points_axis{ index_object } - 1 ) / 2;
@@ -186,7 +209,7 @@ classdef orthotope
             %--------------------------------------------------------------
             objects_out = discretizations.grid( N_points_axis, delta_axis, grid_offset_axis );
 
-        end % function objects_out = discretize( orthotopes, delta_axis )
+        end % function objects_out = discretize( orthotopes, parameters )
 
     end % methods
 

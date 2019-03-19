@@ -3,15 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-15
-% modified: 2019-02-15
+% modified: 2019-03-19
 %
 classdef parameters
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-    end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -21,22 +15,22 @@ classdef parameters
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = parameters( varargin )
+        function objects = parameters( varargin )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
             % check number of arguments
             if nargin ~= 1
                 return;
             end
 
             %--------------------------------------------------------------
-            % 1.) check arguments
+            % 2.) create discretization parameters
             %--------------------------------------------------------------
+            objects = repmat( objects, size( varargin{1} ) );
 
-            %--------------------------------------------------------------
-            % 2.) set independent properties
-            %--------------------------------------------------------------
-
-        end % function object = parameters( varargin )
+        end % function objects = parameters( varargin )
 
 	end % methods
 

@@ -75,8 +75,8 @@ classdef setup < handle
             % 2.) discretize transducer array and field of view
             %--------------------------------------------------------------
             % discretization based on regular grids
-            discretizations_elements = discretize( setup.xdc_array, options_spatial.N_points_per_element_axis );
-            discretization_FOV = discretize( setup.FOV, options_spatial.delta_axis );
+            discretizations_elements = discretize( setup.xdc_array, options_spatial.options_elements );
+            discretization_FOV = discretize( setup.FOV, options_spatial.options_FOV );
 
             %--------------------------------------------------------------
             % 3.) construct spatial discretizations
