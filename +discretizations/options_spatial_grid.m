@@ -33,6 +33,8 @@ classdef options_spatial_grid < discretizations.options_spatial
             %--------------------------------------------------------------
             % specify default values
             if nargin == 0
+                options_FOV = discretizations.parameters_distance;
+                options_elements = discretizations.parameters_number;
             end
 
             % ensure cell array for options_elements

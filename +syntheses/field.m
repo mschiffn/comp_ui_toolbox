@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-03-19
+% modified: 2019-03-20
 %
 classdef field
 
@@ -13,6 +13,7 @@ classdef field
 	properties
 
         % independent properties
+        set_f ( 1, 1 ) discretizations.set_discrete_frequency
         values % phasors of the acoustic value for each grid point in the FOV
 
         % dependent properties
@@ -28,64 +29,62 @@ classdef field
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = field( spatiospectral )
+        function objects = field( sets_discrete_frequencies, samples )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % return if no input argument
+            %
             if nargin == 0
                 return;
             end
 
-            % ensure class discretizations.spatiospectral
-            if ~( isa( spatiospectral, 'discretizations.spatiospectral' ) && numel( spatiospectral ) == 1 )
-                errorStruct.message     = 'spatiospectral must be a single discretizations.spatiospectral!';
-                errorStruct.identifier	= 'field:NoDiscretization';
+            % ensure class discretizations.set_discrete_frequency
+            if ~isa( sets_discrete_frequencies, 'discretizations.set_discrete_frequency' )
+                errorStruct.message     = 'sets_discrete_frequencies must be discretizations.set_discrete_frequency!';
+                errorStruct.identifier	= 'field:NoSetDiscreteFrequency';
                 error( errorStruct );
             end
 
-            % ensure class discretizations.spatial_grid
-            if ~isa( spatiospectral.spatial, 'discretizations.spatial_grid' )
-                errorStruct.message     = 'spatiospectral.spatial must be discretizations.spatial_grid!';
-                errorStruct.identifier	= 'field:NoSpatialGrid';
-                error( errorStruct );
+            % ensure cell array for samples
+            if nargin >= 2 && ~iscell( samples )
+                samples = { samples };
+            else
+                
             end
 
-            % ensure class discretizations.spectral_points
-            if ~isa( spatiospectral.spectral, 'discretizations.spectral_points' )
-                errorStruct.message     = 'spatiospectral.spectral must be discretizations.spectral_points!';
-                errorStruct.identifier	= 'field:NoSpectralPoints';
-                error( errorStruct );
-            end
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sets_discrete_frequencies, samples );
 
             %--------------------------------------------------------------
-            % 2.) construct objects
+            % 2.) create fields
             %--------------------------------------------------------------
-            % construct column vector of objects
-            objects = repmat( objects, size( spatiospectral.spectral ) );
+            objects = repmat( objects, size( sets_discrete_frequencies ) );
 
             %--------------------------------------------------------------
-            % 3.) initialize objects with zeros / compute memory consumption
+            % 3.) set independent and dependent properties
             %--------------------------------------------------------------
-            for index_object = 1:numel( spatiospectral.spectral )
+            for index_object = 1:numel( sets_discrete_frequencies )
 
-                % number of unique discrete frequencies
-                N_samples_f = abs( spatiospectral.spectral( index_object ).tx_unique.excitation_voltages( 1 ).set_f );
-                N_points = spatiospectral.spatial.grid_FOV.N_points;
+                % number of discrete frequencies
+                N_dimensions_act = ndims( samples{ index_object } );
+                size_act = size( samples{ index_object } );
+                N_samples_f = size_act( end );
+                N_points = prod( size_act( 1:(end - 1) ) );
+                firstdims = repmat( {':'}, 1, N_dimensions_act - 1 );
 
                 % initialize field values with zeros
                 objects( index_object ).values = cell( 1, N_samples_f );
                 for index_f = 1:N_samples_f
-                    objects( index_object ).values{ index_f } = zeros( spatiospectral.spatial.grid_FOV.N_points_axis );                   
+                    objects( index_object ).values{ index_f } = samples{ index_object }( firstdims{ : }, index_f );
                 end
 
                 % compute memory consumption
                 objects( index_object ).size_bytes = physical_values.memory( N_samples_f * N_points * 16 );
 
-            end % for index_object = 1:numel( spatiospectral.spectral )
+            end % for index_object = 1:numel( sets_discrete_frequencies )
 
-        end % function objects = field( spatiospectral )
+        end % function objects = field( sets_discrete_frequencies, samples )
 
         %------------------------------------------------------------------
         % show

@@ -65,42 +65,6 @@ classdef sequence
         end % function object = sequence( setup, settings )
 
         %------------------------------------------------------------------
-        % spatiospectral discretization
-        %------------------------------------------------------------------
-        function spatiospectral = discretize( sequences, options )
-            % TODO: single sequence
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class discretizations.options
-            if ~isa( options, 'discretizations.options' )
-                errorStruct.message     = 'options_spectral must be discretizations.options_spectral!';
-                errorStruct.identifier	= 'discretize:NoOptionsFrequency';
-                error( errorStruct );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, options );
-
-            %--------------------------------------------------------------
-            % 2.) spatial discretization
-            %--------------------------------------------------------------
-            spatial = discretize( [ sequences.setup ], [ options.spatial ] );
-
-            %--------------------------------------------------------------
-            % 3.) spectral discretization
-            %--------------------------------------------------------------
-            spectral = discretize( [ sequences.settings ], [ options.spectral ] );
-
-            %--------------------------------------------------------------
-            % 4.) create spatiospectral discretization
-            %--------------------------------------------------------------
-            spatiospectral = discretizations.spatiospectral( spatial, spectral );
-
-        end % function spatiospectral = discretize( object, options )
-
-        %------------------------------------------------------------------
         % estimate recording time intervals
         %------------------------------------------------------------------
         function [ intervals_t, hulls ] = determine_interval_t( object )
@@ -178,19 +142,43 @@ classdef sequence
 
             end % for index_incident = 1:N_incident
 
-        end % function intervals_t = determine_interval_t( object )
+        end % function [ intervals_t, hulls ] = determine_interval_t( object )
 
         %------------------------------------------------------------------
-        % compute incident acoustic fields
+        % spatiospectral discretization
         %------------------------------------------------------------------
-        function p_incident = compute_p_incident( object, spatiospectral )
+        function spatiospectral = discretize( sequences, options )
+            % TODO: single sequence
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            p_incident = syntheses.pressure_incident( object.setup, spatiospectral );
+            % ensure class discretizations.options
+            if ~isa( options, 'discretizations.options' )
+                errorStruct.message     = 'options_spectral must be discretizations.options_spectral!';
+                errorStruct.identifier	= 'discretize:NoOptionsFrequency';
+                error( errorStruct );
+            end
 
-        end % function p_incident = compute_p_incident( object, spatiospectral )
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, options );
+
+            %--------------------------------------------------------------
+            % 2.) spatial discretization
+            %--------------------------------------------------------------
+            spatial = discretize( [ sequences.setup ], [ options.spatial ] );
+
+            %--------------------------------------------------------------
+            % 3.) spectral discretization
+            %--------------------------------------------------------------
+            spectral = discretize( [ sequences.settings ], [ options.spectral ] );
+
+            %--------------------------------------------------------------
+            % 4.) create spatiospectral discretization
+            %--------------------------------------------------------------
+            spatiospectral = discretizations.spatiospectral( spatial, spectral );
+
+        end % function spatiospectral = discretize( object, options )
 
 	end % methods
 

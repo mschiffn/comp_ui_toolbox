@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-03-18
+% modified: 2019-03-20
 %
 classdef spatial_grid < discretizations.spatial
 
@@ -74,26 +74,6 @@ classdef spatial_grid < discretizations.spatial
             end % for index_object = 1:numel( objects )
 
         end % function objects = spatial_grid( grids_elements, grid_FOV )
-
-        %------------------------------------------------------------------
-        % spatial transfer function
-        %------------------------------------------------------------------
-        function h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element, varargin )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % TODO: check for wavenumbers, element
-
-            %--------------------------------------------------------------
-            % 2.) compute spatial transfer function
-            %--------------------------------------------------------------
-            % TODO: prevent swapping for three-dimensional FOVs
-            h_tx = discretizations.greens_function( axis_k_tilde, spatial_grid.grids_elements( index_element ), spatial_grid.grid_FOV, varargin{ : } );
-            h_tx = reshape( squeeze( sum( h_tx, 1 ) ), [ spatial_grid.grid_FOV.N_points_axis, numel( axis_k_tilde ) ] );
-            h_tx = -2 * spatial_grid.grids_elements( 1 ).delta_V * h_tx;
-
-        end % function h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element, varargin )
 
 	end % methods
 

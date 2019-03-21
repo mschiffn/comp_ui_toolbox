@@ -71,7 +71,7 @@ classdef operator
             %--------------------------------------------------------------
             % 4.) compute incident acoustic fields (unique frequencies)
             %--------------------------------------------------------------
-            object.p_incident = compute_p_incident( object.sequence, object.discretization );
+            object.p_incident = syntheses.pressure_incident( object.sequence.setup, object.discretization );
 
             % create pulse-echo measurements
             % TODO: check method to determine Fourier coefficients

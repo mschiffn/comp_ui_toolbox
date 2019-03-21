@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-03-14
+% modified: 2019-03-20
 %
 classdef pressure_incident < syntheses.field
 
@@ -18,11 +18,28 @@ classdef pressure_incident < syntheses.field
         function objects = pressure_incident( setup, spatiospectral )
 
             %--------------------------------------------------------------
-            % 1.) constructor of superclass
+            % 1.) check arguments
             %--------------------------------------------------------------
-            objects@syntheses.field( spatiospectral );
-            N_objects = numel( objects );
-            % assertion: objects are fields initialized by zeros
+            % ensure class pulse_echo_measurements.setup
+            if ~( isa( setup, 'pulse_echo_measurements.setup' ) && numel( setup ) == 1 )
+                errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
+                errorStruct.identifier	= 'sequence:NoSingleSetup';
+                error( errorStruct );
+            end
+
+            % ensure class discretizations.spatiospectral
+            if ~isa( spatiospectral, 'discretizations.spatiospectral' )
+                errorStruct.message     = 'spatiospectral must be discretizations.spatiospectral!';
+                errorStruct.identifier	= 'sequence:NoSpatiospectral';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) constructor of superclass
+            %--------------------------------------------------------------
+            sets_f = [ spatiospectral.spectral.tx_unique.excitation_voltages( 1 ).set_f ];
+            objects@syntheses.field( sets_f, samples ); % 
+            objects = repmat( objects, size( spatiospectral.spectral ) );
 
             %--------------------------------------------------------------
             % 2.) load or compute incident acoustic pressure fields
@@ -31,6 +48,11 @@ classdef pressure_incident < syntheses.field
             str_hash_setup = hash( setup );
             str_hash_discretization_spatial = hash( spatiospectral.spatial );
             str_name_dir = sprintf( '%s_setup_%s/spatial_%s', setup.str_name, str_hash_setup, str_hash_discretization_spatial );
+
+            % create cell arrays
+            N_objects = numel( spatiospectral.spectral );
+            
+            samples = cell( size( spatiospectral.spectral ) );
 
             % iterate pulse-echo measurements
             for index_object = 1:N_objects
@@ -124,6 +146,7 @@ classdef pressure_incident < syntheses.field
 
             end % for index_object = 1:N_objects
 
+
         end % function objects = pressure_incident( setup, spatiospectral )
 
         %------------------------------------------------------------------
@@ -148,7 +171,7 @@ classdef pressure_incident < syntheses.field
             %--------------------------------------------------------------
             if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
 
-                h_tx_ref = spatial_transfer_function( spatial_grid, axis_k_tilde, 1 );
+                h_tx_ref = syntheses.spatial_transfer_function( spatial_grid, axis_k_tilde, 1 );
             end
 
             %--------------------------------------------------------------
@@ -181,7 +204,7 @@ classdef pressure_incident < syntheses.field
                     % b) arbitrary grid
                     %------------------------------------------------------
                     % spatial impulse response of the active array element
-                    h_tx = spatial_transfer_function( spatial_grid, axis_k_tilde, index_element );
+                    h_tx = syntheses.spatial_transfer_function( spatial_grid, axis_k_tilde, index_element );
 
                 end % if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
 

@@ -70,7 +70,7 @@ classdef operator_born < scattering.operator
                     axis_k_tilde_unique = operator_born.sequence.setup.absorption_model.compute_wavenumbers( axis_f_unique );
 
                     % spatial transfer function for unique frequencies and occupied grid points
-                    h_rx_ref = spatial_transfer_function( operator_born.discretization.spatial, axis_k_tilde_unique, 1, [], indices_occupied );
+                    h_rx_ref = syntheses.spatial_transfer_function( operator_born.discretization.spatial, axis_k_tilde_unique, 1, [], indices_occupied );
 
                 end
 
@@ -134,7 +134,7 @@ classdef operator_born < scattering.operator
                             % b) arbitrary grid
                             %----------------------------------------------
                             % spatial impulse response of the active array element
-                            h_rx = spatial_transfer_function( operator_born.discretization.spatial, axis_k_tilde, index_element, [], indices_occupied );
+                            h_rx = syntheses.spatial_transfer_function( operator_born.discretization.spatial, axis_k_tilde, index_element, [], indices_occupied );
 
                         end
 

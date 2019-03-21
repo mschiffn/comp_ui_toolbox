@@ -89,8 +89,11 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_comm
 %         sequence = pulse_echo_measurements.sequence_rnd_del( setup, excitation_voltages_common, e_dir, settings_rng_del );
 %         sequence = pulse_echo_measurements.sequence_rnd_apo_del( setup, excitation_voltages_common, e_dir, settings_rng_apo, settings_rng_del );
 
+%--------------------------------------------------------------------------
+% specify options
+%--------------------------------------------------------------------------
 % discretization options
-parameters_elements = discretizations.parameters_number( [ 4, 4 ] );
+parameters_elements = discretizations.parameters_number( [ 2, 4 ] );
 parameters_FOV = discretizations.parameters_distance( 76.2e-6 * ones(1, 3) );
 options_disc_spatial = discretizations.options_spatial_grid( parameters_FOV, parameters_elements );
 options_disc_spectral = discretizations.options_spectral.signal;
@@ -99,9 +102,14 @@ options_disc = discretizations.options( options_disc_spatial, options_disc_spect
 % scattering options
 options = scattering.options( options_disc );
 
+%--------------------------------------------------------------------------
 % initialize scattering operator
+%--------------------------------------------------------------------------
 operator_born = scattering.operator_born( sequence, options );
 
+%--------------------------------------------------------------------------
+% test scattering operator
+%--------------------------------------------------------------------------
 theta = zeros(512^2, 1);
 theta(128*512+128) = 1;
 theta(256*512+256) = 1;

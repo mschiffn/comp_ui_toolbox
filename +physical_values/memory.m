@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-24
-% modified: 2019-03-11
+% modified: 2019-03-20
 %
 classdef memory < physical_values.physical_value
 
@@ -15,22 +15,22 @@ classdef memory < physical_values.physical_value
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = memory( values )
+        function objects = memory( bytes )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % set default values
             if nargin == 0
-                values = 0;
+                bytes = 0;
             end
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@physical_values.physical_value( values );
+            objects@physical_values.physical_value( bytes );
 
-        end % function objects = memory( values )
+        end % function objects = memory( bytes )
 
         %------------------------------------------------------------------
         % convert to binary unit
