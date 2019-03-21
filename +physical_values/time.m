@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-02-07
+% modified: 2019-03-21
 %
-classdef time < physical_values.physical_value
+classdef time < physical_values.physical_value_base
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% methods
@@ -17,6 +17,9 @@ classdef time < physical_values.physical_value
         %------------------------------------------------------------------
         function objects = time( values )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
             % set default values
             if nargin == 0
                 values = 0;
@@ -25,9 +28,12 @@ classdef time < physical_values.physical_value
             % check argument
             mustBeNonnegative( values );
 
-            % constructor of superclass
-            objects@physical_values.physical_value( values );
-        end
+            %--------------------------------------------------------------
+            % 2.) constructor of superclass
+            %--------------------------------------------------------------
+            objects@physical_values.physical_value_base( values );
+
+        end % function objects = time( values )
 
         %------------------------------------------------------------------
         % right array division (overload rdivide function)
@@ -83,4 +89,4 @@ classdef time < physical_values.physical_value
 
 	end % methods
 
-end % classdef time
+end % classdef time < physical_values.physical_value_base
