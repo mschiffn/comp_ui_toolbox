@@ -48,9 +48,13 @@ classdef parallelotope
             if nargin >= 2
                 basis = varargin{ 1 };
             else
-                basis = physical_values.unit_vector( eye( numel( edge_lengths{ 1 } ) ) )';
+                % create canonical bases of adequate dimensions
+                basis = cell( size( edge_lengths ) );
+                for index_object = 1:numel( edge_lengths )
+                    basis{ index_object } = physical_values.unit_vector( eye( numel( edge_lengths{ index_object } ) ) )';
+                end
             end
-            
+
             % ensure cell array for basis
             if ~iscell( basis )
                 basis = { basis };

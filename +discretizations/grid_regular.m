@@ -13,39 +13,32 @@ classdef grid_regular < discretizations.grid
 	properties (SetAccess = private)
 
         % independent properties
-        N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]	% numbers of grid points along each coordinate axis (1)
-        offset_axis ( 1, : ) coordinates.coordinates_cartesian =  coordinates.coordinates_cartesian( [ -63.5e-4, 0.5e-4] )	% arbitrary offset (m)
+        offset ( 1, 1 ) coordinates.coordinates_cartesian = coordinates.coordinates_cartesian( [ 0, 1 ] )	% arbitrary offset
+        N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]      % numbers of grid points along each coordinate axis (1)
         cell_ref ( 1, 1 ) discretizations.parallelotope
 
         % dependent properties
         N_points ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 16384	% total number of grid points (1)
         positions ( :, : ) coordinates.coordinates_cartesian         % discrete positions of the grid points (m)
-%         positions_axis      % discrete positions of the grid points along each axis (m)
-%         frequencies_axis	% discrete spatial frequencies along each axis (1 / m)
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = grid_regular( N_points_axis, offset_axis, cells_ref, varargin )
+        function objects = grid_regular( offset, cells_ref, N_points_axis )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for N_points_axis
-            if ~iscell( N_points_axis )
-                N_points_axis = { N_points_axis };
-            end
-
-            % ensure cell array for offset_axis
-            if ~iscell( offset_axis )
-                offset_axis = { offset_axis };
+            % ensure cell array for offset
+            if ~iscell( offset )
+                offset = { offset };
             end
 
             % ensure class discretizations.parallelotope
@@ -55,8 +48,13 @@ classdef grid_regular < discretizations.grid
                 error( errorStruct );
             end
 
+            % ensure cell array for N_points_axis
+            if ~iscell( N_points_axis )
+                N_points_axis = { N_points_axis };
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( N_points_axis, offset_axis, cells_ref );
+            auxiliary.mustBeEqualSize( offset, cells_ref, N_points_axis );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
@@ -69,62 +67,62 @@ classdef grid_regular < discretizations.grid
             for index_object = 1:numel( N_points_axis )
 
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( N_points_axis{ index_object }, offset_axis{ index_object }, cells_ref( index_object ).edge_lengths );
+                auxiliary.mustBeEqualSize( offset{ index_object }.components, cells_ref( index_object ).edge_lengths, N_points_axis{ index_object } );
 
                 % set independent properties
-                objects( index_object ).N_points_axis = N_points_axis{ index_object };
-                objects( index_object ).offset_axis = offset_axis{ index_object };
+                objects( index_object ).offset = offset{ index_object };
                 objects( index_object ).cell_ref = cells_ref( index_object );
+                objects( index_object ).N_points_axis = N_points_axis{ index_object };
 
                 % dependent properties
                 objects( index_object ).N_points = prod( objects( index_object ).N_points_axis, 2 );
 
-                % compute discrete positions of the grid points along each axis
-%                 objects( index_object ) = compute_positions_axis( objects( index_object ) );
-
                 % compute discrete positions of the grid points
                 objects( index_object ).positions = compute_positions( objects( index_object ) );
 
-                % compute discrete spatial frequencies along each axis
-%                 objects( index_object ) = compute_frequencies_axis( objects( index_object ) );
-
             end % for index_object = 1:numel( N_points_axis )
 
-        end % function objects = grid_regular( N_points_axis, delta_axis, offset_axis, varargin )
+        end % function objects = grid_regular( offset, cells_ref, N_points_axis )
 
         %------------------------------------------------------------------
         % compute discrete positions of the grid points along each axis
         %------------------------------------------------------------------
-        function obj = compute_positions_axis( obj )
+        function positions_axis = compute_positions_axis( grids_regular )
 
-            obj.positions_axis = cell( 1, obj.N_dimensions );
-            for index_dim = 1:obj.N_dimensions
+            %
+            positions_axis = cell( 1, grids_regular.N_dimensions );
 
-                indices_axis = (0:obj.N_points_axis( index_dim ) - 1)';
-                obj.positions_axis{ index_dim } = repmat( obj.offset_axis, [obj.N_points_axis( index_dim ), 1] ) + indices_axis * obj.delta_axis( index_dim ) * obj.lattice_vectors( index_dim, : );
+            %
+            for index_dim = 1:grids_regular.N_dimensions
+
+                indices_axis = (0:grids_regular.N_points_axis( index_dim ) - 1)';
+                positions_axis{ index_dim } = repmat( grids_regular.offset_axis, [grids_regular.N_points_axis( index_dim ), 1] ) + indices_axis * grids_regular.delta_axis( index_dim ) * grids_regular.lattice_vectors( index_dim, : );
             end
-        end
+
+        end % function positions_axis = compute_positions_axis( grids_regular )
 
         %------------------------------------------------------------------
         % compute discrete spatial frequencies along each axis
         %------------------------------------------------------------------
-        function obj = compute_frequencies_axis( obj )
+        function frequencies_axis = compute_frequencies_axis( grids_regular )
 
-            indices_shift = ceil( obj.N_points_axis / 2 );
+            indices_shift = ceil( grids_regular.N_points_axis / 2 );
 
-            obj.frequencies_axis = cell( 1, obj.N_dimensions );
-            for index_dim = 1:obj.N_dimensions
+            frequencies_axis = cell( 1, grids_regular.N_dimensions );
 
-                if index_dim < obj.N_dimensions
+            for index_dim = 1:grids_regular.N_dimensions
+
+                if index_dim < grids_regular.N_dimensions
                     % create FFTshifted axis
-                    indices_axis = ( ( indices_shift( index_dim ) - obj.N_points_axis( index_dim ) ):( indices_shift( index_dim ) - 1 ) )';
+                    indices_axis = ( ( indices_shift( index_dim ) - grids_regular.N_points_axis( index_dim ) ):( indices_shift( index_dim ) - 1 ) )';
                 else
                     % create normal axis
-                    indices_axis = ( 0:( obj.N_points_axis( end ) - 1 ) )';
+                    indices_axis = ( 0:( grids_regular.N_points_axis( end ) - 1 ) )';
                 end
-                obj.frequencies_axis{ index_dim } = indices_axis * obj.lattice_vectors( index_dim, : ) / ( obj.N_points_axis( index_dim ) * obj.delta_axis( index_dim ) );
+                frequencies_axis{ index_dim } = indices_axis * grids_regular.lattice_vectors( index_dim, : ) / ( grids_regular.N_points_axis( index_dim ) * grids_regular.delta_axis( index_dim ) );
             end
-        end
+
+        end % function frequencies_axis = compute_frequencies_axis( grids_regular )
 
         %------------------------------------------------------------------
         % compute discrete positions of the grid points
@@ -142,8 +140,8 @@ classdef grid_regular < discretizations.grid
                 indices_axis = inverse_index_transform( grids_regular( index_object ), indices_lattice );
 
                 % compute Cartesian coordinates of grid points
-                positions = repmat( grids_regular( index_object ).offset_axis, [grids_regular( index_object ).N_points, 1] ) + indices_axis * double( ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis )' );
-                positions = coordinates.coordinates_cartesian( positions );
+                positions_rel = coordinates.coordinates_cartesian( indices_axis * double( ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis )' ) );
+                positions{ index_object } = repmat( grids_regular( index_object ).offset_axis, [grids_regular( index_object ).N_points, 1] ) + positions_rel;
 
             end % for index_object = 1:numel( grids_regular )
 
