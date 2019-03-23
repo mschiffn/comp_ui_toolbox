@@ -13,7 +13,7 @@ classdef ( InferiorClasses = {?physical_values.physical_value,?physical_values.l
 	properties (SetAccess = private)
 
         % independent properties
-        components ( 1, : ) double { mustBeReal, mustBeFinite, mustBeNonempty } = [0, 1]
+        components ( 1, : ) double { mustBeReal, mustBeFinite, mustBeNonempty } = [1, 0]
 
     end % properties
 
@@ -35,37 +35,36 @@ classdef ( InferiorClasses = {?physical_values.physical_value,?physical_values.l
                 return;
             end
 
-            % ensure cell array for components
-%             if ~iscell( components )
-%                 components = { components };
-%             end
-
-            % ensure matrix argument
-            if ~ismatrix( components ) || ~isreal( components ) || ~all( isfinite( components(:) ) )
-                errorStruct.message     = 'components must be a real-valued finite matrix!';
-                errorStruct.identifier	= 'unit_vector:NoRealFiniteMatrix';
-                error( errorStruct );
+            % convert matrix to cell array
+            if ismatrix( components ) && isnumeric( components )
+                components = mat2cell( components, ones( size( components, 1 ), 1 ) );
             end
 
-            % ensure l2-norms of unity
-            norms = sqrt( sum( abs( components ).^2, 2 ) );
-            if ~all( abs( norms - 1 ) < eps )
-                errorStruct.message     = 'Rows of the argument must be unit vectors!';
-                errorStruct.identifier	= 'unit_vector:NoRealMatrix';
-                error( errorStruct );
+            % ensure cell array for components
+            if ~iscell( components )
+                components = { components };
             end
 
             %--------------------------------------------------------------
             % 2.) create unit vectors
             %--------------------------------------------------------------
             % construct column vector of objects
-            N_objects = size( components, 1 );
-            objects = repmat( objects, [ N_objects, 1 ] );
+            objects = repmat( objects, size( components ) );
 
             % set independent properties
-            for index_object = 1:N_objects
-                objects( index_object ).components = components( index_object, : );
-            end
+            for index_object = 1:numel( components )
+
+                % ensure l2-norms of unity
+                if abs( norm( components{ index_object } ) - 1 ) >= eps
+                    errorStruct.message     = sprintf( 'components{ %d } is not a unit vector!', index_object );
+                    errorStruct.identifier	= 'unit_vector:NoUnitVector';
+                    error( errorStruct );
+                end
+
+                % assign components
+                objects( index_object ).components = components{ index_object };
+
+            end % for index_object = 1:numel( components )
 
         end % function objects = unit_vector( components )
 

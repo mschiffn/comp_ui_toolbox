@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-03-22
+% modified: 2019-03-23
 %
 classdef grid_regular < discretizations.grid
 
@@ -15,11 +15,11 @@ classdef grid_regular < discretizations.grid
         % independent properties
         N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]	% numbers of grid points along each coordinate axis (1)
         offset_axis ( 1, : ) coordinates.coordinates_cartesian =  coordinates.coordinates_cartesian( [ -63.5e-4, 0.5e-4] )	% arbitrary offset (m)
-        cell ( 1, 1 ) discretizations.parallelotope
+        cell_ref ( 1, 1 ) discretizations.parallelotope
 
         % dependent properties
         N_points ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 16384	% total number of grid points (1)
-        positions           % discrete positions of the grid points (m)
+        positions ( :, : ) coordinates.coordinates_cartesian         % discrete positions of the grid points (m)
 %         positions_axis      % discrete positions of the grid points along each axis (m)
 %         frequencies_axis	% discrete spatial frequencies along each axis (1 / m)
 
@@ -33,7 +33,7 @@ classdef grid_regular < discretizations.grid
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = grid_regular( N_points_axis, offset_axis, cells, varargin )
+        function objects = grid_regular( N_points_axis, offset_axis, cells_ref, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -49,14 +49,14 @@ classdef grid_regular < discretizations.grid
             end
 
             % ensure class discretizations.parallelotope
-            if ~isa( cells, 'discretizations.parallelotope' )
+            if ~isa( cells_ref, 'discretizations.parallelotope' )
                 errorStruct.message     = 'grid_regular must be discretizations.parallelotope!';
                 errorStruct.identifier	= 'grid_regular:NoParallelotopes';
                 error( errorStruct );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( N_points_axis, offset_axis, cells );
+            auxiliary.mustBeEqualSize( N_points_axis, offset_axis, cells_ref );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
@@ -69,12 +69,12 @@ classdef grid_regular < discretizations.grid
             for index_object = 1:numel( N_points_axis )
 
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( N_points_axis{ index_object }, offset_axis{ index_object }, cells( index_object ).edge_lengths );
+                auxiliary.mustBeEqualSize( N_points_axis{ index_object }, offset_axis{ index_object }, cells_ref( index_object ).edge_lengths );
 
                 % set independent properties
                 objects( index_object ).N_points_axis = N_points_axis{ index_object };
                 objects( index_object ).offset_axis = offset_axis{ index_object };
-                objects( index_object ).cell = cells( index_object );
+                objects( index_object ).cell_ref = cells_ref( index_object );
 
                 % dependent properties
                 objects( index_object ).N_points = prod( objects( index_object ).N_points_axis, 2 );
@@ -83,7 +83,7 @@ classdef grid_regular < discretizations.grid
 %                 objects( index_object ) = compute_positions_axis( objects( index_object ) );
 
                 % compute discrete positions of the grid points
-                objects( index_object ) = compute_positions( objects( index_object ) );
+                objects( index_object ).positions = compute_positions( objects( index_object ) );
 
                 % compute discrete spatial frequencies along each axis
 %                 objects( index_object ) = compute_frequencies_axis( objects( index_object ) );
@@ -129,15 +129,30 @@ classdef grid_regular < discretizations.grid
         %------------------------------------------------------------------
         % compute discrete positions of the grid points
         %------------------------------------------------------------------
-        function obj = compute_positions( obj )
+        function positions = compute_positions( grids_regular )
 
-            % calculate indices along each coordinate axis
-            indices_lattice = (0:(obj.N_points - 1))';
-            indices_axis = obj.inverse_index_transform( indices_lattice );
+            % create cell array
+            positions = cell( size( grids_regular ) );
 
-            % compute positions
-            obj.positions = repmat( obj.offset_axis, [obj.N_points, 1] ) + ( indices_axis .* repmat( obj.cell.edge_lengths, [obj.N_points, 1] ) ) * obj.cell.basis;
-        end
+            % iterate regular grids
+            for index_object = 1:numel( grids_regular )
+
+                % calculate indices along each coordinate axis
+                indices_lattice = ( 0:(grids_regular( index_object ).N_points - 1) )';
+                indices_axis = inverse_index_transform( grids_regular( index_object ), indices_lattice );
+
+                % compute Cartesian coordinates of grid points
+                positions = repmat( grids_regular( index_object ).offset_axis, [grids_regular( index_object ).N_points, 1] ) + indices_axis * double( ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis )' );
+                positions = coordinates.coordinates_cartesian( positions );
+
+            end % for index_object = 1:numel( grids_regular )
+
+            % avoid cell array for single regular grid
+            if numel( grids_regular ) == 1
+                positions = positions{ 1 };
+            end
+
+        end % function positions = compute_positions( grids_regular )
 
         %------------------------------------------------------------------
         % inverse index transform
