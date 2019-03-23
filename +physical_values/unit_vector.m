@@ -5,7 +5,7 @@
 % date: 2019-01-30
 % modified: 2019-03-23
 %
-classdef unit_vector
+classdef ( InferiorClasses = {?physical_values.physical_value,?physical_values.length} ) unit_vector
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % properties
@@ -124,39 +124,39 @@ classdef unit_vector
             %--------------------------------------------------------------
             if isa( inputs_1, 'physical_values.unit_vector' ) && ( isnumeric( inputs_2 ) || isa( inputs_2, 'physical_values.physical_value' ) )
                 unit_vectors = inputs_1;
-                numbers_in = inputs_2;
+                num_or_phys_val_in = inputs_2;
             elseif ( isnumeric( inputs_1 ) || isa( inputs_1, 'physical_values.physical_value' ) ) && isa( inputs_2, 'physical_values.unit_vector' )
                 unit_vectors = inputs_2;
-                numbers_in = inputs_1;
+                num_or_phys_val_in = inputs_1;
             else
                 errorStruct.message     = 'One argument must be numeric or physical_values.physical_value and one argument must be physical_values.unit_vector!';
                 errorStruct.identifier	= 'times:Arguments';
                 error( errorStruct );
             end
 
-            % multiple unit_vectors / single numbers_in
-            if ~isscalar( unit_vectors ) && isscalar( numbers_in )
-                numbers_in = repmat( numbers_in, size( unit_vectors ) );
+            % multiple unit_vectors / single num_or_phys_val_in
+            if ~isscalar( unit_vectors ) && isscalar( num_or_phys_val_in )
+                num_or_phys_val_in = repmat( num_or_phys_val_in, size( unit_vectors ) );
             end
 
-            % single unit_vectors / multiple numbers_in
-            if isscalar( unit_vectors ) && ~isscalar( numbers_in )
-                unit_vectors = repmat( unit_vectors, size( numbers_in ) );
+            % single unit_vectors / multiple num_or_phys_val_in
+            if isscalar( unit_vectors ) && ~isscalar( num_or_phys_val_in )
+                unit_vectors = repmat( unit_vectors, size( num_or_phys_val_in ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( unit_vectors, numbers_in );
+            auxiliary.mustBeEqualSize( unit_vectors, num_or_phys_val_in );
 
             %--------------------------------------------------------------
-            % 2.) compute results
+            % 2.) compute products
             %--------------------------------------------------------------
             % create cell array
             size_unit_vectors = size( unit_vectors );
             results = cell( size_unit_vectors );
 
-            % compute products
+            % compute products and maintain subclass
             for index_objects = 1:numel( unit_vectors )
-                results{ index_objects } = unit_vectors( index_objects ).components * double( numbers_in( index_objects ) );
+                results{ index_objects } = unit_vectors( index_objects ).components .* num_or_phys_val_in( index_objects );
             end
 
             % return matrix for equal dimensions
@@ -172,17 +172,20 @@ classdef unit_vector
                     size_result( dim_singleton ) = N_dimensions( 1 );
                 end
 
-                results_dbl = zeros( size_result );
+                % initialize results maintain subclass
+                results_dbl = repmat( num_or_phys_val_in( 1 ), size_result );
+
+                % copy data
                 selector = repmat( { ':' }, [ 1, numel( size_result ) ] );
                 for index_dim = 1:N_dimensions( 1 )
                     selector{ dim_singleton } = index_dim;
                     results_dbl( selector{ : } ) = cellfun( @(x) x( index_dim ), results );
                 end
-
                 results = results_dbl;
+
             end
 
-        end % function objects_out = times( inputs_1, inputs_2 )
+        end % function results = times( inputs_1, inputs_2 )
 
 	end % methods
 

@@ -205,9 +205,9 @@ classdef physical_value
             auxiliary.mustBeEqualSize( objects_in, numbers_in );
 
             %--------------------------------------------------------------
-            % 2.) compute results
+            % 2.) compute products
             %--------------------------------------------------------------
-            % create physical values
+            % copy physical values to adopt subclass
             objects_out = objects_in;
 
             for index_objects = 1:numel( objects_in )
