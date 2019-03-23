@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21
-% modified: 2019-03-21
+% modified: 2019-03-22
 %
 classdef grid
 
@@ -14,8 +14,6 @@ classdef grid
 
         % independent properties
         N_dimensions ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 2              % number of dimensions (1)
-
-        % dependent properties
 
     end % properties
 

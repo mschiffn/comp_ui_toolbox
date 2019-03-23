@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-03-18
+% modified: 2019-03-22
 %
-classdef grid
+classdef grid_regular < discretizations.grid
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% properties
@@ -13,19 +13,16 @@ classdef grid
 	properties (SetAccess = private)
 
         % independent properties
-        N_dimensions ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 2              % number of dimensions (1)
         N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]	% numbers of grid points along each coordinate axis (1)
-        delta_axis ( 1, : ) double { mustBeReal, mustBePositive, mustBeNonempty } = [ 1e-4, 1e-4 ]      % constant spacings between the adjacent grid points along each coordinate axis (m)
-        offset_axis ( 1, : ) double { mustBeReal, mustBeNonempty } = [ -63.5e-4, 0.5e-4]                % arbitrary offset (m)
-        lattice_vectors ( :, : ) double { mustBeReal, mustBeNonempty } = eye( 2 )                       % linearly-independent unit row vectors of the grid (m)
-        str_name                                                                                        % name of the grid
+        offset_axis ( 1, : ) coordinates.coordinates_cartesian =  coordinates.coordinates_cartesian( [ -63.5e-4, 0.5e-4] )	% arbitrary offset (m)
+        cell ( 1, 1 ) discretizations.parallelotope
 
         % dependent properties
         N_points ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 16384	% total number of grid points (1)
-        delta_V ( 1, 1 ) double { mustBeReal, mustBePositive, mustBeNonempty } = 1e-8       % d-dimensional volume element (m^{d})
-        positions_axis      % discrete positions of the grid points along each axis (m)
         positions           % discrete positions of the grid points (m)
-        frequencies_axis	% discrete spatial frequencies along each axis (1 / m)
+%         positions_axis      % discrete positions of the grid points along each axis (m)
+%         frequencies_axis	% discrete spatial frequencies along each axis (1 / m)
+
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,84 +33,64 @@ classdef grid
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = grid( N_points_axis, delta_axis, offset_axis, varargin )
-
-            % return for no input arguments
-            if nargin == 0
-                return;
-            end
+        function objects = grid_regular( N_points_axis, offset_axis, cells, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array
+            % ensure cell array for N_points_axis
             if ~iscell( N_points_axis )
                 N_points_axis = { N_points_axis };
             end
 
-            % ensure cell array
-            if ~iscell( delta_axis )
-                delta_axis = { delta_axis };
-            end
-
-            % ensure cell array
+            % ensure cell array for offset_axis
             if ~iscell( offset_axis )
                 offset_axis = { offset_axis };
             end
 
+            % ensure class discretizations.parallelotope
+            if ~isa( cells, 'discretizations.parallelotope' )
+                errorStruct.message     = 'grid_regular must be discretizations.parallelotope!';
+                errorStruct.identifier	= 'grid_regular:NoParallelotopes';
+                error( errorStruct );
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( N_points_axis, delta_axis, offset_axis );
-            % assertion: N_points_axis, delta_axis, and offset_axis have the same size
+            auxiliary.mustBeEqualSize( N_points_axis, offset_axis, cells );
 
             %--------------------------------------------------------------
-            % 2.) create regular grids
+            % 2.) constructor of superclass
             %--------------------------------------------------------------
-            N_objects = numel( N_points_axis );
-            objects = repmat( objects, size( N_points_axis ) );
+            objects@discretizations.grid( cellfun( @(x) numel(x), N_points_axis ) );
 
-            % check and set independent properties
-            for index_object = 1:N_objects
+            %--------------------------------------------------------------
+            % 3.) check and set independent properties
+            %--------------------------------------------------------------
+            for index_object = 1:numel( N_points_axis )
 
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( N_points_axis{ index_object }, delta_axis{ index_object }, offset_axis{ index_object } );
-                % assertion: N_points_axis, delta_axis, and offset_axis have the same size
+                auxiliary.mustBeEqualSize( N_points_axis{ index_object }, offset_axis{ index_object }, cells( index_object ).edge_lengths );
 
                 % set independent properties
-                objects( index_object ).N_dimensions = numel( N_points_axis{ index_object } );
                 objects( index_object ).N_points_axis = N_points_axis{ index_object };
-                objects( index_object ).delta_axis = delta_axis{ index_object };
                 objects( index_object ).offset_axis = offset_axis{ index_object };
-                % assertion: independent properties specify valid grid
-
-                % optional basis unit vectors of the grid
-                if numel( varargin ) > 0
-                    if abs( det( varargin{ 1 } ) ) > eps
-                        objects( index_object ).lattice_vectors = varargin{ 1 };
-                    else
-                        % TODO: invalid grid directions
-                    end
-                else
-                    % specify canonical basis
-                    objects( index_object ).lattice_vectors = eye( objects( index_object ).N_dimensions );
-                end
+                objects( index_object ).cell = cells( index_object );
 
                 % dependent properties
                 objects( index_object ).N_points = prod( objects( index_object ).N_points_axis, 2 );
-                % TODO: check volume of n-parallelotope
-                objects( index_object ).delta_V = abs( det( diag( objects( index_object ).delta_axis ) * objects( index_object ).lattice_vectors ) );
 
                 % compute discrete positions of the grid points along each axis
-                objects( index_object ) = compute_positions_axis( objects( index_object ) );
+%                 objects( index_object ) = compute_positions_axis( objects( index_object ) );
 
                 % compute discrete positions of the grid points
                 objects( index_object ) = compute_positions( objects( index_object ) );
 
                 % compute discrete spatial frequencies along each axis
-                objects( index_object ) = compute_frequencies_axis( objects( index_object ) );
+%                 objects( index_object ) = compute_frequencies_axis( objects( index_object ) );
 
-            end % for index_object = 1:N_objects
+            end % for index_object = 1:numel( N_points_axis )
 
-        end % function objects = grid( N_points_axis, delta_axis, offset_axis, varargin )
+        end % function objects = grid_regular( N_points_axis, delta_axis, offset_axis, varargin )
 
         %------------------------------------------------------------------
         % compute discrete positions of the grid points along each axis
@@ -159,7 +136,7 @@ classdef grid
             indices_axis = obj.inverse_index_transform( indices_lattice );
 
             % compute positions
-            obj.positions = repmat( obj.offset_axis, [obj.N_points, 1] ) + ( indices_axis .* repmat( obj.delta_axis, [obj.N_points, 1] ) ) * obj.lattice_vectors;
+            obj.positions = repmat( obj.offset_axis, [obj.N_points, 1] ) + ( indices_axis .* repmat( obj.cell.edge_lengths, [obj.N_points, 1] ) ) * obj.cell.basis;
         end
 
         %------------------------------------------------------------------
@@ -207,10 +184,10 @@ classdef grid
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.grid
-            if ~( isa( grids_1, 'discretizations.grid' ) && isa( grids_2, 'discretizations.grid' ) )
-                errorStruct.message     = 'Both arguments must be discretizations.grid!';
-                errorStruct.identifier	= 'mutual_differences:NoGrids';
+            % ensure class discretizations.grid_regular
+            if ~( isa( grids_1, 'discretizations.grid_regular' ) && isa( grids_2, 'discretizations.grid_regular' ) )
+                errorStruct.message     = 'Both arguments must be discretizations.grid_regular!';
+                errorStruct.identifier	= 'mutual_differences:NoRegularGrids';
                 error( errorStruct );
             end
 
@@ -369,4 +346,4 @@ classdef grid
 
     end % methods
 
-end % classdef grid
+end % classdef grid_regular < discretizations.grid

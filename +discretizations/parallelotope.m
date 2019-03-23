@@ -82,11 +82,11 @@ classdef parallelotope
                 end
 
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( basis{ index_object }, edge_lengths{ index_object } );
+                auxiliary.mustBeEqualSize( edge_lengths{ index_object }, basis{ index_object } );
 
                 % set independent properties
-                objects( index_object ).basis = basis{ index_object };
                 objects( index_object ).edge_lengths = edge_lengths{ index_object };
+                objects( index_object ).basis = basis{ index_object };
 
                 % set dependent properties
 %                 objects( index_object ).volume = compute_volume( objects( index_object ) );
@@ -108,7 +108,8 @@ classdef parallelotope
 
                 % compute volume as absolute value of the determinant of the basis vectors
                 % diag( objects( index_object ).delta_axis ) * objects( index_object ).lattice_vectors
-                results( index_object ) = abs( det( double( parallelotopes( index_object ).edge_lengths ) .* parallelotopes( index_object ).basis ) );
+                % TODO: error if abs( det ) < eps!
+                results( index_object ) = abs( det( parallelotopes( index_object ).edge_lengths .* parallelotopes( index_object ).basis ) );
 
             end % for index_object = 1:numel( parallelotopes )
 

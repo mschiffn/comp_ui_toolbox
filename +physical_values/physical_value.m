@@ -20,7 +20,7 @@ classdef physical_value
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -203,7 +203,6 @@ classdef physical_value
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( objects_in, numbers_in );
-            % assertion: objects_in and numbers_in have equal sizes
 
             %--------------------------------------------------------------
             % 2.) compute results
