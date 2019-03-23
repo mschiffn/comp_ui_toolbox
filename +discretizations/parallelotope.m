@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21
-% modified: 2019-03-21
+% modified: 2019-03-23
 %
 classdef parallelotope
 
@@ -17,14 +17,14 @@ classdef parallelotope
         basis ( 1, : ) physical_values.unit_vector
 
         % dependent properties
-        volume ( 1, 1 ) double
+        volume ( 1, 1 ) double { mustBePositive } = 1
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -89,7 +89,14 @@ classdef parallelotope
                 objects( index_object ).basis = basis{ index_object };
 
                 % set dependent properties
-%                 objects( index_object ).volume = compute_volume( objects( index_object ) );
+                objects( index_object ).volume = compute_volume( objects( index_object ) );
+
+                % ensure linearly independent unit vectors in basis
+                if objects( index_object ).volume < eps
+                    errorStruct.message = sprintf( 'physical_values.unit_vector in basis{ %d } must be linearly independent!', index_object );
+                    errorStruct.identifier	= 'parallelotope:NoBasis';
+                    error( errorStruct );
+                end
 
             end % for index_object = 1:numel( edge_lengths )
 
@@ -107,9 +114,7 @@ classdef parallelotope
             for index_object = 1:numel( parallelotopes )
 
                 % compute volume as absolute value of the determinant of the basis vectors
-                % diag( objects( index_object ).delta_axis ) * objects( index_object ).lattice_vectors
-                % TODO: error if abs( det ) < eps!
-                results( index_object ) = abs( det( parallelotopes( index_object ).edge_lengths .* parallelotopes( index_object ).basis ) );
+                results( index_object ) = abs( det( double( parallelotopes( index_object ).edge_lengths .* parallelotopes( index_object ).basis ) ) );
 
             end % for index_object = 1:numel( parallelotopes )
 
