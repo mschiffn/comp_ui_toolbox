@@ -46,18 +46,8 @@ classdef parameters_planar < transducers.parameters
                 element_kerf_axis = { element_kerf_axis };
             end
 
-            % ensure cell array for str_model
-            if ~iscell( str_model )
-                str_model = { str_model };
-            end
-
-            % ensure cell array for str_vendor
-            if ~iscell( str_vendor )
-                str_vendor = { str_vendor };
-            end
-
             % ensure equal number of dimensions and sizes of cell arrays
-            auxiliary.mustBeEqualSize( N_elements_axis, element_width_axis, element_kerf_axis, str_model, str_vendor );
+            auxiliary.mustBeEqualSize( N_elements_axis, element_width_axis, element_kerf_axis );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
@@ -79,6 +69,49 @@ classdef parameters_planar < transducers.parameters
             end % for index_object = 1:numel( objects )
 
         end % function objects = parameters_planar( N_elements_axis, element_width_axis, element_kerf_axis, str_model, str_vendor )
+
+        %------------------------------------------------------------------
+        % project
+        %------------------------------------------------------------------
+        function parameters_planar = project( parameters_planar, N_dimensions )
+
+            %--------------------------------------------------------------
+            % 1.) call superclass function
+            %--------------------------------------------------------------
+            parameters_planar = project@transducers.parameters( parameters_planar, N_dimensions );
+
+            %--------------------------------------------------------------
+            % 2.) project parameters onto lower dimension
+            %--------------------------------------------------------------
+            for index_object = 1:numel( parameters_planar )
+
+                % extract relevant numbers of elements
+                parameters_planar( index_object ).element_width_axis = parameters_planar( index_object ).element_width_axis( 1:N_dimensions( index_object ) );
+                parameters_planar( index_object ).element_kerf_axis = parameters_planar( index_object ).element_kerf_axis( 1:N_dimensions( index_object ) );
+
+            end % for index_object = 1:numel( parameters_planar )
+
+        end % function parameters_planar = project( parameters_planar, N_dimensions )
+
+        %------------------------------------------------------------------
+        % element pitches along each coordinate axis
+        %------------------------------------------------------------------
+        function results = element_pitch_axis( parameters_planar )
+
+            % initialize cell array
+            results = cell( size( parameters_planar ) );
+
+            % compute element pitch
+            for index_object = 1:numel( parameters_planar )
+                results{ index_object } = parameters_planar( index_object ).element_width_axis + parameters_planar( index_object ).element_kerf_axis;
+            end
+
+            % avoid cell array for single parameter object
+            if numel( parameters_planar ) == 1
+                results = results{ 1 };
+            end
+
+        end % function results = element_pitch_axis( parameters_planar )
 
 	end % methods
 

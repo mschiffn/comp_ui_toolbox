@@ -13,7 +13,7 @@ classdef coordinates_affine < coordinates.coordinates
 	properties (SetAccess = private)
 
         % independent properties
-        components ( 1, : ) physical_values.length
+        components physical_values.length
 
     end % properties
 

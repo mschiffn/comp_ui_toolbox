@@ -2,7 +2,7 @@
 % superclass for all array elements with orthotope shape
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-02-18
+% modified: 2019-03-25
 %
 classdef face_planar_orthotope < transducers.face_planar & physical_values.orthotope_position
 
@@ -12,7 +12,7 @@ classdef face_planar_orthotope < transducers.face_planar & physical_values.ortho
 	properties (SetAccess = private)
 
         % independent properties
-        pos_center ( 1, : ) physical_values.position	% center coordinates of vibrating face (m)
+        pos_center ( 1, : ) physical_values.length	% center coordinates of vibrating face (m)
 
     end % properties
 

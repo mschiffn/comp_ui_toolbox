@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-05-03
-% modified: 2019-03-18
+% modified: 2019-03-25
 %
 classdef L14_5_38 < transducers.array_planar
 
@@ -36,17 +36,11 @@ classdef L14_5_38 < transducers.array_planar
                 errorStruct.identifier	= 'L14_5_38:InvalidNumberOfDimensions';
                 error( errorStruct );
             end
-            % assertion: N_dimensions == 1 || N_dimensions == 2
 
             %--------------------------------------------------------------
-            % 2.) parameters of planar transducer array
+            % 2.) constructor of superclass
             %--------------------------------------------------------------
-            parameters = transducers.parameters_L14_5_38;
-
-            %--------------------------------------------------------------
-            % 3.) constructor of superclass
-            %--------------------------------------------------------------
-            object@transducers.array_planar( parameters, N_dimensions );
+            object@transducers.array_planar( transducers.parameters_L14_5_38, N_dimensions );
 
         end % function object = L14_5_38( varargin )
 

@@ -12,10 +12,6 @@ classdef array_planar < transducers.array
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
-        % independent properties
-        element_width_axis ( 1, : ) physical_values.length	% widths of the vibrating faces along each coordinate axis (m)
-        element_kerf_axis ( 1, : ) physical_values.length	% widths of the kerfs separating the adjacent elements along each coordinate axis (m)
-
         % dependent properties
         element_pitch_axis ( 1, : ) physical_values.length	% pitches along each coordinate axis (m)
         aperture transducers.face_planar                    % aperture
@@ -48,48 +44,59 @@ classdef array_planar < transducers.array
             objects@transducers.array( parameters_planar, N_dimensions );
 
             %--------------------------------------------------------------
-            % 3.) create planar transducer arrays
+            % 3.) set dependent properties
             %--------------------------------------------------------------
             for index_object = 1:numel( objects )
 
-                %----------------------------------------------------------
-                % a) set independent properties
-                %----------------------------------------------------------
-                objects( index_object ).element_width_axis = parameters_planar( index_object ).element_width_axis( 1:objects( index_object ).N_dimensions );
-                objects( index_object ).element_kerf_axis = parameters_planar( index_object ).element_kerf_axis( 1:objects( index_object ).N_dimensions );
-
-                %----------------------------------------------------------
-                % b) set dependent properties
-                %----------------------------------------------------------
-                objects( index_object ).element_pitch_axis = objects( index_object ).element_width_axis + objects( index_object ).element_kerf_axis;
-
-                % create position intervals for aperture
-                M_elements_axis = ( objects( index_object ).N_elements_axis - 1 ) / 2;
-                intervals = cell( 1, objects( index_object ).N_dimensions );
-
-                for index_dimension = 1:objects( index_object ).N_dimensions
-
-                    % compute lower and upper bounds on the position intervals on current axis
-                    pos_ctr = ( -M_elements_axis( index_dimension ):M_elements_axis( index_dimension ) ) * objects( index_object ).element_pitch_axis( index_dimension );
-                    pos_rel = objects( index_object ).element_width_axis( index_dimension ) ./ 2;
-                    lbs = coordinates.coordinates_cartesian( pos_ctr(:) - pos_rel );
-                    ubs = coordinates.coordinates_cartesian( pos_ctr(:) + pos_rel );
-
-                    % create position intervals
-                    shape_act = ones( 1, max( [ objects( index_object ).N_dimensions, 2 ] ) );
-                    shape_act( index_dimension ) = objects( index_object ).N_elements_axis( index_dimension );
-                    rep_act = objects( index_object ).N_elements_axis;
-                    rep_act( index_dimension ) = 1;
-                    intervals{ index_dimension } = repmat( reshape( physical_values.interval_position( lbs, ubs ), shape_act ), rep_act );
-
-                end % for index_dimension = 1:objects( index_object ).N_dimensions
-
-                % create aperture
-                objects( index_object ).aperture = transducers.face_planar_orthotope( intervals{ : } );
+                objects( index_object ).element_pitch_axis = element_pitch_axis( objects( index_object ).parameters );
+                objects( index_object ).aperture = create_aperture( objects( index_object ) );
 
             end % for index_object = 1:numel( objects )
 
         end % function objects = array_planar( parameters_planar, N_dimensions )
+
+        %------------------------------------------------------------------
+        % create aperture
+        %------------------------------------------------------------------
+        function apertures = create_aperture( arrays_planar )
+
+            % initialize cell array
+            apertures = cell( size( arrays_planar ) );
+
+            for index_object = 1:numel( arrays_planar )
+
+                % create position intervals for aperture
+                M_elements_axis = ( arrays_planar( index_object ).parameters.N_elements_axis - 1 ) / 2;
+                intervals = cell( 1, arrays_planar( index_object ).N_dimensions );
+
+                for index_dimension = 1:arrays_planar( index_object ).N_dimensions
+
+                    % compute lower and upper bounds on the position intervals on current axis
+                    pos_ctr = ( -M_elements_axis( index_dimension ):M_elements_axis( index_dimension ) ) * arrays_planar( index_object ).element_pitch_axis( index_dimension );
+                    pos_rel = arrays_planar( index_object ).parameters.element_width_axis( index_dimension ) ./ 2;
+                    lbs = pos_ctr - pos_rel;
+                    ubs = pos_ctr + pos_rel;
+
+                    % create position intervals
+                    shape_act = ones( 1, max( [ arrays_planar( index_object ).N_dimensions, 2 ] ) );
+                    shape_act( index_dimension ) = arrays_planar( index_object ).parameters.N_elements_axis( index_dimension );
+                    rep_act = arrays_planar( index_object ).parameters.N_elements_axis;
+                    rep_act( index_dimension ) = 1;
+                    intervals{ index_dimension } = repmat( reshape( physical_values.interval_length( lbs, ubs ), shape_act ), rep_act );
+
+                end % for index_dimension = 1:arrays_planar( index_object ).N_dimensions
+
+                % create aperture
+                apertures{ index_object } = transducers.face_planar_orthotope( intervals{ : } );
+
+            end % for index_object = 1:numel( arrays_planar )
+
+            % avoid cell array for single parameter object
+            if numel( arrays_planar ) == 1
+                apertures = apertures{ 1 };
+            end
+
+        end % function apertures = create_aperture( arrays_planar )
 
         %------------------------------------------------------------------
         % centers
@@ -103,7 +110,7 @@ classdef array_planar < transducers.array
             for index_object = 1:numel( arrays_planar )
 
                 % initialize results
-                objects_out{ index_object } = physical_values.position( zeros( arrays_planar( index_object ).N_elements, arrays_planar( index_object ).N_dimensions + 1 ) );
+                objects_out{ index_object } = physical_values.length( zeros( arrays_planar( index_object ).N_elements, arrays_planar( index_object ).N_dimensions + 1 ) );
 
                 % extract and augment center coordinates
                 pos_center = reshape( [ arrays_planar( index_object ).aperture.pos_center ], [ arrays_planar( index_object ).N_dimensions, arrays_planar( index_object ).N_elements ] )';

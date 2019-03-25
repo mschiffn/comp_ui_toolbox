@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-11
-% modified: 2019-02-13
+% modified: 2019-03-25
 %
 classdef orthotope_position < physical_values.orthotope
 
@@ -20,9 +20,9 @@ classdef orthotope_position < physical_values.orthotope
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class physical_values.interval_position for first argument (additional arguments must match in superclass)
-            if ~isa( varargin{ 1 }, 'physical_values.interval_position' )
-                errorStruct.message     = sprintf( 'Argument %d must be physical_values.interval_position!', 1 );
+            % ensure class physical_values.interval_length for first argument (additional arguments must match in superclass)
+            if ~isa( varargin{ 1 }, 'physical_values.interval_length' )
+                errorStruct.message     = sprintf( 'Argument %d must be physical_values.interval_length!', 1 );
                 errorStruct.identifier	= 'orthotope_position:NoPositionInterval';
                 error( errorStruct );
             end
