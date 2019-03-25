@@ -74,6 +74,16 @@ classdef coordinates_affine < coordinates.coordinates
                 error( errorStruct );
             end
 
+            % multiple objects_1 / single objects_2
+            if ~isscalar( objects_1 ) && isscalar( objects_2 )
+                objects_2 = repmat( objects_2, size( objects_1 ) );
+            end
+
+            % single objects_1 / multiple objects_2
+            if isscalar( objects_1 ) && ~isscalar( objects_2 )
+                objects_1 = repmat( objects_1, size( objects_2 ) );
+            end
+
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( objects_1, objects_2 );
 
@@ -84,6 +94,7 @@ classdef coordinates_affine < coordinates.coordinates
             results = objects_1;
 
             % add the affine coordinates
+            % TODO: very slow, use matrix operations
             for index_object = 1:numel( objects_1 )
                 results( index_object ).components = objects_1( index_object ).components + objects_2( index_object ).components;
             end

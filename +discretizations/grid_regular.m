@@ -36,9 +36,11 @@ classdef grid_regular < discretizations.grid
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for offset
-            if ~iscell( offset )
-                offset = { offset };
+            % ensure class coordinates.coordinates_cartesian
+            if ~isa( offset, 'coordinates.coordinates_cartesian' )
+                errorStruct.message     = 'offset must be coordinates.coordinates_cartesian!';
+                errorStruct.identifier	= 'grid_regular:NoCartesianCoordinates';
+                error( errorStruct );
             end
 
             % ensure class discretizations.parallelotope
@@ -64,13 +66,13 @@ classdef grid_regular < discretizations.grid
             %--------------------------------------------------------------
             % 3.) check and set independent properties
             %--------------------------------------------------------------
-            for index_object = 1:numel( N_points_axis )
+            for index_object = 1:numel( offset )
 
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( offset{ index_object }.components, cells_ref( index_object ).edge_lengths, N_points_axis{ index_object } );
+                auxiliary.mustBeEqualSize( offset( index_object ).components, cells_ref( index_object ).edge_lengths, N_points_axis{ index_object } );
 
                 % set independent properties
-                objects( index_object ).offset = offset{ index_object };
+                objects( index_object ).offset = offset( index_object );
                 objects( index_object ).cell_ref = cells_ref( index_object );
                 objects( index_object ).N_points_axis = N_points_axis{ index_object };
 
@@ -80,7 +82,7 @@ classdef grid_regular < discretizations.grid
                 % compute discrete positions of the grid points
                 objects( index_object ).positions = compute_positions( objects( index_object ) );
 
-            end % for index_object = 1:numel( N_points_axis )
+            end % for index_object = 1:numel( offset )
 
         end % function objects = grid_regular( offset, cells_ref, N_points_axis )
 
@@ -140,8 +142,9 @@ classdef grid_regular < discretizations.grid
                 indices_axis = inverse_index_transform( grids_regular( index_object ), indices_lattice );
 
                 % compute Cartesian coordinates of grid points
-                positions_rel = coordinates.coordinates_cartesian( indices_axis * double( ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis )' ) );
-                positions{ index_object } = repmat( grids_regular( index_object ).offset_axis, [grids_regular( index_object ).N_points, 1] ) + positions_rel;
+                % TODO: implement matrix multiplication for physical value
+                positions_rel = coordinates.coordinates_cartesian( indices_axis * double( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis )' );
+                positions{ index_object } = grids_regular( index_object ).offset + positions_rel;
 
             end % for index_object = 1:numel( grids_regular )
 
