@@ -71,9 +71,9 @@ classdef array_planar < transducers.array
 
                     % compute lower and upper bounds on the position intervals on current axis
                     pos_ctr = ( -M_elements_axis( index_dimension ):M_elements_axis( index_dimension ) ) * objects( index_object ).element_pitch_axis( index_dimension );
-                    pos_rel = objects( index_object ).element_width_axis( index_dimension ) / 2;
-                    lbs = physical_values.position( pos_ctr - pos_rel );
-                    ubs = physical_values.position( pos_ctr + pos_rel );
+                    pos_rel = objects( index_object ).element_width_axis( index_dimension ) ./ 2;
+                    lbs = coordinates.coordinates_cartesian( pos_ctr(:) - pos_rel );
+                    ubs = coordinates.coordinates_cartesian( pos_ctr(:) + pos_rel );
 
                     % create position intervals
                     shape_act = ones( 1, max( [ objects( index_object ).N_dimensions, 2 ] ) );

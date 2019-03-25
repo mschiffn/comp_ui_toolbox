@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-03-23
+% modified: 2019-03-25
 %
 classdef grid_regular < discretizations.grid
 
@@ -14,8 +14,8 @@ classdef grid_regular < discretizations.grid
 
         % independent properties
         offset ( 1, 1 ) coordinates.coordinates_cartesian = coordinates.coordinates_cartesian( [ 0, 1 ] )	% arbitrary offset
-        N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]      % numbers of grid points along each coordinate axis (1)
         cell_ref ( 1, 1 ) discretizations.parallelotope
+        N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]      % numbers of grid points along each coordinate axis (1)
 
         % dependent properties
         N_points ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 16384	% total number of grid points (1)
@@ -142,8 +142,7 @@ classdef grid_regular < discretizations.grid
                 indices_axis = inverse_index_transform( grids_regular( index_object ), indices_lattice );
 
                 % compute Cartesian coordinates of grid points
-                % TODO: implement matrix multiplication for physical value
-                positions_rel = coordinates.coordinates_cartesian( indices_axis * double( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis )' );
+                positions_rel = coordinates.coordinates_cartesian( indices_axis * ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis )' );
                 positions{ index_object } = grids_regular( index_object ).offset + positions_rel;
 
             end % for index_object = 1:numel( grids_regular )

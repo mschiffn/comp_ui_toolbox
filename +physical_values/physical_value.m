@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-02-13
+% modified: 2019-03-25
 %
 classdef physical_value
 
@@ -122,9 +122,18 @@ classdef physical_value
                 error( errorStruct );
             end
 
+            % multiple objects_1 / single objects_2
+            if ~isscalar( objects_1 ) && isscalar( objects_2 )
+                objects_2 = repmat( objects_2, size( objects_1 ) );
+            end
+
+            % single objects_1 / multiple objects_2
+            if isscalar( objects_1 ) && ~isscalar( objects_2 )
+                objects_1 = repmat( objects_1, size( objects_2 ) );
+            end
+
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( objects_1, objects_2 );
-            % assertion: objects_1 and objects_2 have equal size
 
             %--------------------------------------------------------------
             % 2.) perform addition
@@ -154,9 +163,18 @@ classdef physical_value
                 error( errorStruct );
             end
 
+            % multiple objects_1 / single objects_2
+            if ~isscalar( objects_1 ) && isscalar( objects_2 )
+                objects_2 = repmat( objects_2, size( objects_1 ) );
+            end
+
+            % single objects_1 / multiple objects_2
+            if isscalar( objects_1 ) && ~isscalar( objects_2 )
+                objects_1 = repmat( objects_1, size( objects_2 ) );
+            end
+
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( objects_1, objects_2 );
-            % assertion: objects_1 and objects_2 have equal size
 
             %--------------------------------------------------------------
             % 2.) perform subtraction
@@ -182,7 +200,7 @@ classdef physical_value
             if isa( inputs_1, 'physical_values.physical_value' ) && isnumeric( inputs_2 )
                 objects_in = inputs_1;
                 numbers_in = inputs_2;
-            elseif  isnumeric( inputs_1 ) && isa( inputs_2, 'physical_values.physical_value' )
+            elseif isnumeric( inputs_1 ) && isa( inputs_2, 'physical_values.physical_value' )
                 objects_in = inputs_2;
                 numbers_in = inputs_1;
             else
@@ -215,6 +233,64 @@ classdef physical_value
             end
 
         end % function objects_out = times( inputs_1, inputs_2 )
+
+        %------------------------------------------------------------------
+        % matrix multiplication (overload mtimes function)
+        %------------------------------------------------------------------
+        function objects_out = mtimes( inputs_1, inputs_2 )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % treat scalars by element-wise multiplication
+            if isscalar( inputs_1 ) || isscalar( inputs_2 )
+                objects_out = inputs_1 .* inputs_2;
+                return;
+            end
+
+            % ensure class physical_values.physical_value for result
+            if isa( inputs_1, 'physical_values.physical_value' ) && isnumeric( inputs_2 )
+                objects_in = inputs_1;
+                numbers_in = inputs_2;
+            elseif isnumeric( inputs_1 ) && isa( inputs_2, 'physical_values.physical_value' )
+                objects_in = inputs_2;
+                numbers_in = inputs_1;
+            else
+                errorStruct.message     = 'One argument must be numeric and one argument must be physical_values.physical_value!';
+                errorStruct.identifier	= 'mtimes:Arguments';
+                error( errorStruct );
+            end
+
+            % ensure matrices for objects_in and numbers_in
+            if ~( ismatrix( inputs_1 ) && ismatrix( inputs_2 ) )
+                errorStruct.message     = 'One argument must be numeric and one argument must be physical_values.physical_value!';
+                errorStruct.identifier	= 'mtimes:Arguments';
+                error( errorStruct );
+            end
+
+            % ensure valid sizes
+            if size( inputs_1, 2 ) ~= size( inputs_2, 1 )
+                errorStruct.message     = 'Invalid sizes for matrix multiplication!';
+                errorStruct.identifier	= 'mtimes:Arguments';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) compute products
+            %--------------------------------------------------------------
+            % repeat physical values to adopt subclass
+            objects_out = repmat( objects_in( 1 ), [ size( inputs_1, 1 ), size( inputs_2, 2 ) ] );
+
+            for index_out_row = 1:size( inputs_1, 1 )
+                for index_out_col = 1:size( inputs_2, 2 )
+                    objects_out( index_out_row, index_out_col ).value = 0;
+                    for index_in_col = 1:size( inputs_1, 2 )
+                        objects_out( index_out_row, index_out_col ).value = objects_out( index_out_row, index_out_col ).value + double( inputs_1( index_out_row, index_in_col ) ) * double( inputs_2( index_in_col, index_out_col ) );
+                    end
+                end
+            end
+
+        end % function objects_out = mtimes( inputs_1, inputs_2 )
 
         %------------------------------------------------------------------
         % right array division (overload rdivide function)

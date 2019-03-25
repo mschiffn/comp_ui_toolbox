@@ -17,24 +17,29 @@ classdef interval_position < physical_values.interval
         %------------------------------------------------------------------
         function objects = interval_position( lbs, ubs )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
             % set default values
             if nargin == 0
                 lbs = physical_values.position( 0 );
                 ubs = physical_values.position( 1 );
             end
 
-            % arguments must be physical_values.position
-            if ~( isa( lbs, 'physical_values.position' ) && isa( ubs, 'physical_values.position' ) )
-                errorStruct.message     = 'Both arguments must be physical_values.position!';
+            % arguments must be coordinates.coordinates_cartesian
+            if ~( isa( lbs, 'coordinates.coordinates_cartesian' ) && isa( ubs, 'coordinates.coordinates_cartesian' ) )
+                errorStruct.message     = 'Both arguments must be coordinates.coordinates_cartesian!';
                 errorStruct.identifier	= 'interval_position:NoPositions';
                 error( errorStruct );
             end
 
-            % constructor of superclass
+            %--------------------------------------------------------------
+            % 2.) constructor of superclass
+            %--------------------------------------------------------------
             objects@physical_values.interval( lbs, ubs );
 
-        end
+        end % function objects = interval_position( lbs, ubs )
 
 	end % methods
 
-end % classdef interval_position
+end % classdef interval_position < physical_values.interval

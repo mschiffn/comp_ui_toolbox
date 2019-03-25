@@ -45,7 +45,6 @@ classdef interval
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( lbs, ubs );
-            % assertion: lbs and ubs have equal sizes
 
             % ensure strictly monotonic increasing bounds
             if ~all( ubs > lbs, 'all' )

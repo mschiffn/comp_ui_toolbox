@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-22
-% modified: 2019-03-23
+% modified: 2019-03-25
 %
 classdef coordinates_affine < coordinates.coordinates
 
@@ -36,7 +36,7 @@ classdef coordinates_affine < coordinates.coordinates
             end
 
             % convert matrix to cell array
-            if ismatrix( components ) && isnumeric( components )
+            if ismatrix( components )
                 components = mat2cell( components, ones( size( components, 1 ), 1 ) );
             end
 
