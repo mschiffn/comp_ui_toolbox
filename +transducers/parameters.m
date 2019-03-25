@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-02-18
+% modified: 2019-03-25
 %
 classdef parameters
 
@@ -49,7 +49,6 @@ classdef parameters
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( N_elements_axis, str_model, str_vendor );
-            % assertion: N_elements_axis and str_name have equal sizes
 
             %--------------------------------------------------------------
             % 2.) create transducer array parameters

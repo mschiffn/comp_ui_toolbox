@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-02-18
+% modified: 2019-03-25
 %
 classdef parameters_planar < transducers.parameters
 
@@ -13,8 +13,8 @@ classdef parameters_planar < transducers.parameters
 	properties (SetAccess = private)
 
         % independent geometrical properties
-        element_width_axis ( 1, : ) double { mustBeReal, mustBePositive, mustBeFinite }     % widths of the vibrating faces along each coordinate axis (m)
-        element_kerf_axis ( 1, : ) double { mustBeReal, mustBeNonnegative, mustBeFinite }	% widths of the kerfs separating the adjacent elements along each coordinate axis (m)
+        element_width_axis ( 1, : ) physical_values.length	% widths of the vibrating faces along each coordinate axis (m)
+        element_kerf_axis ( 1, : ) physical_values.length	% widths of the kerfs separating the adjacent elements along each coordinate axis (m)
 
     end % properties
 
@@ -58,7 +58,6 @@ classdef parameters_planar < transducers.parameters
 
             % ensure equal number of dimensions and sizes of cell arrays
             auxiliary.mustBeEqualSize( N_elements_axis, element_width_axis, element_kerf_axis, str_model, str_vendor );
-            % assertion: N_elements_axis, element_width_axis, element_kerf_axis, and str_name have equal sizes
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
@@ -72,7 +71,6 @@ classdef parameters_planar < transducers.parameters
 
                 % ensure equal number of dimensions and sizes
                 auxiliary.mustBeEqualSize( objects( index_object ).N_elements_axis, element_width_axis{ index_object }, element_kerf_axis{ index_object } );
-                % assertion: N_elements_axis, element_width_axis, element_kerf_axis, and str_name have equal sizes
 
                 % set independent properties
                 objects( index_object ).element_width_axis = element_width_axis{ index_object };
@@ -80,8 +78,8 @@ classdef parameters_planar < transducers.parameters
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = parameters_planar( N_elements_axis, str_name )
+        end % function objects = parameters_planar( N_elements_axis, element_width_axis, element_kerf_axis, str_model, str_vendor )
 
 	end % methods
 
-end % classdef parameters_planar
+end % classdef parameters_planar < transducers.parameters

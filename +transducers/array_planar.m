@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-04-19
-% modified: 2019-03-18
+% modified: 2019-03-25
 %
 classdef array_planar < transducers.array
 
@@ -13,12 +13,12 @@ classdef array_planar < transducers.array
 	properties (SetAccess = private)
 
         % independent properties
-        element_width_axis ( 1, : ) double { mustBeReal, mustBePositive, mustBeFinite }     % widths of the vibrating faces along each coordinate axis (m)
-        element_kerf_axis ( 1, : ) double { mustBeReal, mustBeNonnegative, mustBeFinite }	% widths of the kerfs separating the adjacent elements along each coordinate axis (m)
+        element_width_axis ( 1, : ) physical_values.length	% widths of the vibrating faces along each coordinate axis (m)
+        element_kerf_axis ( 1, : ) physical_values.length	% widths of the kerfs separating the adjacent elements along each coordinate axis (m)
 
         % dependent properties
-        element_pitch_axis ( 1, : ) double { mustBeReal, mustBePositive, mustBeFinite }     % pitches along each coordinate axis (m)
-        aperture transducers.face_planar                                                    % aperture
+        element_pitch_axis ( 1, : ) physical_values.length	% pitches along each coordinate axis (m)
+        aperture transducers.face_planar                    % aperture
 
 	end % properties
 
