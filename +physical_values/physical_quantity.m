@@ -38,7 +38,7 @@ classdef physical_quantity < physical_values.transparent_container
             %--------------------------------------------------------------
             % default exponents
             if nargin < 1
-                exponents = zeros( 1, 7 );
+                exponents = zeros( 1, 8 );
                 exponents( 1 ) = 1;
             end
 
@@ -127,22 +127,27 @@ classdef physical_quantity < physical_values.transparent_container
             % 2.) assign class
             %--------------------------------------------------------------
             % investigate exponents and return appropriate classes
-            if isequal( physical_quantity.exponents, [ 1, 0, 0, 0, 0, 0, 0, 0, 0 ] )
+            if isequal( physical_quantity.exponents, [ 1, 0, 0, 0, 0, 0, 0, 0 ] )
                 result = physical_values.meter( physical_quantity.values );
-            elseif isequal( physical_quantity.exponents, [ 2, 0, 0, 0, 0, 0, 0, 0, 0 ] )
+            elseif isequal( physical_quantity.exponents, [ 2, 0, 0, 0, 0, 0, 0, 0 ] )
                 result = physical_values.squaremeter( physical_quantity.values );
-            elseif isequal( physical_quantity.exponents, [ 3, 0, 0, 0, 0, 0, 0, 0, 0 ] )
+            elseif isequal( physical_quantity.exponents, [ 3, 0, 0, 0, 0, 0, 0, 0 ] )
                 result = physical_values.cubicmeter( physical_quantity.values );
-            elseif isequal( physical_quantity.exponents, [ 0, 1, 0, 0, 0, 0, 0, 0, 0 ] )
+            elseif isequal( physical_quantity.exponents, [ 0, 1, 0, 0, 0, 0, 0, 0 ] )
                 result = physical_values.kilogram( physical_quantity.values );
-            elseif isequal( physical_quantity.exponents, [ 0, 0, 1, 0, 0, 0, 0, 0, 0 ] )
+            elseif isequal( physical_quantity.exponents, [ 0, 0, 1, 0, 0, 0, 0, 0 ] )
                 result = physical_values.second( physical_quantity.values );
-            elseif isequal( physical_quantity.exponents, [ 0, 0, -1, 0, 0, 0, 0, 0, 0 ] )
+            elseif isequal( physical_quantity.exponents, [ 0, 0, -1, 0, 0, 0, 0, 0 ] )
                 result = physical_values.hertz( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 0, 0, 0, 1, 0, 0, 0, 0 ] )
+                result = physical_values.ampere( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 1, 0, -1, 0, 0, 0, 0, 0 ] )
+                result = physical_values.meter_per_second( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 2, 1, -3, -1, 0, 0, 0, 0 ] )
+                result = physical_values.volt( physical_quantity.values );
             else
-                errorStruct.message     = 'Physical unit undefined!';
-                errorStruct.identifier	= 'determine_class:UnknownPhysicalUnit';
-                error( errorStruct );
+                result = physical_values.physical_quantity_derived( physical_quantity.exponents, physical_quantity.values );
+                warning( 'Physical unit of unknown class!' );
             end
 
         end

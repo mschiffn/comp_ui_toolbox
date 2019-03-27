@@ -1,11 +1,11 @@
 %
-% superclass for all current ratings
+% superclass for all velocities in meter per second
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
 % modified: 2019-03-27
 %
-classdef current_rating < physical_values.physical_quantity_base
+classdef meter_per_second < physical_values.velocity
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% methods
@@ -15,15 +15,15 @@ classdef current_rating < physical_values.physical_quantity_base
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = current_rating( varargin )
+        function objects = meter_per_second( varargin )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
-            objects@physical_values.physical_quantity_base( 4, varargin{ : } );
+            objects@physical_values.velocity( varargin{ : } );
 
-        end % function objects = current_rating( varargin )
+        end % function objects = meter_per_second( varargin )
 
 	end % methods
 
-end % classdef current_rating < physical_values.physical_quantity_base
+end % classdef meter_per_second < physical_values.velocity

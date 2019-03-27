@@ -31,11 +31,9 @@ xdc_array = transducers.L14_5_38( 1 );
 str_name = 'sim_study_obj_A_v2';
 str_excitation = 'cylindrical_waves';
 
-test = physical_values.millimeter;
-
-c_ref = physical_values.speed( 1500 );
-f_tx = physical_values.frequency( 4e6 );
-T_s = physical_values.time( 1 / 20e6 );
+c_ref = physical_values.meter_per_second( 1500 );
+f_tx = physical_values.hertz( 4e6 );
+T_s = physical_values.second( 1 / 20e6 );
 
 theta_incident = (77.5:2.5:102.5) * pi / 180;
 e_theta = physical_values.unit_vector( [ cos( theta_incident(:) ), zeros( numel( theta_incident ), 1 ), sin( theta_incident(:) ) ] );

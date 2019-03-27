@@ -1,11 +1,11 @@
 %
-% superclass for all time frequencies
+% superclass for all velocities
 %
 % author: Martin F. Schiffner
-% date: 2019-01-15
-% modified: 2019-03-27
+% date: 2019-03-26
+% modified: 2019-03-26
 %
-classdef frequency < physical_values.physical_quantity_derived
+classdef velocity < physical_values.physical_quantity_derived
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% methods
@@ -15,17 +15,18 @@ classdef frequency < physical_values.physical_quantity_derived
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = frequency( varargin )
+        function objects = velocity( varargin )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
             exponents = zeros( 1, 8 );
+            exponents( 1 ) = 1;
             exponents( 3 ) = -1;
             objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
 
-        end % function objects = frequency( varargin )
+        end
 
 	end % methods
 
-end % classdef frequency < physical_values.physical_quantity_derived
+end % classdef velocity < physical_values.physical_quantity_derived

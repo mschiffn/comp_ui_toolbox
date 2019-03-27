@@ -21,7 +21,7 @@ classdef physical_quantity_base < physical_values.physical_quantity
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure physical base quantities
-            exponents = zeros( 1, 7 );
+            exponents = zeros( 1, 8 );
             exponents( index_exponent ) = 1;
 
             %--------------------------------------------------------------

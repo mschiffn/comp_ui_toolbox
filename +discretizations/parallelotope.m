@@ -1,5 +1,5 @@
 %
-% superclass for all parallelotopes
+% superclass for all d-parallelotopes
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21

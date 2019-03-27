@@ -20,7 +20,7 @@ classdef voltage < physical_values.physical_quantity_derived
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
-            exponents = zeros( 1, 7 );
+            exponents = zeros( 1, 8 );
             exponents( 1 ) = 2;
             exponents( 2 ) = 1;
             exponents( 3 ) = -3;

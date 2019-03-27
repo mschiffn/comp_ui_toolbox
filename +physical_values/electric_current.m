@@ -1,11 +1,11 @@
 %
-% superclass for all time frequencies
+% superclass for all electric currents
 %
 % author: Martin F. Schiffner
-% date: 2019-01-15
+% date: 2019-03-27
 % modified: 2019-03-27
 %
-classdef frequency < physical_values.physical_quantity_derived
+classdef electric_current < physical_values.physical_quantity_base
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% methods
@@ -15,17 +15,15 @@ classdef frequency < physical_values.physical_quantity_derived
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = frequency( varargin )
+        function objects = electric_current( varargin )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
-            exponents = zeros( 1, 8 );
-            exponents( 3 ) = -1;
-            objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
+            objects@physical_values.physical_quantity_base( 4, varargin{ : } );
 
-        end % function objects = frequency( varargin )
+        end % function objects = electric_current( varargin )
 
 	end % methods
 
-end % classdef frequency < physical_values.physical_quantity_derived
+end % classdef electric_current < physical_values.physical_quantity_base

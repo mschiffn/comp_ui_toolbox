@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-02-12
+% modified: 2019-03-27
 %
-classdef interval < physical_values.physical_quantity
+classdef interval < physical_values.transparent_container
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% properties
