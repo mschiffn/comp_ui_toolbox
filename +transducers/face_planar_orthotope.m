@@ -4,7 +4,7 @@
 % date: 2019-02-18
 % modified: 2019-03-25
 %
-classdef face_planar_orthotope < transducers.face_planar & physical_values.orthotope_position
+classdef face_planar_orthotope < transducers.face_planar & physical_values.orthotope
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % properties
@@ -30,7 +30,7 @@ classdef face_planar_orthotope < transducers.face_planar & physical_values.ortho
             % 1.) constructors of superclasses
             %--------------------------------------------------------------
             objects@transducers.face_planar();
-            objects@physical_values.orthotope_position( varargin{ : } );
+            objects@physical_values.orthotope( varargin{ : } );
 
             for index_object = 1:numel( objects )
                 objects( index_object ).pos_center = center( objects( index_object ) );

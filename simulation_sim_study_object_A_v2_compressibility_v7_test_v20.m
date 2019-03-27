@@ -19,7 +19,7 @@ addpath( genpath( sprintf('%s/toolbox/spgl1-1.8/', matlabroot) ) );
 %% physical parameters of linear array L14-5/38
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-xdc_array = transducers.L14_5_38( 1 );
+xdc_array = transducers.L14_5_38( 2 );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% signal processing parameters, load and process plane wave data
@@ -55,10 +55,11 @@ absorption_model = absorption_models.time_causal( 0, 2.17e-3, 2, c_ref, double( 
 %% define lattice
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-FOV_size_axis = physical_values.position( xdc_array.N_elements_axis(1) * xdc_array.element_pitch_axis(1) * ones( 1, 3 ) );
-FOV_size_axis(2) = physical_values.position( 76.5e-6 );
-FOV_intervals_lateral = physical_values.interval_position( - FOV_size_axis( 1:2 ) ./ 2, FOV_size_axis( 1:2 ) ./ 2 );
-FOV_interval_axial = physical_values.interval_position( physical_values.position( 0 ), FOV_size_axis( 1 ) );
+FOV_size_axis = xdc_array.parameters.N_elements_axis(1) * xdc_array.element_pitch_axis(1) * ones( 1, 3 );
+FOV_size_axis( 2 ) = physical_values.meter( 76.5e-6 );
+
+FOV_intervals_lateral = physical_values.interval( - FOV_size_axis( 1:2 ) ./ 2, FOV_size_axis( 1:2 ) ./ 2 );
+FOV_interval_axial = physical_values.interval( physical_values.meter( 0 ), FOV_size_axis( 1 ) );
 
 FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral(1), FOV_intervals_lateral(2), FOV_interval_axial );
 
@@ -67,16 +68,19 @@ FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral(1), FOV_intervals_later
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % specify recording time interval
-interval_t = physical_values.interval_time( 0 .* T_s, 1700 .* T_s );
+t_lb = 0 .* T_s;        % lower cut-off time
+t_ub = 1700 .* T_s;     % upper cut-off time
+interval_t = physical_values.interval( t_lb, t_ub );
 
 % specify bandwidth to perform simulation in
-f_lb = f_tx .* ( 1 - 0.5 * frac_bw );	% lower cut-off frequency (Hz)
-f_ub = f_tx .* ( 1 + 0.5 * frac_bw );	% upper cut-off frequency (Hz)
-interval_f = physical_values.interval_frequency( f_lb, f_ub );
+f_lb = f_tx .* ( 1 - 0.5 * frac_bw );       % lower cut-off frequency
+f_ub = f_tx .* ( 1 + 0.5 * frac_bw );       % upper cut-off frequency
+interval_f = physical_values.interval( f_lb, f_ub );
 
 % create pulse-echo measurement setup
 setup = pulse_echo_measurements.setup( xdc_array, FOV_cs, absorption_model, 'wire_phantom' );
 
+% create excitation voltages
 excitation_voltages_common = syntheses.excitation_voltage( axis_t, { physical_values.voltage( u_tx_tilde ) } );
 
 % create pulse-echo measurement sequence

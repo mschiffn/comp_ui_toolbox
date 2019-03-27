@@ -29,18 +29,18 @@ classdef parameters_L14_5_38 < transducers.parameters_planar
             % 2.) geometrical specifications
             %--------------------------------------------------------------
             N_elements_axis	= [128, 1];                                             % number of physical elements along each coordinate axis (1)
-            element_width_axis	= physical_values.length( [279.8, 4000] * 1e-6 );   % widths of physical elements along each coordinate axis (m)
-            element_kerf_axis	= physical_values.length( [25, 0] * 1e-6 );         % kerfs between physical elements along each coordinate axis (m)
+            element_width_axis	= physical_values.meter( [ 279.8, 4000 ] * 1e-6 );	% widths of physical elements along each coordinate axis
+            element_kerf_axis	= physical_values.meter( [ 25, 0 ] * 1e-6 );        % kerfs between physical elements along each coordinate axis
 
             %--------------------------------------------------------------
             % 3.) acoustic lens specifications
             %--------------------------------------------------------------
-            elevational_focus = physical_values.length( 16e-3 );	% axial distance of the elevational focus (m)
+            elevational_focus = physical_values.meter( 16e-3 );	% axial distance of the elevational focus
 
             %--------------------------------------------------------------
             % 4.) electromechanical specifications
             %--------------------------------------------------------------
-            f_center  = physical_values.frequency( 7.5e6 );	% temporal center frequency (Hz)
+            f_center  = physical_values.hertz( 7.5e6 );     % temporal center frequency
             B_frac_lb = 0.65;                               % fractional bandwidth at -6 dB (1)
 
             %--------------------------------------------------------------

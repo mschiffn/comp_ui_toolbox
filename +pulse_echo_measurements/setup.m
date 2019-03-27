@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2019-02-15
+% modified: 2019-03-27
 %
 classdef setup < handle
 
@@ -17,8 +17,8 @@ classdef setup < handle
         FOV ( 1, 1 ) fields_of_view.field_of_view                       % field of view
         % TODO: properties of the lossy homogeneous fluid
         absorption_model ( 1, 1 ) absorption_models.absorption_model = absorption_models.time_causal( 0, 0.5, 1, 1540, 4e6, 1 )	% absorption model for the lossy homogeneous fluid
-        c_avg = 1500;                                                   % average small-signal sound speed
-        T_clk = physical_values.time( 1 / 80e6 );                       % time period of the clock signal (Hz)
+        c_avg = physical_values.meter_per_second( 1500 );               % average small-signal sound speed
+        T_clk = physical_values.second( 1 / 80e6 );                     % time period of the clock signal
         str_name = 'default'                                            % name
 
     end % properties
@@ -38,8 +38,8 @@ classdef setup < handle
             %--------------------------------------------------------------
             % ensure matching number of dimensions
             if xdc_array.N_dimensions ~= ( FOV.N_dimensions - 1 )
-                errorStruct.message     = 'parameters must be transducers.parameters!';
-                errorStruct.identifier	= 'array:NoParameters';
+                errorStruct.message     = 'The number of dimensions in FOV must exceed that in xdc_array by unity!';
+                errorStruct.identifier	= 'array:DimensionMismatch';
                 error( errorStruct );
             end
 

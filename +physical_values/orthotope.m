@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-11
-% modified: 2019-03-18
+% modified: 2019-03-27
 %
 classdef orthotope
 
@@ -13,10 +13,11 @@ classdef orthotope
 	properties (SetAccess = private)
 
         % independent properties
-        intervals ( 1, : ) physical_values.interval                     % intervals of physical values
+        intervals ( 1, : ) physical_values.interval	% intervals of physical quantities
 
         % dependent properties
         N_dimensions ( 1, 1 ) { mustBeInteger, mustBeNonempty } = 0     % number of dimensions
+
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -29,14 +30,14 @@ classdef orthotope
         %------------------------------------------------------------------
         function objects = orthotope( varargin )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
             % return if no argument
             if nargin == 0
                 return;
             end
 
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
             % ensure equal subclasses of physical_values.interval
             auxiliary.mustBeEqualSubclasses( 'physical_values.interval', varargin{ : } );
 

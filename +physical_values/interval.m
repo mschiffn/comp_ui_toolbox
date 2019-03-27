@@ -5,7 +5,7 @@
 % date: 2019-01-21
 % modified: 2019-03-27
 %
-classdef interval < physical_values.transparent_container
+classdef interval
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% properties
@@ -41,7 +41,7 @@ classdef interval < physical_values.transparent_container
             mustBeNonempty( ubs );
 
             % ensure equal subclasses of physical_values.physical_value
-            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_value', lbs, ubs );
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', lbs, ubs );
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( lbs, ubs );
@@ -56,12 +56,11 @@ classdef interval < physical_values.transparent_container
             %--------------------------------------------------------------
             % 2.) create intervals
             %--------------------------------------------------------------
-            % construct objects
-            N_objects = numel( lbs );
+            % repeat objects
             objects = repmat( objects, size( lbs ) );
 
             % set independent properties
-            for index_object = 1:N_objects
+            for index_object = 1:numel( lbs )
 
                 objects( index_object ).lb = lbs( index_object );
                 objects( index_object ).ub = ubs( index_object );
