@@ -13,7 +13,8 @@ classdef grid
 	properties (SetAccess = private)
 
         % independent properties
-        N_dimensions ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 2              % number of dimensions (1)
+        N_dimensions ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 2	% number of dimensions (1)
+        %TODO: positions, N_points
 
     end % properties
 

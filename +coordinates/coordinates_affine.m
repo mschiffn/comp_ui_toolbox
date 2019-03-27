@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-22
-% modified: 2019-03-25
+% modified: 2019-03-27
 %
 classdef coordinates_affine < coordinates.coordinates
 
@@ -13,7 +13,7 @@ classdef coordinates_affine < coordinates.coordinates
 	properties (SetAccess = private)
 
         % independent properties
-        components physical_values.length
+        components ( :, : ) physical_values.length
 
     end % properties
 
@@ -32,12 +32,7 @@ classdef coordinates_affine < coordinates.coordinates
             %--------------------------------------------------------------
             % return for no input arguments
             if nargin == 0
-                components = physical_values.length( zeros( 1, 2 ) );
-            end
-
-            % convert matrix to cell array
-            if ismatrix( components )
-                components = mat2cell( components, ones( size( components, 1 ), 1 ) );
+                components = physical_values.meter( zeros( 1, 2 ) );
             end
 
             % ensure cell array for components
@@ -54,52 +49,20 @@ classdef coordinates_affine < coordinates.coordinates
             % 3.) set independent properties
             %--------------------------------------------------------------
             for index_object = 1:numel( objects )
+
+                % ensure class physical_values.length
+                if ~isa( components{ index_object }, 'physical_values.length' )
+                    errorStruct.message     = sprintf( 'components{ index_object } must be physical_values.length!', index_object );
+                    errorStruct.identifier	= 'coordinates_affine:NoLengths';
+                    error( errorStruct );
+                end
+
+                % set independent properties
                 objects( index_object ).components = components{ index_object };
-            end
+
+            end % for index_object = 1:numel( objects )
 
         end % function objects = coordinates_affine( components )
-
-        %------------------------------------------------------------------
-        % addition (overload plus function)
-        %------------------------------------------------------------------
-        function results = plus( objects_1, objects_2 )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure equal classes
-            if ~strcmp( class( objects_1 ), class( objects_2 ) )
-                errorStruct.message     = 'Both arguments must have the same class!';
-                errorStruct.identifier	= 'plus:ClassMismatch';
-                error( errorStruct );
-            end
-
-            % multiple objects_1 / single objects_2
-            if ~isscalar( objects_1 ) && isscalar( objects_2 )
-                objects_2 = repmat( objects_2, size( objects_1 ) );
-            end
-
-            % single objects_1 / multiple objects_2
-            if isscalar( objects_1 ) && ~isscalar( objects_2 )
-                objects_1 = repmat( objects_1, size( objects_2 ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( objects_1, objects_2 );
-
-            %--------------------------------------------------------------
-            % 2.) perform addition
-            %--------------------------------------------------------------
-            % create results of the same class
-            results = objects_1;
-
-            % add the affine coordinates
-            % TODO: very slow, use matrix operations
-            for index_object = 1:numel( objects_1 )
-                results( index_object ).components = objects_1( index_object ).components + objects_2( index_object ).components;
-            end
-
-        end % function results = plus( objects_1, objects_2 )
 
     end % methods
 

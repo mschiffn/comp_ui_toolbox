@@ -1,11 +1,11 @@
 %
-% superclass for all time frequencies
+% superclass for all masses
 %
 % author: Martin F. Schiffner
-% date: 2019-01-15
+% date: 2019-03-26
 % modified: 2019-03-27
 %
-classdef frequency < physical_values.physical_quantity_derived
+classdef mass < physical_values.physical_quantity_base
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% methods
@@ -15,17 +15,15 @@ classdef frequency < physical_values.physical_quantity_derived
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = frequency( varargin )
+        function objects = mass( varargin )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
-            exponents = zeros( 1, 7 );
-            exponents( 3 ) = -1;
-            objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
+            objects@physical_values.physical_quantity_base( 2, varargin{ : } );
 
-        end % function objects = frequency( varargin )
+        end % function objects = mass( values )
 
 	end % methods
 
-end % classdef frequency < physical_values.physical_quantity_derived
+end % classdef mass < physical_values.physical_quantity_base

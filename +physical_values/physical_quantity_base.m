@@ -1,11 +1,11 @@
 %
-% superclass for all regular grids using cuboids
+% superclass for all physical base quantities
 %
 % author: Martin F. Schiffner
-% date: 2018-01-23
-% modified: 2019-03-23
+% date: 2019-03-21
+% modified: 2019-03-27
 %
-classdef grid_regular_orthogonal < discretizations.grid_regular
+classdef physical_quantity_base < physical_values.physical_quantity
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -15,21 +15,22 @@ classdef grid_regular_orthogonal < discretizations.grid_regular
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = grid_regular_orthogonal( offset, delta_axis, N_points_axis )
+        function objects = physical_quantity_base( index_exponent, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % reference cells are cuboids
-            cells_ref = discretizations.parallelotope( delta_axis );
+            % ensure physical base quantities
+            exponents = zeros( 1, 7 );
+            exponents( index_exponent ) = 1;
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.grid_regular( offset, cells_ref, N_points_axis );
+            objects@physical_values.physical_quantity( exponents, varargin{ : } );
 
-        end % function objects = grid_regular_orthogonal( offset, delta_axis, N_points_axis )
+        end % function objects = physical_quantity_base( index_exponent, varargin )
 
-    end % methods
+	end % methods
 
-end % classdef grid_regular_orthogonal < discretizations.grid_regular
+end % classdef physical_quantity_base < physical_values.physical_quantity

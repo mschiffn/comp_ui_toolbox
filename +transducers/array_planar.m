@@ -73,7 +73,7 @@ classdef array_planar < transducers.array
 
                     % compute lower and upper bounds on the position intervals on current axis
                     pos_ctr = ( -M_elements_axis( index_dimension ):M_elements_axis( index_dimension ) ) * arrays_planar( index_object ).element_pitch_axis( index_dimension );
-                    pos_rel = arrays_planar( index_object ).parameters.element_width_axis( index_dimension ) ./ 2;
+                    pos_rel = arrays_planar( index_object ).parameters.element_width_axis( index_dimension ) / 2;
                     lbs = pos_ctr - pos_rel;
                     ubs = pos_ctr + pos_rel;
 

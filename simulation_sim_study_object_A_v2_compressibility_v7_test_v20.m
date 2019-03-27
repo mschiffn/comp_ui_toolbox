@@ -19,7 +19,7 @@ addpath( genpath( sprintf('%s/toolbox/spgl1-1.8/', matlabroot) ) );
 %% physical parameters of linear array L14-5/38
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-xdc_array = transducers.L14_5_38( 2 );
+xdc_array = transducers.L14_5_38( 1 );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% signal processing parameters, load and process plane wave data
@@ -31,7 +31,9 @@ xdc_array = transducers.L14_5_38( 2 );
 str_name = 'sim_study_obj_A_v2';
 str_excitation = 'cylindrical_waves';
 
-c_ref = 1500;
+test = physical_values.millimeter;
+
+c_ref = physical_values.speed( 1500 );
 f_tx = physical_values.frequency( 4e6 );
 T_s = physical_values.time( 1 / 20e6 );
 

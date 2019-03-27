@@ -5,7 +5,7 @@
 % date: 2019-01-21
 % modified: 2019-02-12
 %
-classdef interval
+classdef interval < physical_values.physical_quantity
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% properties
@@ -13,8 +13,8 @@ classdef interval
 	properties (SetAccess = private)
 
         % independent properties
-        lb ( 1, 1 ) physical_values.physical_value	% lower bound
-        ub ( 1, 1 ) physical_values.physical_value	% upper bound
+        lb physical_values.physical_quantity	% lower bound
+        ub physical_values.physical_quantity	% upper bound
 
     end % properties
 

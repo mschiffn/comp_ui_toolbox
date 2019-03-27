@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21
-% modified: 2019-03-23
+% modified: 2019-03-27
 %
 classdef parallelotope
 
@@ -17,7 +17,7 @@ classdef parallelotope
         basis ( 1, : ) physical_values.unit_vector
 
         % dependent properties
-        volume ( 1, 1 ) double { mustBePositive } = 1
+        volume ( 1, 1 ) physical_values.physical_quantity
 
     end % properties
 
@@ -96,7 +96,7 @@ classdef parallelotope
                 objects( index_object ).volume = compute_volume( objects( index_object ) );
 
                 % ensure linearly independent unit vectors in basis
-                if objects( index_object ).volume < eps
+                if double( objects( index_object ).volume ) < eps
                     errorStruct.message = sprintf( 'physical_values.unit_vector in basis{ %d } must be linearly independent!', index_object );
                     errorStruct.identifier	= 'parallelotope:NoBasis';
                     error( errorStruct );
@@ -111,16 +111,21 @@ classdef parallelotope
         %------------------------------------------------------------------
         function results = compute_volume( parallelotopes )
 
-            % initialize results
-            results = zeros( size( parallelotopes ) );
+            % initialize cell array to enable diverse physical units
+            results = cell( size( parallelotopes ) );
 
             % iterate parallelotopes
             for index_object = 1:numel( parallelotopes )
 
                 % compute volume as absolute value of the determinant of the basis vectors
-                results( index_object ) = abs( det( double( parallelotopes( index_object ).edge_lengths .* parallelotopes( index_object ).basis ) ) );
+                results{ index_object } = abs( det( parallelotopes( index_object ).edge_lengths .* parallelotopes( index_object ).basis ) );
 
             end % for index_object = 1:numel( parallelotopes )
+
+            % avoid cell array for single parallelotope
+            if numel( parallelotopes ) == 1
+                results = results{ 1 };
+            end
 
         end % function results = compute_volume( parallelotopes )
 

@@ -13,13 +13,13 @@ classdef grid_regular < discretizations.grid
 	properties (SetAccess = private)
 
         % independent properties
-        offset ( 1, 1 ) coordinates.coordinates_cartesian = coordinates.coordinates_cartesian( [ 0, 1 ] )	% arbitrary offset
-        cell_ref ( 1, 1 ) discretizations.parallelotope
-        N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]      % numbers of grid points along each coordinate axis (1)
+        offset ( 1, : ) physical_values.length              % arbitrary offset
+        cell_ref ( 1, 1 ) discretizations.parallelotope     % elementary cell
+        N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]	 % numbers of grid points along each coordinate axis (1)
 
         % dependent properties
         N_points ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 16384	% total number of grid points (1)
-        positions ( :, : ) coordinates.coordinates_cartesian         % discrete positions of the grid points (m)
+        positions ( :, : ) physical_values.length           % discrete positions of the grid points
 
     end % properties
 
@@ -36,16 +36,14 @@ classdef grid_regular < discretizations.grid
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class coordinates.coordinates_cartesian
-            if ~isa( offset, 'coordinates.coordinates_cartesian' )
-                errorStruct.message     = 'offset must be coordinates.coordinates_cartesian!';
-                errorStruct.identifier	= 'grid_regular:NoCartesianCoordinates';
-                error( errorStruct );
+            % ensure cell array for offset
+            if ~iscell( offset )
+                offset = { offset };
             end
 
             % ensure class discretizations.parallelotope
             if ~isa( cells_ref, 'discretizations.parallelotope' )
-                errorStruct.message     = 'grid_regular must be discretizations.parallelotope!';
+                errorStruct.message     = 'cells_ref must be discretizations.parallelotope!';
                 errorStruct.identifier	= 'grid_regular:NoParallelotopes';
                 error( errorStruct );
             end
@@ -68,11 +66,18 @@ classdef grid_regular < discretizations.grid
             %--------------------------------------------------------------
             for index_object = 1:numel( offset )
 
+                % ensure class physical_values.length
+                if ~isa( offset{ index_object }, 'physical_values.length' )
+                    errorStruct.message     = 'offset must be physical_values.length!';
+                    errorStruct.identifier	= 'grid_regular:NoCartesianCoordinates';
+                    error( errorStruct );
+                end
+
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( offset( index_object ).components, cells_ref( index_object ).edge_lengths, N_points_axis{ index_object } );
+                auxiliary.mustBeEqualSize( offset{ index_object }, cells_ref( index_object ).edge_lengths, N_points_axis{ index_object } );
 
                 % set independent properties
-                objects( index_object ).offset = offset( index_object );
+                objects( index_object ).offset = offset{ index_object };
                 objects( index_object ).cell_ref = cells_ref( index_object );
                 objects( index_object ).N_points_axis = N_points_axis{ index_object };
 
@@ -142,7 +147,7 @@ classdef grid_regular < discretizations.grid
                 indices_axis = inverse_index_transform( grids_regular( index_object ), indices_lattice );
 
                 % compute Cartesian coordinates of grid points
-                positions_rel = coordinates.coordinates_cartesian( indices_axis * ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis )' );
+                positions_rel = indices_axis * ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis );
                 positions{ index_object } = grids_regular( index_object ).offset + positions_rel;
 
             end % for index_object = 1:numel( grids_regular )

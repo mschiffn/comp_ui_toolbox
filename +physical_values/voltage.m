@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-15
-% modified: 2019-01-23
+% modified: 2019-03-27
 %
-classdef voltage < physical_values.physical_value
+classdef voltage < physical_values.physical_quantity_derived
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% methods
@@ -15,17 +15,20 @@ classdef voltage < physical_values.physical_value
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function obj = voltage( values )
+        function objects = voltage( varargin )
 
-            % check number of arguments
-%             if nargin ~= 1
-%                 errorStruct.message     = 'The number of arguments must equal unity!';
-%                 errorStruct.identifier	= 'voltage:Arguments';
-%                 error( errorStruct );
-%             end
+            %--------------------------------------------------------------
+            % 1.) constructor of superclass
+            %--------------------------------------------------------------
+            exponents = zeros( 1, 7 );
+            exponents( 1 ) = 2;
+            exponents( 2 ) = 1;
+            exponents( 3 ) = -3;
+            exponents( 4 ) = -1;
+            objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
 
-            % constructor of superclass
-            obj@physical_values.physical_value( values );
-        end
+        end % function objects = voltage( varargin )
+
 	end % methods
-end % classdef voltage
+
+end % classdef voltage < physical_values.physical_quantity_derived
