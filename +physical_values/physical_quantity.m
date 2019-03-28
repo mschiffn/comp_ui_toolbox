@@ -152,6 +152,7 @@ classdef physical_quantity < physical_values.transparent_container
 
         end
 
+        % TODO: micro, milli, kilo, mega,
         %------------------------------------------------------------------
         % 2.) overload built-in type conversion functions
         %------------------------------------------------------------------
@@ -177,6 +178,11 @@ classdef physical_quantity < physical_values.transparent_container
         
             % check exponents of remaining arguments
             for index_arg = 1:numel( varargin )
+
+                % skip empty argument
+                if isempty( varargin{ index_arg } )
+                    continue;
+                end
 
                 % ensure class physical_values.physical_quantity
                 if ~isa( varargin{ index_arg }, 'physical_values.physical_quantity' )
@@ -263,6 +269,11 @@ classdef physical_quantity < physical_values.transparent_container
 
         end
 
+        % sum of array elements
+        function physical_quantity = sum( physical_quantity, varargin )
+            physical_quantity.values = sum( physical_quantity.values, varargin{ : } );
+        end
+
         % addition
         function physical_quantity_1 = plus( physical_quantity_1, physical_quantity_2 )
 
@@ -328,6 +339,31 @@ classdef physical_quantity < physical_values.transparent_container
 
             physical_quantity.exponents = size( physical_quantity.values, 1 ) * physical_quantity.exponents;
             physical_quantity.values = det( physical_quantity.values );
+            physical_quantity = determine_class( physical_quantity );
+        end
+
+        % element-wise power
+        function physical_quantity = power( physical_quantity, power )
+
+            % ensure numeric nonempty power
+% TODO: scalar vs matrix
+            if ~( isnumeric( power ) && isscalar( power ) ) || isempty( power)
+                errorStruct.message     = 'power must be numeric and nonempty!';
+                errorStruct.identifier	= 'power:InvalidPower';
+                error( errorStruct );
+            end
+
+            % compute element-wise power
+            physical_quantity.exponents = power * physical_quantity.exponents;
+            physical_quantity.values = physical_quantity.values.^power;
+            physical_quantity = determine_class( physical_quantity );
+
+        end
+
+        % square root
+        function physical_quantity = sqrt( physical_quantity )
+            physical_quantity.exponents = physical_quantity.exponents / 2;
+            physical_quantity.values = sqrt( physical_quantity.values );
             physical_quantity = determine_class( physical_quantity );
         end
 

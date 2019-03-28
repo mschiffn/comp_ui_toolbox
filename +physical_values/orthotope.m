@@ -163,8 +163,9 @@ classdef orthotope
             % initialize parameter cell arrays
             N_points_axis = cell( size( orthotopes ) );
             delta_axis = cell( size( orthotopes ) );
-            grid_offset_axis = cell( size( orthotopes ) );
+            offset_axis = cell( size( orthotopes ) );
 
+            % iterate orthotopes
             for index_object = 1:numel( orthotopes )
 
                 switch class( parameters( index_object ) )
@@ -178,7 +179,7 @@ classdef orthotope
                         auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, N_points_axis{ index_object } );
 
                         % distances between adjacent grid points along each axis
-                        delta_axis{ index_object } = double( abs( orthotopes( index_object ).intervals ) ) ./ N_points_axis{ index_object };
+                        delta_axis{ index_object } = abs( orthotopes( index_object ).intervals ) ./ N_points_axis{ index_object };
 
                     case 'discretizations.parameters_distance'
 
@@ -201,14 +202,15 @@ classdef orthotope
 
                 % offset along each axis
                 M_points_axis = ( N_points_axis{ index_object } - 1 ) / 2;
-                grid_offset_axis{ index_object } = double( center( orthotopes( index_object ) ) ) - M_points_axis .* delta_axis{ index_object };
+                offset_axis{ index_object } = center( orthotopes( index_object ) ) - M_points_axis .* delta_axis{ index_object };
 
             end % for index_object = 1:numel( orthotopes )
 
             %--------------------------------------------------------------
-            % 3.) create regular grids
+            % 3.) create orthogonal regular grids
             %--------------------------------------------------------------
-            objects_out = discretizations.grid( N_points_axis, delta_axis, grid_offset_axis );
+            % TODO: specify subtype of regular grid
+            objects_out = discretizations.grid_regular_orthogonal( offset_axis, delta_axis, N_points_axis );
 
         end % function objects_out = discretize( orthotopes, parameters )
 
