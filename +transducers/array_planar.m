@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-04-19
-% modified: 2019-03-25
+% modified: 2019-03-28
 %
 classdef array_planar < transducers.array
 
@@ -82,7 +82,7 @@ classdef array_planar < transducers.array
                     shape_act( index_dimension ) = arrays_planar( index_object ).parameters.N_elements_axis( index_dimension );
                     rep_act = arrays_planar( index_object ).parameters.N_elements_axis;
                     rep_act( index_dimension ) = 1;
-                    intervals{ index_dimension } = repmat( reshape( physical_values.interval( lbs, ubs ), shape_act ), rep_act );
+                    intervals{ index_dimension } = repmat( reshape( math.interval( lbs, ubs ), shape_act ), rep_act );
 
                 end % for index_dimension = 1:arrays_planar( index_object ).N_dimensions
 

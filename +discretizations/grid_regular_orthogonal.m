@@ -15,7 +15,7 @@ classdef grid_regular_orthogonal < discretizations.grid_regular
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = grid_regular_orthogonal( offset, delta_axis, N_points_axis )
+        function objects = grid_regular_orthogonal( offset_axis, delta_axis, N_points_axis )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -26,9 +26,9 @@ classdef grid_regular_orthogonal < discretizations.grid_regular
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.grid_regular( offset, cells_ref, N_points_axis );
+            objects@discretizations.grid_regular( offset_axis, cells_ref, N_points_axis );
 
-        end % function objects = grid_regular_orthogonal( offset, delta_axis, N_points_axis )
+        end % function objects = grid_regular_orthogonal( offset_axis, delta_axis, N_points_axis )
 
     end % methods
 

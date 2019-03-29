@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-30
-% modified: 2019-03-23
+% modified: 2019-03-28
 %
 classdef ( InferiorClasses = {?physical_values.physical_quantity,?physical_values.meter} ) unit_vector
 
@@ -121,14 +121,14 @@ classdef ( InferiorClasses = {?physical_values.physical_quantity,?physical_value
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            if isa( inputs_1, 'physical_values.unit_vector' ) && ( isnumeric( inputs_2 ) || isa( inputs_2, 'physical_values.physical_quantity' ) )
+            if isa( inputs_1, 'math.unit_vector' ) && ( isnumeric( inputs_2 ) || isa( inputs_2, 'physical_values.physical_quantity' ) )
                 unit_vectors = inputs_1;
                 num_or_phys_val_in = inputs_2;
-            elseif ( isnumeric( inputs_1 ) || isa( inputs_1, 'physical_values.physical_quantity' ) ) && isa( inputs_2, 'physical_values.unit_vector' )
+            elseif ( isnumeric( inputs_1 ) || isa( inputs_1, 'physical_values.physical_quantity' ) ) && isa( inputs_2, 'math.unit_vector' )
                 unit_vectors = inputs_2;
                 num_or_phys_val_in = inputs_1;
             else
-                errorStruct.message     = 'One argument must be numeric or physical_values.physical_quantity and one argument must be physical_values.unit_vector!';
+                errorStruct.message     = 'One argument must be numeric or physical_values.physical_quantity and one argument must be math.unit_vector!';
                 errorStruct.identifier	= 'times:Arguments';
                 error( errorStruct );
             end

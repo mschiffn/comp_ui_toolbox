@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2019-03-27
+% modified: 2019-03-28
 %
 classdef setup < handle
 
@@ -152,7 +152,7 @@ classdef setup < handle
             end % for index_element_tx = 1:object.xdc_array.N_elements
 
             % create time intervals
-            results = physical_values.interval_time( t_tof_lbs, t_tof_ubs);
+            results = math.interval_time( t_tof_lbs, t_tof_ubs);
 
         end % function results = times_of_flight( object )
 

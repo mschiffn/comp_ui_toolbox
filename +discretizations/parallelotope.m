@@ -14,7 +14,7 @@ classdef parallelotope
 
         % independent properties
         edge_lengths ( 1, : ) physical_values.length
-        basis ( 1, : ) physical_values.unit_vector
+        basis ( 1, : ) math.unit_vector
 
         % dependent properties
         volume ( 1, 1 ) physical_values.physical_quantity
@@ -51,7 +51,7 @@ classdef parallelotope
                 % create canonical bases of adequate dimensions
                 basis = cell( size( edge_lengths ) );
                 for index_object = 1:numel( edge_lengths )
-                    basis{ index_object } = physical_values.unit_vector( eye( numel( edge_lengths{ index_object } ) ) )';
+                    basis{ index_object } = math.unit_vector( eye( numel( edge_lengths{ index_object } ) ) )';
                 end
             end
 
@@ -78,9 +78,9 @@ classdef parallelotope
                     error( errorStruct );
                 end
 
-                % ensure class physical_values.unit_vector
-                if ~isa( basis{ index_object }, 'physical_values.unit_vector' )
-                    errorStruct.message = sprintf( 'basis{ %d } must be physical_values.unit_vector!', index_object );
+                % ensure class math.unit_vector
+                if ~isa( basis{ index_object }, 'math.unit_vector' )
+                    errorStruct.message = sprintf( 'basis{ %d } must be math.unit_vector!', index_object );
                     errorStruct.identifier	= 'parallelotope:NoUnitVector';
                     error( errorStruct );
                 end
@@ -97,7 +97,7 @@ classdef parallelotope
 
                 % ensure linearly independent unit vectors in basis
                 if double( objects( index_object ).volume ) < eps
-                    errorStruct.message = sprintf( 'physical_values.unit_vector in basis{ %d } must be linearly independent!', index_object );
+                    errorStruct.message = sprintf( 'math.unit_vector in basis{ %d } must be linearly independent!', index_object );
                     errorStruct.identifier	= 'parallelotope:NoBasis';
                     error( errorStruct );
                 end

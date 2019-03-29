@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-06
-% modified: 2019-02-07
+% modified: 2019-03-28
 %
-classdef interval_quantized_time < physical_values.interval_quantized
+classdef interval_quantized_time < math.interval_quantized
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -30,7 +30,7 @@ classdef interval_quantized_time < physical_values.interval_quantized
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@physical_values.interval_quantized( lbs, ubs, deltas );
+            objects@math.interval_quantized( lbs, ubs, deltas );
 
         end
 

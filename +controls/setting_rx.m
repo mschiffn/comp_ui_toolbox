@@ -13,8 +13,8 @@ classdef setting_rx < controls.setting
 	properties (SetAccess = private)
 
         % independent properties
-        interval_t ( 1, 1 ) physical_values.interval_time       % recording time interval
-        interval_f ( 1, 1 ) physical_values.interval_frequency	% frequency interval
+        interval_t ( 1, 1 ) math.interval_time       % recording time interval
+        interval_f ( 1, 1 ) math.interval_frequency	% frequency interval
 
     end % properties
 
@@ -34,8 +34,8 @@ classdef setting_rx < controls.setting
             if nargin == 0
                 indices_active = 1;
                 impulse_responses = physical_values.impulse_response( discretizations.set_discrete_time_regular( 0, 0, physical_values.time(1) ), physical_values.physical_value(1) );
-                intervals_t = physical_values.interval_time( physical_values.time( 0 ), physical_values.time( 1 ) );
-                intervals_f = physical_values.interval_frequency( physical_values.frequency( 1 ), physical_values.frequency( 2 ) );
+                intervals_t = math.interval_time( physical_values.time( 0 ), physical_values.time( 1 ) );
+                intervals_f = math.interval_frequency( physical_values.frequency( 1 ), physical_values.frequency( 2 ) );
             end
 
             objects@controls.setting( indices_active, impulse_responses );

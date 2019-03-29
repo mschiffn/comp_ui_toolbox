@@ -22,44 +22,35 @@ addpath( genpath( sprintf('%s/toolbox/spgl1-1.8/', matlabroot) ) );
 xdc_array = transducers.L14_5_38( 2 );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% signal processing parameters, load and process plane wave data
+%% general parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% name of the simulation
+str_name = 'wire_phantom';
 
-%--------------------------------------------------------------------------
-% general parameters
-%--------------------------------------------------------------------------
-str_name = 'sim_study_obj_A_v2';
-str_excitation = 'cylindrical_waves';
-
-c_ref = physical_values.meter_per_second( 1500 );
-f_tx = physical_values.hertz( 4e6 );
+% signal processing parameters
 T_s = physical_values.second( 1 / 20e6 );
 
-theta_incident = (77.5:2.5:102.5) * pi / 180;
-e_theta = physical_values.unit_vector( [ cos( theta_incident(:) ), zeros( numel( theta_incident ), 1 ), sin( theta_incident(:) ) ] );
-
 % specify bandwidth to perform simulation in
-frac_bw = 0.7;                   % fractional bandwidth of incident pulse
-frac_bw_ref = -60;               % dB value that determines frac_bw
-
-% specify tx voltage signal
-tc = gauspuls( 'cutoff', double( f_tx ), frac_bw, frac_bw_ref, -60 );     % calculate cutoff time
-t = (-tc:double(T_s):tc);
-u_tx_tilde = gauspuls( t, double( f_tx ), frac_bw, frac_bw_ref );
-axis_t = discretizations.set_discrete_time_regular( 0, numel( t ) - 1, T_s );
+f_tx = physical_values.hertz( 4e6 );
+frac_bw = 1;                   % fractional bandwidth of incident pulse
+frac_bw_ref = -60;             % dB value that determines frac_bw
 
 % properties of the homogeneous fluid
+c_ref = physical_values.meter_per_second( 1500 );
 absorption_model = absorption_models.time_causal( 0, 2.17e-3, 2, c_ref, double( f_tx ), 1 );
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% define lattice
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% directions of incidence
+theta_incident = (77.5:2.5:102.5) * pi / 180;
+e_theta = math.unit_vector( [ cos( theta_incident(:) ), zeros( numel( theta_incident ), 1 ), sin( theta_incident(:) ) ] );
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% define field of view
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 FOV_size_axis = xdc_array.parameters.N_elements_axis(1) * xdc_array.element_pitch_axis(1) * ones( 1, 3 );
 FOV_size_axis( 2 ) = physical_values.meter( 76.5e-6 );
 
-FOV_intervals_lateral = physical_values.interval( - FOV_size_axis( 1:2 ) ./ 2, FOV_size_axis( 1:2 ) ./ 2 );
-FOV_interval_axial = physical_values.interval( physical_values.meter( 0 ), FOV_size_axis( 1 ) );
+FOV_intervals_lateral = math.interval( - FOV_size_axis( 1:2 ) ./ 2, FOV_size_axis( 1:2 ) ./ 2 );
+FOV_interval_axial = math.interval( physical_values.meter( 0 ), FOV_size_axis( 1 ) );
 
 FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral(1), FOV_intervals_lateral(2), FOV_interval_axial );
 
@@ -70,18 +61,22 @@ FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral(1), FOV_intervals_later
 % specify recording time interval
 t_lb = 0 .* T_s;        % lower cut-off time
 t_ub = 1700 .* T_s;     % upper cut-off time
-interval_t = physical_values.interval( t_lb, t_ub );
+interval_t = math.interval( t_lb, t_ub );
 
 % specify bandwidth to perform simulation in
 f_lb = f_tx .* ( 1 - 0.5 * frac_bw );       % lower cut-off frequency
 f_ub = f_tx .* ( 1 + 0.5 * frac_bw );       % upper cut-off frequency
-interval_f = physical_values.interval( f_lb, f_ub );
+interval_f = math.interval( f_lb, f_ub );
 
 % create pulse-echo measurement setup
-setup = pulse_echo_measurements.setup( xdc_array, FOV_cs, absorption_model, 'wire_phantom' );
+setup = pulse_echo_measurements.setup( xdc_array, FOV_cs, absorption_model, str_name );
 
-% create excitation voltages
-excitation_voltages_common = syntheses.excitation_voltage( axis_t, { physical_values.voltage( u_tx_tilde ) } );
+% specify excitation voltages
+tc = gauspuls( 'cutoff', double( f_tx ), frac_bw, frac_bw_ref, -60 );     % calculate cutoff time
+t = (-tc:double(T_s):tc);
+u_tx_tilde = physical_values.voltage( gauspuls( t, double( f_tx ), frac_bw, frac_bw_ref ) );
+axis_t = (0:(numel( t ) - 1)) * T_s;
+excitation_voltages_common = discretizations.signal_matrix_td( axis_t, u_tx_tilde );
 
 % create pulse-echo measurement sequence
 sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_common, e_theta(1), interval_t, interval_f );
@@ -89,7 +84,7 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_comm
 %         settings_rng_apo = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
 %         settings_rng_del = auxiliary.setting_rng( 3 * ones(1, 1), repmat({'twister'}, [ 1, 1 ]) );
 %         sequence = pulse_echo_measurements.sequence_rnd_apo( setup, excitation_voltages_common, settings_rng_apo );
-%         e_dir = physical_values.unit_vector( [ cos( 89.9 * pi / 180 ), sin( 89.9 * pi / 180 ) ] );
+%         e_dir = math.unit_vector( [ cos( 89.9 * pi / 180 ), sin( 89.9 * pi / 180 ) ] );
 %         sequence = pulse_echo_measurements.sequence_rnd_del( setup, excitation_voltages_common, e_dir, settings_rng_del );
 %         sequence = pulse_echo_measurements.sequence_rnd_apo_del( setup, excitation_voltages_common, e_dir, settings_rng_apo, settings_rng_del );
 

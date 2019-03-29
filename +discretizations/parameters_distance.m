@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-19
-% modified: 2019-03-19
+% modified: 2019-03-27
 %
 classdef parameters_distance < discretizations.parameters
 
@@ -13,7 +13,7 @@ classdef parameters_distance < discretizations.parameters
 	properties (SetAccess = private)
 
         % independent properties
-        values ( 1, : ) double { mustBeReal, mustBePositive } = 76.2e-6 * ones(1, 3);
+        values ( 1, : ) physical_values.length = physical_values.meter( 76.2e-6 * ones(1, 3) );
 
     end % properties
 
@@ -32,7 +32,7 @@ classdef parameters_distance < discretizations.parameters
             %--------------------------------------------------------------
             % specify default values if no arguments
             if nargin == 0
-                values = 76.2e-6 * ones(1, 3);
+                values = physical_values.meter( 76.2e-6 * ones(1, 3) );
             end
 
             % ensure cell array for values

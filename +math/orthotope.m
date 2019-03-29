@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-11
-% modified: 2019-03-27
+% modified: 2019-03-28
 %
 classdef orthotope
 
@@ -13,7 +13,7 @@ classdef orthotope
 	properties (SetAccess = private)
 
         % independent properties
-        intervals ( 1, : ) physical_values.interval	% intervals of physical quantities
+        intervals ( 1, : ) math.interval	% intervals of physical quantities
 
         % dependent properties
         N_dimensions ( 1, 1 ) { mustBeInteger, mustBeNonempty } = 0     % number of dimensions
@@ -38,8 +38,8 @@ classdef orthotope
                 return;
             end
 
-            % ensure equal subclasses of physical_values.interval
-            auxiliary.mustBeEqualSubclasses( 'physical_values.interval', varargin{ : } );
+            % ensure equal subclasses of math.interval
+            auxiliary.mustBeEqualSubclasses( 'math.interval', varargin{ : } );
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( varargin{ : } );

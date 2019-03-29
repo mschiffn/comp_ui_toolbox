@@ -152,7 +152,52 @@ classdef physical_quantity < physical_values.transparent_container
 
         end
 
-        % TODO: micro, milli, kilo, mega,
+        %------------------------------------------------------------------
+        % 2.) prefix conversion
+        %------------------------------------------------------------------
+        % compute size in binary system
+        function size_binary = convert_binary( physical_quantity, base, exponent )
+            physical_quantity.values = physical_quantity.values / base^exponent;
+        end
+
+        % kilo
+        function physical_quantity = kilo( physical_quantity )
+
+            % return result of binary conversion
+            physical_quantity.values = convert_binary( physical_quantity.values, 10, 3 );
+            str_class = class( physical_quantity );
+        end
+
+        % mega
+        function size_megabyte = mega( objects )
+            % return result of binary conversion
+            size_megabyte = convert_binary( objects, 10, 6 );
+        end
+
+        % giga
+        function size_gigabyte = giga( objects )
+            % return result of binary conversion
+            size_gigabyte = convert_binary( objects, 10, 9 );
+        end
+
+        % kibi
+        function size_kibibyte = kibi( objects )
+            % return result of binary conversion
+            size_kibibyte = convert_binary( objects, 2, 10 );
+        end
+
+        % mebi
+        function size_mebibyte = mebi( objects )
+            % return result of binary conversion
+            size_mebibyte = convert_binary( objects, 2, 20 );
+        end
+
+        % gibi
+        function size_gibibyte = gibi( objects )
+            % return result of binary conversion
+            size_gibibyte = convert_binary( objects, 2, 30 );
+        end
+
         %------------------------------------------------------------------
         % 2.) overload built-in type conversion functions
         %------------------------------------------------------------------

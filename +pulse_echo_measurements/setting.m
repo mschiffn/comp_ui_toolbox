@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-03-09
+% modified: 2019-03-28
 %
 classdef setting
 
@@ -17,8 +17,8 @@ classdef setting
         rx ( :, : ) controls.setting_rx     % mixer settings
 
         % dependent properties
-        interval_t ( 1, 1 ) physical_values.interval_time       % hull of all recording time intervals
-        interval_f ( 1, 1 ) physical_values.interval_frequency	% hull of all frequency intervals
+        interval_t ( 1, 1 ) math.interval_time       % hull of all recording time intervals
+        interval_f ( 1, 1 ) math.interval_frequency	% hull of all frequency intervals
 
     end % properties
 

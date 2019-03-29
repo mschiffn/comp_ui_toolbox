@@ -1,9 +1,9 @@
 %
-% superclass for all intervals of physical values
+% superclass for all intervals of physical quantities
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-03-27
+% modified: 2019-03-28
 %
 classdef interval
 
@@ -40,7 +40,7 @@ classdef interval
             mustBeNonempty( lbs );
             mustBeNonempty( ubs );
 
-            % ensure equal subclasses of physical_values.physical_value
+            % ensure equal subclasses of physical_values.physical_quantity
             auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', lbs, ubs );
 
             % ensure equal number of dimensions and sizes
@@ -103,8 +103,8 @@ classdef interval
 
             % TODO: check sizes of objects vs values
 
-            % ensure equal subclasses of physical_values.physical_value
-            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_value', lbs, values );
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', lbs, values );
 
             % compute results
             indicator = ( lbs <= values ) && ( values <= ubs );
@@ -121,12 +121,10 @@ classdef interval
             %--------------------------------------------------------------
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( objects_in, deltas );
-            % assertion: objects_in and deltas have equal size
 
-            % ensure equal subclasses of physical_values.physical_value
+            % ensure equal subclasses of physical_values.physical_quantity
             lbs = [ objects_in.lb ];
-            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_value', lbs, deltas );
-            % assertion: objects_in.lb, objects_in.ub, and deltas are equal subclasses of physical_values.physical_value
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', lbs, deltas );
 
             %--------------------------------------------------------------
             % 2.) compute boundary indices
@@ -139,53 +137,50 @@ classdef interval
             for index_object = 1:numel( objects_in )
 
                 % compute boundary fractions
-                index_lb = objects_in( index_object ).lb ./ deltas( index_object );
-                index_ub = objects_in( index_object ).ub ./ deltas( index_object );
+                index_lb = objects_in( index_object ).lb / deltas( index_object );
+                index_ub = objects_in( index_object ).ub / deltas( index_object );
 
                 % compute boundary indices
                 lbs_q( index_object ) = ceil( index_lb );
                 ubs_q( index_object ) = floor( index_ub );
 
-            end
+            end % for index_object = 1:numel( objects_in )
 
             %--------------------------------------------------------------
-            % 3.) construct quantized intervals
+            % 3.) create quantized intervals
             %--------------------------------------------------------------
-            objects_out = physical_values.interval_quantized( lbs_q, ubs_q, deltas );
+            objects_out = math.interval_quantized( lbs_q, ubs_q, deltas );
 
         end % function objects_out = quantize( objects_in, deltas )
 
         %------------------------------------------------------------------
         % discretize
         %------------------------------------------------------------------
-        function objects_out = discretize( objects_in, deltas )
+        function objects_out = discretize( intervals, deltas )
             % TODO: enumeration class discretization method
 
             %--------------------------------------------------------------
             % 1.) quantize intervals
             %--------------------------------------------------------------
-            objects_in = quantize( objects_in, deltas );
-            % assertion: objects_in is physical_values.interval_quantized
+            intervals = quantize( intervals, deltas );
 
             %--------------------------------------------------------------
-            % 2.) compute sets of discrete physical values
+            % 2.) compute sets of discrete physical quantities
             %--------------------------------------------------------------
-            % create cell array of objects
-            sets = cell( size( objects_in ) );
+            % create cell array of physical quantities
+            objects_out = cell( size( intervals ) );
 
-            % set independent properties
-            for index_object = 1:numel( objects_in )
-
-                % compute discrete times
-                sets{ index_object } = double( objects_in( index_object ).q_lb:(objects_in( index_object ).q_ub - 1) ) .* objects_in( index_object ).delta;
+            % compute discrete physical quantities
+            for index_object = 1:numel( intervals )
+                objects_out{ index_object } = ( intervals( index_object ).q_lb:(intervals( index_object ).q_ub - 1) ) * intervals( index_object ).delta;
             end
 
-            %--------------------------------------------------------------
-            % 3.) construct sets of discrete physical values
-            %--------------------------------------------------------------
-            objects_out = discretizations.set_discrete_physical_value( sets );
+            % avoid cell array for single interval
+            if numel( intervals ) == 1
+                objects_out = objects_out{ 1 };
+            end
 
-        end % function objects_out = discretize( objects_in, deltas )
+        end % function objects_out = discretize( intervals, deltas )
 
         %------------------------------------------------------------------
         % convex hull of intervals

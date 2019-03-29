@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-01-26
+% modified: 2019-03-28
 %
 classdef setting_rnd_apo_del < syntheses.setting
 
@@ -15,7 +15,7 @@ classdef setting_rnd_apo_del < syntheses.setting
         % independent properties
         setting_rng_apo ( 1, 1 ) auxiliary.setting_rng      % settings of the random number generator
         setting_rng_del ( 1, 1 ) auxiliary.setting_rng      % settings of the random number generator
-        e_theta ( 1, 1 ) physical_values.unit_vector        % preferred direction of propagation (1)
+        e_theta ( 1, 1 ) math.unit_vector        % preferred direction of propagation (1)
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,9 +41,9 @@ classdef setting_rnd_apo_del < syntheses.setting
 
             % excitation_voltages_common will be checked in superclass
 
-            % ensure class physical_values.unit_vector
-            if ~isa( e_theta, 'physical_values.unit_vector' )
-                errorStruct.message     = 'e_theta must be physical_values.unit_vector!';
+            % ensure class math.unit_vector
+            if ~isa( e_theta, 'math.unit_vector' )
+                errorStruct.message     = 'e_theta must be math.unit_vector!';
                 errorStruct.identifier	= 'setting_rnd_del:NoUnitVectors';
                 error( errorStruct );
             end

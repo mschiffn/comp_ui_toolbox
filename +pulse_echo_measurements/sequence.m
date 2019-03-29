@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-02-19
+% modified: 2019-03-28
 %
 classdef sequence
 
@@ -17,8 +17,8 @@ classdef sequence
         settings %( :, : ) pulse_echo_measurements.setting	% pulse-echo measurement settings
 
         % dependent properties
-        interval_t ( 1, 1 ) physical_values.interval_time       % hull of all recording time intervals
-        interval_f ( 1, 1 ) physical_values.interval_frequency	% hull of all frequency intervals
+        interval_t ( 1, 1 ) math.interval_time       % hull of all recording time intervals
+        interval_f ( 1, 1 ) math.interval_frequency	% hull of all frequency intervals
 
     end % properties
 
@@ -135,7 +135,7 @@ classdef sequence
                 end % for index_mix = 1:N_mix
 
                 % create time intervals for all mixes
-                intervals_t{ index_incident } = physical_values.interval_time( t_lbs, t_ubs );
+                intervals_t{ index_incident } = math.interval_time( t_lbs, t_ubs );
 
                 % determine hull of time intervals
                 hulls( index_incident ) = hull( intervals_t{ index_incident } );
