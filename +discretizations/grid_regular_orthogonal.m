@@ -21,7 +21,7 @@ classdef grid_regular_orthogonal < discretizations.grid_regular
             % 1.) check arguments
             %--------------------------------------------------------------
             % reference cells are cuboids
-            cells_ref = discretizations.parallelotope( delta_axis );
+            cells_ref = math.parallelotope( delta_axis );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass

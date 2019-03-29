@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-03-25
+% modified: 2019-03-29
 %
 classdef grid_regular < discretizations.grid
 
@@ -13,8 +13,8 @@ classdef grid_regular < discretizations.grid
 	properties (SetAccess = private)
 
         % independent properties
-        offset_axis ( 1, : ) physical_values.length         % arbitrary offset
-        cell_ref ( 1, 1 ) discretizations.parallelotope     % elementary cell
+        offset_axis ( 1, : ) physical_values.length     % arbitrary offset
+        cell_ref ( 1, 1 ) math.parallelotope            % elementary cell
         N_points_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 128 ]	 % numbers of grid points along each coordinate axis (1)
 
         % dependent properties
@@ -41,9 +41,9 @@ classdef grid_regular < discretizations.grid
                 offset_axis = { offset_axis };
             end
 
-            % ensure class discretizations.parallelotope
-            if ~isa( cells_ref, 'discretizations.parallelotope' )
-                errorStruct.message     = 'cells_ref must be discretizations.parallelotope!';
+            % ensure class math.parallelotope
+            if ~isa( cells_ref, 'math.parallelotope' )
+                errorStruct.message     = 'cells_ref must be math.parallelotope!';
                 errorStruct.identifier	= 'grid_regular:NoParallelotopes';
                 error( errorStruct );
             end
