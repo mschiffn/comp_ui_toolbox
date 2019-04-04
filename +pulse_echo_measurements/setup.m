@@ -57,8 +57,7 @@ classdef setup < handle
         %------------------------------------------------------------------
         % spatial discretization
         %------------------------------------------------------------------
-        function objects_out = discretize( setup, options_spatial )
-
+        function objects_out = discretize( setups, options_spatial )
             % TODO: various types of discretization / parameter objects
 
             %--------------------------------------------------------------
@@ -72,23 +71,25 @@ classdef setup < handle
             end
 
             %--------------------------------------------------------------
-            % 2.) discretize transducer array and field of view
+            % 2.) discretize transducer arrays and fields of view
             %--------------------------------------------------------------
-            % discretization based on regular grids
-            discretizations_elements = discretize( setup.xdc_array, options_spatial.options_elements );
-            discretization_FOV = discretize( setup.FOV, options_spatial.options_FOV );
+            % vector or cell array of discretized apertures
+            discretizations_elements = discretize( [ setups.xdc_array ], [ options_spatial.options_elements ] );
+
+            % matrix of discretized fields of view
+            discretization_FOV = discretize( [ setups.FOV ], [ options_spatial.options_FOV ] );
 
             %--------------------------------------------------------------
             % 3.) construct spatial discretizations
             %--------------------------------------------------------------
-            % TODO: check symmetry of setup and choose class accordingly            
-            if 1
+            % TODO: check symmetry of setups and choose class accordingly
+            if 1 %issymmetric( discretizations_elements, discretization_FOV )
                 objects_out = discretizations.spatial_grid_symmetric( discretizations_elements, discretization_FOV );
             else
                 objects_out = discretizations.spatial_grid( discretizations_elements, discretization_FOV );
             end
 
-        end % function objects_out = discretize( setup, options_spatial )
+        end % function objects_out = discretize( setups, options_spatial )
 
         %------------------------------------------------------------------
         % lower and upper bounds on the times-of-flight

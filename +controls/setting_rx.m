@@ -1,25 +1,25 @@
 %
-% superclass for all recording settings
+% superclass for all transducer control settings in recording mode
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-03-08
+% modified: 2019-03-29
 %
 classdef setting_rx < controls.setting
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
+	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
-        interval_t ( 1, 1 ) math.interval_time       % recording time interval
-        interval_f ( 1, 1 ) math.interval_frequency	% frequency interval
+        interval_t ( 1, 1 ) math.interval	% recording time interval
+        interval_f ( 1, 1 ) math.interval	% frequency interval
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -34,8 +34,8 @@ classdef setting_rx < controls.setting
             if nargin == 0
                 indices_active = 1;
                 impulse_responses = physical_values.impulse_response( discretizations.set_discrete_time_regular( 0, 0, physical_values.time(1) ), physical_values.physical_value(1) );
-                intervals_t = math.interval_time( physical_values.time( 0 ), physical_values.time( 1 ) );
-                intervals_f = math.interval_frequency( physical_values.frequency( 1 ), physical_values.frequency( 2 ) );
+                intervals_t = math.interval( physical_values.time( 0 ), physical_values.time( 1 ) );
+                intervals_f = math.interval( physical_values.frequency( 1 ), physical_values.frequency( 2 ) );
             end
 
             objects@controls.setting( indices_active, impulse_responses );
@@ -80,6 +80,7 @@ classdef setting_rx < controls.setting
             transfer_functions = cell( size( settings_rx ) );
             for index_object = 1:numel( settings_rx )
 
+                % specify recording time and frequency intervals
                 if nargin == 1
                     interval_t_act = settings_rx( index_object ).interval_t;
                     interval_f_act = settings_rx( index_object ).interval_f;

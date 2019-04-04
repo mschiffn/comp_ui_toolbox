@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-03-28
+% modified: 2019-04-02
 %
 classdef setting_tx_QPW < controls.setting_tx
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -18,7 +18,7 @@ classdef setting_tx_QPW < controls.setting_tx
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -36,7 +36,6 @@ classdef setting_tx_QPW < controls.setting_tx
                 errorStruct.identifier	= 'setting_tx_QPW:NoSetup';
                 error( errorStruct );
             end
-            % assertion: setup is a single pulse_echo_measurements.setup
 
             % excitation_voltages_common will be checked in superclass
 
@@ -61,7 +60,7 @@ classdef setting_tx_QPW < controls.setting_tx
             impulse_responses = cell( size( excitation_voltages_common ) );
             excitation_voltages = cell( size( excitation_voltages_common ) );
 
-            % iterate objects
+            % iterate synthesis settings
             for index_object = 1:N_objects
 
                 %----------------------------------------------------------
@@ -73,17 +72,25 @@ classdef setting_tx_QPW < controls.setting_tx
                 % b) impulse responses are delays
                 %----------------------------------------------------------
                 % compute time delays for each preferred direction of propagation
-                time_delays_act = e_theta( index_object ).components * double( centers( setup.xdc_array ) )' / setup.c_avg;
+                time_delays_act = e_theta( index_object ).components * centers( setup.xdc_array )' / setup.c_avg;
                 time_delays_act = time_delays_act - min( time_delays_act );
 
-                % compute impulse responses
-                lbs_q = round( time_delays_act / double( setup.T_clk ) );
-                impulse_responses{ index_object } = physical_values.impulse_response_delta( lbs_q, setup.T_clk );
+                % specify impulse responses
+                indices_q = round( time_delays_act / setup.T_clk );
+                axis_t = math.sequence_increasing_regular( min( indices_q ), max( indices_q ), setup.T_clk );
+
+                samples = zeros( setup.xdc_array.N_elements, numel( indices_q ) );
+                for index_element = 1:setup.xdc_array.N_elements
+                    samples( index_element, indices_q( index_element ) + 1 ) = 1;
+                end
+%                 samples = physical_values.meter_per_volt_second( samples );
+
+                impulse_responses{ index_object } = discretizations.signal_matrix( axis_t, samples );
 
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements
                 %----------------------------------------------------------
-                excitation_voltages{ index_object } = repmat( excitation_voltages_common( index_object ), [ 1, setup.xdc_array.N_elements ] );
+                excitation_voltages{ index_object } = excitation_voltages_common( index_object );
 
             end % for index_object = 1:N_objects
 

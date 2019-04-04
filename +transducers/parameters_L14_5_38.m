@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-03-25
+% modified: 2019-04-02
 %
 classdef parameters_L14_5_38 < transducers.parameters_planar
 
@@ -35,6 +35,7 @@ classdef parameters_L14_5_38 < transducers.parameters_planar
             %--------------------------------------------------------------
             % 3.) acoustic lens specifications
             %--------------------------------------------------------------
+            apodization_axis = { @(x) 1, @(x) 1 };              % apodization along each coordinate axis
             elevational_focus = physical_values.meter( 16e-3 );	% axial distance of the elevational focus
 
             %--------------------------------------------------------------

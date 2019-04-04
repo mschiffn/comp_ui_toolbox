@@ -1,11 +1,12 @@
 %
-% superclass for all quantized intervals of physical quantities
+% superclass for all strictly monotonically increasing sequences with
+% regular spacing
 %
 % author: Martin F. Schiffner
-% date: 2019-02-06
-% modified: 2019-03-28
+% date: 2019-03-29
+% modified: 2019-03-29
 %
-classdef interval_quantized < math.interval
+classdef sequence_increasing_regular < math.sequence_increasing
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % properties
@@ -15,7 +16,7 @@ classdef interval_quantized < math.interval
         % independent properties
         q_lb ( 1, 1 ) int64     % lower integer bound
         q_ub ( 1, 1 ) int64     % upper integer bound
-        delta ( 1, 1 ) physical_values.physical_quantity       % quantization step
+        delta ( 1, 1 ) physical_values.physical_quantity       % step size
 
     end % properties
 
@@ -27,7 +28,7 @@ classdef interval_quantized < math.interval
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = interval_quantized( lbs_q, ubs_q, deltas )
+        function objects = sequence_increasing_regular( lbs_q, ubs_q, deltas )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -36,21 +37,30 @@ classdef interval_quantized < math.interval
             mustBeInteger( lbs_q );
             mustBeInteger( ubs_q );
 
-            % physical_values.physical_quantity for deltas are ensured by superclass
+            % ensure positive deltas
+            % (class physical_values.physical_quantity is ensured by superclass)
+            mustBePositive( deltas );
+
+            % multiple lbs_q / single deltas
+            if ~isscalar( lbs_q ) && isscalar( deltas )
+                deltas = repmat( deltas, size( lbs_q ) );
+            end
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( lbs_q, ubs_q, deltas );
 
             %--------------------------------------------------------------
-            % 2.) compute lower and upper bounds
+            % 2.) compute strictly monotonically increasing members
             %--------------------------------------------------------------
-            lbs = lbs_q .* deltas;
-            ubs = ubs_q .* deltas;
+            members = cell( size( lbs_q ) );
+            for index_object = 1:numel( lbs_q )
+                members{ index_object } = ( lbs_q( index_object ):ubs_q( index_object ) ) * deltas( index_object );
+            end
 
             %--------------------------------------------------------------
             % 3.) constructor of superclass
             %--------------------------------------------------------------
-            objects@math.interval( lbs, ubs );
+            objects@math.sequence_increasing( members );
 
             %--------------------------------------------------------------
             % 4.) set independent properties
@@ -61,8 +71,8 @@ classdef interval_quantized < math.interval
                 objects( index_object ).delta = deltas( index_object );
             end
 
-        end % function objects = interval_quantized( lbs_q, ubs_q, deltas )
+        end % function objects = sequence_increasing_regular( lbs_q, ubs_q, deltas )
 
-	end % methods
+    end % methods
 
-end % classdef interval_quantized < math.interval
+end % classdef sequence_increasing_regular < math.sequence_increasing

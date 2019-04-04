@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-03-20
+% modified: 2019-03-29
 %
-classdef field
+classdef field < discretizations.signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % properties
@@ -13,11 +13,10 @@ classdef field
 	properties
 
         % independent properties
-        set_f ( 1, 1 ) discretizations.set_discrete_frequency
-        values % phasors of the acoustic value for each grid point in the FOV
+        grid_FOV ( 1, 1 ) discretizations.grid
 
         % dependent properties
-        size_bytes ( 1, 1 ) physical_values.memory	% memory consumption (B)
+        size_bytes ( 1, 1 ) physical_values.byte	% memory consumption
 
     end % properties
 
@@ -29,62 +28,102 @@ classdef field
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = field( sets_discrete_frequencies, samples )
+        function objects = field( axes, grids_FOV, samples )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            %
-            if nargin == 0
-                return;
-            end
-
-            % ensure class discretizations.set_discrete_frequency
-            if ~isa( sets_discrete_frequencies, 'discretizations.set_discrete_frequency' )
-                errorStruct.message     = 'sets_discrete_frequencies must be discretizations.set_discrete_frequency!';
-                errorStruct.identifier	= 'field:NoSetDiscreteFrequency';
+            % ensure class discretizations.grid
+            if ~isa( grids_FOV, 'discretizations.grid' )
+                errorStruct.message     = 'grids_FOV must be discretizations.grid!';
+                errorStruct.identifier	= 'field:NoRegularGrid';
                 error( errorStruct );
             end
 
+            % specify default samples
+            if nargin < 3
+                samples = cell( size( axes ) );
+                for index_object = 1:numel( axes )
+                    samples{ index_object } = zeros( [ grids_FOV( index_object ).N_points, abs( axes( index_object ) ) ] );
+                    if isa( grids_FOV( index_object ), 'discretizations.grid_regular' )
+                        samples{ index_object } = reshape( samples{ index_object }, [ grids_FOV( index_object ).N_points_axis, abs( axes( index_object ) ) ] );
+                    end
+                end
+            end
+
             % ensure cell array for samples
-            if nargin >= 2 && ~iscell( samples )
+            if ~iscell( samples )
                 samples = { samples };
-            else
-                
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sets_discrete_frequencies, samples );
+            auxiliary.mustBeEqualSize( axes, grids_FOV );
 
             %--------------------------------------------------------------
-            % 2.) create fields
+            % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects = repmat( objects, size( sets_discrete_frequencies ) );
+            objects@discretizations.signal_matrix( axes, samples );
 
             %--------------------------------------------------------------
             % 3.) set independent and dependent properties
             %--------------------------------------------------------------
-            for index_object = 1:numel( sets_discrete_frequencies )
+            for index_object = 1:numel( objects )
 
-                % number of discrete frequencies
-                N_dimensions_act = ndims( samples{ index_object } );
-                size_act = size( samples{ index_object } );
-                N_samples_f = size_act( end );
-                N_points = prod( size_act( 1:(end - 1) ) );
-                firstdims = repmat( {':'}, 1, N_dimensions_act - 1 );
-
-                % initialize field values with zeros
-                objects( index_object ).values = cell( 1, N_samples_f );
-                for index_f = 1:N_samples_f
-                    objects( index_object ).values{ index_f } = samples{ index_object }( firstdims{ : }, index_f );
+                % ensure correct size of grids_FOV
+                if grids_FOV( index_object ).N_points ~= objects( index_object ).N_signals
+                    errorStruct.message = sprintf( 'Number of grid points in grids_FOV( %d ) must equal the number of signals %d!', index_object, objects( index_object ).N_signals );
+                    errorStruct.identifier = 'field:GridSizeMismatch';
+                    error( errorStruct );
                 end
 
+                % set independent properties
+                objects( index_object ).grid_FOV = grids_FOV( index_object );
+
                 % compute memory consumption
-                objects( index_object ).size_bytes = physical_values.memory( N_samples_f * N_points * 16 );
+                objects( index_object ).size_bytes = data_volume( objects( index_object ) );
 
-            end % for index_object = 1:numel( sets_discrete_frequencies )
+            end % for index_object = 1:numel( objects )
 
-        end % function objects = field( sets_discrete_frequencies, samples )
+        end % function objects = field( axes, grids_FOV, samples )
+
+        %------------------------------------------------------------------
+        % get_cell
+        %------------------------------------------------------------------
+        function objects = get_cell( fields )
+
+            for index_object = 1:numel( fields )
+
+                
+            end
+            % number of discrete frequencies
+            N_dimensions_act = ndims( samples{ index_object } );
+            size_act = size( samples{ index_object } );
+            N_samples_f = size_act( end );
+            N_points = prod( size_act( 1:(end - 1) ) );
+            firstdims = repmat( {':'}, 1, N_dimensions_act - 1 );
+
+            % initialize field values with zeros
+            objects( index_object ).values = cell( 1, N_samples_f );
+            for index_f = 1:N_samples_f
+                objects( index_object ).values{ index_f } = samples{ index_object }( firstdims{ : }, index_f );
+            end
+        end
+
+        %------------------------------------------------------------------
+        % shift fields
+        %------------------------------------------------------------------
+        function objects_out = shift( objects_in )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % TODO: symmetric grid
+
+            %--------------------------------------------------------------
+            % 2.) shift spatial transfer functions
+            %--------------------------------------------------------------
+
+        end % function objects_out = shift( objects_in )
 
         %------------------------------------------------------------------
         % show
@@ -164,4 +203,4 @@ classdef field
 
 	end % methods
 
-end % classdef field
+end % classdef field < discretizations.signal_matrix

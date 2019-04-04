@@ -3,29 +3,29 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-03-28
+% modified: 2019-04-02
 %
 classdef sequence
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
+	properties ( SetAccess = private )
 
         % independent properties
         setup %( 1, 1 ) pulse_echo_measurements.setup        % pulse-echo measurement setup
         settings %( :, : ) pulse_echo_measurements.setting	% pulse-echo measurement settings
 
         % dependent properties
-        interval_t ( 1, 1 ) math.interval_time       % hull of all recording time intervals
-        interval_f ( 1, 1 ) math.interval_frequency	% hull of all frequency intervals
+        interval_t ( 1, 1 ) math.interval	% hull of all recording time intervals
+        interval_f ( 1, 1 ) math.interval	% hull of all frequency intervals
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods
+	methods ( Access = public )
 
         %------------------------------------------------------------------
         % constructor
@@ -148,20 +148,16 @@ classdef sequence
         % spatiospectral discretization
         %------------------------------------------------------------------
         function spatiospectral = discretize( sequences, options )
-            % TODO: single sequence
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class discretizations.options
             if ~isa( options, 'discretizations.options' )
-                errorStruct.message     = 'options_spectral must be discretizations.options_spectral!';
-                errorStruct.identifier	= 'discretize:NoOptionsFrequency';
+                errorStruct.message     = 'options must be discretizations.options!';
+                errorStruct.identifier	= 'discretize:NoOptions';
                 error( errorStruct );
             end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, options );
 
             %--------------------------------------------------------------
             % 2.) spatial discretization

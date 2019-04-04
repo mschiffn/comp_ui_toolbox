@@ -71,15 +71,15 @@ interval_f = math.interval( f_lb, f_ub );
 % create pulse-echo measurement setup
 setup = pulse_echo_measurements.setup( xdc_array, FOV_cs, absorption_model, str_name );
 
-% specify excitation voltages
+% specify common excitation voltages
 tc = gauspuls( 'cutoff', double( f_tx ), frac_bw, frac_bw_ref, -60 );     % calculate cutoff time
 t = (-tc:double(T_s):tc);
-u_tx_tilde = physical_values.voltage( gauspuls( t, double( f_tx ), frac_bw, frac_bw_ref ) );
-axis_t = (0:(numel( t ) - 1)) * T_s;
-excitation_voltages_common = discretizations.signal_matrix_td( axis_t, u_tx_tilde );
+pulse = gauspuls( t, double( f_tx ), frac_bw, frac_bw_ref );
+axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
+u_tx_tilde = discretizations.signal( axis_t, physical_values.voltage( pulse ) );
 
 % create pulse-echo measurement sequence
-sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_common, e_theta(1), interval_t, interval_f );
+sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 1 ), interval_t, interval_f );
 %         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
 %         settings_rng_apo = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
 %         settings_rng_del = auxiliary.setting_rng( 3 * ones(1, 1), repmat({'twister'}, [ 1, 1 ]) );
@@ -93,7 +93,7 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, excitation_voltages_comm
 %--------------------------------------------------------------------------
 % discretization options
 parameters_elements = discretizations.parameters_number( [ 2, 4 ] );
-parameters_FOV = discretizations.parameters_distance( 76.2e-6 * ones(1, 3) );
+parameters_FOV = discretizations.parameters_distance( physical_values.meter( 76.2e-6 * ones(1, 3) ) );
 options_disc_spatial = discretizations.options_spatial_grid( parameters_FOV, parameters_elements );
 options_disc_spectral = discretizations.options_spectral.signal;
 options_disc = discretizations.options( options_disc_spatial, options_disc_spectral );
@@ -102,7 +102,7 @@ options_disc = discretizations.options( options_disc_spatial, options_disc_spect
 options = scattering.options( options_disc );
 
 %--------------------------------------------------------------------------
-% initialize scattering operator
+% initialize scattering operator (Born approximation)
 %--------------------------------------------------------------------------
 operator_born = scattering.operator_born( sequence, options );
 

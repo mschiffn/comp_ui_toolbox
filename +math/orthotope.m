@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-11
-% modified: 2019-03-28
+% modified: 2019-04-02
 %
 classdef orthotope
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
+	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -21,7 +21,7 @@ classdef orthotope
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -137,8 +137,8 @@ classdef orthotope
         % discretize
         %------------------------------------------------------------------
         function objects_out = discretize( orthotopes, parameters )
+            % TODO: various types of discretization (subtype of regular grid) / parameter objects
 
-            % TODO: various types of discretization / parameter objects
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -149,7 +149,7 @@ classdef orthotope
                 error( errorStruct );
             end
 
-            % multiple orthotopes / single parameters
+            % multiple orthotopes / scalar parameters
             if ~isscalar( orthotopes ) && isscalar( parameters )
                 parameters = repmat( parameters, size( orthotopes ) );
             end
@@ -190,7 +190,7 @@ classdef orthotope
                         auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, delta_axis{ index_object } );
 
                         % number of grid points along each axis
-                        N_points_axis{ index_object } = floor( double( abs( orthotopes( index_object ).intervals ) ) ./ delta_axis{ index_object } );
+                        N_points_axis{ index_object } = floor( abs( orthotopes( index_object ).intervals ) ./ delta_axis{ index_object } );
 
                     otherwise
 
@@ -209,7 +209,6 @@ classdef orthotope
             %--------------------------------------------------------------
             % 3.) create orthogonal regular grids
             %--------------------------------------------------------------
-            % TODO: specify subtype of regular grid
             objects_out = discretizations.grid_regular_orthogonal( offset_axis, delta_axis, N_points_axis );
 
         end % function objects_out = discretize( orthotopes, parameters )

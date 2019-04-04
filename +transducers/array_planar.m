@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-04-19
-% modified: 2019-03-28
+% modified: 2019-04-02
 %
 classdef array_planar < transducers.array
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -19,7 +19,7 @@ classdef array_planar < transducers.array
 	end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -109,12 +109,11 @@ classdef array_planar < transducers.array
             % iterate planar transducer arrays
             for index_object = 1:numel( arrays_planar )
 
-                % initialize results
-                objects_out{ index_object } = physical_values.length( zeros( arrays_planar( index_object ).N_elements, arrays_planar( index_object ).N_dimensions + 1 ) );
-
                 % extract and augment center coordinates
                 pos_center = reshape( [ arrays_planar( index_object ).aperture.pos_center ], [ arrays_planar( index_object ).N_dimensions, arrays_planar( index_object ).N_elements ] )';
-                objects_out{ index_object }( :, 1:arrays_planar( index_object ).N_dimensions ) = pos_center;
+                pos_center = [ pos_center, pos_center( :, 1 ) ];
+                pos_center( :, arrays_planar( index_object ).N_dimensions + 1 ) = zeros( arrays_planar( index_object ).N_elements, 1 );
+                objects_out{ index_object } = pos_center;
 
             end % for index_object = 1:numel( arrays_planar )
 
@@ -133,12 +132,7 @@ classdef array_planar < transducers.array
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for options_elements
-            if ~iscell( options_elements )
-                options_elements = { options_elements };
-            end
-
-            % multiple arrays_planar / single options_elements
+            % multiple arrays_planar / scalar options_elements
             if ~isscalar( arrays_planar ) && isscalar( options_elements )
                 options_elements = repmat( options_elements, size( arrays_planar ) );
             end
@@ -149,18 +143,18 @@ classdef array_planar < transducers.array
             %--------------------------------------------------------------
             % 2.) create regular grids
             %--------------------------------------------------------------
-            % initialize output
+            % specify cell array for objects_out
             objects_out = cell( size( arrays_planar ) );
 
             % iterate planar transducer arrays
             for index_object = 1:numel( arrays_planar )
 
                 % discretize aperture
-                objects_out{ index_object } = discretize( arrays_planar( index_object ).aperture, options_elements{ index_object } );
+                objects_out{ index_object } = discretize( arrays_planar( index_object ).aperture, options_elements( index_object ) );
 
             end % for index_object = 1:numel( arrays_planar )
 
-            % do not return cell array for single object
+            % do not return cell array for single planar transducer array
             if numel( arrays_planar ) == 1
                 objects_out = objects_out{ 1 };
             end

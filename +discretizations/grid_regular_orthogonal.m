@@ -1,9 +1,9 @@
 %
-% superclass for all regular grids using cuboids
+% superclass for all orthogonal regular grids
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-03-23
+% modified: 2019-04-01
 %
 classdef grid_regular_orthogonal < discretizations.grid_regular
 
@@ -18,10 +18,9 @@ classdef grid_regular_orthogonal < discretizations.grid_regular
         function objects = grid_regular_orthogonal( offset_axis, delta_axis, N_points_axis )
 
             %--------------------------------------------------------------
-            % 1.) check arguments
+            % 1.) create cuboid reference cells
             %--------------------------------------------------------------
-            % reference cells are cuboids
-            cells_ref = math.parallelotope( delta_axis );
+            cells_ref = math.cuboid( delta_axis );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass

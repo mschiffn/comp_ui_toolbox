@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-03-03
+% modified: 2019-04-02
 %
 classdef setting_rx_identity < controls.setting_rx
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -26,7 +26,6 @@ classdef setting_rx_identity < controls.setting_rx
                 errorStruct.identifier	= 'setting_rx_identity:NoSetup';
                 error( errorStruct );
             end
-            % assertion: setup is a single pulse_echo_measurements.setup
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( interval_t, interval_f );
@@ -53,7 +52,8 @@ classdef setting_rx_identity < controls.setting_rx
                 %----------------------------------------------------------
                 % b) impulse responses are identities
                 %----------------------------------------------------------
-                impulse_responses{ index_element } = physical_values.impulse_response_delta( 0, setup.T_clk );
+                axis_t = math.sequence_increasing_regular( 0, 0, setup.T_clk );
+                impulse_responses{ index_element } = discretizations.signal_matrix( axis_t, 1 );
 
             end % for index_element = 1:setup.xdc_array.N_elements
 

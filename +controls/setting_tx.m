@@ -1,24 +1,24 @@
 %
-% superclass for all synthesis settings
+% superclass for all transducer control settings in synthesis mode
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-03-11
+% modified: 2019-04-02
 %
 classdef setting_tx < controls.setting
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
+	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
-        excitation_voltages ( 1, : ) syntheses.excitation_voltage	% excitation voltages
+        excitation_voltages ( 1, : ) discretizations.signal_matrix	% voltages exciting the active channels
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -28,32 +28,82 @@ classdef setting_tx < controls.setting
         function objects = setting_tx( indices_active, impulse_responses, excitation_voltages )
 
             %--------------------------------------------------------------
-            % 1.) constructor of superclass
+            % 1.) check arguments
             %--------------------------------------------------------------
             if nargin == 0
                 indices_active = 1;
-                impulse_responses = physical_values.impulse_response( discretizations.set_discrete_time_regular( 0, 0, physical_values.time(1) ), physical_values.physical_value(1) );
-                excitation_voltages = syntheses.excitation_voltage( discretizations.set_discrete_time_regular( 0, 0, physical_values.time(1) ), physical_values.voltage(1) );
+                impulse_responses = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
+                excitation_voltages = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.voltage );
             end
 
-            objects@controls.setting( indices_active, impulse_responses );
+            % ensure cell array for indices_active
+            if ~iscell( indices_active )
+                indices_active = { indices_active };
+            end
 
-            %--------------------------------------------------------------
-            % 2.) check arguments
-            %--------------------------------------------------------------
-            % ensure cell array
+            % ensure cell array for impulse_responses
+            if ~iscell( impulse_responses )
+                impulse_responses = { impulse_responses };
+            end
+
+            % ensure cell array for excitation_voltages
             if ~iscell( excitation_voltages )
                 excitation_voltages = { excitation_voltages };
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( objects, excitation_voltages );
+            auxiliary.mustBeEqualSize( indices_active, excitation_voltages );
 
             %--------------------------------------------------------------
-            % 3.) create synthesis settings
+            % 2.) constructor of superclass
             %--------------------------------------------------------------
-            % set independent properties
+            objects@controls.setting( indices_active, impulse_responses );
+
+            %--------------------------------------------------------------
+            % 3.) set independent properties
+            %--------------------------------------------------------------
+            % iterate transducer control settings in synthesis mode
             for index_object = 1:numel( objects )
+
+                switch class( excitation_voltages{ index_object } )
+
+                    case 'discretizations.signal'
+
+                        % multiple indices_active{ index_object } / single excitation_voltages{ index_object }
+                        if ~isscalar( indices_active{ index_object } ) && isscalar( excitation_voltages{ index_object } )
+
+                            samples = repmat( excitation_voltages{ index_object }.samples, [ numel( indices_active{ index_object } ), 1 ] );
+                            excitation_voltages{ index_object } = discretizations.signal_matrix( excitation_voltages{ index_object }.axis, samples );
+
+                        else
+
+                            % ensure equal number of dimensions and sizes of cell array contents
+                            auxiliary.mustBeEqualSize( indices_active{ index_object }, excitation_voltages{ index_object } );
+
+                            % assemble signal_matrix for equal axes
+                            if isequal( excitation_voltages{ index_object }.axis )
+                                samples = reshape( excitation_voltages{ index_object }.samples, [ numel( excitation_voltages{ index_object } ), abs( excitation_voltages{ index_object }(1).axis ) ] );
+                                excitation_voltages{ index_object } = discretizations.signal_matrix( excitation_voltages{ index_object }.axis(1), samples );
+                            end
+
+                        end
+
+                    case 'discretizations.signal_matrix'
+
+                        % ensure single signal matrix of correct size
+                        if ~isscalar( excitation_voltages{ index_object } ) || ( numel( indices_active{ index_object } ) ~= excitation_voltages{ index_object }.N_signals )
+                            errorStruct.message     = sprintf( 'excitation_voltages{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
+                            errorStruct.identifier	= 'setting:SizeMismatch';
+                            error( errorStruct );
+                        end
+
+                    otherwise
+
+                        errorStruct.message     = sprintf( 'excitation_voltages{ %d } has to be discretizations.signal_matrix!', index_object );
+                        errorStruct.identifier	= 'setting:NoSignalMatrix';
+                        error( errorStruct );
+
+                end % switch class( excitation_voltages{ index_object } )
 
                 objects( index_object ).excitation_voltages = excitation_voltages{ index_object };
 

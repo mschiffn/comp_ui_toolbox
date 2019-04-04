@@ -71,26 +71,26 @@ classdef interval
         %------------------------------------------------------------------
         % center
         %------------------------------------------------------------------
-        function objects_out = center( objects_in )
+        function objects_out = center( intervals )
 
             % compute centers
-            lbs = [ objects_in.lb ];
-            ubs = [ objects_in.ub ];
-            objects_out = reshape( lbs + ubs, size( objects_in ) ) ./ 2;
+            lbs = [ intervals.lb ];
+            ubs = [ intervals.ub ];
+            objects_out = reshape( lbs + ubs, size( intervals ) ) ./ 2;
 
-        end % function objects_out = center( objects_in )
+        end % function objects_out = center( intervals )
 
         %------------------------------------------------------------------
         % length (overload abs function)
         %------------------------------------------------------------------
-        function lengths = abs( objects_in )
+        function lengths = abs( intervals )
 
             % compute lengths
-            lbs = [ objects_in.lb ];
-            ubs = [ objects_in.ub ];
-            lengths = reshape( ubs - lbs, size( objects_in) );
+            lbs = [ intervals.lb ];
+            ubs = [ intervals.ub ];
+            lengths = reshape( ubs - lbs, size( intervals) );
 
-        end % function lengths = abs( objects_in )
+        end % function lengths = abs( intervals )
 
         %------------------------------------------------------------------
         % element
@@ -114,44 +114,44 @@ classdef interval
         %------------------------------------------------------------------
         % quantization (overload quantize function)
         %------------------------------------------------------------------
-        function objects_out = quantize( objects_in, deltas )
+        function objects_out = quantize( intervals, deltas )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( objects_in, deltas );
+            auxiliary.mustBeEqualSize( intervals, deltas );
 
             % ensure equal subclasses of physical_values.physical_quantity
-            lbs = [ objects_in.lb ];
+            lbs = [ intervals.lb ];
             auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', lbs, deltas );
 
             %--------------------------------------------------------------
             % 2.) compute boundary indices
             %--------------------------------------------------------------
             % initialize boundary indices
-            lbs_q = zeros( size( objects_in ) );
-            ubs_q = zeros( size( objects_in ) );
+            lbs_q = zeros( size( intervals ) );
+            ubs_q = zeros( size( intervals ) );
 
             % compute lower and upper boundary indices
-            for index_object = 1:numel( objects_in )
+            for index_object = 1:numel( intervals )
 
                 % compute boundary fractions
-                index_lb = objects_in( index_object ).lb / deltas( index_object );
-                index_ub = objects_in( index_object ).ub / deltas( index_object );
+                index_lb = intervals( index_object ).lb / deltas( index_object );
+                index_ub = intervals( index_object ).ub / deltas( index_object );
 
                 % compute boundary indices
                 lbs_q( index_object ) = ceil( index_lb );
                 ubs_q( index_object ) = floor( index_ub );
 
-            end % for index_object = 1:numel( objects_in )
+            end % for index_object = 1:numel( intervals )
 
             %--------------------------------------------------------------
             % 3.) create quantized intervals
             %--------------------------------------------------------------
             objects_out = math.interval_quantized( lbs_q, ubs_q, deltas );
 
-        end % function objects_out = quantize( objects_in, deltas )
+        end % function objects_out = quantize( intervals, deltas )
 
         %------------------------------------------------------------------
         % discretize
@@ -165,20 +165,15 @@ classdef interval
             intervals = quantize( intervals, deltas );
 
             %--------------------------------------------------------------
-            % 2.) compute sets of discrete physical quantities
+            % 2.) extract quantized lower and upper bounds
             %--------------------------------------------------------------
-            % create cell array of physical quantities
-            objects_out = cell( size( intervals ) );
+            lbs_q = reshape( [ intervals.q_lb ], size( intervals ) );
+            ubs_q = reshape( [ intervals.q_ub ], size( intervals ) );
 
-            % compute discrete physical quantities
-            for index_object = 1:numel( intervals )
-                objects_out{ index_object } = ( intervals( index_object ).q_lb:(intervals( index_object ).q_ub - 1) ) * intervals( index_object ).delta;
-            end
-
-            % avoid cell array for single interval
-            if numel( intervals ) == 1
-                objects_out = objects_out{ 1 };
-            end
+            %--------------------------------------------------------------
+            % 3.) create strictly monotonically increasing sequences
+            %--------------------------------------------------------------
+            objects_out = math.sequence_increasing_regular( lbs_q, ubs_q, deltas );
 
         end % function objects_out = discretize( intervals, deltas )
 

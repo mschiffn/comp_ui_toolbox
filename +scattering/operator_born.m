@@ -8,7 +8,7 @@
 classdef operator_born < scattering.operator
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -16,7 +16,7 @@ classdef operator_born < scattering.operator
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+	%% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -171,6 +171,18 @@ classdef operator_born < scattering.operator
             end
 
         end % function u_M = mtimes( operator_born, fluctuations )
+
+        %------------------------------------------------------------------
+        % received energy
+        %------------------------------------------------------------------
+        function energy_rx()
+        end
+
+        %------------------------------------------------------------------
+        % point spread function (PSF)
+        %------------------------------------------------------------------
+        function out = psf( operator_born, indices )
+        end
 
 	end % methods
 

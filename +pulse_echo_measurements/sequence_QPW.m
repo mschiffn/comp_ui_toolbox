@@ -15,12 +15,12 @@ classdef sequence_QPW < pulse_echo_measurements.sequence
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = sequence_QPW( setup, excitation_voltages_common, e_theta, interval_t, interval_f )
-
+        function object = sequence_QPW( setup, u_tx_tilde, e_theta, interval_t, interval_f )
+% TODO: determine interval_t from times-of-flight
             %--------------------------------------------------------------
             % 1.) create synthesis settings
             %--------------------------------------------------------------
-            settings_tx = controls.setting_tx_QPW( setup, excitation_voltages_common, e_theta );
+            settings_tx = controls.setting_tx_QPW( setup, u_tx_tilde, e_theta );
 
             %--------------------------------------------------------------
             % 2.) create reception settings (estimate recording time intervals via options?)

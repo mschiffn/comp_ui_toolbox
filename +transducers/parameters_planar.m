@@ -3,7 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-03-25
+% modified: 2019-04-02
+%
+% TODO: apodization, elevational focus
 %
 classdef parameters_planar < transducers.parameters
 

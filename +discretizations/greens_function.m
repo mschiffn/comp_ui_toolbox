@@ -1,4 +1,4 @@
-function result = greens_function( axis_k_tilde, grid_element, grid_FOV, varargin )
+function result = greens_function( axis_k, grid_element, grid_FOV, varargin )
 % Green's function for the d-dimensional Euclidean space
 %
 % author: Martin F. Schiffner
@@ -13,8 +13,8 @@ function result = greens_function( axis_k_tilde, grid_element, grid_FOV, varargi
 	%----------------------------------------------------------------------
 	% 2.) compute arguments of Green's functions
 	%----------------------------------------------------------------------
-	N_samples_f = numel( axis_k_tilde );
-	k_tilde_times_D_act = repmat( reshape( axis_k_tilde, [ 1, 1, N_samples_f ] ), size( D_act ) ) .* repmat( D_act, [ 1, 1, N_samples_f ] );
+	N_samples_f = numel( axis_k );
+	k_times_D_act = repmat( reshape( axis_k, [ 1, 1, N_samples_f ] ), size( D_act ) ) .* repmat( D_act, [ 1, 1, N_samples_f ] );
 
     %----------------------------------------------------------------------
 	% 3.) compute Green's functions
@@ -26,14 +26,14 @@ function result = greens_function( axis_k_tilde, grid_element, grid_FOV, varargi
             %--------------------------------------------------------------
             % a) two-dimensional Euclidean space
             %--------------------------------------------------------------
-            result = 0.25j * besselh( 0, 2, k_tilde_times_D_act );
+            result = 0.25j * besselh( 0, 2, k_times_D_act );
 
         case 3
 
             %--------------------------------------------------------------
             % b) three-dimensional Euclidean space
             %--------------------------------------------------------------
-            result = - exp( -1j * k_tilde_times_D_act ) ./ repmat( 4 * pi * D_act, [ 1, 1, N_samples_f ] );
+            result = - exp( -1j * k_times_D_act ) ./ repmat( 4 * pi * D_act, [ 1, 1, N_samples_f ] );
 
         otherwise
 
@@ -46,4 +46,9 @@ function result = greens_function( axis_k_tilde, grid_element, grid_FOV, varargi
 
 	end % switch grid_FOV.N_dimensions
 
-end % function result = greens_function( axis_k_tilde, grid_element, grid_FOV, varargin )
+    %----------------------------------------------------------------------
+	% 4.) create field
+	%----------------------------------------------------------------------
+    result = discretizations.field( axis_k, grid_FOV, result );
+
+end % function result = greens_function( axis_k, grid_element, grid_FOV, varargin )

@@ -1,22 +1,11 @@
 %
-% superclass for all temporal signals
+% superclass for all individual signals
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-02-20
+% modified: 2019-03-29
 %
-classdef signal
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-
-        % independent properties
-        set_t ( 1, 1 ) discretizations.set_discrete_time	% set of discrete time instants
-        samples ( 1, : ) physical_values.physical_value     % temporal samples of the signal
-
-    end
+classdef signal < discretizations.signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -26,7 +15,7 @@ classdef signal
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = signal( sets_t, samples )
+        function objects = signal( axes, samples )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -37,33 +26,27 @@ classdef signal
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sets_t, samples );
+            auxiliary.mustBeEqualSize( axes, samples );
 
-            %--------------------------------------------------------------
-            % 2.) create signals
-            %--------------------------------------------------------------
-            % construct column vector of objects
-            N_objects = numel( sets_t );
-            objects = repmat( objects, size( sets_t ) );
+            % check for row vectors
+            for index_object = 1:numel( axes )
 
-            % check and set independent properties
-            for index_object = 1:N_objects
-
-                % ensure row vectors with suitable numbers of components
-                if ~( isrow( samples{ index_object } ) && numel( samples{ index_object } ) == abs( sets_t( index_object ) ) )
-                    errorStruct.message     = sprintf( 'The content of samples{ %d } must be a row vector with %d components!', index_object, abs( sets_t( index_object ) ) );
+                % ensure row vectors
+                if ~isrow( samples{ index_object } )
+                    errorStruct.message     = sprintf( 'The content of samples{ %d } must be a row vector!', index_object );
                     errorStruct.identifier	= 'signal:NoRowVector';
                     error( errorStruct );
                 end
 
-                % set independent properties
-                objects( index_object ).set_t = sets_t( index_object );
-                objects( index_object ).samples = samples{ index_object };
+            end % for index_object = 1:numel( axes )
 
-            end % for index_object = 1:N_objects
+            %--------------------------------------------------------------
+            % 2.) constructor of superclass
+            %--------------------------------------------------------------
+            objects@discretizations.signal_matrix( axes, samples );
 
-        end % function objects = signal( sets_t, samples )
+        end % function objects = signal( axes, samples )
 
     end % methods
 
-end
+end % classdef signal < discretizations.signal_matrix

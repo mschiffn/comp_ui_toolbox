@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21
-% modified: 2019-03-27
+% modified: 2019-04-01
 %
 classdef parallelotope
 
@@ -29,7 +29,7 @@ classdef parallelotope
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = parallelotope( edge_lengths, varargin )
+        function objects = parallelotope( edge_lengths, basis )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -44,17 +44,6 @@ classdef parallelotope
                 edge_lengths = { edge_lengths };
             end
 
-            % ensure definition of basis
-            if nargin >= 2
-                basis = varargin{ 1 };
-            else
-                % create canonical bases of adequate dimensions
-                basis = cell( size( edge_lengths ) );
-                for index_object = 1:numel( edge_lengths )
-                    basis{ index_object } = math.unit_vector( eye( numel( edge_lengths{ index_object } ) ) )';
-                end
-            end
-
             % ensure cell array for basis
             if ~iscell( basis )
                 basis = { basis };
@@ -66,6 +55,7 @@ classdef parallelotope
             %--------------------------------------------------------------
             % 2.) create parallelotopes
             %--------------------------------------------------------------
+            % repeat default parallelotope
             objects = repmat( objects, size( edge_lengths ) );
 
             % check and set independent properties
@@ -74,14 +64,14 @@ classdef parallelotope
                 % ensure class physical_values.length
                 if ~isa( edge_lengths{ index_object }, 'physical_values.length' )
                     errorStruct.message = sprintf( 'edge_lengths{ %d } must be physical_values.length!', index_object );
-                    errorStruct.identifier	= 'parallelotope:NoLength';
+                    errorStruct.identifier	= 'parallelotope:NoLengths';
                     error( errorStruct );
                 end
 
                 % ensure class math.unit_vector
                 if ~isa( basis{ index_object }, 'math.unit_vector' )
                     errorStruct.message = sprintf( 'basis{ %d } must be math.unit_vector!', index_object );
-                    errorStruct.identifier	= 'parallelotope:NoUnitVector';
+                    errorStruct.identifier	= 'parallelotope:NoUnitVectors';
                     error( errorStruct );
                 end
 
@@ -97,37 +87,37 @@ classdef parallelotope
 
                 % ensure linearly independent unit vectors in basis
                 if double( objects( index_object ).volume ) < eps
-                    errorStruct.message = sprintf( 'math.unit_vector in basis{ %d } must be linearly independent!', index_object );
+                    errorStruct.message = sprintf( 'basis{ %d } must consist of linearly independent math.unit_vector!', index_object );
                     errorStruct.identifier	= 'parallelotope:NoBasis';
                     error( errorStruct );
                 end
 
             end % for index_object = 1:numel( edge_lengths )
 
-        end % function objects = parallelotope( edge_lengths, varargin )
+        end % function objects = parallelotope( edge_lengths, basis )
 
         %------------------------------------------------------------------
         % volume
         %------------------------------------------------------------------
-        function results = compute_volume( parallelotopes )
+        function volumes = compute_volume( parallelotopes )
 
             % initialize cell array to enable diverse physical units
-            results = cell( size( parallelotopes ) );
+            volumes = cell( size( parallelotopes ) );
 
             % iterate parallelotopes
             for index_object = 1:numel( parallelotopes )
 
                 % compute volume as absolute value of the determinant of the basis vectors
-                results{ index_object } = abs( det( parallelotopes( index_object ).edge_lengths .* parallelotopes( index_object ).basis ) );
+                volumes{ index_object } = abs( det( parallelotopes( index_object ).edge_lengths .* parallelotopes( index_object ).basis ) );
 
             end % for index_object = 1:numel( parallelotopes )
 
             % avoid cell array for single parallelotope
             if numel( parallelotopes ) == 1
-                results = results{ 1 };
+                volumes = volumes{ 1 };
             end
 
-        end % function results = compute_volume( parallelotopes )
+        end % function volumes = compute_volume( parallelotopes )
 
     end % methods
 

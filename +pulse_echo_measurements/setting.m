@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-03-28
+% modified: 2019-04-02
 %
 classdef setting
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -17,13 +17,13 @@ classdef setting
         rx ( :, : ) controls.setting_rx     % mixer settings
 
         % dependent properties
-        interval_t ( 1, 1 ) math.interval_time       % hull of all recording time intervals
-        interval_f ( 1, 1 ) math.interval_frequency	% hull of all frequency intervals
+        interval_t ( 1, 1 ) math.interval	% hull of all recording time intervals
+        interval_f ( 1, 1 ) math.interval	% hull of all frequency intervals
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -46,7 +46,7 @@ classdef setting
             %--------------------------------------------------------------
             % 2.) create pulse-echo measurement settings
             %--------------------------------------------------------------
-            % construct objects
+            % repeat default pulse-echo measurement setting
             objects = repmat( objects, size( settings_tx ) );
 
             % set and check independent properties
@@ -69,14 +69,12 @@ classdef setting
         %------------------------------------------------------------------
         function objects_out = discretize( settings, options_spectral )
             % TODO: various types of discretization / regular vs irregular
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.options_spectral
-            if ~isa( options_spectral, 'discretizations.options_spectral')
-                errorStruct.message     = 'options_spectral must be discretizations.options_spectral!';
-                errorStruct.identifier	= 'discretize:NoOptionsSpectral';
-                error( errorStruct );
+            % multiple settings / single options_spectral
+            if ~isscalar( settings ) && isscalar( options_spectral )
             end
 
             %--------------------------------------------------------------
@@ -141,8 +139,8 @@ classdef setting
                     %------------------------------------------------------
                     % d) unknown spectral discretization method
                     %------------------------------------------------------
-                    errorStruct.message     = 'discretizations.options_spectral not implemented!';
-                    errorStruct.identifier	= 'discretize:UnknownMethod';
+                    errorStruct.message     = 'options_spectral must be discretizations.options_spectral!';
+                    errorStruct.identifier	= 'discretize:NoOptionsSpectral';
                     error( errorStruct );
 
             end % switch options_spectral

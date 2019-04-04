@@ -36,21 +36,19 @@ classdef operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class pulse_echo_measurements.sequence
-            if ~isa( sequence, 'pulse_echo_measurements.sequence' ) || numel( sequence ) ~= 1
+            % ensure class pulse_echo_measurements.sequence (scalar)
+            if ~( isa( sequence, 'pulse_echo_measurements.sequence' ) && isscalar( sequence ) )
                 errorStruct.message     = 'sequence must be a single pulse_echo_measurements.sequence!';
-                errorStruct.identifier	= 'operator:NoSingleSequence';
+                errorStruct.identifier	= 'operator:NoScalarSequence';
                 error( errorStruct );
             end
-            % assertion: sequence is a single pulse_echo_measurements.sequence
 
-            % ensure class scattering.options
-            if ~isa( options, 'scattering.options' ) || numel( options ) ~= 1
+            % ensure class scattering.options (scalar)
+            if ~( isa( options, 'scattering.options' ) && isscalar( options ) )
                 errorStruct.message     = 'options must be a single scattering.options!';
-                errorStruct.identifier	= 'operator:NoSingleOptions';
+                errorStruct.identifier	= 'operator:NoScalarOptions';
                 error( errorStruct );
             end
-            % assertion: options is a single scattering.options
 
             %--------------------------------------------------------------
             % 2.) set independent properties
