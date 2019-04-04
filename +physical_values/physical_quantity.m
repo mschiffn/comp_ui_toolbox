@@ -8,27 +8,27 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-03-27
+% modified: 2019-04-04
 %
 classdef physical_quantity < physical_values.transparent_container
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
-        exponents
+        exponents ( 1, 8 ) double
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
-        % 1.) original functions
+        %% 1.) original functions
         %------------------------------------------------------------------
         % constructor
         function object = physical_quantity( exponents, varargin )
@@ -153,10 +153,11 @@ classdef physical_quantity < physical_values.transparent_container
         end
 
         %------------------------------------------------------------------
-        % 2.) prefix conversion
+        %% 2.) prefix conversion
         %------------------------------------------------------------------
         % compute size in binary system
-        function size_binary = convert_binary( physical_quantity, base, exponent )
+        function physical_quantity = convert_binary( physical_quantity, base, exponent )
+            % TODO: change class
             physical_quantity.values = physical_quantity.values / base^exponent;
         end
 
@@ -169,9 +170,10 @@ classdef physical_quantity < physical_values.transparent_container
         end
 
         % mega
-        function size_megabyte = mega( objects )
-            % return result of binary conversion
-            size_megabyte = convert_binary( objects, 10, 6 );
+        function physical_quantity = mega( physical_quantity )
+            str_class = class( physical_quantity );
+            str_class_mega = [ 'mega', str_class ];
+            physical_quantity = convert_binary( physical_quantity, 10, 6 );
         end
 
         % giga
@@ -199,14 +201,17 @@ classdef physical_quantity < physical_values.transparent_container
         end
 
         %------------------------------------------------------------------
-        % 2.) overload built-in type conversion functions
+        %% 3.) overload built-in type conversion functions
         %------------------------------------------------------------------
+        % double-precision arrays
         function results = double( physical_quantity )
             results = double( physical_quantity.values );
         end
 
+        % TODO: logical, struct
+
         %------------------------------------------------------------------
-        % 3.) overload built-in concatenation functions
+        %% 4.) overload built-in concatenation functions
         %------------------------------------------------------------------
         % concatenate arrays along specified dimension
         function physical_quantity_ref = cat( dim, physical_quantity_ref, varargin )
@@ -231,20 +236,18 @@ classdef physical_quantity < physical_values.transparent_container
 
                 % ensure class physical_values.physical_quantity
                 if ~isa( varargin{ index_arg }, 'physical_values.physical_quantity' )
-                    errorStruct.message = sprintf( 'varargin{ %d } is not physical_values.physical_quantity!', index_arg );
-                    errorStruct.identifier = 'cat:NoPhysicalValue';
-                    error( errorStruct );
+                    % perform concatenation
+                    physical_quantity_ref.values = cat( dim, physical_quantity_ref.values, varargin{ index_arg } );
+                else
+                    % ensure equal physical unit
+                    if ~isequal( exponents_ref, varargin{ index_arg }.exponents )
+                        errorStruct.message = sprintf( 'varargin{ %d } has incompatible physical unit!', index_arg );
+                        errorStruct.identifier = 'cat:Arguments';
+                        error( errorStruct );
+                    end
+                    % perform concatenation
+                    physical_quantity_ref.values = cat( dim, physical_quantity_ref.values, varargin{ index_arg }.values );
                 end
-
-                % ensure equal physical unit
-                if ~isequal( exponents_ref, varargin{ index_arg }.exponents )
-                    errorStruct.message = sprintf( 'varargin{ %d } has incompatible physical unit!', index_arg );
-                    errorStruct.identifier = 'cat:Arguments';
-                    error( errorStruct );
-                end
-
-                % perform concatenation
-                physical_quantity_ref.values = cat( dim, physical_quantity_ref.values, varargin{ index_arg }.values );
 
             end % for index_arg = 1:numel( varargin )
 
@@ -261,8 +264,69 @@ classdef physical_quantity < physical_values.transparent_container
         end
 
         %------------------------------------------------------------------
-        % 4.) overload built-in functions that maintain the physical unit
+        %% 5.)
         %------------------------------------------------------------------
+        % redefine subscripted assignment
+        function physical_quantity = subsasgn( physical_quantity, S, B )
+
+            if isempty( physical_quantity )
+                physical_quantity = B;
+            else
+                if isa( B, 'physical_values.physical_quantity' )
+                    mustBeCompatible( physical_quantity, B );
+                    physical_quantity.values = subsasgn( physical_quantity.values, S, B.values );
+                else
+                    physical_quantity.values = subsasgn( physical_quantity.values, S, double( B ) );
+                end
+            end
+
+        end
+
+        %------------------------------------------------------------------
+        %% 6.) overload built-in property validation functions
+        %------------------------------------------------------------------
+        % validate that value is greater than another value or issue error
+        function mustBeGreaterThan( physical_quantity_1, physical_quantity_2 )
+            mustBeCompatible( physical_quantity_1, physical_quantity_2 );
+            mustBeGreaterThan@physical_values.transparent_container( physical_quantity_1, physical_quantity_2 );
+        end
+
+        % validate that value is greater than or equal to another value or issue error
+        function mustBeGreaterThanOrEqual( physical_quantity_1, physical_quantity_2 )
+            mustBeCompatible( physical_quantity_1, physical_quantity_2 );
+            mustBeGreaterThanOrEqual@physical_values.transparent_container( physical_quantity_1, physical_quantity_2 );
+        end
+
+        % validate that value is less than another value or issue error
+        function mustBeLessThan( physical_quantity_1, physical_quantity_2 )
+            mustBeCompatible( physical_quantity_1, physical_quantity_2 );
+            mustBeLessThan@physical_values.transparent_container( physical_quantity_1, physical_quantity_2 );
+        end
+
+        % validate that value is less than or equal to another value or issue error
+        function mustBeLessThanOrEqual( physical_quantity_1, physical_quantity_2 )
+            mustBeCompatible( physical_quantity_1, physical_quantity_2 );
+            mustBeLessThanOrEqual@physical_values.transparent_container( physical_quantity_1, physical_quantity_2 );
+        end
+
+        %------------------------------------------------------------------
+        %% 8.) overload built-in functions that maintain the physical unit
+        %------------------------------------------------------------------
+        % complex conjugate
+        function physical_quantity = conj( physical_quantity )
+            physical_quantity.values = conj( physical_quantity.values );
+        end
+
+        % transpose vector or matrix
+        function physical_quantity = transpose( physical_quantity )
+            physical_quantity.values = transpose( physical_quantity.values );
+        end
+
+        % complex conjugate transpose
+        function physical_quantity = ctranspose( physical_quantity )
+            physical_quantity.values = ctranspose( physical_quantity.values );
+        end
+
         % unary plus
         function physical_quantity = uplus( physical_quantity )
         end
@@ -319,6 +383,13 @@ classdef physical_quantity < physical_values.transparent_container
             physical_quantity.values = sum( physical_quantity.values, varargin{ : } );
         end
 
+        % fast Fourier transform
+        function physical_quantity = fft( physical_quantity, varargin )
+            physical_quantity.values = fft( physical_quantity.values, varargin{ : } );
+        end
+
+        % TODO: fft2, fftn, ifft, ifft2, ifftn
+
         % addition
         function physical_quantity_1 = plus( physical_quantity_1, physical_quantity_2 )
 
@@ -351,23 +422,31 @@ classdef physical_quantity < physical_values.transparent_container
 
         end
 
-        % quantize
-%         function objects = quantize( physical_quantity, delta )
-% 
-%             % check arguments
-%             if ~isscalar( delta )
-%                 errorStruct.message     = 'delta must be a scalar!';
-%                 errorStruct.identifier	= 'quantize:NoScalar';
-%                 error( errorStruct );
-%             end
-%             mustBePositive( delta );
-% 
-%             % quantize values
-%             N_objects = numel( objects );
-%             for index_object = 1:N_objects
-%                 objects( index_object ).value = round( objects( index_object ).value / delta ) * delta;
-%             end
-%         end % function objects = quantize( objects, delta )
+        % vector creation, array subscripting, and for-loop iteration
+        function physical_quantity_start = colon( physical_quantity_start, varargin )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % specify step size and stop value
+            if nargin <= 2
+                step = physical_quantity_start( 1 );
+                step.values = 1;
+                physical_quantity_stop = varargin{ 1 };
+            else
+                step = varargin{ 1 };
+                physical_quantity_stop = varargin{ 2 };
+            end
+
+            % ensure compatible physical units
+            mustBeCompatible( physical_quantity_start, step, physical_quantity_stop );
+
+            %--------------------------------------------------------------
+            % 2.) perform colon operation
+            %--------------------------------------------------------------
+            physical_quantity_start.values = physical_quantity_start.values:step.values:physical_quantity_stop.values;
+
+        end
 
         % display value of variable
 %         function disp( physical_quantity )
@@ -377,11 +456,10 @@ classdef physical_quantity < physical_values.transparent_container
 %         end
 
         %------------------------------------------------------------------
-        % 5.) overload functions that potentially change the physical unit
+        %% 9.) overload functions that potentially change the physical unit
         %------------------------------------------------------------------
         % matrix determinant
         function physical_quantity = det( physical_quantity )
-
             physical_quantity.exponents = size( physical_quantity.values, 1 ) * physical_quantity.exponents;
             physical_quantity.values = det( physical_quantity.values );
             physical_quantity = determine_class( physical_quantity );
@@ -418,19 +496,15 @@ classdef physical_quantity < physical_values.transparent_container
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            if isa( arg_1, 'physical_values.physical_quantity' ) && isnumeric( arg_2 )
+            if isa( arg_1, 'physical_values.physical_quantity' ) && ~isa( arg_2, 'physical_values.physical_quantity' )
                 arg_1.values = arg_1.values .* arg_2;
-            elseif isnumeric( arg_1 ) && isa( arg_2, 'physical_values.physical_quantity' )
+            elseif ~isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
                 arg_2.values = arg_1 .* arg_2.values;
                 arg_1 = arg_2;
             elseif isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
-                arg_1.values = arg_1.values .* arg_2.values;
                 arg_1.exponents = arg_1.exponents + arg_2.exponents;
+                arg_1.values = arg_1.values .* arg_2.values;
                 arg_1 = determine_class( arg_1 );
-            else
-                errorStruct.message     = 'One argument must be numeric and one argument must be physical_values.physical_quantity or both arguments must be physical_values.physical_quantity!';
-                errorStruct.identifier	= 'mtimes:Arguments';
-                error( errorStruct );
             end
 
         end
@@ -441,20 +515,16 @@ classdef physical_quantity < physical_values.transparent_container
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            if isa( arg_1, 'physical_values.physical_quantity' ) && isnumeric( arg_2 )
+            if isa( arg_1, 'physical_values.physical_quantity' ) && ~isa( arg_2, 'physical_values.physical_quantity' )
                 arg_1.values = arg_1.values ./ arg_2;
-            elseif isnumeric( arg_1 ) && isa( arg_2, 'physical_values.physical_quantity' )
-                arg_2.values = arg_1 ./ arg_2.values;
+            elseif ~isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
                 arg_2.exponents = - arg_2.exponents;
+                arg_2.values = arg_1 ./ arg_2.values;
                 arg_1 = determine_class( arg_2 );
             elseif isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
-                arg_1.values = arg_1.values ./ arg_2.values;
                 arg_1.exponents = arg_1.exponents - arg_2.exponents;
+                arg_1.values = arg_1.values ./ arg_2.values;
                 arg_1 = determine_class( arg_1 );
-            else
-                errorStruct.message     = 'One argument must be numeric and one argument must be physical_values.physical_quantity or both arguments must be physical_values.physical_quantity!';
-                errorStruct.identifier	= 'mrdivide:Arguments';
-                error( errorStruct );
             end
 
         end
@@ -465,19 +535,15 @@ classdef physical_quantity < physical_values.transparent_container
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            if isa( arg_1, 'physical_values.physical_quantity' ) && isnumeric( arg_2 )
+            if isa( arg_1, 'physical_values.physical_quantity' ) && ~isa( arg_2, 'physical_values.physical_quantity' )
                 arg_1.values = arg_1.values * arg_2;
-            elseif isnumeric( arg_1 ) && isa( arg_2, 'physical_values.physical_quantity' )
+            elseif ~isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
                 arg_2.values = arg_1 * arg_2.values;
                 arg_1 = arg_2;
             elseif isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
-                arg_1.values = arg_1.values * arg_2.values;
                 arg_1.exponents = arg_1.exponents + arg_2.exponents;
+                arg_1.values = arg_1.values * arg_2.values;
                 arg_1 = determine_class( arg_1 );
-            else
-                errorStruct.message     = 'One argument must be numeric and one argument must be physical_values.physical_quantity or both arguments must be physical_values.physical_quantity!';
-                errorStruct.identifier	= 'mtimes:Arguments';
-                error( errorStruct );
             end
 
         end
@@ -488,26 +554,22 @@ classdef physical_quantity < physical_values.transparent_container
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            if isa( arg_1, 'physical_values.physical_quantity' ) && isnumeric( arg_2 )
+            if isa( arg_1, 'physical_values.physical_quantity' ) && ~isa( arg_2, 'physical_values.physical_quantity' )
                 arg_1.values = arg_1.values / arg_2;
-            elseif isnumeric( arg_1 ) && isa( arg_2, 'physical_values.physical_quantity' )
-                arg_2.values = arg_1 / arg_2.values;
+            elseif ~isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
                 arg_2.exponents = - arg_2.exponents;
+                arg_2.values = arg_1 / arg_2.values;
                 arg_1 = determine_class( arg_2 );
             elseif isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
-                arg_1.values = arg_1.values / arg_2.values;
                 arg_1.exponents = arg_1.exponents - arg_2.exponents;
+                arg_1.values = arg_1.values / arg_2.values;
                 arg_1 = determine_class( arg_1 );
-            else
-                errorStruct.message     = 'One argument must be numeric and one argument must be physical_values.physical_quantity or both arguments must be physical_values.physical_quantity!';
-                errorStruct.identifier	= 'mrdivide:Arguments';
-                error( errorStruct );
             end
 
         end
 
         %------------------------------------------------------------------
-        % 6.) overload logical functions
+        %% 10.) overload logical functions
         %------------------------------------------------------------------
         % determine greater than
         function results = gt( physical_quantity_1, physical_quantity_2 )
