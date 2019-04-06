@@ -111,9 +111,7 @@ classdef array_planar < transducers.array
 
                 % extract and augment center coordinates
                 pos_center = reshape( [ arrays_planar( index_object ).aperture.pos_center ], [ arrays_planar( index_object ).N_dimensions, arrays_planar( index_object ).N_elements ] )';
-                pos_center = [ pos_center, pos_center( :, 1 ) ];
-                pos_center( :, arrays_planar( index_object ).N_dimensions + 1 ) = zeros( arrays_planar( index_object ).N_elements, 1 );
-                objects_out{ index_object } = pos_center;
+                objects_out{ index_object } = [ pos_center, zeros( arrays_planar( index_object ).N_elements, 1 ) ];
 
             end % for index_object = 1:numel( arrays_planar )
 

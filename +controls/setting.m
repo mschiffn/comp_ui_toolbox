@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-04-02
+% modified: 2019-04-06
 %
 classdef setting
 
@@ -64,21 +64,16 @@ classdef setting
 
                         % multiple indices_active{ index_object } / single impulse_responses{ index_object }
                         if ~isscalar( indices_active{ index_object } ) && isscalar( impulse_responses{ index_object } )
+                            impulse_responses{ index_object } = repmat( impulse_responses{ index_object }, size( indices_active{ index_object } ) );
+                        end
 
-                            samples = repmat( impulse_responses{ index_object }.samples, [ numel( indices_active{ index_object } ), 1 ] );
-                            impulse_responses{ index_object } = discretizations.signal_matrix( impulse_responses{ index_object }.axis, samples );
+                        % ensure equal number of dimensions and sizes of cell array contents
+                        auxiliary.mustBeEqualSize( indices_active{ index_object }, impulse_responses{ index_object } );
 
-                        else
-
-                            % ensure equal number of dimensions and sizes of cell array contents
-                            auxiliary.mustBeEqualSize( indices_active{ index_object }, impulse_responses{ index_object } );
-
-                            % assemble signal_matrix for equal axes
-                            if isequal( impulse_responses{ index_object }.axis )
-                                samples = reshape( impulse_responses{ index_object }.samples, [ numel( impulse_responses{ index_object } ), abs( impulse_responses{ index_object }(1).axis ) ] );
-                                impulse_responses{ index_object } = discretizations.signal_matrix( impulse_responses{ index_object }.axis(1), samples );
-                            end
-
+                        % try to merge compatible signals into a single signal matrix
+                        try
+                            impulse_responses{ index_object } = merge( 1, impulse_responses{ index_object } );
+                        catch
                         end
 
                     case 'discretizations.signal_matrix'
@@ -90,20 +85,7 @@ classdef setting
                             error( errorStruct );
                         end
 
-                    otherwise
-
-                        errorStruct.message     = sprintf( 'impulse_responses{ %d } has to be discretizations.signal_matrix!', index_object );
-                        errorStruct.identifier	= 'setting:NoSignalMatrix';
-                        error( errorStruct );
-
                 end % switch class( impulse_responses{ index_object } )
-
-%                 % ensure row vectors
-%                 if ~isrow( indices_active{ index_object } )
-%                     errorStruct.message     = sprintf( 'The contents of indices_active{ %d } and impulse_responses{ %d } must be row vectors!', index_object, index_object );
-%                     errorStruct.identifier	= 'setting:SizeMismatch';
-%                     error( errorStruct );
-%                 end
 
                 % set independent properties
                 objects( index_object ).indices_active = indices_active{ index_object };
@@ -112,6 +94,79 @@ classdef setting
             end % for index_object = 1:numel( indices_active )
 
         end % function objects = setting( indices_active, impulse_responses )
+
+        %------------------------------------------------------------------
+        % spectral discretization
+        %------------------------------------------------------------------
+        function settings = discretize( settings, intervals_t, intervals_f )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure correct number of arguments
+            if nargin ~= 3
+                errorStruct.message     = 'Three arguments are required!';
+                errorStruct.identifier	= 'discretize:NumberArguments';
+                error( errorStruct );
+            end
+
+            % multiple settings / single intervals_t
+            if ~isscalar( settings ) && isscalar( intervals_t )
+                intervals_t = repmat( intervals_t, size( settings ) );
+            end
+
+            % multiple settings / single intervals_f
+            if ~isscalar( settings ) && isscalar( intervals_f )
+                intervals_f = repmat( intervals_f, size( settings ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( settings, intervals_t, intervals_f );
+
+            %--------------------------------------------------------------
+            % 2.) compute Fourier transform samples
+            %--------------------------------------------------------------
+            % iterate transducer control settings
+            for index_object = 1:numel( settings )
+
+                % compute Fourier transform samples
+                settings( index_object ).impulse_responses = fourier_transform( settings( index_object ).impulse_responses, intervals_t( index_object ), intervals_f( index_object ) );
+
+                % merge transforms to ensure class signal_matrix
+                % TODO: dim = 1 always correct?
+                settings( index_object ).impulse_responses = merge( 1, settings( index_object ).impulse_responses );
+
+            end % for index_object = 1:numel( settings )
+
+        end % function settings = discretize( settings, intervals_t, intervals_f )
+
+        %------------------------------------------------------------------
+        % unique active indices
+        %------------------------------------------------------------------
+        function [ indices_unique, ia, ic ] = unique_indices( settings )
+
+            % extract unique physical values
+            [ indices_unique, ia, ic ] = unique( [ settings.indices_active ] );
+
+        end % function [ indices_unique, ia, ic ] = unique_indices( settings )
+
+        %------------------------------------------------------------------
+        % compute hash values
+        %------------------------------------------------------------------
+        function str_hash = hash( settings )
+
+            % specify cell array
+            str_hash = cell( size( settings ) );
+
+            % iterate transducer control settings
+            for index_object = 1:numel( settings )
+
+                % use DataHash function to compute hash value
+                str_hash{ index_object } = auxiliary.DataHash( settings( index_object ) );
+
+            end % for index_object = 1:numel( settings )
+
+        end % function str_hash = hash( settings )
 
         %------------------------------------------------------------------
         % support

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-04-02
+% modified: 2019-04-05
 %
 classdef setting_tx < controls.setting
 
@@ -60,7 +60,7 @@ classdef setting_tx < controls.setting
             objects@controls.setting( indices_active, impulse_responses );
 
             %--------------------------------------------------------------
-            % 3.) set independent properties
+            % 3.) check and set independent properties
             %--------------------------------------------------------------
             % iterate transducer control settings in synthesis mode
             for index_object = 1:numel( objects )
@@ -71,80 +71,157 @@ classdef setting_tx < controls.setting
 
                         % multiple indices_active{ index_object } / single excitation_voltages{ index_object }
                         if ~isscalar( indices_active{ index_object } ) && isscalar( excitation_voltages{ index_object } )
+                            excitation_voltages{ index_object } = repmat( excitation_voltages{ index_object }, size( indices_active{ index_object } ) );
+                        end
 
-                            samples = repmat( excitation_voltages{ index_object }.samples, [ numel( indices_active{ index_object } ), 1 ] );
-                            excitation_voltages{ index_object } = discretizations.signal_matrix( excitation_voltages{ index_object }.axis, samples );
+                        % ensure equal number of dimensions and sizes of cell array contents
+                        auxiliary.mustBeEqualSize( indices_active{ index_object }, excitation_voltages{ index_object } );
 
-                        else
-
-                            % ensure equal number of dimensions and sizes of cell array contents
-                            auxiliary.mustBeEqualSize( indices_active{ index_object }, excitation_voltages{ index_object } );
-
-                            % assemble signal_matrix for equal axes
-                            if isequal( excitation_voltages{ index_object }.axis )
-                                samples = reshape( excitation_voltages{ index_object }.samples, [ numel( excitation_voltages{ index_object } ), abs( excitation_voltages{ index_object }(1).axis ) ] );
-                                excitation_voltages{ index_object } = discretizations.signal_matrix( excitation_voltages{ index_object }.axis(1), samples );
-                            end
-
+                        % try to merge compatible signals into a single signal matrix
+                        try
+                            excitation_voltages{ index_object } = merge( 1, excitation_voltages{ index_object } );
+                        catch
                         end
 
                     case 'discretizations.signal_matrix'
 
                         % ensure single signal matrix of correct size
                         if ~isscalar( excitation_voltages{ index_object } ) || ( numel( indices_active{ index_object } ) ~= excitation_voltages{ index_object }.N_signals )
-                            errorStruct.message     = sprintf( 'excitation_voltages{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
-                            errorStruct.identifier	= 'setting:SizeMismatch';
+                            errorStruct.message = sprintf( 'excitation_voltages{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
+                            errorStruct.identifier = 'setting:SizeMismatch';
                             error( errorStruct );
                         end
 
-                    otherwise
-
-                        errorStruct.message     = sprintf( 'excitation_voltages{ %d } has to be discretizations.signal_matrix!', index_object );
-                        errorStruct.identifier	= 'setting:NoSignalMatrix';
-                        error( errorStruct );
-
                 end % switch class( excitation_voltages{ index_object } )
 
+                % ensure class physical_values.voltage
+%                 if ~isa( [ excitation_voltages{ index_object }.samples ], 'physical_values.voltage' )
+%                     errorStruct.message = sprintf( 'excitation_voltages{ %d }.samples has to be physical_values.voltage!', index_object );
+%                     errorStruct.identifier = 'setting:NoVoltages';
+%                     error( errorStruct );
+%                 end
+
+                % set independent properties
                 objects( index_object ).excitation_voltages = excitation_voltages{ index_object };
 
-            end % for index_object = 1:numel( indices_active )
+            end % for index_object = 1:numel( objects )
 
         end % function objects = setting_tx( indices_active, impulse_responses, excitation_voltages )
 
         %------------------------------------------------------------------
         % spectral discretization
         %------------------------------------------------------------------
-        function objects_out = discretize( setting_tx, intervals_t, intervals_f )
+        function settings_tx = discretize( settings_tx, intervals_t, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure correct number of arguments
+            if nargin ~= 3
+                errorStruct.message     = 'Three arguments are required!';
+                errorStruct.identifier	= 'discretize:NumberArguments';
+                error( errorStruct );
+            end
+
+            % multiple settings_tx / single intervals_t
+            if ~isscalar( settings_tx ) && isscalar( intervals_t )
+                intervals_t = repmat( intervals_t, size( settings_tx ) );
+            end
+
+            % multiple settings_tx / single intervals_f
+            if ~isscalar( settings_tx ) && isscalar( intervals_f )
+                intervals_f = repmat( intervals_f, size( settings_tx ) );
+            end
+
+            % single settings_tx / multiple intervals_t
+            if isscalar( settings_tx ) && ~isscalar( intervals_t )
+                settings_tx = repmat( settings_tx, size( intervals_t ) );
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( intervals_t, intervals_f );
+            auxiliary.mustBeEqualSize( settings_tx, intervals_t, intervals_f );
 
             %--------------------------------------------------------------
-            % 2.) compute transfer functions and excitation voltages
+            % 2.) compute Fourier transform samples and coefficients
             %--------------------------------------------------------------
+            % transfer behavior via superclass
+            settings_tx = discretize@controls.setting( settings_tx, intervals_t, intervals_f );
+
+            % iterate transducer control settings
+            for index_object = 1:numel( settings_tx )
+
+                % compute Fourier coefficients
+                settings_tx( index_object ).excitation_voltages = fourier_coefficients( settings_tx( index_object ).excitation_voltages, intervals_t( index_object ), intervals_f( index_object ) );
+
+                % merge transforms to ensure class signal_matrix
+                % TODO: dim = 1 always correct?
+                settings_tx( index_object ).excitation_voltages = merge( 1, settings_tx( index_object ).excitation_voltages );
+
+            end % for index_object = 1:numel( settings_tx )
+
+        end % function settings_tx = discretize( settings_tx, intervals_t, intervals_f )
+
+        %------------------------------------------------------------------
+        % unique values in array (overload unique function)
+        %------------------------------------------------------------------
+        function [ object_out, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % return settings_tx if only one argument
+            if isscalar( settings_tx )
+                object_out = settings_tx;
+                indices_unique_to_f = [];
+                indices_f_to_unique = [];
+                return;
+            end
+
+            %
+            % TODO: check matching dimensions
+            % TODO: impulse_responses and excitation_voltages must be single signal matrices (ensured by Fourier transform)
+
+            %--------------------------------------------------------------
+            % 2.) extract transfer functions and excitation voltages for unique frequencies
+            %--------------------------------------------------------------
+            % extract axes of discrete frequencies
+            axes_f = repmat( settings_tx( 1 ).excitation_voltages.axis, size( settings_tx ) );
+            for index_object = 2:numel( settings_tx )
+                axes_f( index_object ) = settings_tx( index_object ).excitation_voltages.axis;
+            end
+
+            % extract axis of unique discrete frequencies
+            % TODO: create regular sequence if possible
+            [ axis_f_unique, indices_unique_to_f, indices_f_to_unique ] = unique( axes_f );
+            N_samples_f_unique = numel( indices_unique_to_f );
+
             % initialize cell arrays
-            indices_active = cell( size( intervals_t ) );
-            transfer_functions = cell( size( intervals_t ) );
-            excitation_voltages = cell( size( intervals_t ) );
+            samples_tf = repmat( settings_tx( 1 ).impulse_responses.samples( 1 ), [ numel( settings_tx( 1 ).indices_active ), N_samples_f_unique ] );
+            samples_u_tx = repmat( settings_tx( 1 ).excitation_voltages.samples( 1 ), [ numel( settings_tx( 1 ).indices_active ), N_samples_f_unique ] );
 
-            % iterate intervals
-            for index_object = 1:numel( intervals_t )
+            for index_f_unique = 1:N_samples_f_unique
 
-                indices_active{ index_object } = setting_tx.indices_active;
-                transfer_functions{ index_object } = fourier_transform( setting_tx.impulse_responses, intervals_t( index_object ), intervals_f( index_object ) );
-                excitation_voltages{ index_object } = fourier_coefficients( setting_tx.excitation_voltages, intervals_t( index_object ), intervals_f( index_object ) );
+                % map unique frequencies to object and frequency index
+                index_object = indices_unique_to_f( index_f_unique ).index_object;
+                index_f = indices_unique_to_f( index_f_unique ).index_f;
 
-            end % for index_object = 1:numel( intervals_t )
+                % extract samples
+                samples_tf( :, index_f_unique ) = settings_tx( index_object ).impulse_responses.samples( :, index_f );
+                samples_u_tx( :, index_f_unique ) = settings_tx( index_object ).excitation_voltages.samples( :, index_f );
+
+            end % for index_f_unique = 1:N_samples_f_unique
+
+            % create transfer functions and excitation voltages
+            indices_active_unique = settings_tx( 1 ).indices_active;
+            impulse_responses_unique = discretizations.signal_matrix( axis_f_unique, samples_tf );
+            excitation_voltages_unique = discretizations.signal_matrix( axis_f_unique, samples_u_tx );
 
             %--------------------------------------------------------------
-            % 3.) create spectral discretizations of the recording settings
+            % 3.) create objects
             %--------------------------------------------------------------
-            objects_out = discretizations.spectral_points_tx( indices_active, transfer_functions, excitation_voltages );
+            object_out = controls.setting_tx( indices_active_unique, impulse_responses_unique, excitation_voltages_unique );
 
-        end % function objects_out = discretize( setting_tx, intervals_t, intervals_f )
+        end % function [ object_out, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx )
 
 	end % methods
 

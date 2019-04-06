@@ -13,11 +13,11 @@ classdef spectral_points < discretizations.spectral
 	properties (SetAccess = private)
 
         % independent properties
-        tx ( :, : ) discretizations.spectral_points_tx
-        rx ( :, : ) discretizations.spectral_points_rx
+        tx ( :, : ) controls.setting_tx
+        rx ( :, : ) controls.setting_rx
 
         % dependent properties
-        tx_unique ( :, : ) discretizations.spectral_points_tx
+        tx_unique ( :, : ) controls.setting_tx
         indices_f_to_unique
         indices_unique_to_f
         indices_active

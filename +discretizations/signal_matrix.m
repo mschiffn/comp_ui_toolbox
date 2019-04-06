@@ -78,30 +78,12 @@ classdef signal_matrix
         end % function objects = signal_matrix( axes, samples )
 
         %------------------------------------------------------------------
-        % data volume
-        %------------------------------------------------------------------
-        function volumes = data_volume( signal_matrices )
-
-            % initialize data volumes
-            volumes = physical_values.byte( zeros( size( signal_matrices ) ) );
-
-            % iterate signal matrices
-            for index_object = 1:numel( signal_matrices )
-
-                samples_act = signal_matrices( index_object ).samples;
-                S = whos('samples_act');
-                volumes( index_object ) = physical_values.byte( S.bytes );
-
-            end % for index_object = 1:numel( signal_matrices )
-
-        end % function volumes = data_volume( signal_matrices )
-
-        %------------------------------------------------------------------
-        % orthonormal discrete Fourier transform
+        % orthonormal discrete Fourier transform (DFT)
         %------------------------------------------------------------------
         function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, intervals_t, intervals_f )
 % TODO: generalize for arbitrary physical units
 % TODO: generalize for complex-valued samples
+% TODO: summarize multiple signals into signal matrix, if frequency axes are identical
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -135,7 +117,7 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 2.) compute orthonormal discrete Fourier transforms
             %--------------------------------------------------------------
-            % extract axes
+            % extract axes and numbers of samples
             axes = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
             N_samples_signal = abs( axes );
 
@@ -146,8 +128,9 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % extract deltas
+            % extract deltas and lower bounds
             deltas = reshape( [ axes.delta ], size( signal_matrices ) );
+            lbs_q_signal = reshape( [ axes.q_lb ], size( signal_matrices ) );
 
             % ensure class physical_values.time
             if ~isa( [ axes.members ], 'physical_values.time' )
@@ -159,10 +142,12 @@ classdef signal_matrix
             % quantize recording time intervals and determine lengths
             intervals_t_quantized = quantize( intervals_t, deltas );
             T_rec_act = abs( intervals_t_quantized );
-            N_dft = double( [ intervals_t_quantized.q_ub ] - [ intervals_t_quantized.q_lb ] );
+            lbs_q = reshape( [ intervals_t_quantized.q_lb ], size( signal_matrices ) );
+            ubs_q = reshape( [ intervals_t_quantized.q_ub ], size( signal_matrices ) );
+            N_dft = double( ubs_q - lbs_q );
 
-            % ensure that intervals_t includes the discrete times
-            if N_samples_signal > N_dft
+            % ensure that numbers of samples do not exceed the order of the DFT
+            if any( N_samples_signal(:) > N_dft(:) )
                 errorStruct.message = sprintf( 'Number of signal samples %d exceeds order of DFT %d!', N_samples_signal, N_dft );
                 errorStruct.identifier = 'DFT:IntervalMismatch';
                 error( errorStruct );
@@ -170,7 +155,7 @@ classdef signal_matrix
 
             % compute axes of relevant frequencies
             axes_f = discretize( intervals_f, 1 ./ T_rec_act );
-            samples_shift = axes.q_lb - [ intervals_t_quantized.q_lb ];
+            samples_shift = lbs_q_signal - lbs_q;
 
             % initialize cell arrays
             samples_dft = cell( size( signal_matrices ) );
@@ -178,14 +163,22 @@ classdef signal_matrix
             % iterate signal matrices
             for index_object = 1:numel( signal_matrices )
 
-                % TODO: only for real-valued signals!
+                % ensure real-valued samples
+                if ~isreal( signal_matrices( index_object ).samples )
+                    errorStruct.message = sprintf( 'signal_matrices( %d ).samples must be real-valued!', index_object );
+                    errorStruct.identifier = 'DFT:NoRealSamples';
+                    error( errorStruct );
+                end
+
+                % specify relevant indices
                 indices_relevant = double( axes_f( index_object ).q_lb:axes_f( index_object ).q_ub );
 
-                % compute and truncate DFT                
+                % zero-pad and shift samples
                 size_samples = size( signal_matrices( index_object ).samples );
-                samples_act = cat( numel( size_samples ), signal_matrices( index_object ).samples, zeros( size_samples( 1:(end - 1) ), N_dft - N_samples_signal ) );
+                samples_act = cat( numel( size_samples ), signal_matrices( index_object ).samples, zeros( [ size_samples( 1:(end - 1) ), N_dft( index_object ) - N_samples_signal( index_object ) ] ) );
                 samples_act = circshift( samples_act, samples_shift( index_object ), numel( size_samples ) );
 
+                % compute and truncate DFT
                 DFT_act = fft( samples_act, N_dft( index_object ), numel( size_samples ) ) / sqrt( N_dft( index_object ) );
                 str_selector = repmat( {':'}, [ 1, numel( size_samples ) - 1 ] );
                 samples_dft{ index_object } = DFT_act( str_selector{ : }, indices_relevant );
@@ -236,6 +229,79 @@ classdef signal_matrix
             end % for index_object = 1:numel( signal_matrices )
 
         end % function signal_matrices = fourier_coefficients( signal_matrices, intervals_t, intervals_f )
+
+        %------------------------------------------------------------------
+        % merge compatible signal matrices
+        %------------------------------------------------------------------
+        function signal_matrix = merge( dim, signal_matrices )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure positive integers for dim
+            mustBeInteger( dim );
+            mustBePositive( dim );
+
+            % quick exit for single signal_matrices
+            if isscalar( signal_matrices )
+                signal_matrix = signal_matrices;
+                return;
+            end
+
+            % ensure identical axes
+            if ~isequal( signal_matrices.axis )
+                errorStruct.message = 'All signal matrices must have identical axes!';
+                errorStruct.identifier = 'merge:AxisMismatch';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) perform merging
+            %--------------------------------------------------------------
+            % extract reference axis and samples
+            axis_ref = signal_matrices( 1 ).axis;
+            samples_ref = signal_matrices( 1 ).samples;
+
+            % ensure correct merging dimension
+            if dim >= ndims( samples_ref )
+                errorStruct.message = 'dim must not exceed the number of dimensions minus one!';
+                errorStruct.identifier = 'merge:InvalidDim';
+                error( errorStruct );
+            end
+
+            % iterate signal matrices
+            for index_object = 2:numel( signal_matrices )
+
+                % concatenate samples along specified dimension
+                samples_ref = cat( dim, samples_ref, signal_matrices( index_object ).samples );
+
+            end % for index_object = 2:numel( signal_matrices )
+
+            %--------------------------------------------------------------
+            % 3.) create signal matrix
+            %--------------------------------------------------------------
+            signal_matrix = discretizations.signal_matrix( axis_ref, samples_ref );
+
+        end % function signal_matrix = merge( dim, signal_matrices )
+
+        %------------------------------------------------------------------
+        % data volume
+        %------------------------------------------------------------------
+        function volumes = data_volume( signal_matrices )
+
+            % initialize data volumes
+            volumes = physical_values.byte( zeros( size( signal_matrices ) ) );
+
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
+
+                samples_act = signal_matrices( index_object ).samples;
+                S = whos('samples_act');
+                volumes( index_object ) = physical_values.byte( S.bytes );
+
+            end % for index_object = 1:numel( signal_matrices )
+
+        end % function volumes = data_volume( signal_matrices )
 
         %------------------------------------------------------------------
         % 2-D line plot (overload plot function)

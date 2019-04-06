@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-04-02
+% modified: 2019-04-04
 %
 classdef setting
 
@@ -73,7 +73,7 @@ classdef setting
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % multiple settings / single options_spectral
+            % TODO: multiple settings / single options_spectral
             if ~isscalar( settings ) && isscalar( options_spectral )
             end
 
@@ -93,7 +93,7 @@ classdef setting
                     %------------------------------------------------------
                     for index_setting = 1:numel( settings )
 
-                        % time and frequency intervals
+                        % time and frequency intervals of each recorded signal
                         intervals_t = reshape( [ settings( index_setting ).rx.interval_t ], size( settings( index_setting ).rx ) );
                         intervals_f = reshape( [ settings( index_setting ).rx.interval_f ], size( settings( index_setting ).rx ) );
 

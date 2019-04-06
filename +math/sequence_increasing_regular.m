@@ -54,7 +54,8 @@ classdef sequence_increasing_regular < math.sequence_increasing
             %--------------------------------------------------------------
             members = cell( size( lbs_q ) );
             for index_object = 1:numel( lbs_q )
-                members{ index_object } = ( lbs_q( index_object ):ubs_q( index_object ) ) * deltas( index_object );
+                % use double function to prevent zeros caused by int64
+                members{ index_object } = double( lbs_q( index_object ):ubs_q( index_object ) ) * deltas( index_object );
             end
 
             %--------------------------------------------------------------

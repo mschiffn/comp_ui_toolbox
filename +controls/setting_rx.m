@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-03-29
+% modified: 2019-04-04
 %
 classdef setting_rx < controls.setting
 
@@ -43,15 +43,47 @@ classdef setting_rx < controls.setting
             %--------------------------------------------------------------
             % 2.) check arguments
             %--------------------------------------------------------------
+            % ensure classes math.interval
+            if ~( isa( intervals_t, 'math.interval' ) && isa( intervals_f, 'math.interval' ) )
+                errorStruct.message     = 'intervals_t and intervals_f must be math.interval!';
+                errorStruct.identifier	= 'setting_rx:NoIntervals';
+                error( errorStruct );
+            end
+
+            % multiple objects / single intervals_t
+            if ~isscalar( objects ) && isscalar( intervals_t )
+                intervals_t = repmat( intervals_t, size( objects ) );
+            end
+
+            % multiple objects / single intervals_f
+            if ~isscalar( objects ) && isscalar( intervals_f )
+                intervals_f = repmat( intervals_f, size( objects ) );
+            end
+
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( objects, intervals_t, intervals_f );
 
             %--------------------------------------------------------------
             % 3.) create recording settings
             %--------------------------------------------------------------
-            % set independent properties
+            % iterate transducer control settings in recording mode
             for index_object = 1:numel( objects )
 
+                % ensure time interval
+                if ~isa( intervals_t( index_object ).lb, 'physical_values.time' )
+                    errorStruct.message = sprintf( 'Bounds of intervals_t( %d ) must be physical_values.time!', index_object );
+                    errorStruct.identifier = 'setting_rx:NoTimeInterval';
+                    error( errorStruct );
+                end
+
+                % ensure frequency interval
+                if ~isa( intervals_f( index_object ).lb, 'physical_values.frequency' )
+                    errorStruct.message = sprintf( 'Bounds of intervals_f( %d ) must be physical_values.frequency!', index_object );
+                    errorStruct.identifier = 'setting_rx:NoFrequencyInterval';
+                    error( errorStruct );
+                end
+
+                % set independent properties
                 objects( index_object ).interval_t = intervals_t( index_object );
                 objects( index_object ).interval_f = intervals_f( index_object );
 
@@ -62,44 +94,39 @@ classdef setting_rx < controls.setting
         %------------------------------------------------------------------
         % spectral discretization
         %------------------------------------------------------------------
-        function objects_out = discretize( settings_rx, varargin )
+        function settings_rx = discretize( settings_rx, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure correct number of arguments
             if ~( nargin == 1 || nargin == 3 )
                 errorStruct.message     = 'Either one or three arguments are required!';
                 errorStruct.identifier	= 'discretize:Arguments';
                 error( errorStruct );
             end
 
-            %--------------------------------------------------------------
-            % 2.) compute transfer functions
-            %--------------------------------------------------------------
-            indices_active = cell( size( settings_rx ) );
-            transfer_functions = cell( size( settings_rx ) );
-            for index_object = 1:numel( settings_rx )
+            % specify recording time and frequency intervals
+            if nargin == 1
 
-                % specify recording time and frequency intervals
-                if nargin == 1
-                    interval_t_act = settings_rx( index_object ).interval_t;
-                    interval_f_act = settings_rx( index_object ).interval_f;
-                else
-                    interval_t_act = varargin{ 1 };
-                    interval_f_act = varargin{ 2 };
-                end
+                % use intervals from transducer control settings
+                intervals_t = reshape( [ settings_rx.interval_t ], size( settings_rx ) );
+                intervals_f = reshape( [ settings_rx.interval_f ], size( settings_rx ) );
 
-                indices_active{ index_object } = settings_rx( index_object ).indices_active;
-                transfer_functions{ index_object } = fourier_transform( settings_rx( index_object ).impulse_responses, interval_t_act, interval_f_act );
+            else
 
-            end % for index_object = 1:numel( settings_rx )
+                % use external intervals
+                intervals_t = varargin{ 1 };
+                intervals_f = varargin{ 2 };
+
+            end % if nargin == 1
 
             %--------------------------------------------------------------
-            % 3.) create spectral discretizations of the recording settings
+            % 2.) compute Fourier transform samples via superclass method
             %--------------------------------------------------------------
-            objects_out = discretizations.spectral_points_rx( indices_active, transfer_functions );
+            settings_rx = discretize@controls.setting( settings_rx, intervals_t, intervals_f );
 
-        end % function objects_out = discretize( settings_rx, varargin )
+        end % function settings_rx = discretize( settings_rx, varargin )
 
 	end % methods
 

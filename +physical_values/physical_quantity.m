@@ -310,7 +310,7 @@ classdef physical_quantity < physical_values.transparent_container
         end
 
         %------------------------------------------------------------------
-        %% 8.) overload built-in functions that maintain the physical unit
+        %% 7.) overload built-in functions that maintain the physical unit
         %------------------------------------------------------------------
         % complex conjugate
         function physical_quantity = conj( physical_quantity )
@@ -456,7 +456,7 @@ classdef physical_quantity < physical_values.transparent_container
 %         end
 
         %------------------------------------------------------------------
-        %% 9.) overload functions that potentially change the physical unit
+        %% 8.) overload functions that potentially change the physical unit
         %------------------------------------------------------------------
         % matrix determinant
         function physical_quantity = det( physical_quantity )
@@ -569,7 +569,7 @@ classdef physical_quantity < physical_values.transparent_container
         end
 
         %------------------------------------------------------------------
-        %% 10.) overload logical functions
+        %% 9.) overload logical functions
         %------------------------------------------------------------------
         % determine greater than
         function results = gt( physical_quantity_1, physical_quantity_2 )

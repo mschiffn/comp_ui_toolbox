@@ -124,8 +124,34 @@ classdef transparent_container
         end
 
         %------------------------------------------------------------------
-        %% 2.) overload built-in is* functions
+        %% 2.) overload built-in state detection (is*) functions
         %------------------------------------------------------------------
+        % see Matlab documentation "is*" "Detect state"
+        % determine if input is cell array
+        function tf = iscell( container )
+            tf = iscell( container.values );
+        end
+
+        % determine if input is cell array of character vectors
+        function tf = iscellstr( container )
+            tf = iscellstr( container.values );
+        end
+
+        % determine if input is character array
+        function tf = ischar( container )
+            tf = ischar( container.values );
+        end
+
+        % determine whether input is column vector
+        function tf = iscolumn( container )
+            tf = iscolumn( container.values );
+        end
+
+        % determine if matrix is diagonal
+        function tf = isdiag( container )
+            tf = isdiag( container.values );
+        end
+
         % determine whether array is empty
         function tf = isempty( container )
             tf = isempty( container.values );
@@ -144,6 +170,11 @@ classdef transparent_container
         % array elements that are finite
         function tf = isfinite( container )
             tf = isfinite( container.values );
+        end
+
+        % determine if input is floating-point array
+        function tf = isfloat( container )
+            tf = isfloat( container.values );
         end
 
         % array elements that are infinite
@@ -167,7 +198,7 @@ classdef transparent_container
         end
 
         %------------------------------------------------------------------
-        %% 3.) overload built-in property validation functions
+        %% 3.) overload built-in property validation (mustBe*) functions
         %------------------------------------------------------------------
         % validate that value is positive or issue error
         function mustBePositive( container )
@@ -177,6 +208,16 @@ classdef transparent_container
         % validate that value is nonpositive or issue error
         function mustBeNonpositive( container )
             mustBeNonpositive( container.values );
+        end
+
+        % validate that value is finite or issue error
+        function mustBeFinite( container )
+            mustBeFinite( container.values );
+        end
+
+        % validate that value is nonNaN
+        function mustBeNonNan( container )
+            mustBeNonNan( container.values );
         end
 
         % validate that value is negative or issue error
@@ -213,6 +254,39 @@ classdef transparent_container
         function mustBeLessThanOrEqual( container_1, container_2 )
             mustBeLessThanOrEqual( container_1.values, container_2.values );
         end
+
+        % validate that value is nonempty or issue error
+        function mustBeNonempty( container )
+            mustBeNonempty( container.values );
+        end
+
+        % validate that value is nonsparse or issue error
+        function mustBeNonsparse( container )
+            mustBeNonsparse( container.values );
+        end
+
+        % validate that value is numeric or issue error
+        function mustBeNumeric( container )
+            mustBeNumeric( container.values );
+        end
+
+        % validate that value is numeric or logical or issue error
+        function mustBeNumericOrLogical( container )
+            mustBeNumericOrLogical( container.values );
+        end
+
+        % validate that value is real or issue error
+        function mustBeReal( container )
+            mustBeReal( container.values );
+        end
+
+        % validate that value is integer or issue error
+        function mustBeInteger( container )
+            mustBeInteger( container.values );
+        end
+
+        % validate that value is member of specified set
+%         mustBeMember
 
 	end % methods
 

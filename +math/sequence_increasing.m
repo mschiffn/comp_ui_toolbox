@@ -100,11 +100,11 @@ classdef sequence_increasing
             % 2.) create sequence of unique members
             %--------------------------------------------------------------
             % extract unique discrete frequencies
-            [ members, ia, ic ] = unique( [ sequences_in.members ] );
-            N_members_unique = numel( members );
+            [ members_unique, ia, ic ] = unique( [ sequences_in.members ] );
+            N_members_unique = numel( members_unique );
 
             % create sequence of unique members
-            sequence_out = discretizations.sequence_increasing( members );
+            sequence_out = math.sequence_increasing( members_unique );
 
             %--------------------------------------------------------------
             % 3.) map unique members to those in each sequence
