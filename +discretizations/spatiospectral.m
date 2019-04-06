@@ -14,7 +14,7 @@ classdef spatiospectral
 
         % independent properties
         spatial ( 1, 1 ) discretizations.spatial        % spatial discretization
-        spectral %( :, : ) discretizations.spectral      % spectral discretization
+        spectral ( :, : ) discretizations.spectral      % spectral discretization
 
     end % properties
 

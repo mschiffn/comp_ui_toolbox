@@ -51,7 +51,7 @@ classdef physical_quantity < physical_values.transparent_container
 
             % ensure nonemptyness of the argument
             mustBeNonempty( values );
-            mustBeReal( values );
+%             mustBeReal( values );
             mustBeFinite( values );
 
             %--------------------------------------------------------------

@@ -22,7 +22,7 @@ function objects = spatial_transfer_function( axis_k, grid_element, grid_FOV )
 	%----------------------------------------------------------------------
 	% TODO: prevent swapping for three-dimensional FOVs
 	h_tx = discretizations.greens_function( axis_k, grid_element, grid_FOV );
-	h_tx = reshape( squeeze( sum( h_tx, 1 ) ), [ grid_FOV.N_points_axis, numel( axis_k ) ] );
+	h_tx = reshape( squeeze( sum( h_tx, 1 ) ), [ grid_FOV.N_points_axis, abs( axis_k ) ] );
 	h_tx = -2 * grid_element.cell_ref.volume * h_tx;
 
 	%----------------------------------------------------------------------

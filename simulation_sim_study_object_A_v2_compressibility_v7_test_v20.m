@@ -37,7 +37,7 @@ frac_bw_ref = -60;             % dB value that determines frac_bw
 
 % properties of the homogeneous fluid
 c_ref = physical_values.meter_per_second( 1500 );
-absorption_model = absorption_models.time_causal( 0, 2.17e-3, 2, c_ref, double( f_tx ), 1 );
+absorption_model = absorption_models.time_causal( 0, 2.17e-3, 2, double( c_ref ), double( f_tx ), 1 );
 
 % directions of incidence
 theta_incident = (77.5:2.5:102.5) * pi / 180;

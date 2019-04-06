@@ -18,8 +18,7 @@ classdef operator
 
         % dependent properties
         discretization ( 1, 1 ) discretizations.spatiospectral      % results of the spatiospectral discretization
-        p_incident % ( :, : ) syntheses.pressure_incident           % incident acoustic pressure field
-        p_incident_grad                                             % spatial gradient of the incident acoustic pressure field
+        incident_waves ( :, : ) syntheses.incident_wave             % incident waves
 
     end % properties
 
@@ -69,7 +68,7 @@ classdef operator
             %--------------------------------------------------------------
             % 4.) compute incident acoustic fields (unique frequencies)
             %--------------------------------------------------------------
-            object.p_incident = syntheses.pressure_incident( object.sequence.setup, object.discretization );
+            object.incident_waves = syntheses.incident_wave( object.sequence.setup, object.discretization );
 
             % create pulse-echo measurements
             % TODO: check method to determine Fourier coefficients

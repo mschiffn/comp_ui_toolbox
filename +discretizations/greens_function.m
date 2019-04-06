@@ -13,8 +13,8 @@ function result = greens_function( axis_k, grid_element, grid_FOV, varargin )
 	%----------------------------------------------------------------------
 	% 2.) compute arguments of Green's functions
 	%----------------------------------------------------------------------
-	N_samples_f = numel( axis_k );
-	k_times_D_act = repmat( reshape( axis_k, [ 1, 1, N_samples_f ] ), size( D_act ) ) .* repmat( D_act, [ 1, 1, N_samples_f ] );
+	N_samples_k = numel( axis_k );
+	k_times_D_act = repmat( reshape( axis_k, [ 1, 1, N_samples_k ] ), size( D_act ) ) .* repmat( D_act, [ 1, 1, N_samples_k ] );
 
     %----------------------------------------------------------------------
 	% 3.) compute Green's functions
@@ -33,7 +33,7 @@ function result = greens_function( axis_k, grid_element, grid_FOV, varargin )
             %--------------------------------------------------------------
             % b) three-dimensional Euclidean space
             %--------------------------------------------------------------
-            result = - exp( -1j * k_times_D_act ) ./ repmat( 4 * pi * D_act, [ 1, 1, N_samples_f ] );
+            result = - exp( -1j * k_times_D_act ) ./ repmat( 4 * pi * D_act, [ 1, 1, N_samples_k ] );
 
         otherwise
 
@@ -49,6 +49,6 @@ function result = greens_function( axis_k, grid_element, grid_FOV, varargin )
     %----------------------------------------------------------------------
 	% 4.) create field
 	%----------------------------------------------------------------------
-    result = discretizations.field( axis_k, grid_FOV, result );
+%     result = discretizations.field( axis_k, grid_FOV, result );
 
 end % function result = greens_function( axis_k, grid_element, grid_FOV, varargin )

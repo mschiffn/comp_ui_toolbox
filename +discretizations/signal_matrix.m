@@ -60,6 +60,7 @@ classdef signal_matrix
                 size_samples = size( samples{ index_object } );
 
                 % ensure correct sizes
+                % TODO: ensure class math.sequence_increasing
                 if ~( abs( axes( index_object ) ) == size_samples( end ) )
                     errorStruct.message = sprintf( 'axes( %d ) must match samples{ %d }!', index_object, index_object );
                     errorStruct.identifier = 'signal_matrix:SizeMismatch';
@@ -283,6 +284,35 @@ classdef signal_matrix
             signal_matrix = discretizations.signal_matrix( axis_ref, samples_ref );
 
         end % function signal_matrix = merge( dim, signal_matrices )
+
+        %------------------------------------------------------------------
+        % element-wise multiplication (overload times method)
+        %------------------------------------------------------------------
+        function arg_1 = times( arg_1, arg_2 )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure classes signal_matrix
+            if ~( isa( arg_1, 'discretizations.signal_matrix' ) && isa( arg_2, 'discretizations.signal_matrix' ) )
+                errorStruct.message = 'arg_1 and arg_2 must be discretizations.signal_matrix!';
+                errorStruct.identifier = 'times:NoSignalMatrices';
+                error( errorStruct );
+            end
+
+            % ensure identical axes
+            if ~isequal( arg_1.axis, arg_2.axis )
+                errorStruct.message = 'arg_1 and arg_2 must have identical axes!';
+                errorStruct.identifier = 'times:DiverseAxes';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) perform element-wise multiplication
+            %--------------------------------------------------------------
+            arg_1.samples = arg_1.samples .* arg_2.samples;
+
+        end % function arg_1 = times( arg_1, arg_2 )
 
         %------------------------------------------------------------------
         % data volume
