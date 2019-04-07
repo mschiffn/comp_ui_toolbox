@@ -312,86 +312,8 @@ classdef physical_quantity < physical_values.transparent_container
         end
 
         %------------------------------------------------------------------
-        %% 7.) overload built-in functions that maintain the physical unit
-        %------------------------------------------------------------------
-        % complex conjugate
-        function physical_quantity = conj( physical_quantity )
-            physical_quantity.values = conj( physical_quantity.values );
-        end
-
-        % transpose vector or matrix
-        function physical_quantity = transpose( physical_quantity )
-            physical_quantity.values = transpose( physical_quantity.values );
-        end
-
-        % complex conjugate transpose
-        function physical_quantity = ctranspose( physical_quantity )
-            physical_quantity.values = ctranspose( physical_quantity.values );
-        end
-
-        % unary plus
-        function physical_quantity = uplus( physical_quantity )
-        end
-
-        % unary minus
-        function physical_quantity = uminus( physical_quantity )
-            physical_quantity.values = - physical_quantity.values;
-        end
-
-        % absolute value
-        function physical_quantity = abs( physical_quantity )
-            physical_quantity.values = abs( physical_quantity.values );
-        end
-
-        % round toward positive infinity
-        function physical_quantity = ceil( physical_quantity )
-            physical_quantity.values = ceil( physical_quantity.values );
-        end
-
-        % round toward negative infinity
-        function physical_quantity = floor( physical_quantity )
-            physical_quantity.values = floor( physical_quantity.values );
-        end
-
-        % minimum elements of an array
-        function varargout = min( physical_quantity, varargin )
-
-            % TODO: exclude problematic cases
-            varargout{1} = physical_quantity;
-            [ varargout{1}.values, varargout{2:nargout} ] = min( physical_quantity.values, varargin{ : } );
-
-        end
-
-        % maximum elements of an array
-        function varargout = max( physical_quantity, varargin )
-
-            % TODO: exclude problematic cases
-            varargout{1} = physical_quantity;
-            [ varargout{1}.values, varargout{2:nargout} ] = max( physical_quantity.values, varargin{ : } );
-
-        end
-
-        % unique values in array
-        function varargout = unique( physical_quantity, varargin )
-
-            % extract unique physical quantities
-            varargout{ 1 } = physical_quantity;
-            [ varargout{ 1 }.values, varargout{ 2:nargout } ] = unique( physical_quantity.values, varargin{ : } );
-
-        end
-
-        % sum of array elements
-        function physical_quantity = sum( physical_quantity, varargin )
-            physical_quantity.values = sum( physical_quantity.values, varargin{ : } );
-        end
-
-        % fast Fourier transform
-        function physical_quantity = fft( physical_quantity, varargin )
-            physical_quantity.values = fft( physical_quantity.values, varargin{ : } );
-        end
-
-        % TODO: fft2, fftn, ifft, ifft2, ifftn
-
+        %% 7.) overload built-in functions that maintain the physical unit but require compatibility
+        %------------------------------------------------------------------      
         % addition
         function physical_quantity_1 = plus( physical_quantity_1, physical_quantity_2 )
 

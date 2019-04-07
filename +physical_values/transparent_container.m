@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-25
-% modified: 2019-04-04
+% modified: 2019-04-07
 %
 classdef transparent_container
 
@@ -50,34 +50,14 @@ classdef transparent_container
         %------------------------------------------------------------------
         %% 1.) overload built-in functions to ensure transparency
         %------------------------------------------------------------------
-        % number of array elements
-        function result = numel( container )
-            result = numel( container.values );
+        % absolute value
+        function container = abs( container )
+            container.values = abs( container.values );
         end
 
-        % array size
-        function varargout = size( container, varargin )
-            [ varargout{ 1:nargout } ] = size( container.values, varargin{ : } );
-        end
-
-        % length of largest array dimension
-        function result = length( container )
-            result = length( container.values );
-        end
-
-        % number of array dimensions
-        function result = ndims( container )
-            result = ndims( container.values );
-        end
-
-        % repeat copies of array
-        function container = repmat( container, varargin )
-            container.values = repmat( container.values, varargin{ : } );
-        end
-
-        % reshape array
-        function container = reshape( container, varargin )
-            container.values = reshape( container.values, varargin{ : } );
+        % round toward positive infinity
+        function container = ceil( container )
+            container.values = ceil( container.values );
         end
 
         % shift array circularly
@@ -85,31 +65,36 @@ classdef transparent_container
             container.values = circshift( container.values, varargin{ : } );
         end
 
-        % real part of complex number
-        function container = real( container )
-            container.values = real( container.values );
+        % complex conjugate
+        function container = conj( container )
+            container.values = conj( container.values );
         end
 
-        % imaginary part of complex number
-        function container = imag( container )
-            container.values = imag( container.values );
+        % complex conjugate transpose
+        function container = ctranspose( container )
+            container.values = ctranspose( container.values );
         end
 
-        % redefine subscripted reference for objects
-        function container = subsref( container, S )
-            container.values = subsref( container.values, S );
+        % cumulative sum
+        function container = cumsum( container, varargin )
+            container.values = cumsum( container.values, varargin{ : } );
         end
 
-        % redefine subscripted assignment
-        function container = subsasgn( container, S, B )
-            
-            if isempty( container )
-                % TODO: is this correct?
-                container = B;
-            else
-                container.values = subsasgn( container.values, S, B.values );
+        % create diagonal matrix or get diagonal elements of matrix
+        function container = diag( container, varargin )
+            container.values = diag( container.values, varargin{ : } );
+        end
+
+        % differences and approximate derivatives
+        function container = diff( container, varargin )
+            container.values = diff( container.values, varargin{ : } );
+        end
+
+        % display value of variable
+        function disp( container )
+            if ~isempty( container )
+                disp( container.values );
             end
-
         end
 
         % indicate last array index
@@ -126,38 +111,168 @@ classdef transparent_container
             end
         end
 
-        % display value of variable
-        function disp( container )
-            if ~isempty( container )
-                disp( container.values );
-            end
+        % fast Fourier transform
+        function container = fft( container, varargin )
+            container.values = fft( container.values, varargin{ : } );
+        end
+        % TODO: fft2, fftn
+
+        % round toward negative infinity
+        function container = floor( container )
+            container.values = floor( container.values );
         end
 
-%         function v = abs(v);            v.value = abs(v.value);                 end
-%     function v = circshift(v,varargin)
-%         v.value = circshift(v.value,varargin{:});
-%     end
-%     function v = conj(v);           v.value = conj(v.value);                end
-%     function v = ctranspose(v);     v.value = v.value';                     end
-%     function v = cumsum(v,varargin);v.value = cumsum(v.value,varargin{:});  end
-%     function v = diag(v,varargin);  v.value = diag(v.value,varargin{:});    end
-%     function v = diff(v,varargin);  v.value = diff(v.value,varargin{:});    end
-%     function v = full(v);           v.value = full(v.value);                end
-%     function v = mean(v,varargin);  v.value = mean(v.value,varargin{:});    end
-%     function v = median(v,varargin);v.value = median(v.value,varargin{:});  end
-%     function v = norm(v,varargin);  v.value = norm(v.value,varargin{:});    end
-%     function v = permute(v,varargin);v.value = permute(v.value,varargin{:});end
-%     function v = reshape(v,varargin);v.value = reshape(v.value,varargin{:});end
-%     function [v,I] = sort(v,varargin)
-%         [v.value, I] = sort(v.value,varargin{:});
-%     end
-%     function v = std(v,varargin);   v.value = std(v.value,varargin{:});     end
-%     function v = subsref(v,varargin);v.value = subsref(v.value,varargin{:});end
-%     function v = sum(v,varargin);   v.value = sum(v.value,varargin{:});     end
-%     function v = trace(v);          v.value = trace(v.value);               end
-%     function v = transpose(v);      v.value = v.value.';                    end
-%     function v = uminus(v);         v.value = -v.value;                     end
-%     function v = uplus(v);                                                  end
+        % convert sparse matrix to full matrix
+        function container = full( container )
+            container.values = full( container.values );
+        end
+
+        % inverse fast Fourier transform
+        function container = ifft( container, varargin )
+            container.values = ifft( container.values, varargin{ : } );
+        end
+        % TODO: ifft2, ifftn
+
+        % imaginary part of complex number
+        function container = imag( container )
+            container.values = imag( container.values );
+        end
+
+        % length of largest array dimension
+        function result = length( container )
+            result = length( container.values );
+        end
+
+        % maximum elements of an array
+        function varargout = max( container, varargin )
+            % TODO: exclude problematic cases
+            varargout{1} = container;
+            [ varargout{1}.values, varargout{2:nargout} ] = max( container.values, varargin{ : } );
+        end
+
+        % average or mean value of array
+        function container = mean( container, varargin )
+            container.values = mean( container.values, varargin{ : } );
+        end
+
+        % median value of array
+        function container = median( container, varargin )
+            container.values = median( container.values, varargin{ : } );
+        end
+
+        % minimum elements of an array
+        function varargout = min( container, varargin )
+            % TODO: exclude problematic cases
+            varargout{1} = container;
+            [ varargout{1}.values, varargout{2:nargout} ] = min( container.values, varargin{ : } );
+        end
+
+        % number of array dimensions
+        function result = ndims( container )
+            result = ndims( container.values );
+        end
+
+        % vector and matrix norms
+        function container = norm( container, varargin )
+            container.values = norm( container.values, varargin{ : } );
+        end
+
+        % number of array elements
+        function result = numel( container )
+            result = numel( container.values );
+        end
+
+        % rearrange dimensions of N-D array
+        function container = permute( container, order )
+            container.values = permute( container.values, order );
+        end
+
+        % real part of complex number
+        function container = real( container )
+            container.values = real( container.values );
+        end
+
+        % repeat copies of array
+        function container = repmat( container, varargin )
+            container.values = repmat( container.values, varargin{ : } );
+        end
+
+        % reshape array
+        function container = reshape( container, varargin )
+            container.values = reshape( container.values, varargin{ : } );
+        end
+
+        % array size
+        function varargout = size( container, varargin )
+            [ varargout{ 1:nargout } ] = size( container.values, varargin{ : } );
+        end
+
+        % redefine subscripted assignment
+        function container = subsasgn( container, S, B )
+            
+            if isempty( container )
+                % TODO: is this correct?
+                container = B;
+            else
+                container.values = subsasgn( container.values, S, B.values );
+            end
+
+        end
+
+        % redefine subscripted reference for objects
+        function container = subsref( container, S )
+            container.values = subsref( container.values, S );
+        end
+
+        % sum of array elements
+        function container = sum( container, varargin )
+            container.values = sum( container.values, varargin{ : } );
+        end
+
+        % sort array elements
+        function varargout = sort( container, varargin )
+            % TODO: what happens if no output argument is specified in
+            % function call?
+            varargout{ 1 } = container;
+            [ varargout{ 1 }.values, varargout{ 2:nargout } ] = sort( container.values, varargin{ : } );
+        end
+
+        % standard deviation
+        function container = std( container, varargin )
+            container.values = std( container.values, varargin{ : } );
+        end
+
+        % sum of diagonal elements
+        function container = trace( container )
+            container.values = trace( container.values );
+        end
+
+        % transpose vector or matrix
+        function container = transpose( container )
+            container.values = transpose( container.values );
+        end
+
+        % unary minus
+        function container = uminus( container )
+            container.values = - container.values;
+        end
+
+        % unique values in array
+        function varargout = unique( container, varargin )
+            % TODO: what happens if no output argument is specified in
+            % function call?
+            varargout{ 1 } = container;
+            [ varargout{ 1 }.values, varargout{ 2:nargout } ] = unique( container.values, varargin{ : } );
+        end
+
+        % unary plus
+        function container = uplus( container )
+        end
+
+        % vector-wise norm
+        function container = vecnorm( container, varargin )
+            container.values = vecnorm( container.values, varargin{ : } );
+        end
 
         %------------------------------------------------------------------
         %% 2.) overload built-in state detection (is*) functions
