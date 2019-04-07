@@ -155,6 +155,7 @@ classdef setting_tx < controls.setting
 
                 % merge transforms to ensure class signal_matrix
                 % TODO: dim = 1 always correct?
+                % TODO: ensure that excitation_voltages and impulse_responses have identical axes?
                 settings_tx( index_object ).excitation_voltages = merge( 1, settings_tx( index_object ).excitation_voltages );
 
             end % for index_object = 1:numel( settings_tx )

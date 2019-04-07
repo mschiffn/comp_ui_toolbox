@@ -133,6 +133,8 @@ classdef physical_quantity < physical_values.transparent_container
                 result = physical_values.squaremeter( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 3, 0, 0, 0, 0, 0, 0, 0 ] )
                 result = physical_values.cubicmeter( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ -1, 0, 0, 0, 0, 0, 0, 0 ] )
+                result = physical_values.unity_per_meter( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 0, 1, 0, 0, 0, 0, 0, 0 ] )
                 result = physical_values.kilogram( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 0, 0, 1, 0, 0, 0, 0, 0 ] )

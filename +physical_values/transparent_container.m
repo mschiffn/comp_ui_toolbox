@@ -84,7 +84,17 @@ classdef transparent_container
         function container = circshift( container, varargin )
             container.values = circshift( container.values, varargin{ : } );
         end
-    
+
+        % real part of complex number
+        function container = real( container )
+            container.values = real( container.values );
+        end
+
+        % imaginary part of complex number
+        function container = imag( container )
+            container.values = imag( container.values );
+        end
+
         % redefine subscripted reference for objects
         function container = subsref( container, S )
             container.values = subsref( container.values, S );
@@ -122,6 +132,32 @@ classdef transparent_container
                 disp( container.values );
             end
         end
+
+%         function v = abs(v);            v.value = abs(v.value);                 end
+%     function v = circshift(v,varargin)
+%         v.value = circshift(v.value,varargin{:});
+%     end
+%     function v = conj(v);           v.value = conj(v.value);                end
+%     function v = ctranspose(v);     v.value = v.value';                     end
+%     function v = cumsum(v,varargin);v.value = cumsum(v.value,varargin{:});  end
+%     function v = diag(v,varargin);  v.value = diag(v.value,varargin{:});    end
+%     function v = diff(v,varargin);  v.value = diff(v.value,varargin{:});    end
+%     function v = full(v);           v.value = full(v.value);                end
+%     function v = mean(v,varargin);  v.value = mean(v.value,varargin{:});    end
+%     function v = median(v,varargin);v.value = median(v.value,varargin{:});  end
+%     function v = norm(v,varargin);  v.value = norm(v.value,varargin{:});    end
+%     function v = permute(v,varargin);v.value = permute(v.value,varargin{:});end
+%     function v = reshape(v,varargin);v.value = reshape(v.value,varargin{:});end
+%     function [v,I] = sort(v,varargin)
+%         [v.value, I] = sort(v.value,varargin{:});
+%     end
+%     function v = std(v,varargin);   v.value = std(v.value,varargin{:});     end
+%     function v = subsref(v,varargin);v.value = subsref(v.value,varargin{:});end
+%     function v = sum(v,varargin);   v.value = sum(v.value,varargin{:});     end
+%     function v = trace(v);          v.value = trace(v.value);               end
+%     function v = transpose(v);      v.value = v.value.';                    end
+%     function v = uminus(v);         v.value = -v.value;                     end
+%     function v = uplus(v);                                                  end
 
         %------------------------------------------------------------------
         %% 2.) overload built-in state detection (is*) functions

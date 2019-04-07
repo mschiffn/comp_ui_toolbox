@@ -136,13 +136,13 @@ classdef field < discretizations.signal_matrix
             hdl = zeros( size( fields ) );
             for index_object = 1:numel( fields )
 
-                N_samples_f = numel( fields( index_object ).values );
-                index_ctr = round( N_samples_f / 2 );
+                N_samples = abs( fields( index_object ).axis );
+                index_ctr = round( N_samples / 2 );
 
                 hdl( index_object ) = figure( index_object );
 
                 % check number of spatial dimensions
-                switch ndims( fields( index_object ).values{ 1 } )
+                switch ( ndims( fields( index_object ).samples ) - 1 )
 
                     case 2
 
@@ -150,17 +150,17 @@ classdef field < discretizations.signal_matrix
                         % a) two-dimensional Euclidean space
                         %--------------------------------------------------
                         subplot( 2, 3, 1);
-                        imagesc( abs( fields( index_object ).values{ 1 } ) );
+                        imagesc( abs( fields( index_object ).samples( :, :, 1 ) ) );
                         subplot( 2, 3, 2);
-                        imagesc( abs( fields( index_object ).values{ index_ctr } ) );
+                        imagesc( abs( fields( index_object ).samples( :, :, index_ctr ) ) );
                         subplot( 2, 3, 3);
-                        imagesc( abs( fields( index_object ).values{ end } ) );
+                        imagesc( abs( fields( index_object ).samples( :, :, end ) ) );
                         subplot( 2, 3, 4);
-                        imagesc( angle( fields( index_object ).values{ 1 } ) );
+                        imagesc( angle( fields( index_object ).samples( :, :, 1 ) ) );
                         subplot( 2, 3, 5);
-                        imagesc( angle( fields( index_object ).values{ index_ctr } ) );
+                        imagesc( angle( fields( index_object ).samples( :, :, index_ctr ) ) );
                         subplot( 2, 3, 6);
-                        imagesc( angle( fields( index_object ).values{ end } ) );
+                        imagesc( angle( fields( index_object ).samples( :, :, end ) ) );
 
                     case 3
 
@@ -168,23 +168,23 @@ classdef field < discretizations.signal_matrix
                         % b) three-dimensional Euclidean space
                         %--------------------------------------------------
                         subplot( 3, 3, 1);
-                        imagesc( abs( squeeze( fields( index_object ).values{ 1 }( :, 1, :) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, 1, :, 1 ) ) ) ) );
                         subplot( 3, 3, 2);
-                        imagesc( abs( squeeze( fields( index_object ).values{ index_ctr }( :, 1, :) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, 1, :, index_ctr ) ) ) ) );
                         subplot( 3, 3, 3);
-                        imagesc( abs( squeeze( fields( index_object ).values{ end }( :, 1, :) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, 1, :, end ) ) ) ) );
                         subplot( 3, 3, 4);
-                        imagesc( abs( squeeze( fields( index_object ).values{ 1 }( :, :, 1) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, :, 1, 1 ) ) ) ) );
                         subplot( 3, 3, 5);
-                        imagesc( abs( squeeze( fields( index_object ).values{ index_ctr }( :, :, 1) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, :, 1, index_ctr ) ) ) ) );
                         subplot( 3, 3, 6);
-                        imagesc( abs( squeeze( fields( index_object ).values{ end }( :, :, 1) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, :, 1, end ) ) ) ) );
                         subplot( 3, 3, 7);
-                        imagesc( abs( squeeze( fields( index_object ).values{ 1 }( 1, :, :) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( 1, :, :, 1 ) ) ) ) );
                         subplot( 3, 3, 8);
-                        imagesc( abs( squeeze( fields( index_object ).values{ index_ctr }( 1, :, :) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( 1, :, :, index_ctr ) ) ) ) );
                         subplot( 3, 3, 9);
-                        imagesc( abs( squeeze( fields( index_object ).values{ end }( 1, :, :) ) ) );
+                        imagesc( double( abs( squeeze( fields( index_object ).samples( 1, :, :, end ) ) ) ) );
 
                     otherwise
 
@@ -195,7 +195,7 @@ classdef field < discretizations.signal_matrix
                         errorStruct.identifier	= 'show:UnknownDimensions';
                         error( errorStruct );
 
-                end % switch ndims( fields( index_object ).values{ 1 } )
+                end % switch ( ndims( fields( index_object ).samples ) - 1 )
                 
             end % for index_object = 1:numel( fields )
 

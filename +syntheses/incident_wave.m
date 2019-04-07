@@ -162,29 +162,23 @@ end % classdef incident_wave
 function object = compute_p_in( setup, spatial_grid, setting_tx )
 
 	%----------------------------------------------------------------------
-	% 1.) compute complex-valued wavenumbers
-    %----------------------------------------------------------------------
-	axis_f = double( setting_tx.excitation_voltages.axis.members );
-	N_samples_f = abs( setting_tx.excitation_voltages.axis );
-	axis_k_tilde = setup.absorption_model.compute_wavenumbers( axis_f );
-
-	%----------------------------------------------------------------------
-	% 2.) normal velocities of active elements
+	% 1.) normal velocities of active elements
 	%----------------------------------------------------------------------
 	v_d = setting_tx.excitation_voltages .* setting_tx.impulse_responses;
 
 	%----------------------------------------------------------------------
-	% 3.) spatial transfer function of the first array element
+	% 2.) spatial transfer function of the first array element
 	%----------------------------------------------------------------------
 	if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
-
-        h_tx_ref = syntheses.spatial_transfer_function( spatial_grid, axis_k_tilde, 1 );
+        h_tx_ref = discretizations.spatial_transfer_function( spatial_grid.grids_elements( 1 ), spatial_grid.grid_FOV, setup.absorption_model, setting_tx.excitation_voltages.axis );
+        factor_interp_tx = round( setup.xdc_array.element_pitch_axis(1) / spatial_grid.grid_FOV.cell_ref.edge_lengths(1) );
     end
 
 	%----------------------------------------------------------------------
-	% 4.) superimpose quasi-(d-1)-spherical waves
+	% 3.) superimpose quasi-(d-1)-spherical waves
 	%----------------------------------------------------------------------
-	factor_interp_tx = round( setup.xdc_array.element_pitch_axis(1) / spatial_grid.grid_FOV.delta_axis(1) );
+    p_incident = physical_values.pascal( zeros() );
+
 	for index_active = 1:numel( setting_tx.indices_active )
 
         % index of active array element
@@ -211,19 +205,14 @@ function object = compute_p_in( setup, spatial_grid, setting_tx )
             % b) arbitrary grid
             %--------------------------------------------------------------
             % spatial impulse response of the active array element
-            h_tx = syntheses.spatial_transfer_function( spatial_grid, axis_k_tilde, index_element );
+            h_tx = discretizations.spatial_transfer_function( spatial_grid.grids_elements( index_element ), spatial_grid.grid_FOV, setup.absorption_model, setting_tx.excitation_voltages.axis );
 
         end % if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
 
         % compute summand for the incident pressure field
-        p_incident_summand = h_tx .* repmat( reshape( v_d( index_active ).coefficients, [ ones( 1, spatial_grid.grid_FOV.N_dimensions ), N_samples_f ] ), [ spatial_grid.grid_FOV.N_points_axis, 1 ] );
+        p_incident_summand = h_tx.samples .* repmat( reshape( v_d( index_active ).samples, [ ones( 1, spatial_grid.grid_FOV.N_dimensions ), N_samples_f ] ), [ spatial_grid.grid_FOV.N_points_axis, 1 ] );
 
-        for index_f = 1:N_samples_f
-            % TODO: generalize for arbitrary dimensions
-            object.values{ index_f } = object.values{ index_f } + p_incident_summand( :, :, :, index_f );
-        end
-
-        show( object );
+        p_incident = p_incident + p_incident_summand;
 
 	end % for index_active = 1:numel( setting_tx.indices_active )
 

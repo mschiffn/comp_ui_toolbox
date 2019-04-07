@@ -1,7 +1,9 @@
 %
 % superclass for all absorption models
-% author: Martin Schiffner
+%
+% author: Martin F. Schiffner
 % date: 2016-08-25
+% modified: 2019-04-07
 %
 classdef absorption_model
 
@@ -11,6 +13,7 @@ classdef absorption_model
 	properties (SetAccess = private)
 
         str_name        % name of absorption model
+
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,13 +28,6 @@ classdef absorption_model
 
             % internal properties
             ABS.str_name	= str_name;
-        end
-
-        %------------------------------------------------------------------
-        % compute complex-valued wavenumbers
-        %------------------------------------------------------------------
-        function axis_k_tilde = compute_wavenumbers( ABS, axis_f )
-
         end
 
     end % methods

@@ -168,7 +168,7 @@ classdef grid
             %--------------------------------------------------------------
             differences = mutual_differences( grids_1, grids_2, varargin{ : } );
 
-            % ensure cell array
+            % ensure cell array for differences
             if ~iscell( differences )
                 differences = { differences };
             end
