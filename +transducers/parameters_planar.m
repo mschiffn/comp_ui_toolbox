@@ -3,9 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-04-02
-%
-% TODO: apodization, elevational focus
+% modified: 2019-04-10
 %
 classdef parameters_planar < transducers.parameters
 
@@ -28,7 +26,7 @@ classdef parameters_planar < transducers.parameters
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = parameters_planar( N_elements_axis, element_width_axis, element_kerf_axis, str_model, str_vendor )
+        function objects = parameters_planar( N_elements_axis, element_width_axis, element_kerf_axis, apodization, focus, str_model, str_vendor )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -54,7 +52,7 @@ classdef parameters_planar < transducers.parameters
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@transducers.parameters( N_elements_axis, str_model, str_vendor );
+            objects@transducers.parameters( N_elements_axis, apodization, focus, str_model, str_vendor );
 
             %--------------------------------------------------------------
             % 3.) set parameters of planar transducer array
@@ -70,7 +68,7 @@ classdef parameters_planar < transducers.parameters
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = parameters_planar( N_elements_axis, element_width_axis, element_kerf_axis, str_model, str_vendor )
+        end % function objects = parameters_planar( N_elements_axis, element_width_axis, element_kerf_axis, apodization, focus, str_model, str_vendor )
 
         %------------------------------------------------------------------
         % project
@@ -109,7 +107,7 @@ classdef parameters_planar < transducers.parameters
             end
 
             % avoid cell array for single parameter object
-            if numel( parameters_planar ) == 1
+            if isscalar( parameters_planar )
                 results = results{ 1 };
             end
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-04-02
+% modified: 2019-04-08
 %
 classdef spatial_grid < discretizations.spatial
 
@@ -13,7 +13,7 @@ classdef spatial_grid < discretizations.spatial
 	properties (SetAccess = private)
 
         % independent properties
-        grids_elements ( 1, : ) discretizations.grid	% grids representing the array elements
+        grids_elements ( :, : ) discretizations.grid	% grids representing the array elements
         grid_FOV ( 1, 1 ) discretizations.grid          % grid representing the field-of-view
 
 	end % properties
@@ -26,7 +26,7 @@ classdef spatial_grid < discretizations.spatial
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = spatial_grid( grids_elements, grid_FOV )
+        function objects = spatial_grid( grids_elements, grids_FOV )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -37,14 +37,14 @@ classdef spatial_grid < discretizations.spatial
             end
 
             % ensure class discretizations.grid
-            if ~isa( grid_FOV, 'discretizations.grid' )
-                errorStruct.message     = 'grid_FOV must be discretizations.grid!';
+            if ~isa( grids_FOV, 'discretizations.grid' )
+                errorStruct.message     = 'grids_FOV must be discretizations.grid!';
                 errorStruct.identifier	= 'spatial_grid:NoGrid';
                 error( errorStruct );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( grids_elements, grid_FOV );
+            auxiliary.mustBeEqualSize( grids_elements, grids_FOV );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
@@ -66,11 +66,11 @@ classdef spatial_grid < discretizations.spatial
 
                 % set independent properties
                 objects( index_object ).grids_elements = grids_elements{ index_object };
-                objects( index_object ).grid_FOV = grid_FOV( index_object );
+                objects( index_object ).grid_FOV = grids_FOV( index_object );
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = spatial_grid( grids_elements, grid_FOV )
+        end % function objects = spatial_grid( grids_elements, grids_FOV )
 
         %------------------------------------------------------------------
         % check for symmetry

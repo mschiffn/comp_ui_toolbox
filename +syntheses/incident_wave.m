@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-04-06
-% modified: 2019-04-06
+% modified: 2019-04-10
 %
 classdef incident_wave
 
@@ -13,8 +13,12 @@ classdef incident_wave
 	properties (SetAccess = private)
 
         % independent properties
-        p_incident %( 1, 1 ) discretizations.field       % incident acoustic pressure field
+        p_incident %( 1, 1 ) discretizations.field      % incident acoustic pressure field
         p_incident_grad ( 1, : ) discretizations.field	% spatial gradient of the incident acoustic pressure field
+
+        % optional properties
+        h_ref %( 1, 1 ) discretizations.field           % reference spatial transfer function
+        h_ref_grad ( 1, : ) discretizations.field       % spatial gradient of the reference spatial transfer function
 
     end % properties
 
@@ -51,7 +55,7 @@ classdef incident_wave
             % repeat default incident wave
             objects = repmat( objects, size( spatiospectral.spectral ) );
 
-            % compute hashes
+            % compute hashes % TODO: fix hash
             str_hash_setup = hash( setup );
             str_hash_discretization_spatial = hash( spatiospectral.spatial );
             str_name_dir = sprintf( '%s_setup_%s/spatial_%s', setup.str_name, str_hash_setup, str_hash_discretization_spatial );
@@ -100,7 +104,7 @@ classdef incident_wave
                     %------------------------------------------------------
                     % a) load incident acoustic pressure field
                     %------------------------------------------------------
-                    fprintf( '\t %s: loading incident acoustic pressure field (kappa, %.2f MiB)...', str_date_time, mebibyte( objects( index_object ).size_bytes ) );
+%                     fprintf( '\t %s: loading incident acoustic pressure field (kappa, %.2f MiB)...', str_date_time, mebibyte( objects( index_object ).size_bytes ) );
                     temp = load( str_name_file, 'p_incident' );
                     objects( index_object ).p_incident = temp.p_incident;
 
@@ -109,8 +113,8 @@ classdef incident_wave
                     %------------------------------------------------------
                     % b) compute incident acoustic pressure field
                     %------------------------------------------------------
-                    fprintf( '\t %s: computing incident acoustic pressure field (kappa, %.2f MiB)...', str_date_time, mebibyte( objects( index_object ).size_bytes ) );
-                    objects( index_object ).p_incident = compute_p_in( setup, spatiospectral.spatial, spatiospectral.spectral( index_object ).tx_unique );
+%                     fprintf( '\t %s: computing incident acoustic pressure field (kappa, %.2f MiB)...', str_date_time, mebibyte( objects( index_object ).size_bytes ) );
+                    [ objects( index_object ).p_incident, objects( index_object ).h_ref ] = syntheses.compute_p_in( setup, spatiospectral.spatial, spatiospectral.spectral( index_object ).tx_unique );
 
                     %------------------------------------------------------
                     % c) save result to disk
@@ -120,6 +124,7 @@ classdef incident_wave
 
                         % specify data structures to save
                         p_incident = objects( index_object ).p_incident;
+                        h_ref = objects( index_object ).h_ref;
                         spatial = spatiospectral.spatial;
                         spectral_points_tx = spatiospectral.spectral( index_object ).tx_unique;
 
@@ -127,7 +132,7 @@ classdef incident_wave
                         if indicator_file_exists
 
                             % append to existing file
-                            save( str_name_file, 'p_incident', '-append' );
+                            save( str_name_file, 'p_incident', 'h_ref', '-append' );
 
                         else
 
@@ -138,7 +143,7 @@ classdef incident_wave
                             end
 
                             % create new file
-                            save( str_name_file, 'p_incident', 'setup', 'spatial', 'spectral_points_tx', '-v7.3' );
+                            save( str_name_file, 'p_incident', 'h_ref', 'setup', 'spatial', 'spectral_points_tx', '-v7.3' );
 
                         end % indicator_file_exists
                     end % if N_elements_active >= 2
@@ -155,65 +160,3 @@ classdef incident_wave
 	end % methods
 
 end % classdef incident_wave
-
-%--------------------------------------------------------------------------
-% compute incident acoustic pressure field
-%--------------------------------------------------------------------------
-function object = compute_p_in( setup, spatial_grid, setting_tx )
-
-	%----------------------------------------------------------------------
-	% 1.) normal velocities of active elements
-	%----------------------------------------------------------------------
-	v_d = setting_tx.excitation_voltages .* setting_tx.impulse_responses;
-
-	%----------------------------------------------------------------------
-	% 2.) spatial transfer function of the first array element
-	%----------------------------------------------------------------------
-	if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
-        h_tx_ref = discretizations.spatial_transfer_function( spatial_grid.grids_elements( 1 ), spatial_grid.grid_FOV, setup.absorption_model, setting_tx.excitation_voltages.axis );
-        factor_interp_tx = round( setup.xdc_array.element_pitch_axis(1) / spatial_grid.grid_FOV.cell_ref.edge_lengths(1) );
-    end
-
-	%----------------------------------------------------------------------
-	% 3.) superimpose quasi-(d-1)-spherical waves
-	%----------------------------------------------------------------------
-    p_incident = physical_values.pascal( zeros() );
-
-	for index_active = 1:numel( setting_tx.indices_active )
-
-        % index of active array element
-        index_element = setting_tx.indices_active( index_active );
-        % TODO: indices_axis
-
-        % spatial transfer function of the active array element
-        if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
-
-            %--------------------------------------------------------------
-            % a) symmetric grid
-            %--------------------------------------------------------------
-            % shift in grid points required for current array element
-            delta_lattice_points = ( index_element - 1 ) * factor_interp_tx;
-
-            % compute summand for the incident pressure field
-            index_start = spatial_grid.grid_FOV.N_points_axis(1) - ( setup.xdc_array.N_elements - 1 ) * factor_interp_tx + 1;
-            index_stop = index_start + delta_lattice_points - 1;
-            h_tx = [ h_tx_ref( :, index_stop:-1:index_start, : ), h_tx_ref( :, 1:(end - delta_lattice_points), : ) ];
-
-        else
-
-            %--------------------------------------------------------------
-            % b) arbitrary grid
-            %--------------------------------------------------------------
-            % spatial impulse response of the active array element
-            h_tx = discretizations.spatial_transfer_function( spatial_grid.grids_elements( index_element ), spatial_grid.grid_FOV, setup.absorption_model, setting_tx.excitation_voltages.axis );
-
-        end % if isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
-
-        % compute summand for the incident pressure field
-        p_incident_summand = h_tx.samples .* repmat( reshape( v_d( index_active ).samples, [ ones( 1, spatial_grid.grid_FOV.N_dimensions ), N_samples_f ] ), [ spatial_grid.grid_FOV.N_points_axis, 1 ] );
-
-        p_incident = p_incident + p_incident_summand;
-
-	end % for index_active = 1:numel( setting_tx.indices_active )
-
-end % function object = compute_p_in( setup, spatial_grid, setting_tx )

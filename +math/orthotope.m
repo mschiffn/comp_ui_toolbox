@@ -75,63 +75,64 @@ classdef orthotope
         %------------------------------------------------------------------
         % vertices
         %------------------------------------------------------------------
-        function objects_out = vertices( objects_in )
+        function objects_out = vertices( orthotopes )
 
             % initialize results
-            objects_out = cell( size( objects_in ) );
+            objects_out = cell( size( orthotopes ) );
 
             % iterate orthotopes
-            for index_object = 1:numel( objects_in )
+            for index_object = 1:numel( orthotopes )
 
                 % number of vertices
-                N_dimensions_act = objects_in( index_object ).N_dimensions;
+                N_dimensions_act = orthotopes( index_object ).N_dimensions;
                 N_vertices_act = 2^N_dimensions_act;
 
                 % initialize results
-                objects_out{ index_object } = repmat( objects_in( index_object ).intervals( 1 ).lb, [ N_vertices_act, N_dimensions_act ] );
+                objects_out{ index_object } = repmat( orthotopes( index_object ).intervals( 1 ).lb, [ N_vertices_act, N_dimensions_act ] );
 
                 % extract vertices
                 for index_vertex = 1:N_vertices_act
                     indices_bounds_act = dec2bin( index_vertex - 1, N_dimensions_act ) - '0' + 1;
                     for index_dimension = 1:N_dimensions_act
                         if indices_bounds_act( index_dimension ) == 1
-                            objects_out{ index_object }( index_vertex, index_dimension ) = objects_in( index_object ).intervals( index_dimension ).lb;
+                            objects_out{ index_object }( index_vertex, index_dimension ) = orthotopes( index_object ).intervals( index_dimension ).lb;
                         else
-                            objects_out{ index_object }( index_vertex, index_dimension ) = objects_in( index_object ).intervals( index_dimension ).ub;
+                            objects_out{ index_object }( index_vertex, index_dimension ) = orthotopes( index_object ).intervals( index_dimension ).ub;
                         end
                     end
                 end
 
-            end % for index_object = 1:numel( objects_in )
+            end % for index_object = 1:numel( orthotopes )
 
-            if numel( objects_in ) == 1
-                objects_out = objects_out{1};
+            % avoid cell array for single orthotope
+            if isscalar( orthotopes )
+                objects_out = objects_out{ 1 };
             end
 
-        end % function objects_out = vertices( objects_in )
+        end % function objects_out = vertices( orthotopes )
 
         %------------------------------------------------------------------
         % center
         %------------------------------------------------------------------
-        function objects_out = center( objects_in )
+        function objects_out = center( orthotopes )
 
             % initialize results
-            objects_out = cell( size( objects_in ) );
+            objects_out = cell( size( orthotopes ) );
 
             % iterate orthotopes
-            for index_object = 1:numel( objects_in )
+            for index_object = 1:numel( orthotopes )
 
                 % compute interval centers
-                objects_out{ index_object } = center( objects_in( index_object ).intervals );
+                objects_out{ index_object } = center( orthotopes( index_object ).intervals );
 
             end % for index_object = 1:numel( objects )
 
-            % do not return cell array for single object
-            if numel( objects_in ) == 1
-                objects_out = objects_out{1};
+            % avoid cell array for single orthotope
+            if isscalar( orthotopes )
+                objects_out = objects_out{ 1 };
             end
 
-        end % function objects_out = center( objects_in )
+        end % function objects_out = center( orthotopes )
 
         %------------------------------------------------------------------
         % discretize

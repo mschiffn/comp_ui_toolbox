@@ -1,9 +1,9 @@
 %
-% superclass for all unity per meters
+% superclass for physical quantities with the unit unity per meter
 %
 % author: Martin F. Schiffner
 % date: 2019-04-07
-% modified: 2019-04-07
+% modified: 2019-04-08
 %
 classdef unity_per_meter < physical_values.physical_quantity_derived
 

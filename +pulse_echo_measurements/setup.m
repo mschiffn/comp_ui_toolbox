@@ -84,7 +84,8 @@ classdef setup < handle
             %--------------------------------------------------------------
             % TODO: check symmetry of setups and choose class accordingly
             if 1 %issymmetric( discretizations_elements, discretization_FOV )
-                objects_out = discretizations.spatial_grid_symmetric( discretizations_elements, discretization_FOV );
+                N_points_per_pitch_axis = round( setups.xdc_array.element_pitch_axis ./ options_spatial.options_FOV.values( 1:(end - 1) ) );
+                objects_out = discretizations.spatial_grid_symmetric( discretizations_elements, discretization_FOV, N_points_per_pitch_axis );
             else
                 objects_out = discretizations.spatial_grid( discretizations_elements, discretization_FOV );
             end

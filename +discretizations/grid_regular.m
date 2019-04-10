@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-04-01
+% modified: 2019-04-09
 %
 classdef grid_regular < discretizations.grid
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
+	%% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -20,7 +20,7 @@ classdef grid_regular < discretizations.grid
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -149,8 +149,8 @@ classdef grid_regular < discretizations.grid
             for index_object = 1:numel( grids_regular )
 
                 % calculate indices along each coordinate axis
-                indices_lattice = ( 0:(grids_regular( index_object ).N_points - 1) )';
-                indices_axis = inverse_index_transform( grids_regular( index_object ), indices_lattice );
+                indices_linear = ( 0:(grids_regular( index_object ).N_points - 1) )';
+                indices_axis = inverse_index_transform( grids_regular( index_object ), indices_linear );
 
                 % compute Cartesian coordinates of grid points
                 positions_rel = indices_axis * ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis );
@@ -159,7 +159,7 @@ classdef grid_regular < discretizations.grid
             end % for index_object = 1:numel( grids_regular )
 
             % avoid cell array for single regular grid
-            if numel( grids_regular ) == 1
+            if isscalar( grids_regular )
                 positions = positions{ 1 };
             end
 
@@ -168,40 +168,85 @@ classdef grid_regular < discretizations.grid
         %------------------------------------------------------------------
         % inverse index transform
         %------------------------------------------------------------------
-        function indices_axis = inverse_index_transform( obj, indices_lattice )
+        function indices_axis = inverse_index_transform( grids_regular, indices_linear )
 
-            % divisors for inverse index calculation
-            divisors = zeros( 1, obj.N_dimensions - 1 );
-            for index_prod = 2:obj.N_dimensions
-                divisors( index_prod - 1 ) = prod( obj.N_points_axis( index_prod:end ), 2 );
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for indices_linear
+            if ~iscell( indices_linear )
+                indices_linear = { indices_linear };
             end
 
-            % compute indices along each coordinate axis
-            indices_axis = zeros( obj.N_points, obj.N_dimensions );
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( grids_regular, indices_linear );
 
-            for index_dimension = 1:(obj.N_dimensions - 1)
-                indices_axis( :, index_dimension ) = floor( indices_lattice(:) / divisors( index_dimension ) );
-                indices_lattice(:) = indices_lattice(:) - indices_axis( :, index_dimension ) * divisors( index_dimension );
+            %--------------------------------------------------------------
+            % 2.) convert linear indices into subscripts
+            %--------------------------------------------------------------
+            % specify cell array for indices_axis
+            indices_axis = cell( size( grids_regular ) );
+
+            % iterate regular grids
+            for index_object = 1:numel( grids_regular )
+
+                % convert linear indices into subscripts
+                temp = cell( 1, grids_regular( index_object ).N_dimensions );
+                [ temp{ : } ] = ind2sub( grids_regular( index_object ).N_points_axis, indices_linear{ index_object } + 1 );
+                indices_axis{ index_object } = cat( 2, temp{ : } ) - 1;
+
+            end % for index_object = 1:numel( grids_regular )
+
+            % avoid cell array for single regular grid
+            if isscalar( grids_regular )
+                indices_axis = indices_axis{ 1 };
             end
-            indices_axis( :, obj.N_dimensions ) = indices_lattice;
 
-        end % function indices_axis = inverse_index_transform( obj, indices_lattice )
+        end % function indices_axis = inverse_index_transform( grids_regular, indices_linear )
 
         %------------------------------------------------------------------
         % forward index transform
         %------------------------------------------------------------------
-        function indices_lattice = forward_index_transform( obj, indices_axis )
+        function indices_linear = forward_index_transform( grids_regular, indices_axis )
 
-            % factors for forward index calculation
-            factors = ones( obj.N_dimensions, 1 );
-            for index_prod = 1:(obj.N_dimensions - 1)
-                factors( index_prod ) = prod( obj.N_points_axis( (index_prod + 1):end ), 2 );
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for indices_axis
+            if ~iscell( indices_axis )
+                indices_axis = { indices_axis };
             end
 
-            % compute grid indices
-            indices_lattice = indices_axis * factors;
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( grids_regular, indices_axis );
 
-        end % function indices_lattice = forward_index_transform( obj, indices_axis )
+            %--------------------------------------------------------------
+            % 2.) convert array indices into linear indices
+            %--------------------------------------------------------------
+            % specify cell array for indices_axis
+            indices_linear = cell( size( grids_regular ) );
+
+            % iterate regular grids
+            for index_object = 1:numel( grids_regular )
+% TODO: finish code
+                [ temp{ : } ] = sub2ind( grids_regular( index_object ).N_points_axis, indices_linear{ index_object } + 1 );
+                % factors for forward index calculation
+                factors = ones( grids_regular( index_object ).N_dimensions, 1 );
+                for index_prod = 1:(grids_regular( index_object ).N_dimensions - 1)
+                    factors( index_prod ) = prod( grids_regular( index_object ).N_points_axis( (index_prod + 1):end ), 2 );
+                end
+
+                % compute grid indices
+                indices_linear = indices_axis * factors;
+
+            end % for index_object = 1:numel( grids_regular )
+
+            % avoid cell array for single regular grid
+            if isscalar( grids_regular )
+                indices_linear = indices_linear{ 1 };
+            end
+
+        end % function indices_linear = forward_index_transform( grids_regular, indices_axis )
 
     end % methods
 

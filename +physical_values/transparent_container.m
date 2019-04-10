@@ -252,6 +252,11 @@ classdef transparent_container
             container.values = transpose( container.values );
         end
 
+        % convert data types without changing underlying data
+        function result = typecast( container, type )
+            result = typecast( container.values, type );
+        end
+
         % unary minus
         function container = uminus( container )
             container.values = - container.values;

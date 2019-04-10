@@ -152,7 +152,7 @@ classdef grid
             end % for index_object = 1:numel( grids_1 )
 
             % avoid cell array for single pair of grids
-            if numel( grids_1 ) == 1
+            if isscalar( grids_1 )
                 differences = differences{ 1 };
             end
 
@@ -188,7 +188,7 @@ classdef grid
             end % for index_object = 1:numel( differences )
 
             % avoid cell arrays for single pair of grids
-            if numel( grids_1 ) == 1
+            if isscalar( grids_1 )
                 D = D{ 1 };
                 differences = differences{ 1 };
             end
@@ -230,7 +230,7 @@ classdef grid
             end % for index_object = 1:numel( differences )
 
             % avoid cell array for single pair of grids
-            if numel( grids_1 ) == 1
+            if isscalar( grids_1 )
                 D = D{ 1 };
                 e_1_minus_2 = e_1_minus_2{ 1 };
             end

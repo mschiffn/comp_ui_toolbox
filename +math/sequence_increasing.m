@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-04-02
+% modified: 2019-04-09
 %
 classdef sequence_increasing
 
@@ -71,21 +71,6 @@ classdef sequence_increasing
         end % function objects = sequence_increasing( members )
 
         %------------------------------------------------------------------
-        % cardinality (overload abs function)
-        %------------------------------------------------------------------
-        function N_members = abs( sequences )
-
-            % initialize N_members with zeros
-            N_members = zeros( size( sequences ) );
-
-            % iterate sequences
-            for index_object = 1:numel( sequences )
-                N_members( index_object ) = numel( sequences( index_object ).members );
-            end
-
-        end % function N_members = abs( sequences )
-
-        %------------------------------------------------------------------
         % unique values in array (overload unique function)
         %------------------------------------------------------------------
         function [ sequence_out, indices_unique_to_f, indices_f_to_unique ] = unique( sequences_in )
@@ -135,6 +120,58 @@ classdef sequence_increasing
             end
 
         end % function [ sequence_out, indices_unique_to_f, indices_f_to_unique ] = unique( sequences_in )
+
+        %------------------------------------------------------------------
+        % subsample
+        %------------------------------------------------------------------
+        function sequences_out = subsample( sequences_in, indices_axes )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for indices_axes
+            if ~iscell( indices_axes )
+                indices_axes = { indices_axes };
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences_in, indices_axes );
+
+            %--------------------------------------------------------------
+            % 2.) perform subsampling
+            %--------------------------------------------------------------
+            % specify cell array for members_sub
+            members_sub = cell( size( sequences_in ) );
+
+            % iterate sequences
+            for index_object = 1:numel( sequences_in )
+
+                % subsample members
+                members_sub{ index_object } = sequences_in( index_object ).members( indices_axes{ index_object } );
+
+            end % for index_object = 1:numel( sequences_in )
+
+            %--------------------------------------------------------------
+            % 3.) create sequences
+            %--------------------------------------------------------------
+            sequences_out = math.sequence_increasing( members_sub );
+
+        end % function sequences_out = subsample( sequences_in, indices_axes )
+
+        %------------------------------------------------------------------
+        % cardinality (overload abs function)
+        %------------------------------------------------------------------
+        function N_members = abs( sequences )
+
+            % initialize N_members with zeros
+            N_members = zeros( size( sequences ) );
+
+            % iterate sequences
+            for index_object = 1:numel( sequences )
+                N_members( index_object ) = numel( sequences( index_object ).members );
+            end
+
+        end % function N_members = abs( sequences )
 
     end % methods
 

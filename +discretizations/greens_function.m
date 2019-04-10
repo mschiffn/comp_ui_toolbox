@@ -85,8 +85,8 @@ function results = greens_function( grids_element, grids_FOV, axes_k, varargin )
 	end % for index_object = 1:numel( D_act )
 
 	% avoid cell array for single pair of grids
-	if numel( grids_element ) == 1
+	if isscalar( grids_element )
         results = results{ 1 };
-    end
+	end
 
 end % function results = greens_function( grids_element, grids_FOV, axes_k, varargin )

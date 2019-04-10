@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-04-06
+% modified: 2019-04-11
 %
 classdef setting
 
@@ -165,6 +165,11 @@ classdef setting
                 str_hash{ index_object } = auxiliary.DataHash( settings( index_object ) );
 
             end % for index_object = 1:numel( settings )
+
+            % avoid cell array for single transducer control setting
+            if isscalar( settings )
+                str_hash = str_hash{ 1 };
+            end
 
         end % function str_hash = hash( settings )
 

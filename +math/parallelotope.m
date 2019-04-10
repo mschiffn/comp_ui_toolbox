@@ -113,7 +113,7 @@ classdef parallelotope
             end % for index_object = 1:numel( parallelotopes )
 
             % avoid cell array for single parallelotope
-            if numel( parallelotopes ) == 1
+            if isscalar( parallelotopes )
                 volumes = volumes{ 1 };
             end
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-04-19
-% modified: 2019-04-02
+% modified: 2019-04-08
 %
 classdef array_planar < transducers.array
 
@@ -91,8 +91,8 @@ classdef array_planar < transducers.array
 
             end % for index_object = 1:numel( arrays_planar )
 
-            % avoid cell array for single parameter object
-            if numel( arrays_planar ) == 1
+            % avoid cell array for single planar transducer array
+            if isscalar( arrays_planar )
                 apertures = apertures{ 1 };
             end
 
@@ -115,8 +115,8 @@ classdef array_planar < transducers.array
 
             end % for index_object = 1:numel( arrays_planar )
 
-            % do not return cell array for single object
-            if numel( arrays_planar ) == 1
+            % avoid cell array for single planar transducer array
+            if isscalar( arrays_planar )
                 objects_out = objects_out{ 1 };
             end
 
@@ -152,12 +152,61 @@ classdef array_planar < transducers.array
 
             end % for index_object = 1:numel( arrays_planar )
 
-            % do not return cell array for single planar transducer array
-            if numel( arrays_planar ) == 1
+            % avoid cell array for single planar transducer array
+            if isscalar( arrays_planar )
                 objects_out = objects_out{ 1 };
             end
 
         end % function objects_out = discretize( arrays_planar, options_elements )
+
+        %------------------------------------------------------------------
+        % inverse index transform
+        %------------------------------------------------------------------
+        function indices_axis = inverse_index_transform( arrays_planar, indices_linear )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for indices_linear
+            if ~iscell( indices_linear )
+                indices_linear = { indices_linear };
+            end
+
+            % multiple arrays_planar / single indices_linear
+            if ~isscalar( arrays_planar ) && isscalar( indices_linear )
+                indices_linear = repmat( indices_linear, size( arrays_planar ) );
+            end
+
+            % single arrays_planar / multiple indices_linear
+            if isscalar( arrays_planar ) && ~isscalar( indices_linear )
+                arrays_planar = repmat( arrays_planar, size( indices_linear ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( arrays_planar, indices_linear );
+
+            %--------------------------------------------------------------
+            % 2.) convert linear indices into subscripts
+            %--------------------------------------------------------------
+            % specify cell array for indices_axis
+            indices_axis = cell( size( arrays_planar ) );
+
+            % iterate planar transducer arrays
+            for index_array = 1:numel( arrays_planar )
+
+                % convert linear indices into subscripts
+                temp = cell( 1, arrays_planar( index_array ).N_dimensions );
+                [ temp{ : } ] = ind2sub( arrays_planar( index_array ).parameters.N_elements_axis, indices_linear{ index_array } + 1 );
+                indices_axis{ index_array } = cat( 2, temp{ : } ) - 1;
+
+            end % for index_array = 1:numel( arrays_planar )
+
+            % avoid cell array for single arrays_planar
+            if isscalar( arrays_planar )
+                indices_axis = indices_axis{ 1 };
+            end
+
+        end % function indices_axis = inverse_index_transform( arrays_planar, indices_linear )
 
 	end % methods
 

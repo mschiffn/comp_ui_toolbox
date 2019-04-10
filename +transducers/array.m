@@ -41,12 +41,9 @@ classdef array
                 error( errorStruct );
             end
 
-            % ensure positive integers
-            mustBeInteger( N_dimensions );
-            mustBePositive( N_dimensions );
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( parameters, N_dimensions );
+            % project parameters onto lower or equal dimension
+            parameters = project( parameters, N_dimensions );
+            % assertion: N_dimensions are adequate integers of equal number of dimensions and sizes as parameters
 
             %--------------------------------------------------------------
             % 2.) create transducer arrays
@@ -57,16 +54,9 @@ classdef array
             % set independent and dependent properties
             for index_object = 1:numel( objects )
 
-                % consider maximum number of dimensions in parameters
-                if N_dimensions( index_object ) > numel( parameters( index_object ).N_elements_axis )
-                    errorStruct.message     = sprintf( 'N_dimensions( %d ) exceeds number of specified dimensions in parameters( %d )!', index_object, index_object );
-                    errorStruct.identifier	= 'array:NoPositiveIntegers';
-                    error( errorStruct );
-                end
-
                 % set independent properties
+                objects( index_object ).parameters = parameters( index_object );
                 objects( index_object ).N_dimensions = N_dimensions( index_object );
-                objects( index_object ).parameters = project( parameters( index_object ), objects( index_object ).N_dimensions );
 
                 % dependent properties
                 objects( index_object ).N_elements = N_elements( objects( index_object ).parameters );

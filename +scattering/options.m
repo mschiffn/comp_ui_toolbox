@@ -3,23 +3,23 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-15
-% modified: 2019-03-19
+% modified: 2019-04-09
 %
 classdef options
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
-        discretization ( 1, 1 ) discretizations.options = discretizations.options % spatiospectral discretization
-        spatial_aliasing
+        discretization ( 1, 1 ) discretizations.options = discretizations.options                       % spatiospectral discretization
+        spatial_aliasing ( 1, 1 ) scattering.options_aliasing = scattering.options_aliasing.include     % aliasing options
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
@@ -32,7 +32,7 @@ classdef options
             % 1.) check arguments
             %--------------------------------------------------------------
             % check number of arguments
-            if nargin ~= 1
+            if nargin == 0
                 return;
             end
 
@@ -41,9 +41,27 @@ classdef options
             %--------------------------------------------------------------
             for index_arg = 1:nargin
 
-                if isa( varargin{ index_arg }, 'discretizations.options' )
-                    object.discretization = varargin{ index_arg };
-                end
+                switch class( varargin{ index_arg } )
+
+                    %------------------------------------------------------
+                    % spatiospectral discretization
+                    %------------------------------------------------------
+                    case 'discretizations.options'
+                        object.discretization = varargin{ index_arg };
+
+                    %------------------------------------------------------
+                    % anti-aliasing options
+                    %------------------------------------------------------
+                    case 'scattering.options_aliasing'
+                        object.spatial_aliasing = varargin{ index_arg };
+
+                    otherwise
+
+                        errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
+                        errorStruct.identifier = 'options:UnknownClass';
+                        error( errorStruct );
+
+                end % switch class( varargin{ index_arg } )
 
             end % for index_arg = 1:nargin
 

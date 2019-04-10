@@ -8,7 +8,7 @@
 classdef operator
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -23,7 +23,7 @@ classdef operator
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
@@ -56,10 +56,9 @@ classdef operator
             object.options = options;
 
             % TODO: check for identical recording time intervals / identical frequency intervals
-            % TODO: which elements are active? -> D_full required?
             % TODO: find active elements and compute impulse responses
             % check for identical frequency axes identical?
-
+            % TODO: check for valid spatial discretization (sampling theorem)
             %--------------------------------------------------------------
             % 3.) spatiospectral discretization of the sequence
             %--------------------------------------------------------------

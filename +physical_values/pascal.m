@@ -1,11 +1,11 @@
 %
-% superclass for all voltages
+% superclass for physical quantities with the unit pascal
 %
 % author: Martin F. Schiffner
-% date: 2019-01-15
-% modified: 2019-03-27
+% date: 2019-04-08
+% modified: 2019-04-08
 %
-classdef voltage < physical_values.physical_quantity_derived
+classdef pascal < physical_values.physical_quantity_derived
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% methods
@@ -15,20 +15,19 @@ classdef voltage < physical_values.physical_quantity_derived
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = voltage( varargin )
+        function objects = pascal( varargin )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
             exponents = zeros( 1, 8 );
-            exponents( 1 ) = 2;     % length
+            exponents( 1 ) = -1;    % length
             exponents( 2 ) = 1;     % mass
-            exponents( 3 ) = -3;    % time
-            exponents( 4 ) = -1;    % electric current
+            exponents( 3 ) = -2;    % time
             objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
 
-        end % function objects = voltage( varargin )
+        end
 
 	end % methods
 
-end % classdef voltage < physical_values.physical_quantity_derived
+end % classdef pascal < physical_values.physical_quantity_derived

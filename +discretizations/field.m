@@ -112,18 +112,62 @@ classdef field < discretizations.signal_matrix
         %------------------------------------------------------------------
         % shift fields
         %------------------------------------------------------------------
-        function objects_out = shift( objects_in )
+        function fields = shift( fields, spatial_grid, N_points_shift_axis )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % TODO: symmetric grid
+            % ensure class discretizations.spatial_grid_symmetric
+            if ~isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
+                errorStruct.message = 'spatial_grid must be discretizations.spatial_grid_symmetric!';
+                errorStruct.identifier = 'shift:NoSpatialGridSymmetric';
+                error( errorStruct );
+            end
+
+            % ensure cell array for N_points_shift_axis
+            if ~iscell( N_points_shift_axis )
+                N_points_shift_axis = { N_points_shift_axis };
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( fields, spatial_grid, N_points_shift_axis );
 
             %--------------------------------------------------------------
             % 2.) shift spatial transfer functions
             %--------------------------------------------------------------
+            % iterate fields
+            for index_object = 1:numel( fields )
 
-        end % function objects_out = shift( objects_in )
+                % ensure identical grids
+                if ~isequal( fields( index_object ).grid_FOV, spatial_grid( index_object ).grid_FOV )
+                    errorStruct.message = sprintf( 'fields( %d ).grid_FOV differs from spatial_grid( %d ).grid_FOV!', index_object, index_object );
+                    errorStruct.identifier = 'shift:NoSpatialGridSymmetric';
+                    error( errorStruct );
+                end
+
+                % ensure integers
+                mustBeInteger( N_points_shift_axis{ index_object } );
+
+                % compute summand for the incident pressure field
+                index_start_axis = fields( index_object ).grid_FOV.N_points_axis( 1:(end - 1) ) - ( size( spatial_grid( index_object ).grids_elements ) - 1 ) .* spatial_grid( index_object ).N_points_per_pitch_axis + 1;
+                index_stop_axis = index_start_axis + N_points_shift_axis{ index_object } - 1;
+
+                % iterate dimensions
+                for index_dim = 1:numel( index_start_axis )
+
+                    selector_front = repmat( {':'}, size( index_start_axis ) );
+                    selector_tail = repmat( {':'}, size( index_start_axis ) );
+
+                    selector_front{ index_dim } = ( index_stop_axis( index_dim ):-1:index_start_axis( index_dim ) );
+                    selector_tail{ index_dim } = ( 1:(fields( index_object ).grid_FOV.N_points_axis( index_dim ) - N_points_shift_axis{ index_object }( index_dim )) );
+
+                    fields( index_object ).samples = cat( index_dim, fields( index_object ).samples( selector_front{ : }, :, : ), fields( index_object ).samples( selector_tail{ : }, :, : ) );
+
+                end % for index_dim = 1:numel( index_start_axis )
+
+            end % for index_object = 1:numel( fields )
+
+        end % function fields = shift( fields, spatial_grid, N_points_shift_axis )
 
         %------------------------------------------------------------------
         % show
