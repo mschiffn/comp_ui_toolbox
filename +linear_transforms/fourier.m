@@ -3,21 +3,23 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2019-02-23
+% modified: 2019-04-29
 %
 classdef fourier < linear_transforms.orthonormal_linear_transform
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
+	properties ( SetAccess = private )
+
         N_dimensions
         N_lattice_axis
         N_lattice_sqrt
+
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 

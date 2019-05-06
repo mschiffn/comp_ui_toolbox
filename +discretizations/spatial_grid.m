@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-04-08
+% modified: 2019-04-30
 %
 classdef spatial_grid < discretizations.spatial
 
@@ -13,7 +13,7 @@ classdef spatial_grid < discretizations.spatial
 	properties (SetAccess = private)
 
         % independent properties
-        grids_elements ( :, : ) discretizations.grid	% grids representing the array elements
+        grids_elements %( :, : ) discretizations.grid	% grids representing the array elements, apodization weights, and focal distances
         grid_FOV ( 1, 1 ) discretizations.grid          % grid representing the field-of-view
 
 	end % properties
@@ -53,12 +53,12 @@ classdef spatial_grid < discretizations.spatial
             objects = repmat( objects, size( grids_elements ) );
 
             %--------------------------------------------------------------
-            % 3.) compute mutual distances for array elements
+            % 3.) check and set independent properties
             %--------------------------------------------------------------
             for index_object = 1:numel( objects )
 
                 % ensure class discretizations.grid
-                if ~isa( grids_elements{ index_object }, 'discretizations.grid' )
+                if ~( isa( [ grids_elements{ index_object }.grid ], 'discretizations.grid' ) && isa( [ grids_elements{ index_object }.time_delays ], 'physical_values.time' ) )
                     errorStruct.message     = sprintf( 'grids_elements{ %d } must be discretizations.grid!', index_object );
                     errorStruct.identifier	= 'spatial_grid:NoGrid';
                     error( errorStruct );

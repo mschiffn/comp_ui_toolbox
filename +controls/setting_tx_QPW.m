@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-04-02
+% modified: 2019-05-05
 %
 classdef setting_tx_QPW < controls.setting_tx
 
@@ -79,13 +79,12 @@ classdef setting_tx_QPW < controls.setting_tx
                 indices_q = round( time_delays_act / setup.T_clk );
                 axis_t = math.sequence_increasing_regular( min( indices_q ), max( indices_q ), setup.T_clk );
 
-                samples = zeros( setup.xdc_array.N_elements, numel( indices_q ) );
+                samples = physical_values.meter_per_volt_squaresecond( zeros( setup.xdc_array.N_elements, abs( axis_t ) ) );
                 for index_element = 1:setup.xdc_array.N_elements
                     samples( index_element, indices_q( index_element ) + 1 ) = 1;
                 end
-%                 samples = physical_values.meter_per_volt_second( samples );
 
-                impulse_responses{ index_object } = discretizations.signal_matrix( axis_t, samples );
+                impulse_responses{ index_object } = discretizations.signal_array( axis_t, samples );
 
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements

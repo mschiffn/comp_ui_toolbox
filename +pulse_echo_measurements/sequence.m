@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-04-02
+% modified: 2019-04-22
 %
 classdef sequence
 
@@ -30,39 +30,65 @@ classdef sequence
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = sequence( setup, settings )
+        function objects = sequence( setups, settings )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class pulse_echo_measurements.setup
-            if ~isa( setup, 'pulse_echo_measurements.setup' ) || numel( setup ) ~= 1
-                errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'sequence:NoSingleSetup';
+            if ~isa( setups, 'pulse_echo_measurements.setup' )
+                errorStruct.message     = 'setups must be pulse_echo_measurements.setup!';
+                errorStruct.identifier	= 'sequence:NoSetup';
                 error( errorStruct );
             end
-            % assertion: setup is a single pulse_echo_measurements.setup
 
-            % ensure class pulse_echo_measurements.setting
-            if ~isa( settings, 'pulse_echo_measurements.setting' )
-                errorStruct.message     = 'settings must be pulse_echo_measurements.setting!';
-                errorStruct.identifier	= 'sequence:NoSetting';
-                error( errorStruct );
+            % ensure cell array for settings
+            if ~iscell( settings )
+                settings = { settings };
             end
-            % assertion: settings is pulse_echo_measurements.setting
+
+            % multiple setups / single settings
+            if ~isscalar( setups ) && isscalar( settings )
+                settings = repmat( settings, size( setups ) );
+            end
+
+            % single setups / multiple settings
+            if isscalar( setups ) && ~isscalar( settings )
+                setups = repmat( setups, size( settings ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( setups, settings );
 
             %--------------------------------------------------------------
-            % 2.) set independent and dependent properties
+            % 2.) create sequences of pulse-echo measurements
             %--------------------------------------------------------------
-            % set independent properties
-            object.setup = setup;
-            object.settings = settings;
+            % repeat default sequence
+            objects = repmat( objects, size( setups ) );
 
-            % set dependent properties
-            object.interval_t = hull( [ object.settings.interval_t ] );
-            object.interval_f = hull( [ object.settings.interval_f ] );
+            % iterate sequences
+            for index_object = 1:numel( objects )
 
-        end % function object = sequence( setup, settings )
+                % ensure class pulse_echo_measurements.setting
+                if ~isa( settings{ index_object }, 'pulse_echo_measurements.setting' )
+                    errorStruct.message     = 'settings must be pulse_echo_measurements.setting!';
+                    errorStruct.identifier	= 'sequence:NoSetting';
+                    error( errorStruct );
+                end
+
+                % TODO: ensure that settings are compatible w/ setup
+
+                % set independent properties
+                objects( index_object ).setup = setups( index_object );
+                objects( index_object ).settings = settings{ index_object };
+
+                % set dependent properties
+                objects( index_object ).interval_t = hull( [ objects( index_object ).settings.interval_t ] );
+                objects( index_object ).interval_f = hull( [ objects( index_object ).settings.interval_f ] );
+
+            end % for index_object = 1:numel( objects )
+
+        end % function objects = sequence( setups, settings )
 
         %------------------------------------------------------------------
         % estimate recording time intervals
@@ -145,9 +171,9 @@ classdef sequence
         end % function [ intervals_t, hulls ] = determine_interval_t( object )
 
         %------------------------------------------------------------------
-        % spatiospectral discretization
+        % spatiospectral discretizations
         %------------------------------------------------------------------
-        function spatiospectral = discretize( sequences, options )
+        function spatiospectrals = discretize( sequences, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -159,22 +185,35 @@ classdef sequence
                 error( errorStruct );
             end
 
-            %--------------------------------------------------------------
-            % 2.) spatial discretization
-            %--------------------------------------------------------------
-            spatial = discretize( [ sequences.setup ], [ options.spatial ] );
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, options );
 
             %--------------------------------------------------------------
-            % 3.) spectral discretization
+            % 2.) spatial discretizations
             %--------------------------------------------------------------
-            spectral = discretize( [ sequences.settings ], [ options.spectral ] );
+            setups = reshape( [ sequences.setup ], size( sequences ) );
+            spatials = discretize( setups, [ options.spatial ] );
 
             %--------------------------------------------------------------
-            % 4.) create spatiospectral discretization
+            % 3.) spectral discretizations
             %--------------------------------------------------------------
-            spatiospectral = discretizations.spatiospectral( spatial, spectral );
+            % specify cell array for spectrals
+            spectrals = cell( size( sequences ) );
 
-        end % function spatiospectral = discretize( object, options )
+            % iterate sequential pulse-echo measurements
+            for index_object = 1:numel( sequences )
+
+                % discretize pulse-echo measurement settings
+                spectrals{ index_object } = discretize( sequences( index_object ).settings, setups( index_object ).absorption_model, options( index_object ).spectral );
+
+            end % for index_object = 1:numel( sequences )
+
+            %--------------------------------------------------------------
+            % 4.) create spatiospectral discretizations
+            %--------------------------------------------------------------
+            spatiospectrals = discretizations.spatiospectral( spatials, spectrals );
+
+        end % function spatiospectrals = discretize( sequences, options )
 
 	end % methods
 

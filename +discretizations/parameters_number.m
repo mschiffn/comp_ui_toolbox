@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-19
-% modified: 2019-03-19
+% modified: 2019-04-15
 %
 classdef parameters_number < discretizations.parameters
 
@@ -13,7 +13,7 @@ classdef parameters_number < discretizations.parameters
 	properties (SetAccess = private)
 
         % independent properties
-        values ( 1, : ) double { mustBeInteger } = [ 2, 4 ];
+        values ( 1, : ) double { mustBeInteger, mustBePositive } = [ 2, 4 ];
 
     end % properties
 
@@ -32,7 +32,7 @@ classdef parameters_number < discretizations.parameters
             %--------------------------------------------------------------
             % specify default values if no arguments
             if nargin == 0
-                values = [ 4, 10 ];
+                values = [ 2, 4 ];
             end
 
             % ensure cell array for values

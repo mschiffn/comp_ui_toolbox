@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-03-29
+% modified: 2019-05-04
 %
-classdef signal < discretizations.signal_matrix
+classdef signal < discretizations.signal_array
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -20,33 +20,26 @@ classdef signal < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure samples is a cell array
+            % ensure cell array for samples
             if ~iscell( samples )
                 samples = { samples };
             end
 
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( axes, samples );
-
-            % check for row vectors
-            for index_object = 1:numel( axes )
-
-                % ensure row vectors
-                if ~isrow( samples{ index_object } )
-                    errorStruct.message     = sprintf( 'The content of samples{ %d } must be a row vector!', index_object );
-                    errorStruct.identifier	= 'signal:NoRowVector';
-                    error( errorStruct );
-                end
-
-            end % for index_object = 1:numel( axes )
+            % ensure row vectors
+            indicator_row = cellfun( @isrow, samples );
+            if ~all( indicator_row( : ) )
+                errorStruct.message = 'samples must be row vectors!';
+                errorStruct.identifier = 'signal:NoRowVectors';
+                error( errorStruct );
+            end
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.signal_matrix( axes, samples );
+            objects@discretizations.signal_array( axes, samples );
 
         end % function objects = signal( axes, samples )
 
     end % methods
 
-end % classdef signal < discretizations.signal_matrix
+end % classdef signal < discretizations.signal_array

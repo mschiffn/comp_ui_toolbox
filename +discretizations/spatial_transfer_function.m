@@ -1,114 +1,125 @@
-function objects = spatial_transfer_function( xdc_array.parameters, grids_element, grids_FOV, absorption_models, axes_f )
+function fields = spatial_transfer_function( spatial_grid, spectral_points, varargin )
 % spatial transfer function for the d-dimensional Euclidean space
 %
 % author: Martin F. Schiffner
 % date: 2019-03-19
-% modified: 2019-04-10
+% modified: 2019-05-04
 
-    N_points_max = 6;
+    N_points_max = 4;
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
 	%----------------------------------------------------------------------
-	% TODO: check for wavenumbers
-	% ensure class transducers.parameters
-	if ~isa( parameters, 'transducers.parameters' )
-        errorStruct.message     = 'grids_element must be discretizations.grid_regular!';
-        errorStruct.identifier	= 'spatial_transfer_function:NoRegularGrid';
+	% ensure class discretizations.spatial_grid (scalar)
+	if ~( isa( spatial_grid, 'discretizations.spatial_grid' ) && isscalar( spatial_grid ) )
+        errorStruct.message = 'spatial_grid must be a single discretizations.spatial_grid!';
+        errorStruct.identifier = 'spatial_transfer_function:NoSpatialGrid';
         error( errorStruct );
     end
 
-	% ensure class discretizations.grid_regular
-	if ~isa( grids_element, 'discretizations.grid_regular' )
-        errorStruct.message     = 'grids_element must be discretizations.grid_regular!';
-        errorStruct.identifier	= 'spatial_transfer_function:NoRegularGrid';
+	% ensure class discretizations.spectral_points
+	if ~isa( spectral_points, 'discretizations.spectral_points' )
+        errorStruct.message = 'spectral_points must be discretizations.spectral_points!';
+        errorStruct.identifier = 'spatial_transfer_function:NoSpectralPoints';
         error( errorStruct );
     end
 
-    %----------------------------------------------------------------------
-	% 2.) compute complex-valued wavenumbers
-    %----------------------------------------------------------------------
-    axes_k_tilde = compute_wavenumbers( absorption_models, axes_f );
-
-	%----------------------------------------------------------------------
-	% 3.) compute spatial transfer functions
-	%----------------------------------------------------------------------
-	% compute Green's functions for specified pairs of grids
-% 	h_tx = discretizations.greens_function( grids_element, grids_FOV, axes_k_tilde );
-
-    % ensure cell array for h_tx
-%     if ~iscell( h_tx )
-%         h_tx = { h_tx };
-%     end
-
-    % specify cell array for h_tx
-    h_tx = cell( size( grids_element ) );
-
-    % iterate spatial transfer functions
-    for index_object = 1:numel( h_tx )
-
-        %------------------------------------------------------------------
-        % 3.) compute apodization weights
-        %------------------------------------------------------------------
-        % compute normalized relative positions of mathematical array elements
-        positions_rel = ( grids_element( index_object ).positions - xdc_array.aperture().pos_center ) ./ xdc_array.parameters.element_width_axis;
-
-        % compute apodization weights
-        if isscalar( xdc_array.parameters.apodization )
-            apo_weights = xdc_array.parameters.apodization( positions_rel );
-        else
-            apo_weights = parameters.apodization( grids_element( index_object ).positions( :, 1 ), grids_element( index_object ).positions( :, 2 ) );
-        end
-
-        %------------------------------------------------------------------
-        % compute phase shifts
-        %------------------------------------------------------------------
-
-    axes_k_tilde
-    parameters.focus
-
-        % initialize results
-% TODO: correct unit
-        h_tx{ index_object } = physical_values.unity_per_meter( zeros( grids_FOV( index_object ).N_points, abs( axes_k_tilde ) ) );
-
-        %
-        N_batches = floor( grids_element( index_object ).N_points / N_points_max );
-
-        for index_batch = 1:N_batches
-            
-            % indices of current grid points
-            index_start = ( index_batch - 1 ) * N_points_max + 1;
-            index_stop = index_start + N_points_max - 1;
-            disp( ( index_start:index_stop ) );
-
-            % compute Green's functions for specified pairs of grids
-            temp = discretizations.greens_function( grids_element( index_object ), grids_FOV( index_object ), axes_k_tilde, ( index_start:index_stop ) );
-
-            % compute apodization weights
-            
-            h_tx{ index_object } = h_tx{ index_object } + squeeze( sum( temp, 1 ) );
-
-        end
-
-        % compute Green's functions for specified pairs of grids
-        indices_remaining = ( (index_stop + 1):grids_element( index_object ).N_points );
-        if numel( indices_remaining ) > 0
-            temp = discretizations.greens_function( grids_element( index_object ), grids_FOV( index_object ), axes_k_tilde, indices_remaining );
-            h_tx{ index_object } = h_tx{ index_object } + squeeze( sum( temp, 1 ) );
-        end
-
-        % reshape result for regular grid
-        if isa( grids_FOV( index_object ), 'discretizations.grid_regular' )
-            h_tx{ index_object } = reshape( h_tx{ index_object }, [ grids_FOV( index_object ).N_points_axis, abs( axes_k_tilde( index_object ) ) ] );
-        end
-
-        h_tx{ index_object } = -2 * grids_element( index_object ).cell_ref.volume * h_tx{ index_object };
-
+	% ensure nonempty indices_element
+	if nargin >= 3 && ~isempty( varargin{ 1 } )
+        indices_element = varargin{ 1 };
+    else
+        indices_element = num2cell( ones( size( spectral_points ) ) );
     end
 
-	%----------------------------------------------------------------------
-	% 4.) create fields
-	%----------------------------------------------------------------------
-	objects = discretizations.field( axes_f, grids_FOV, h_tx );
+	% ensure cell array for indices_element
+	if ~iscell( indices_element )
+        indices_element = { indices_element };
+    end
 
-end % function objects = spatial_transfer_function( grids_element, grids_FOV, absorption_models, axes_f )
+	% multiple spectral_points / single indices_element
+	if ~isscalar( spectral_points ) && isscalar( indices_element )
+        indices_element = repmat( indices_element, size( spectral_points ) );
+	end
+
+	% ensure equal number of dimensions and sizes
+	auxiliary.mustBeEqualSize( spectral_points, indices_element );
+
+    %----------------------------------------------------------------------
+	% 2.) compute spatial transfer functions
+	%----------------------------------------------------------------------
+	% specify cell array for fields
+    fields = cell( size( spectral_points ) );
+
+    % iterate spectral discretizations based on pointwise sampling
+    for index_object = 1:numel( spectral_points )
+
+        % ensure positive integers
+        mustBeInteger( indices_element{ index_object } );
+        mustBePositive( indices_element{ index_object } );
+
+        % ensure that indices_element{ index_object } does not exceed number of elements
+        if any( indices_element{ index_object } > numel( spatial_grid.grids_elements ) )
+            errorStruct.message = sprintf( 'indices_element{ %d } must not exceed %d!', index_object, numel( spatial_grid.grids_elements ) );
+            errorStruct.identifier = 'spatial_transfer_function:InvalidIndices';
+            error( errorStruct );
+        end
+
+        % extract axis of unique frequencies
+        axis_f = spectral_points( index_object ).tx_unique.excitation_voltages.axis;
+        axis_k_tilde = spectral_points( index_object ).axis_k_tilde_unique;
+        N_samples_f = abs( axis_f );
+
+        % iterate specified elements
+        for index_element = indices_element{ index_object }
+
+            % extract discretized element
+            grid_element_act = spatial_grid.grids_elements( index_element );
+
+            % ensure class discretizations.grid_regular
+            if ~isa( grid_element_act.grid, 'discretizations.grid_regular' )
+                errorStruct.message     = 'grid_element_act.grid must be discretizations.grid_regular!';
+                errorStruct.identifier	= 'spatial_transfer_function:NoRegularGrid';
+                error( errorStruct );
+            end
+
+            % compute complex-valued apodization weights
+            weights = reshape( grid_element_act.apodization .* exp( - 2j * pi * grid_element_act.time_delays * axis_f.members ), [ grid_element_act.grid.N_points, 1, N_samples_f ] );
+
+            % initialize results with zeros
+            h_tx{ index_object } = physical_values.meter( zeros( spatial_grid.grid_FOV.N_points, N_samples_f ) );
+
+            % partition grid points into batches to save memory
+            N_batches = ceil( grid_element_act.grid.N_points / N_points_max );
+            N_points_last = grid_element_act.grid.N_points - ( N_batches - 1 ) * N_points_max;
+            indices = mat2cell( (1:grid_element_act.grid.N_points), 1, [ N_points_max * ones( 1, N_batches - 1 ), N_points_last ] );
+
+            % iterate batches
+            for index_batch = 1:N_batches
+
+                % indices of current grid points
+                disp( indices{ index_batch } );
+
+                % compute Green's functions for specified pairs of grids and specified grid points
+                temp = discretizations.greens_function( grid_element_act.grid, spatial_grid.grid_FOV, axis_k_tilde, indices{ index_batch } );
+
+                % apply complex-valued apodization weights
+                temp = weights( indices{ index_batch }, :, : ) .* temp;
+
+                % integrate over aperture
+                h_tx{ index_object } = h_tx{ index_object } - 2 * grid_element_act.grid.cell_ref.volume * squeeze( sum( temp, 1 ) );
+
+            end % for index_batch = 1:N_batches
+
+        end % for index_element = indices_element{ index_object }
+
+        % create fields
+        fields{ index_object } = discretizations.field( axis_f, spatial_grid.grid_FOV, h_tx );
+
+    end % for index_object = 1:numel( spectral_points )
+
+    % avoid cell array for single transducer control setting
+	if isscalar( spectral_points )
+        fields = fields{ 1 };
+    end
+
+end % function fields = spatial_transfer_function( spatial_grid, spectral_points, varargin )

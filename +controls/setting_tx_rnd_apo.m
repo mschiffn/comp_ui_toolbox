@@ -82,7 +82,7 @@ classdef setting_rnd_apo < syntheses.setting
                 apodization_weights_act(1, indicator) = 1;
                 apodization_weights_act(1, ~indicator) = -1;
 
-                apodization_weights{ index_object } = physical_values.apodization_weight( apodization_weights_act );
+                apodization_weights{ index_object } = apodization_weights_act;
 
                 %----------------------------------------------------------
                 % c) no time delays

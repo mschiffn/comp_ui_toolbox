@@ -19,7 +19,8 @@ addpath( genpath( sprintf('%s/toolbox/spgl1-1.8/', matlabroot) ) );
 %% physical parameters of linear array L14-5/38
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-xdc_array = transducers.L14_5_38( 2 );
+xdc_array = transducers.L14_5_38( 1 );
+% xdc_array = transducers.array_planar( transducers.parameters_test, 1 );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% general parameters
@@ -32,7 +33,7 @@ T_s = physical_values.second( 1 / 20e6 );
 
 % specify bandwidth to perform simulation in
 f_tx = physical_values.hertz( 4e6 );
-frac_bw = 0.1;                  % fractional bandwidth of incident pulse
+frac_bw = 0.7;                  % fractional bandwidth of incident pulse
 frac_bw_ref = -60;              % dB value that determines frac_bw
 
 % properties of the homogeneous fluid
@@ -41,18 +42,18 @@ absorption_model = absorption_models.time_causal( 0, 0.5, 1, c_ref, f_tx, 1 );
 
 % directions of incidence
 theta_incident = (77.5:2.5:102.5) * pi / 180;
-e_theta = math.unit_vector( [ cos( theta_incident(:) ), zeros( numel( theta_incident ), 1 ), sin( theta_incident(:) ) ] );
+e_theta = math.unit_vector( [ cos( theta_incident(:) ), sin( theta_incident(:) ) ] );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% define field of view
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-FOV_size_axis = xdc_array.parameters.N_elements_axis(1) * xdc_array.element_pitch_axis(1) * ones( 1, 3 );
-FOV_size_axis( 2 ) = physical_values.meter( 5e-4 );
+FOV_size_lateral = xdc_array.parameters.N_elements_axis .* xdc_array.element_pitch_axis;
+FOV_size_axial = FOV_size_lateral( 1 );
 
-FOV_intervals_lateral = math.interval( - FOV_size_axis( 1:2 ) ./ 2, FOV_size_axis( 1:2 ) ./ 2 );
-FOV_interval_axial = math.interval( physical_values.meter( 0 ), FOV_size_axis( 1 ) );
+FOV_intervals_lateral = num2cell( math.interval( - FOV_size_lateral ./ 2, FOV_size_lateral ./ 2 ) );
+FOV_interval_axial = math.interval( physical_values.meter( 0 ), FOV_size_axial );
 
-FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral(1), FOV_intervals_lateral(2), FOV_interval_axial );
+FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral{ : }, FOV_interval_axial );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% reconstruct material parameters with CS ((quasi) plane waves)
@@ -79,7 +80,7 @@ axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
 u_tx_tilde = discretizations.signal( axis_t, physical_values.voltage( pulse ) );
 
 % create pulse-echo measurement sequence
-sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 1 ), interval_t, interval_f );
+sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 6 ), interval_t, interval_f );
 %         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
 %         settings_rng_apo = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
 %         settings_rng_del = auxiliary.setting_rng( 3 * ones(1, 1), repmat({'twister'}, [ 1, 1 ]) );
@@ -92,8 +93,8 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 1 )
 % specify options
 %--------------------------------------------------------------------------
 % discretization options
-parameters_elements = discretizations.parameters_number( [ 4, 60 ] );
-parameters_FOV = discretizations.parameters_distance( physical_values.meter( [ 76.2e-6, 5e-4, 76.2e-6 ] ) );
+parameters_elements = discretizations.parameters_number( 12 );
+parameters_FOV = discretizations.parameters_distance( physical_values.meter( [ 76.2e-6, 76.2e-6 ] ) );
 options_disc_spatial = discretizations.options_spatial_grid( parameters_FOV, parameters_elements );
 options_disc_spectral = discretizations.options_spectral.signal;
 options_disc = discretizations.options( options_disc_spatial, options_disc_spectral );
@@ -110,9 +111,18 @@ operator_born = scattering.operator_born( sequence, options );
 % test scattering operator
 %--------------------------------------------------------------------------
 theta = zeros( 512^2, 1 );
-theta(128*512+128) = 1;
-theta(256*512+256) = 1;
-theta(384*512+384) = 2;
+theta(12*512+128) = 1;
+theta(12*512+256) = 1;
+theta(12*512+384) = 1;
+theta(120*512+128) = 1;
+theta(120*512+256) = 1;
+theta(120*512+384) = 1;
+theta(255*512+128) = 1;
+theta(255*512+256) = 1;
+theta(255*512+384) = 1;
+theta(511*512+128) = 1;
+theta(511*512+256) = 1;
+theta(511*512+384) = 1;
 
 u_rx = operator_born * theta;
 u_rx_tilde = signal( u_rx, 0, T_s );
@@ -121,7 +131,7 @@ u_rx_tilde = signal( u_rx, 0, T_s );
 % display results
 %--------------------------------------------------------------------------
 figure( 1 );
-imagesc( double( u_rx_tilde.samples ) );
+imagesc( illustration.dB( abs( hilbert( double( u_rx_tilde.samples )' ) ), 20 ), [ -60, 0 ] );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% compute tranform point spread function (TPSF, (quasi) plane waves)

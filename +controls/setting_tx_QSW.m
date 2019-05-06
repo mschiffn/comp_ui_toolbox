@@ -70,7 +70,7 @@ classdef setting_QSW < syntheses.setting
                 %----------------------------------------------------------
                 % b) unity apodization weights
                 %----------------------------------------------------------
-                apodization_weights{ index_object } = physical_values.apodization_weight( ones( 1, N_elements_active ) );
+                apodization_weights{ index_object } = ones( 1, N_elements_active );
 
                 %----------------------------------------------------------
                 % c) compute time delays for each virtual source

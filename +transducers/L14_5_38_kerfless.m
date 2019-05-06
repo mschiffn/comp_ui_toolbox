@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-05-03
-% modified: 2019-01-17
+% modified: 2019-04-11
 %
 classdef L14_5_38_kerfless < transducers.array_planar
 

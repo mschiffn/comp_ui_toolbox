@@ -162,9 +162,9 @@ classdef orthotope
             % 2.) compute parameters for regular grids
             %--------------------------------------------------------------
             % initialize parameter cell arrays
-            N_points_axis = cell( size( orthotopes ) );
-            delta_axis = cell( size( orthotopes ) );
             offset_axis = cell( size( orthotopes ) );
+            delta_axis = cell( size( orthotopes ) );
+            N_points_axis = cell( size( orthotopes ) );
 
             % iterate orthotopes
             for index_object = 1:numel( orthotopes )

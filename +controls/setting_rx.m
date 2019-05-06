@@ -100,7 +100,7 @@ classdef setting_rx < controls.setting
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure correct number of arguments
-            if ~( nargin == 1 || nargin == 3 )
+            if nargin ~= 1 && nargin ~= 3
                 errorStruct.message     = 'Either one or three arguments are required!';
                 errorStruct.identifier	= 'discretize:Arguments';
                 error( errorStruct );
@@ -127,6 +127,19 @@ classdef setting_rx < controls.setting
             settings_rx = discretize@controls.setting( settings_rx, intervals_t, intervals_f );
 
         end % function settings_rx = discretize( settings_rx, varargin )
+
+        %------------------------------------------------------------------
+        % convex hulls of all intervals
+        %------------------------------------------------------------------
+        function [ interval_hull_t, interval_hull_f ] = hulls( settings_rx )
+
+            % convex hull of all recording time intervals
+            interval_hull_t = hull( [ settings_rx.interval_t ] );
+
+            % convex hull of all frequency intervals
+            interval_hull_f = hull( [ settings_rx.interval_f ] );
+
+        end % function [ interval_hull_t, interval_hull_f ] = hulls( settings_rx )
 
 	end % methods
 

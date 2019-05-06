@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-30
-% modified: 2019-03-28
+% modified: 2019-04-22
 %
 classdef ( InferiorClasses = {?physical_values.physical_quantity,?physical_values.meter} ) unit_vector
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -18,7 +18,7 @@ classdef ( InferiorClasses = {?physical_values.physical_quantity,?physical_value
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 

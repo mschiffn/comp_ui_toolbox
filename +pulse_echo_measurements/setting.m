@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-04-04
+% modified: 2019-04-22
 %
 classdef setting
 
@@ -49,7 +49,7 @@ classdef setting
             % repeat default pulse-echo measurement setting
             objects = repmat( objects, size( settings_tx ) );
 
-            % set and check independent properties
+            % iterate pulse-echo measurement settings
             for index_object = 1:numel( settings_tx )
 
                 % set independent properties
@@ -57,8 +57,7 @@ classdef setting
                 objects( index_object ).rx = settings_rx{ index_object };
 
                 % set dependent properties
-                objects( index_object ).interval_t = interval_t_hull( objects( index_object ) );
-                objects( index_object ).interval_f = interval_f_hull( objects( index_object ) );
+                [ objects( index_object ).interval_t, objects( index_object ).interval_f ] = hulls( objects( index_object ).rx );
 
             end % for index_object = 1:numel( settings_tx )
 
@@ -67,134 +66,153 @@ classdef setting
         %------------------------------------------------------------------
         % spectral discretization
         %------------------------------------------------------------------
-        function objects_out = discretize( settings, options_spectral )
-            % TODO: various types of discretization / regular vs irregular
+        function objects_out = discretize( settings, absorption_models, options_spectral )
+% TODO: various types of discretization / regular vs irregular
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % TODO: multiple settings / single options_spectral
-            if ~isscalar( settings ) && isscalar( options_spectral )
+            % ensure cell array for settings
+            if ~iscell( settings )
+                settings = { settings };
             end
+
+            % class absorption_models.absorption_model is ensured by discretizations.spectral_points
+            % class discretizations.options_spectral is ensured by switch statement
+
+            % multiple settings / single absorption_models
+            if ~isscalar( settings ) && isscalar( absorption_models )
+                absorption_models = repmat( absorption_models, size( settings ) );
+            end
+
+            % multiple settings / single options_spectral
+            if ~isscalar( settings ) && isscalar( options_spectral )
+                options_spectral = repmat( options_spectral, size( settings ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( settings, absorption_models, options_spectral );
 
             %--------------------------------------------------------------
             % 2.) discretize frequency intervals
             %--------------------------------------------------------------
-            % initialize cell arrays
-            spectral_points_rx = cell( size( settings ) );
-            spectral_points_tx = cell( size( settings ) );
+            % iterate pulse-echo measurement settings
+            for index_object = 1:numel( settings )
 
-            switch options_spectral
+                % initialize cell arrays
+                settings_rx = cell( size( settings{ index_object } ) );
+                settings_tx = cell( size( settings{ index_object } ) );
 
-                case discretizations.options_spectral.signal
+                switch options_spectral( index_object )
 
-                    %------------------------------------------------------
-                    % a) individual discretization for each recorded signal
-                    %------------------------------------------------------
-                    for index_setting = 1:numel( settings )
+                    case discretizations.options_spectral.signal
 
-                        % time and frequency intervals of each recorded signal
-                        intervals_t = reshape( [ settings( index_setting ).rx.interval_t ], size( settings( index_setting ).rx ) );
-                        intervals_f = reshape( [ settings( index_setting ).rx.interval_f ], size( settings( index_setting ).rx ) );
+                        %--------------------------------------------------
+                        % a) individual frequency axis for each recorded signal
+                        %--------------------------------------------------
+                        for index_setting = 1:numel( settings{ index_object } )
 
-                        % discretize rx and tx settings
-                        spectral_points_rx{ index_setting } = discretize( settings( index_setting ).rx );
-                        spectral_points_tx{ index_setting } = discretize( settings( index_setting ).tx, intervals_t, intervals_f );
+                            % time and frequency intervals of each recorded signal
+                            intervals_t = reshape( [ settings{ index_object }( index_setting ).rx.interval_t ], size( settings{ index_object }( index_setting ).rx ) );
+                            intervals_f = reshape( [ settings{ index_object }( index_setting ).rx.interval_f ], size( settings{ index_object }( index_setting ).rx ) );
 
-                    end % for index_setting = 1:numel( settings )
+                            % discretize rx and tx settings
+                            settings_rx{ index_setting } = discretize( settings{ index_object }( index_setting ).rx );
+                            settings_tx{ index_setting } = discretize( settings{ index_object }( index_setting ).tx, intervals_t, intervals_f );
 
-                case discretizations.options_spectral.setting
+                        end % for index_setting = 1:numel( settings{ index_object } )
 
-                    %------------------------------------------------------
-                    % b) common discretization for all recorded signals per setting
-                    %------------------------------------------------------
-                    for index_setting = 1:numel( settings )
+                    case discretizations.options_spectral.setting
 
-                        % discretize rx and tx settings
-                        spectral_points_rx{ index_setting } = discretize( settings( index_setting ).rx, settings( index_setting ).interval_t, settings( index_setting ).interval_f );
-                        spectral_points_tx{ index_setting } = discretize( settings( index_setting ).tx, settings( index_setting ).interval_t, settings( index_setting ).interval_f );
+                        %--------------------------------------------------
+                        % b) common frequency axis for all recorded signals per setting
+                        %--------------------------------------------------
+                        for index_setting = 1:numel( settings{ index_object } )
 
-                    end % for index_setting = 1:numel( settings )
+                            % discretize rx and tx settings
+                            settings_rx{ index_setting } = discretize( settings{ index_object }( index_setting ).rx, settings{ index_object }( index_setting ).interval_t, settings{ index_object }( index_setting ).interval_f );
+                            settings_tx{ index_setting } = discretize( settings{ index_object }( index_setting ).tx, settings{ index_object }( index_setting ).interval_t, settings{ index_object }( index_setting ).interval_f );
 
-                case discretizations.options_spectral.sequence
+                        end % for index_setting = 1:numel( settings{ index_object } )
 
-                    %------------------------------------------------------
-                    % c) common discretization for all recorded signals
-                    %------------------------------------------------------
-                    % determine hull time and frequency intervals
-                    interval_t_hull = hull( [ settings.interval_t ] );
-                    interval_f_hull = hull( [ settings.interval_f ] );
+                    case discretizations.options_spectral.sequence
 
-                    % iterate settings
-                    for index_setting = 1:numel( settings )
+                        %--------------------------------------------------
+                        % c) common frequency axis for all recorded signals
+                        %--------------------------------------------------
+                        % determine hulls of all time and frequency intervals
+                        [ interval_t_hull, interval_f_hull ] = hulls( settings{ index_object } );
 
-                        % discretize rx and tx settings
-                        spectral_points_rx{ index_setting } = discretize( settings( index_setting ).rx, interval_t_hull, interval_f_hull );
-                        spectral_points_tx{ index_setting } = discretize( settings( index_setting ).tx, interval_t_hull, interval_f_hull );
+                        % iterate settings
+                        for index_setting = 1:numel( settings{ index_object } )
 
-                    end % for index_setting = 1:numel( settings )
+                            % discretize rx and tx settings
+                            settings_rx{ index_setting } = discretize( settings{ index_object }( index_setting ).rx, interval_t_hull, interval_f_hull );
+                            settings_tx{ index_setting } = discretize( settings{ index_object }( index_setting ).tx, interval_t_hull, interval_f_hull );
 
-                otherwise
+                        end % for index_setting = 1:numel( settings{ index_object } )
 
-                    %------------------------------------------------------
-                    % d) unknown spectral discretization method
-                    %------------------------------------------------------
-                    errorStruct.message     = 'options_spectral must be discretizations.options_spectral!';
-                    errorStruct.identifier	= 'discretize:NoOptionsSpectral';
-                    error( errorStruct );
+                    otherwise
 
-            end % switch options_spectral
+                        %--------------------------------------------------
+                        % d) unknown spectral discretization method
+                        %--------------------------------------------------
+                        errorStruct.message = sprintf( 'options_spectral( %d ) must be discretizations.options_spectral!', index_object );
+                        errorStruct.identifier	= 'discretize:NoOptionsSpectral';
+                        error( errorStruct );
 
-            %--------------------------------------------------------------
-            % 3.) create spectral discretizations
-            %--------------------------------------------------------------
-            objects_out = discretizations.spectral_points( spectral_points_tx, spectral_points_rx );
+                end % switch options_spectral( index_object )
 
-        end % function objects_out = discretize( settings, options_spectral )
+                %----------------------------------------------------------
+                % 3.) create spectral discretizations
+                %----------------------------------------------------------
+% TODO: vectorize function
+                objects_out{ index_object } = discretizations.spectral_points( settings_tx, settings_rx, absorption_models( index_object ) );
 
-        %------------------------------------------------------------------
-        % convex hull of all recording time intervals
-        %------------------------------------------------------------------
-        function objects_out = interval_t_hull( objects_in )
+            end % for index_object = 1:numel( settings )
 
-            % create objects_out of equal size
-            objects_out = repmat( objects_in( 1 ).rx( 1 ).interval_t, size( objects_in ) );
+            % avoid cell array for single spectral discretization
+            if isscalar( objects_out )
+                objects_out = objects_out{ 1 };
+            end
 
-            % iterate objects_in
-            for index_object = 1:numel( objects_in )
-
-                objects_out( index_object ) = hull( [ objects_in( index_object ).rx.interval_t ] );
-
-            end % for index_object = 1:numel( objects_in )
-
-        end % function objects_out = interval_t_hull( objects_in )
+        end % function objects_out = discretize( settings, absorption_models, options_spectral )
 
         %------------------------------------------------------------------
-        % convex hull of all frequency intervals
+        % convex hulls of all intervals
         %------------------------------------------------------------------
-        function objects_out = interval_f_hull( objects_in )
+        function [ interval_hull_t, interval_hull_f ] = hulls( settings )
 
-            % create objects_out of equal size
-            objects_out = repmat( objects_in( 1 ).rx( 1 ).interval_f, size( objects_in ) );
+            % convex hull of all recording time intervals
+            interval_hull_t = hull( [ settings.interval_t ] );
 
-            % iterate objects_in
-            for index_object = 1:numel( objects_in )
+            % convex hull of all frequency intervals
+            interval_hull_f = hull( [ settings.interval_f ] );
 
-                objects_out( index_object ) = hull( [ objects_in( index_object ).rx.interval_f ] );
-
-            end % for index_object = 1:numel( objects_in )
-
-        end % function objects_out = interval_f_hull( objects_in )
+        end % function [ interval_hull_t, interval_hull_f ] = hulls( settings )
 
         %------------------------------------------------------------------
-        % compute hash value
+        % compute hash values
         %------------------------------------------------------------------
-        function str_hash = hash( object )
+        function str_hash = hash( settings )
 
-            % use DataHash function to compute hash value
-            str_hash = auxiliary.DataHash( object );
+            % specify cell array for str_hash
+            str_hash = cell( size( settings ) );
 
-        end % function str_hash = hash( object )
+            % iterate pulse-echo measurement settings
+            for index_object = 1:numel( settings )
+
+                % use DataHash function to compute hash value
+                str_hash{ index_object } = auxiliary.DataHash( settings( index_object ) );
+
+            end % for index_object = 1:numel( settings )
+
+            % avoid cell array for single pulse-echo measurement setting
+            if isscalar( settings )
+                str_hash = str_hash{ 1 };
+            end
+
+        end % function str_hash = hash( settings )
 
 	end % methods
 

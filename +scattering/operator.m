@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-03-16
+% modified: 2019-05-03
 %
 classdef operator
 
@@ -25,13 +25,13 @@ classdef operator
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
         function object = operator( sequence, options )
-
+% TODO: vectorize
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -56,6 +56,7 @@ classdef operator
             object.options = options;
 
             % TODO: check for identical recording time intervals / identical frequency intervals
+            % TODO: check method to determine Fourier coefficients
             % TODO: find active elements and compute impulse responses
             % check for identical frequency axes identical?
             % TODO: check for valid spatial discretization (sampling theorem)
@@ -65,16 +66,130 @@ classdef operator
             object.discretization = discretize( object.sequence, object.options.discretization );
 
             %--------------------------------------------------------------
-            % 4.) compute incident acoustic fields (unique frequencies)
+            % 4.) incident acoustic fields (unique frequencies)
             %--------------------------------------------------------------
             object.incident_waves = syntheses.incident_wave( object.sequence.setup, object.discretization );
 
-            % create pulse-echo measurements
-            % TODO: check method to determine Fourier coefficients
-%             f_s = physical_values.frequency( 20e6 );
-%             object.measurements = pulse_echo_measurements.measurement_ADC( intervals_t, intervals_f, settings_tx_quantized, [], repmat( f_s, size( intervals_t ) ) );
-
         end % function object = operator( sequence, options )
+
+        %------------------------------------------------------------------
+        % point spread function (PSF)
+        %------------------------------------------------------------------
+        function [ out, E_rx, adjointness ] = psf( operators, indices )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for indices
+            if ~iscell( indices )
+                indices = { indices };
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( operators, indices );
+
+            %--------------------------------------------------------------
+            % 2.) compute PSFs
+            %--------------------------------------------------------------
+            % specify cell array for psf
+            out = cell( size( operators ) );
+            E_rx = cell( size( operators ) );
+            adjointness = cell( size( operators ) );
+
+            % iterate scattering operators
+            for index_object = 1:numel( operators )
+
+                % number of PSFs
+                N_psf = numel( indices{ index_object } );
+
+                % initialize coefficient vectors and output with zeros
+                out{ index_object } = zeros( operators( index_object ).discretization.spatial.grid_FOV.N_points, N_psf );
+%                 if options.material_parameter ~= 0
+%                     theta = zeros(N_lattice, N_tpsf);
+%                     theta_recon = zeros(N_lattice, N_tpsf);
+%                     gamma_recon = zeros(N_lattice, N_tpsf);
+%                 else
+%                     theta = zeros(2*N_lattice, N_tpsf);
+%                     theta_recon = zeros(2*N_lattice, N_tpsf);
+%                     gamma_recon = zeros(2*N_lattice, N_tpsf);
+%                 end
+                gamma_kappa = zeros( operators( index_object ).discretization.spatial.grid_FOV.N_points, 1 );
+
+                E_rx{ index_object } = zeros( 1, N_psf );
+                adjointness{ index_object } = zeros( 1, N_psf );
+
+                % iterate grid points
+                for index_grid = 1:N_psf
+
+                    % specify current gamma_kappa
+                    gamma_kappa( indices{ index_object }( index_grid ) ) = 1;
+
+                    % compute forward scattering
+                    u_M = forward( operators( index_object ), gamma_kappa );
+                    E_rx{ index_object }( index_grid ) = energy( u_M );
+
+                    % compute adjoint scattering
+                    out{ index_object }( :, index_grid ) = adjoint( operators( index_object ), u_M );
+                    adjointness{ index_object }( index_grid ) = E_rx{ index_object }( index_grid ) - out{ index_object }( indices{ index_object }( index_grid ), index_grid );
+
+                    % delete current gamma_kappa
+                    gamma_kappa( indices{ index_object }( index_grid ) ) = 0;
+
+                    figure( index_grid );
+                    imagesc( squeeze( reshape( double( abs( out{ index_object }( :, index_grid ) ) ), operators( index_object ).discretization.spatial.grid_FOV.N_points_axis ) ) );
+
+                end % for index_grid = 1:N_psf
+
+            end % for index_object = 1:numel( operators )
+
+            % reshape results
+%         if options.material_parameter ~= 0
+%             gamma_recon = reshape(gamma_recon, [N_lattice_axis(2), N_lattice_axis(1), N_tpsf]);
+%             theta_recon = reshape(theta_recon, [N_lattice_axis(2), N_lattice_axis(1), N_tpsf]);
+%         else
+%             gamma_recon = reshape(gamma_recon, [N_lattice_axis(2), 2*N_lattice_axis(1), N_tpsf]);
+%             theta_recon = reshape(theta_recon, [N_lattice_axis(2), 2*N_lattice_axis(1), N_tpsf]);
+%         end
+
+            % avoid cell array for single operators
+            if isscalar( operators )
+                out = out{ 1 };
+                E_rx = E_rx{ 1 };
+                adjointness = adjointness{ 1 };
+            end
+
+        end % function [ out, E_rx, adjointness ] = psf( operators, indices )
+
+        %------------------------------------------------------------------
+        % received energy
+        %------------------------------------------------------------------
+        function E_rx = energy_rx( operators )
+
+            % extract number of grid points
+            N_points = operators.discretization.spatial.grid_FOV.N_points;
+
+            % initialize relative spatial fluctuations with zeros
+            gamma_kappa = zeros( N_points, 1 );
+            E_rx = zeros( N_points, 1 );
+
+            % iterate grid points
+            for index_point = 1:512%N_points
+
+                % specify fluctuation
+                gamma_kappa( index_point ) = 1;
+
+                % compute forward scattering
+                u_M = forward( operators, gamma_kappa );
+
+                % compute received energy
+                E_rx( index_point ) = energy( u_M );
+
+                % reset fluctuation
+                gamma_kappa( index_point ) = 0;
+
+            end % for index_point = 1:N_points
+
+        end % function E_rx = energy_rx( operators )
 
     end % methods
 

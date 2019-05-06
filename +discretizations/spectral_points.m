@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-03-17
+% modified: 2019-05-05
 %
 classdef spectral_points < discretizations.spectral
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
+	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -20,73 +20,91 @@ classdef spectral_points < discretizations.spectral
         tx_unique ( :, : ) controls.setting_tx
         indices_f_to_unique
         indices_unique_to_f
-        indices_active
+        indices_active_rx_unique ( 1, : ) double
+        indices_active_rx_to_unique
+        axis_k_tilde_unique ( 1, 1 ) math.sequence_increasing % axis of complex-valued wavenumbers
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = spectral_points( tx, rx )
+        function objects = spectral_points( settings_tx, settings_rx, absorption_model )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for tx
-            if ~iscell( tx )
-                tx = { tx };
+            % ensure cell array for settings_tx
+            if ~iscell( settings_tx )
+                settings_tx = { settings_tx };
             end
 
-            % ensure cell array for rx
-            if ~iscell( rx )
-                rx = { rx };
+            % ensure cell array for settings_rx
+            if ~iscell( settings_rx )
+                settings_rx = { settings_rx };
+            end
+
+            % ensure class absorption_models.absorption_model (scalar)
+            if ~( isa( absorption_model, 'absorption_models.absorption_model' ) && isscalar( absorption_model ) )
+                errorStruct.message = 'absorption_model must be absorption_models.absorption_model!';
+                errorStruct.identifier = 'spectral_points:NoAbsorptionModel';
+                error( errorStruct );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( tx, rx );
+            auxiliary.mustBeEqualSize( settings_tx, settings_rx );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
             objects@discretizations.spectral();
-            objects = repmat( objects, size( tx ) );
+            objects = repmat( objects, size( settings_tx ) );
 
             %--------------------------------------------------------------
             % 3.) set independent and dependent properties
             %--------------------------------------------------------------
-            for index_object = 1:numel( tx )
+            for index_object = 1:numel( settings_tx )
 
-                % ensure identical frequency axes
-%                 transfer_functions_tx = [ tx{ index_object }.transfer_functions ];
-%                 transfer_functions_rx = [ rx{ index_object }.transfer_functions ];
-% 
-%                 if ~isequal( tx{ index_object }.transfer_functions.set_f, rx{ index_object }.transfer_functions.set_f )
-%                     errorStruct.message     = 'All sets of discrete frequencies must be identical!';
-%                     errorStruct.identifier	= 'spectral_points:FrequencyMismatch';
-%                     error( errorStruct );
-%                 end
-                if ~( numel( tx{ index_object } ) == 1 || numel( tx{ index_object } ) == numel( rx{ index_object } ) )
-                    errorStruct.message     = 'Number of elements in tx must be one or match rx!';
-                    errorStruct.identifier	= 'spectral_points:SizeMismatch';
+% TODO: ensure identical frequency axes ?
+
+                % ensure correct number of settings_tx{ index_object }
+                if ~( numel( settings_tx{ index_object } ) == 1 || numel( settings_tx{ index_object } ) == numel( settings_rx{ index_object } ) )
+                    errorStruct.message = sprintf( 'Number of elements in settings_tx{ %d } must be one or match settings_rx{ %d }!', index_object, index_object );
+                    errorStruct.identifier = 'spectral_points:SizeMismatch';
                     error( errorStruct );
                 end
 
                 % set independent properties
-                objects( index_object ).tx = tx{ index_object };
-                objects( index_object ).rx = rx{ index_object };
+                objects( index_object ).tx = settings_tx{ index_object };
+                objects( index_object ).rx = settings_rx{ index_object };
 
                 % set dependent properties
                 [ objects( index_object ).tx_unique, objects( index_object ).indices_unique_to_f, objects( index_object ).indices_f_to_unique ] = unique( objects( index_object ).tx );
-                objects( index_object ).indices_active = unique_indices( objects( index_object ).rx );
+                [ objects( index_object ).indices_active_rx_unique, objects( index_object ).indices_active_rx_to_unique ] = unique_indices_active( objects( index_object ).rx );
+                objects( index_object ).axis_k_tilde_unique = compute_wavenumbers( absorption_model, objects( index_object ).tx_unique.excitation_voltages.axis );
 
-            end % for index_object = 1:numel( tx )
+            end % for index_object = 1:numel( settings_tx )
 
-        end % function objects = spectral_points( tx, rx )
+        end % function objects = spectral_points( settings_tx, settings_rx, absorption_model )
+
+        %------------------------------------------------------------------
+        % get unique frequencies
+        %------------------------------------------------------------------
+        function axes_f_unique = get_axes_f_unique( spectral_points )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            settings_tx = reshape( [ spectral_points.tx_unique ], size( spectral_points ) );
+            excitation_voltages = reshape( [ settings_tx.excitation_voltages ], size( spectral_points ) );
+            axes_f_unique = reshape( [ excitation_voltages.axis ], size( spectral_points ) );
+
+        end % function axes_f_unique = get_axes_f_unique( spectral_points )
 
 	end % methods
 

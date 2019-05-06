@@ -81,7 +81,7 @@ classdef setting_rnd_del < syntheses.setting
                 %----------------------------------------------------------
                 % b) unity apodization weights
                 %----------------------------------------------------------
-                apodization_weights{ index_object } = physical_values.apodization_weight( ones( 1, setup.xdc_array.N_elements ) );
+                apodization_weights{ index_object } = ones( 1, setup.xdc_array.N_elements );
 
                 %----------------------------------------------------------
                 % c) random time delays

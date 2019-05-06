@@ -3,14 +3,14 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-03-29
+% modified: 2019-04-30
 %
-classdef field < discretizations.signal_matrix
+classdef field < discretizations.signal_array
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties
+	properties (SetAccess = private)
 
         % independent properties
         grid_FOV ( 1, 1 ) discretizations.grid
@@ -21,9 +21,9 @@ classdef field < discretizations.signal_matrix
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -33,40 +33,25 @@ classdef field < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % superclass ensures class math.sequence_increasing for axes
+
             % ensure class discretizations.grid
             if ~isa( grids_FOV, 'discretizations.grid' )
-                errorStruct.message     = 'grids_FOV must be discretizations.grid!';
-                errorStruct.identifier	= 'field:NoRegularGrid';
+                errorStruct.message = 'grids_FOV must be discretizations.grid!';
+                errorStruct.identifier = 'field:NoGrids';
                 error( errorStruct );
-            end
-
-            % specify default samples
-            if nargin < 3
-                samples = cell( size( axes ) );
-                for index_object = 1:numel( axes )
-                    samples{ index_object } = zeros( [ grids_FOV( index_object ).N_points, abs( axes( index_object ) ) ] );
-                    if isa( grids_FOV( index_object ), 'discretizations.grid_regular' )
-                        samples{ index_object } = reshape( samples{ index_object }, [ grids_FOV( index_object ).N_points_axis, abs( axes( index_object ) ) ] );
-                    end
-                end
-            end
-
-            % ensure cell array for samples
-            if ~iscell( samples )
-                samples = { samples };
             end
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( axes, grids_FOV );
 
             %--------------------------------------------------------------
-            % 2.) constructor of superclass
+            % 2.) create fields
             %--------------------------------------------------------------
-            objects@discretizations.signal_matrix( axes, samples );
+            % constructor of superclass
+            objects@discretizations.signal_array( axes, samples );
 
-            %--------------------------------------------------------------
-            % 3.) set independent and dependent properties
-            %--------------------------------------------------------------
+            % iterate fields
             for index_object = 1:numel( objects )
 
                 % ensure correct size of grids_FOV
@@ -87,148 +72,213 @@ classdef field < discretizations.signal_matrix
         end % function objects = field( axes, grids_FOV, samples )
 
         %------------------------------------------------------------------
-        % get_cell
+        % lateral shift (TODO: check for correctness)
         %------------------------------------------------------------------
-        function objects = get_cell( fields )
-
-            for index_object = 1:numel( fields )
-
-                
-            end
-            % number of discrete frequencies
-            N_dimensions_act = ndims( samples{ index_object } );
-            size_act = size( samples{ index_object } );
-            N_samples_f = size_act( end );
-            N_points = prod( size_act( 1:(end - 1) ) );
-            firstdims = repmat( {':'}, 1, N_dimensions_act - 1 );
-
-            % initialize field values with zeros
-            objects( index_object ).values = cell( 1, N_samples_f );
-            for index_f = 1:N_samples_f
-                objects( index_object ).values{ index_f } = samples{ index_object }( firstdims{ : }, index_f );
-            end
-        end
-
-        %------------------------------------------------------------------
-        % shift fields
-        %------------------------------------------------------------------
-        function fields = shift( fields, spatial_grid, N_points_shift_axis )
+        function output = shift_lateral( fields, spatial_grids_symmetric, indices_element, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class discretizations.spatial_grid_symmetric
-            if ~isa( spatial_grid, 'discretizations.spatial_grid_symmetric' )
-                errorStruct.message = 'spatial_grid must be discretizations.spatial_grid_symmetric!';
-                errorStruct.identifier = 'shift:NoSpatialGridSymmetric';
+            if ~isa( spatial_grids_symmetric, 'discretizations.spatial_grid_symmetric' )
+                errorStruct.message = 'spatial_grids_symmetric must be discretizations.spatial_grid_symmetric!';
+                errorStruct.identifier = 'shift:NoSymmetricSpatialGrids';
                 error( errorStruct );
             end
 
-            % ensure cell array for N_points_shift_axis
-            if ~iscell( N_points_shift_axis )
-                N_points_shift_axis = { N_points_shift_axis };
+            % ensure cell array for indices_element
+            if ~iscell( indices_element )
+                indices_element = { indices_element };
             end
 
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( fields, spatial_grid, N_points_shift_axis );
+            % multiple fields / single spatial_grids_symmetric
+            if ~isscalar( fields ) && isscalar( spatial_grids_symmetric )
+                spatial_grids_symmetric = repmat( spatial_grids_symmetric, size( fields ) );
+            end
+
+            % multiple fields / single indices_element
+            if ~isscalar( fields ) && isscalar( indices_element )
+                indices_element = repmat( indices_element, size( fields ) );
+            end
 
             %--------------------------------------------------------------
-            % 2.) shift spatial transfer functions
+            % 2.) compute shifted indices
             %--------------------------------------------------------------
+            indices_shift = shift_lateral( spatial_grids_symmetric, indices_element, varargin{ : } );
+
+            % ensure cell array for indices_shift
+            if ~iscell( indices_shift )
+                indices_shift = { indices_shift };
+            end
+
+            %--------------------------------------------------------------
+            % 3.) resample fields
+            %--------------------------------------------------------------
+            % specify cell array for output
+            output = cell( size( fields ) );
+
             % iterate fields
-            for index_object = 1:numel( fields )
+            for index_field = 1:numel( fields )
 
                 % ensure identical grids
-                if ~isequal( fields( index_object ).grid_FOV, spatial_grid( index_object ).grid_FOV )
-                    errorStruct.message = sprintf( 'fields( %d ).grid_FOV differs from spatial_grid( %d ).grid_FOV!', index_object, index_object );
-                    errorStruct.identifier = 'shift:NoSpatialGridSymmetric';
+                if ~isequal( fields( index_field ).grid_FOV, spatial_grids_symmetric( index_field ).grid_FOV )
+                    errorStruct.message = sprintf( 'fields( %d ).grid_FOV differs from spatial_grids_symmetric( %d ).grid_FOV!', index_field, index_field );
+                    errorStruct.identifier = 'shift:UnequalSpatialGrids';
                     error( errorStruct );
                 end
 
-                % ensure integers
-                mustBeInteger( N_points_shift_axis{ index_object } );
+                % repeat current field
+                output{ index_field } = repmat( fields( index_field ), size( indices_element{ index_field } ) );
 
-                % compute summand for the incident pressure field
-                index_start_axis = fields( index_object ).grid_FOV.N_points_axis( 1:(end - 1) ) - ( size( spatial_grid( index_object ).grids_elements ) - 1 ) .* spatial_grid( index_object ).N_points_per_pitch_axis + 1;
-                index_stop_axis = index_start_axis + N_points_shift_axis{ index_object } - 1;
+                % iterate shifts
+                for index_shift = 1:numel( indices_element{ index_field } )
 
-                % iterate dimensions
-                for index_dim = 1:numel( index_start_axis )
+                    % resample according to current shift
+                    output{ index_field }( index_shift ).samples = fields( index_field ).samples( indices_shift{ index_field }( :, index_shift ), : );
 
-                    selector_front = repmat( {':'}, size( index_start_axis ) );
-                    selector_tail = repmat( {':'}, size( index_start_axis ) );
+                end % for index_shift = 1:numel( indices_element{ index_field } )
 
-                    selector_front{ index_dim } = ( index_stop_axis( index_dim ):-1:index_start_axis( index_dim ) );
-                    selector_tail{ index_dim } = ( 1:(fields( index_object ).grid_FOV.N_points_axis( index_dim ) - N_points_shift_axis{ index_object }( index_dim )) );
+            end % for index_field = 1:numel( fields )
 
-                    fields( index_object ).samples = cat( index_dim, fields( index_object ).samples( selector_front{ : }, :, : ), fields( index_object ).samples( selector_tail{ : }, :, : ) );
+            % avoid cell array for single fields
+            if isscalar( fields )
+                output = output{ 1 };
+            end
 
-                end % for index_dim = 1:numel( index_start_axis )
+        end % function output = shift_lateral( fields, spatial_grids_symmetric, indices_element, varargin )
+
+        %------------------------------------------------------------------
+        % subsample (overload subsample method)
+        %------------------------------------------------------------------
+        function fields = subsample( fields, indices_axes, indices_grids )
+
+            %--------------------------------------------------------------
+            % 1.) use subsampling method of superclass
+            %--------------------------------------------------------------
+% TODO: do not use superclass method for efficiency
+            fields = subsample@discretizations.signal_array( fields, indices_axes );
+
+            %--------------------------------------------------------------
+            % 2.) check arguments
+            %--------------------------------------------------------------
+            % return for less than three arguments or empty indices_grids
+            if nargin < 3 || isempty( indices_grids )
+                return;
+            end
+
+            % ensure cell array for indices_grids
+            if ~iscell( indices_grids )
+                indices_grids = { indices_grids };
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( fields, indices_grids );
+
+            %--------------------------------------------------------------
+            % 3.) perform subsampling of grid
+            %--------------------------------------------------------------
+            % subsample grids
+            grids_FOV = subgrid( [ fields.grid_FOV ], indices_grids );
+
+            % iterate fields
+            for index_object = 1:numel( fields )
+
+                % assign subsampled grids
+                fields( index_object ).grid_FOV = grids_FOV( index_object );
+
+                % subsample samples
+                fields( index_object ).samples = fields( index_object ).samples( indices_grids{ index_object }, : );
+                fields( index_object ).N_signals = numel( indices_grids{ index_object } );
+                fields( index_object ).size_bytes = data_volume( fields( index_object ) );
 
             end % for index_object = 1:numel( fields )
 
-        end % function fields = shift( fields, spatial_grid, N_points_shift_axis )
+        end % function fields = subsample( fields, indices_axes, indices_grids )
 
         %------------------------------------------------------------------
-        % show
+        % TODO: times
+        %------------------------------------------------------------------
+
+        %------------------------------------------------------------------
+        % 2-D plots (overload show function)
         %------------------------------------------------------------------
         function hdl = show( fields )
 
             %--------------------------------------------------------------
             % 1.) display fields
             %--------------------------------------------------------------
+            % initialize hdl with zeros
             hdl = zeros( size( fields ) );
+
+            % iterate fields
             for index_object = 1:numel( fields )
 
+                % number of samples
                 N_samples = abs( fields( index_object ).axis );
-                index_ctr = round( N_samples / 2 );
+                index_shift = ceil( N_samples / 2 );
 
+                % create figure
                 hdl( index_object ) = figure( index_object );
 
+                % ensure class discretizations.grid_regular
+                if ~isa( fields( index_object ).grid_FOV, 'discretizations.grid_regular' )
+                    show@discretizations.signal_array( fields( index_object ) );
+                    continue;
+                end
+
+                % extract and reshape samples
+                samples_act = reshape( fields( index_object ).samples, [ fields( index_object ).grid_FOV.N_points_axis, N_samples ] );
+
                 % check number of spatial dimensions
-                switch ( ndims( fields( index_object ).samples ) - 1 )
+                switch fields( index_object ).grid_FOV.N_dimensions
 
                     case 2
 
                         %--------------------------------------------------
                         % a) two-dimensional Euclidean space
                         %--------------------------------------------------
+                        axis_1 = double( fields( index_object ).grid_FOV.positions([1,262], 1) );
+                        axis_2 = double( fields( index_object ).grid_FOV.positions([1,68644], 2) );
                         subplot( 2, 3, 1);
-                        imagesc( abs( fields( index_object ).samples( :, :, 1 ) ) );
+                        imagesc( axis_2, axis_1, abs( double( samples_act( :, :, 1 ) ) ) );
                         subplot( 2, 3, 2);
-                        imagesc( abs( fields( index_object ).samples( :, :, index_ctr ) ) );
+                        imagesc( axis_2, axis_1, abs( double( samples_act( :, :, index_shift ) ) ) );
                         subplot( 2, 3, 3);
-                        imagesc( abs( fields( index_object ).samples( :, :, end ) ) );
+                        imagesc( axis_2, axis_1, abs( double( samples_act( :, :, end ) ) ) );
                         subplot( 2, 3, 4);
-                        imagesc( angle( fields( index_object ).samples( :, :, 1 ) ) );
+                        imagesc( axis_2, axis_1, angle( double( samples_act( :, :, 1 ) ) ) );
                         subplot( 2, 3, 5);
-                        imagesc( angle( fields( index_object ).samples( :, :, index_ctr ) ) );
+                        imagesc( axis_2, axis_1, angle( double( samples_act( :, :, index_shift ) ) ) );
                         subplot( 2, 3, 6);
-                        imagesc( angle( fields( index_object ).samples( :, :, end ) ) );
+                        imagesc( axis_2, axis_1, angle( double( samples_act( :, :, end ) ) ) );
 
                     case 3
 
                         %--------------------------------------------------
                         % b) three-dimensional Euclidean space
                         %--------------------------------------------------
+                        index_shift_pos = ceil( fields( index_object ).grid_FOV.N_points_axis / 2 );
+                        axis_1 = double( fields( index_object ).grid_FOV.positions( [1,262], 1 ) );
+                        axis_2 = double( fields( index_object ).grid_FOV.positions( [1,68644], 2 ) );
+                        axis_3 = double( fields( index_object ).grid_FOV.positions( [1,68644], 3 ) );
                         subplot( 3, 3, 1);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, 1, :, 1 ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( :, index_shift_pos( 2 ), :, 1 ) ) ) ) );
                         subplot( 3, 3, 2);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, 1, :, index_ctr ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( :, index_shift_pos( 2 ), :, index_shift ) ) ) ) );
                         subplot( 3, 3, 3);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, 1, :, end ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( :, index_shift_pos( 2 ), :, end ) ) ) ) );
                         subplot( 3, 3, 4);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, :, 1, 1 ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( :, :, 51, 1 ) ) ) ) );
                         subplot( 3, 3, 5);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, :, 1, index_ctr ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( :, :, 51, index_shift ) ) ) ) );
                         subplot( 3, 3, 6);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( :, :, 1, end ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( :, :, 51, end ) ) ) ) );
                         subplot( 3, 3, 7);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( 1, :, :, 1 ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( index_shift_pos( 1 ), :, :, 1 ) ) ) ) );
                         subplot( 3, 3, 8);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( 1, :, :, index_ctr ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( index_shift_pos( 1 ), :, :, index_shift ) ) ) ) );
                         subplot( 3, 3, 9);
-                        imagesc( double( abs( squeeze( fields( index_object ).samples( 1, :, :, end ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( index_shift_pos( 1 ), :, :, end ) ) ) ) );
 
                     otherwise
 
@@ -239,7 +289,7 @@ classdef field < discretizations.signal_matrix
                         errorStruct.identifier	= 'show:UnknownDimensions';
                         error( errorStruct );
 
-                end % switch ( ndims( fields( index_object ).samples ) - 1 )
+                end % switch fields( index_object ).grid_FOV.N_dimensions
                 
             end % for index_object = 1:numel( fields )
 
@@ -247,4 +297,4 @@ classdef field < discretizations.signal_matrix
 
 	end % methods
 
-end % classdef field < discretizations.signal_matrix
+end % classdef field < discretizations.signal_array

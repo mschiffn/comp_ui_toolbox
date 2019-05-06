@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-04-02
+% modified: 2019-05-04
 %
 classdef setting_rx_identity < controls.setting_rx
 
@@ -53,7 +53,16 @@ classdef setting_rx_identity < controls.setting_rx
                 % b) impulse responses are identities
                 %----------------------------------------------------------
                 axis_t = math.sequence_increasing_regular( 0, 0, setup.T_clk );
-                impulse_responses{ index_element } = discretizations.signal_matrix( axis_t, 1 );
+                if setup.xdc_array.N_dimensions == 2
+                    samples = physical_values.volt_per_newton_second( 1 );
+                elseif setup.xdc_array.N_dimensions == 1
+                    samples = physical_values.volt_meter_per_newton_second( 1 );
+                else
+                    errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
+                    errorStruct.identifier	= 'setting_rx_identity:NoSetup';
+                    error( errorStruct );
+                end
+                impulse_responses{ index_element } = discretizations.signal_array( axis_t, samples );
 
             end % for index_element = 1:setup.xdc_array.N_elements
 

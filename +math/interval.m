@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-03-28
+% modified: 2019-05-06
 %
 classdef interval
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
+	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -19,7 +19,7 @@ classdef interval
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -180,18 +180,16 @@ classdef interval
         %------------------------------------------------------------------
         % convex hull of intervals
         %------------------------------------------------------------------
-        function object_out = hull( objects_in )
+        function interval_out = hull( intervals )
 
             % determine minimum lower bound and maximum upper bound
-            lb_min = min( [ objects_in.lb ] );
-            ub_max = max( [ objects_in.ub ] );
+            lb_min = min( [ intervals.lb ] );
+            ub_max = max( [ intervals.ub ] );
 
-            % set independent properties
-            object_out = objects_in( 1 );
-            object_out.lb = lb_min;
-            object_out.ub = ub_max;
+            % create interval
+            interval_out = math.interval( lb_min, ub_max );
 
-        end % function object_out = hull( objects_in )
+        end % function interval_out = hull( intervals )
 
 	end % methods
 

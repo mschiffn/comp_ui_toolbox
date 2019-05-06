@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-04-11
+% modified: 2019-05-05
 %
 classdef setting
 
@@ -14,7 +14,7 @@ classdef setting
 
         % independent properties
         indices_active ( 1, : ) double { mustBeInteger, mustBeFinite }	% indices of active array elements (1)
-        impulse_responses ( 1, : ) discretizations.signal_matrix        % impulse responses of active channels
+        impulse_responses ( 1, : ) discretizations.signal_array         % impulse responses of active channels
 
     end % properties
 
@@ -70,15 +70,15 @@ classdef setting
                         % ensure equal number of dimensions and sizes of cell array contents
                         auxiliary.mustBeEqualSize( indices_active{ index_object }, impulse_responses{ index_object } );
 
-                        % try to merge compatible signals into a single signal matrix
+                        % try to merge compatible signals into a single signal array
                         try
-                            impulse_responses{ index_object } = merge( 1, impulse_responses{ index_object } );
+                            impulse_responses{ index_object } = merge( impulse_responses{ index_object } );
                         catch
                         end
 
-                    case 'discretizations.signal_matrix'
+                    case 'discretizations.signal_array'
 
-                        % ensure single signal matrix of correct size
+                        % ensure single signal array of correct size
                         if ~isscalar( impulse_responses{ index_object } ) || ( numel( indices_active{ index_object } ) ~= impulse_responses{ index_object }.N_signals )
                             errorStruct.message     = sprintf( 'impulse_responses{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
                             errorStruct.identifier	= 'setting:SizeMismatch';
@@ -132,30 +132,51 @@ classdef setting
                 % compute Fourier transform samples
                 settings( index_object ).impulse_responses = fourier_transform( settings( index_object ).impulse_responses, intervals_t( index_object ), intervals_f( index_object ) );
 
-                % merge transforms to ensure class signal_matrix
-                % TODO: dim = 1 always correct?
-                settings( index_object ).impulse_responses = merge( 1, settings( index_object ).impulse_responses );
+                % merge transforms to ensure class signal_array
+                settings( index_object ).impulse_responses = merge( settings( index_object ).impulse_responses );
 
             end % for index_object = 1:numel( settings )
 
         end % function settings = discretize( settings, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
-        % unique active indices
+        % unique indices of active array elements
         %------------------------------------------------------------------
-        function [ indices_unique, ia, ic ] = unique_indices( settings )
+        function [ indices_unique, indices_local_to_unique ] = unique_indices_active( settings )
 
-            % extract unique physical values
+            %--------------------------------------------------------------
+            % 1.) numbers of members and cumulative sum
+            %--------------------------------------------------------------
+            N_active = cellfun( @numel, { settings.indices_active } );
+            N_active_cs = [ 0, cumsum( N_active ) ];
+
+            %--------------------------------------------------------------
+            % 2.) extract unique indices of active array elements
+            %--------------------------------------------------------------
             [ indices_unique, ia, ic ] = unique( [ settings.indices_active ] );
 
-        end % function [ indices_unique, ia, ic ] = unique_indices( settings )
+            %--------------------------------------------------------------
+            % 3.) map indices of active array elements in each setting to the unique indices
+            %--------------------------------------------------------------
+            indices_local_to_unique = cell( size( settings ) );
+
+            for index_set = 1:numel( settings )
+
+                index_start = N_active_cs( index_set ) + 1;
+                index_stop = index_start + N_active( index_set ) - 1;
+
+                indices_local_to_unique{ index_set } = ic( index_start:index_stop );
+
+            end % for index_set = 1:numel( settings )
+            
+        end % function [ indices_unique, indices_local_to_unique ] = unique_indices_active( settings )
 
         %------------------------------------------------------------------
         % compute hash values
         %------------------------------------------------------------------
         function str_hash = hash( settings )
 
-            % specify cell array
+            % specify cell array for str_hash
             str_hash = cell( size( settings ) );
 
             % iterate transducer control settings

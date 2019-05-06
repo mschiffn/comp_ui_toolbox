@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21
-% modified: 2019-04-01
+% modified: 2019-05-03
 %
 classdef grid
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
+	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties
 % TODO: access rights?
@@ -22,7 +22,7 @@ classdef grid
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -109,12 +109,12 @@ classdef grid
             end
 
             % multiple grids_1 / single indices_1
-            if ~isscalar( grids_1 ) && isscalar( indices_1)
+            if ~isscalar( grids_1 ) && isscalar( indices_1 )
                 indices_1 = repmat( indices_1, size( grids_1 ) );
             end
 
             % multiple grids_2 / single indices_2
-            if ~isscalar( grids_2 ) && isscalar( indices_2)
+            if ~isscalar( grids_2 ) && isscalar( indices_2 )
                 indices_2 = repmat( indices_2, size( grids_2 ) );
             end
 
@@ -274,7 +274,7 @@ classdef grid
             %--------------------------------------------------------------
             grids_out = discretizations.grid( positions_act );
 
-        end % function grids_out = extract( grids_in, indices )
+        end % function grids_out = subgrid( grids_in, indices )
 
     end % methods
 

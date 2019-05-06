@@ -149,11 +149,11 @@ classdef grid_regular < discretizations.grid
             for index_object = 1:numel( grids_regular )
 
                 % calculate indices along each coordinate axis
-                indices_linear = ( 0:(grids_regular( index_object ).N_points - 1) )';
+                indices_linear = ( 1:grids_regular( index_object ).N_points );
                 indices_axis = inverse_index_transform( grids_regular( index_object ), indices_linear );
 
                 % compute Cartesian coordinates of grid points
-                positions_rel = indices_axis * ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis );
+                positions_rel = ( indices_axis - 1 ) * ( grids_regular( index_object ).cell_ref.edge_lengths .* grids_regular( index_object ).cell_ref.basis );
                 positions{ index_object } = grids_regular( index_object ).offset_axis + positions_rel;
 
             end % for index_object = 1:numel( grids_regular )
@@ -192,12 +192,12 @@ classdef grid_regular < discretizations.grid
 
                 % convert linear indices into subscripts
                 temp = cell( 1, grids_regular( index_object ).N_dimensions );
-                [ temp{ : } ] = ind2sub( grids_regular( index_object ).N_points_axis, indices_linear{ index_object } + 1 );
-                indices_axis{ index_object } = cat( 2, temp{ : } ) - 1;
+                [ temp{ : } ] = ind2sub( grids_regular( index_object ).N_points_axis, indices_linear{ index_object }( : ) );
+                indices_axis{ index_object } = cat( 2, temp{ : } );
 
             end % for index_object = 1:numel( grids_regular )
 
-            % avoid cell array for single regular grid
+            % avoid cell array for single grids_regular
             if isscalar( grids_regular )
                 indices_axis = indices_axis{ 1 };
             end
@@ -228,20 +228,13 @@ classdef grid_regular < discretizations.grid
 
             % iterate regular grids
             for index_object = 1:numel( grids_regular )
-% TODO: finish code
-                [ temp{ : } ] = sub2ind( grids_regular( index_object ).N_points_axis, indices_linear{ index_object } + 1 );
-                % factors for forward index calculation
-                factors = ones( grids_regular( index_object ).N_dimensions, 1 );
-                for index_prod = 1:(grids_regular( index_object ).N_dimensions - 1)
-                    factors( index_prod ) = prod( grids_regular( index_object ).N_points_axis( (index_prod + 1):end ), 2 );
-                end
 
-                % compute grid indices
-                indices_linear = indices_axis * factors;
+                temp = mat2cell( indices_axis{ index_object }, size( indices_axis{ index_object }, 1 ), ones( 1, grids_regular( index_object ).N_dimensions ) );
+                indices_linear{ index_object } = sub2ind( grids_regular( index_object ).N_points_axis, temp{ : } );
 
             end % for index_object = 1:numel( grids_regular )
 
-            % avoid cell array for single regular grid
+            % avoid cell array for single grids_regular
             if isscalar( grids_regular )
                 indices_linear = indices_linear{ 1 };
             end

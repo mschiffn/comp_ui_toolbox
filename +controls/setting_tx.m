@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-04-05
+% modified: 2019-04-28
 %
 classdef setting_tx < controls.setting
 
@@ -13,7 +13,7 @@ classdef setting_tx < controls.setting
 	properties (SetAccess = private)
 
         % independent properties
-        excitation_voltages ( 1, : ) discretizations.signal_matrix	% voltages exciting the active channels
+        excitation_voltages ( 1, : ) discretizations.signal_array	% voltages exciting the active channels
 
     end % properties
 
@@ -32,8 +32,8 @@ classdef setting_tx < controls.setting
             %--------------------------------------------------------------
             if nargin == 0
                 indices_active = 1;
-                impulse_responses = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
-                excitation_voltages = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.voltage );
+                impulse_responses = discretizations.signal_array( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
+                excitation_voltages = discretizations.signal_array( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.voltage );
             end
 
             % ensure cell array for indices_active
@@ -77,15 +77,15 @@ classdef setting_tx < controls.setting
                         % ensure equal number of dimensions and sizes of cell array contents
                         auxiliary.mustBeEqualSize( indices_active{ index_object }, excitation_voltages{ index_object } );
 
-                        % try to merge compatible signals into a single signal matrix
+                        % try to merge compatible signals into a single signal array
                         try
-                            excitation_voltages{ index_object } = merge( 1, excitation_voltages{ index_object } );
+                            excitation_voltages{ index_object } = merge( excitation_voltages{ index_object } );
                         catch
                         end
 
-                    case 'discretizations.signal_matrix'
+                    case 'discretizations.signal_array'
 
-                        % ensure single signal matrix of correct size
+                        % ensure single signal array of correct size
                         if ~isscalar( excitation_voltages{ index_object } ) || ( numel( indices_active{ index_object } ) ~= excitation_voltages{ index_object }.N_signals )
                             errorStruct.message = sprintf( 'excitation_voltages{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
                             errorStruct.identifier = 'setting:SizeMismatch';
@@ -153,10 +153,10 @@ classdef setting_tx < controls.setting
                 % compute Fourier coefficients
                 settings_tx( index_object ).excitation_voltages = fourier_coefficients( settings_tx( index_object ).excitation_voltages, intervals_t( index_object ), intervals_f( index_object ) );
 
-                % merge transforms to ensure class signal_matrix
-                % TODO: dim = 1 always correct?
-                % TODO: ensure that excitation_voltages and impulse_responses have identical axes?
-                settings_tx( index_object ).excitation_voltages = merge( 1, settings_tx( index_object ).excitation_voltages );
+                % merge transforms to ensure class signal_array
+                settings_tx( index_object ).excitation_voltages = merge( settings_tx( index_object ).excitation_voltages );
+
+% TODO: ensure that excitation_voltages and impulse_responses have identical axes?
 
             end % for index_object = 1:numel( settings_tx )
 
@@ -165,41 +165,42 @@ classdef setting_tx < controls.setting
         %------------------------------------------------------------------
         % unique values in array (overload unique function)
         %------------------------------------------------------------------
-        function [ object_out, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx )
+        function [ setting_tx_out, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx_in )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % return settings_tx if only one argument
-            if isscalar( settings_tx )
-                object_out = settings_tx;
+            % return settings_tx_in if only one argument
+            if isscalar( settings_tx_in )
+                setting_tx_out = settings_tx_in;
                 indices_unique_to_f = [];
                 indices_f_to_unique = [];
                 return;
             end
 
-            %
-            % TODO: check matching dimensions
-            % TODO: impulse_responses and excitation_voltages must be single signal matrices (ensured by Fourier transform)
+% TODO: check matching dimensions
+% TODO: impulse_responses and excitation_voltages must be single signal arrays (ensured by Fourier transform)
+% TODO: move part of functionality to superclass controls.setting
 
             %--------------------------------------------------------------
             % 2.) extract transfer functions and excitation voltages for unique frequencies
             %--------------------------------------------------------------
-            % extract axes of discrete frequencies
-            axes_f = repmat( settings_tx( 1 ).excitation_voltages.axis, size( settings_tx ) );
-            for index_object = 2:numel( settings_tx )
-                axes_f( index_object ) = settings_tx( index_object ).excitation_voltages.axis;
+            % extract frequency axes
+            axes_f = repmat( settings_tx_in( 1 ).excitation_voltages.axis, size( settings_tx_in ) );
+            for index_object = 2:numel( settings_tx_in )
+                axes_f( index_object ) = settings_tx_in( index_object ).excitation_voltages.axis;
             end
 
-            % extract axis of unique discrete frequencies
-            % TODO: create regular sequence if possible
+            % extract unique frequency axis
+% TODO: create regular sequence if possible
             [ axis_f_unique, indices_unique_to_f, indices_f_to_unique ] = unique( axes_f );
             N_samples_f_unique = numel( indices_unique_to_f );
 
-            % initialize cell arrays
-            samples_tf = repmat( settings_tx( 1 ).impulse_responses.samples( 1 ), [ numel( settings_tx( 1 ).indices_active ), N_samples_f_unique ] );
-            samples_u_tx = repmat( settings_tx( 1 ).excitation_voltages.samples( 1 ), [ numel( settings_tx( 1 ).indices_active ), N_samples_f_unique ] );
+            % initialize unique samples
+            samples_tf = repmat( settings_tx_in( 1 ).impulse_responses.samples( 1 ), [ numel( settings_tx_in( 1 ).indices_active ), N_samples_f_unique ] );
+            samples_u_tx = repmat( settings_tx_in( 1 ).excitation_voltages.samples( 1 ), [ numel( settings_tx_in( 1 ).indices_active ), N_samples_f_unique ] );
 
+            % iterate unique frequencies
             for index_f_unique = 1:N_samples_f_unique
 
                 % map unique frequencies to object and frequency index
@@ -207,22 +208,22 @@ classdef setting_tx < controls.setting
                 index_f = indices_unique_to_f( index_f_unique ).index_f;
 
                 % extract samples
-                samples_tf( :, index_f_unique ) = settings_tx( index_object ).impulse_responses.samples( :, index_f );
-                samples_u_tx( :, index_f_unique ) = settings_tx( index_object ).excitation_voltages.samples( :, index_f );
+                samples_tf( :, index_f_unique ) = settings_tx_in( index_object ).impulse_responses.samples( :, index_f );
+                samples_u_tx( :, index_f_unique ) = settings_tx_in( index_object ).excitation_voltages.samples( :, index_f );
 
             end % for index_f_unique = 1:N_samples_f_unique
 
             % create transfer functions and excitation voltages
-            indices_active_unique = settings_tx( 1 ).indices_active;
-            impulse_responses_unique = discretizations.signal_matrix( axis_f_unique, samples_tf );
-            excitation_voltages_unique = discretizations.signal_matrix( axis_f_unique, samples_u_tx );
+            indices_active_unique = settings_tx_in( 1 ).indices_active;
+            impulse_responses_unique = discretizations.signal_array( axis_f_unique, samples_tf );
+            excitation_voltages_unique = discretizations.signal_array( axis_f_unique, samples_u_tx );
 
             %--------------------------------------------------------------
             % 3.) create objects
             %--------------------------------------------------------------
-            object_out = controls.setting_tx( indices_active_unique, impulse_responses_unique, excitation_voltages_unique );
+            setting_tx_out = controls.setting_tx( indices_active_unique, impulse_responses_unique, excitation_voltages_unique );
 
-        end % function [ object_out, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx )
+        end % function [ setting_tx_out, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx_in )
 
 	end % methods
 

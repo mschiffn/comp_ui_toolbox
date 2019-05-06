@@ -34,14 +34,27 @@ classdef spatial
         end % function objects = spatial( )
 
         %------------------------------------------------------------------
-        % compute hash value
+        % compute hash values
         %------------------------------------------------------------------
-        function str_hash = hash( object )
+        function str_hash = hash( spatials )
 
-            % use DataHash function to compute hash value
-            str_hash = auxiliary.DataHash( object );
+            % specify cell array for str_hash
+            str_hash = cell( size( spatials ) );
 
-        end % function str_hash = hash( object )
+            % iterate spatial discretizations
+            for index_object = 1:numel( spatials )
+
+                % use DataHash function to compute hash value
+                str_hash{ index_object } = auxiliary.DataHash( spatials( index_object ) );
+
+            end % for index_object = 1:numel( spatials )
+
+            % avoid cell array for single spatial discretization
+            if isscalar( spatials )
+                str_hash = str_hash{ 1 };
+            end
+
+        end % function str_hash = hash( spatials )
 
 	end % methods
 

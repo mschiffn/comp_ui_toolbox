@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-04-09
+% modified: 2019-05-05
 %
 classdef sequence_increasing
 
@@ -78,13 +78,13 @@ classdef sequence_increasing
             %--------------------------------------------------------------
             % 1.) numbers of members and cumulative sum
             %--------------------------------------------------------------
-            N_members = abs( sequences_in(:) );
+            N_members = abs( sequences_in( : ) );
             N_members_cs = [ 0; cumsum( N_members ) ];
 
             %--------------------------------------------------------------
             % 2.) create sequence of unique members
             %--------------------------------------------------------------
-            % extract unique discrete frequencies
+            % extract unique members
             [ members_unique, ia, ic ] = unique( [ sequences_in.members ] );
             N_members_unique = numel( members_unique );
 
@@ -94,14 +94,14 @@ classdef sequence_increasing
             %--------------------------------------------------------------
             % 3.) map unique members to those in each sequence
             %--------------------------------------------------------------
-            % object and frequency indices for each unique frequency
+            % object and member indices for each unique member
             indices_object = sum( ( repmat( ia, [ 1, numel( N_members_cs ) ] ) - repmat( N_members_cs(:)', [ N_members_unique, 1 ] ) ) > 0, 2 );
             indices_f = ia - N_members_cs( indices_object );
 
-            % create structures with object and frequency indices for each unique frequency
+            % create structures with object and member indices for each unique member
             indices_unique_to_f( N_members_unique ).index_object = indices_object( N_members_unique );
             indices_unique_to_f( N_members_unique ).index_f = indices_f( N_members_unique );
-            for index_f_unique = 1:(N_members_unique-1)
+            for index_f_unique = 1:( N_members_unique - 1 )
                 indices_unique_to_f( index_f_unique ).index_object = indices_object( index_f_unique );
                 indices_unique_to_f( index_f_unique ).index_f = indices_f( index_f_unique );
             end
@@ -140,11 +140,25 @@ classdef sequence_increasing
             %--------------------------------------------------------------
             % 2.) perform subsampling
             %--------------------------------------------------------------
+            % extract cardinalities
+            N_members = abs( sequences_in );
+
             % specify cell array for members_sub
             members_sub = cell( size( sequences_in ) );
 
             % iterate sequences
             for index_object = 1:numel( sequences_in )
+
+                % ensure positive integers
+                mustBeInteger( indices_axes{ index_object } );
+                mustBePositive( indices_axes{ index_object } );
+
+                % ensure that indices_axes{ index_object } do not exceed N_members
+                if any( indices_axes{ index_object } > N_members( index_object ) )
+                    errorStruct.message = sprintf( 'indices_axes{ %d } must not exceed %d!', index_object, N_members( index_object ) );
+                    errorStruct.identifier = 'subsample:InvalidIndices';
+                    error( errorStruct );
+                end
 
                 % subsample members
                 members_sub{ index_object } = sequences_in( index_object ).members( indices_axes{ index_object } );

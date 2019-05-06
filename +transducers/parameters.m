@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-04-10
+% modified: 2019-04-11
 %
 classdef parameters
 
@@ -14,8 +14,8 @@ classdef parameters
 
         % independent properties
         N_elements_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 1 ]	% numbers of elements along each coordinate axis (1)
-        apodization ( 1, : )                    % apodization function
-        focus ( 1, : ) physical_values.length	% axial distances of the foci along each coordinate axis
+        apodization ( 1, : )                                % apodization function
+        axial_focus_axis ( 1, : ) physical_values.length	% axial distances of the foci along each coordinate axis
         str_model = 'Default Array'             % model name
         str_vendor = 'Default Corporation'      % vendor name
 
@@ -29,7 +29,7 @@ classdef parameters
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = parameters( N_elements_axis, apodization, focus, str_model, str_vendor )
+        function objects = parameters( N_elements_axis, apodization, axial_focus_axis, str_model, str_vendor )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -49,9 +49,9 @@ classdef parameters
                 apodization = { apodization };
             end
 
-            % ensure cell array for focus
-            if ~iscell( focus )
-                focus = { focus };
+            % ensure cell array for axial_focus_axis
+            if ~iscell( axial_focus_axis )
+                axial_focus_axis = { axial_focus_axis };
             end
 
             % ensure cell array for str_model
@@ -65,7 +65,7 @@ classdef parameters
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( N_elements_axis, apodization, focus, str_model, str_vendor );
+            auxiliary.mustBeEqualSize( N_elements_axis, apodization, axial_focus_axis, str_model, str_vendor );
 
             %--------------------------------------------------------------
             % 2.) create transducer array parameters
@@ -82,23 +82,19 @@ classdef parameters
                     error( errorStruct );
                 end
 
-                % ensure scalar or row vector for focus
-                if ~( isscalar( focus{ index_object } ) || auxiliary.isEqualSize( focus{ index_object }, N_elements_axis{ index_object } ) )
-                    errorStruct.message = sprintf( 'The size of focus{ %d } must be scalar or match that of N_elements_axis{ %d }', index_object, index_object );
-                    errorStruct.identifier = 'parameters:SizeMismatch';
-                    error( errorStruct );
-                end
+                % ensure equal number of dimensions and sizes
+                auxiliary.mustBeEqualSize( axial_focus_axis{ index_object }, N_elements_axis{ index_object } );
 
                 % set independent properties
                 objects( index_object ).N_elements_axis = N_elements_axis{ index_object };
                 objects( index_object ).apodization = apodization{ index_object };
-                objects( index_object ).focus = focus{ index_object };
+                objects( index_object ).axial_focus_axis = axial_focus_axis{ index_object };
                 objects( index_object ).str_model = str_model{ index_object };
                 objects( index_object ).str_vendor = str_vendor{ index_object };
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = parameters( N_elements_axis, apodization, focus, str_model, str_vendor )
+        end % function objects = parameters( N_elements_axis, apodization, axial_focus_axis, str_model, str_vendor )
 
         %------------------------------------------------------------------
         % project
@@ -135,10 +131,8 @@ classdef parameters
                     parameters( index_object ).apodization = parameters( index_object ).apodization{ 1:N_dimensions( index_object ) };
                 end
 
-                % extract relevant components of focus
-                if ~isscalar( parameters( index_object ).focus )
-                    parameters( index_object ).focus = parameters( index_object ).focus( 1:N_dimensions( index_object ) );
-                end
+                % extract relevant components of axial_focus_axis
+                parameters( index_object ).axial_focus_axis = parameters( index_object ).axial_focus_axis( 1:N_dimensions( index_object ) );
 
             end % for index_object = 1:numel( parameters )
 

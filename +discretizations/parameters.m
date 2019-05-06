@@ -28,7 +28,7 @@ classdef parameters
             %--------------------------------------------------------------
             % 2.) create discretization parameters
             %--------------------------------------------------------------
-            objects = repmat( objects, size( varargin{1} ) );
+            objects = repmat( objects, size( varargin{ 1 } ) );
 
         end % function objects = parameters( varargin )
 

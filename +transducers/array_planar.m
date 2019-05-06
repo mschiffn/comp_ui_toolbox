@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-04-19
-% modified: 2019-04-08
+% modified: 2019-04-24
 %
 classdef array_planar < transducers.array
 
@@ -14,7 +14,7 @@ classdef array_planar < transducers.array
 
         % dependent properties
         element_pitch_axis ( 1, : ) physical_values.length	% pitches along each coordinate axis (m)
-        aperture transducers.face_planar                    % aperture
+        aperture ( :, : ) transducers.face_planar           % aperture
 
 	end % properties
 
@@ -56,7 +56,7 @@ classdef array_planar < transducers.array
         end % function objects = array_planar( parameters_planar, N_dimensions )
 
         %------------------------------------------------------------------
-        % create aperture
+        % create aperture (TODO: replicate reference face_planar)
         %------------------------------------------------------------------
         function apertures = create_aperture( arrays_planar )
 
@@ -125,7 +125,7 @@ classdef array_planar < transducers.array
         %------------------------------------------------------------------
         % discretize planar transducer array
         %------------------------------------------------------------------
-        function objects_out = discretize( arrays_planar, options_elements )
+        function structs_out = discretize( arrays_planar, c_avg, options_elements )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -136,28 +136,51 @@ classdef array_planar < transducers.array
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( arrays_planar, options_elements );
+            auxiliary.mustBeEqualSize( arrays_planar, c_avg, options_elements );
 
             %--------------------------------------------------------------
-            % 2.) create regular grids
+            % 2.) create fields
             %--------------------------------------------------------------
-            % specify cell array for objects_out
-            objects_out = cell( size( arrays_planar ) );
+            % specify cell array for structs_out
+            structs_out = cell( size( arrays_planar ) );
 
             % iterate planar transducer arrays
             for index_object = 1:numel( arrays_planar )
 
                 % discretize aperture
-                objects_out{ index_object } = discretize( arrays_planar( index_object ).aperture, options_elements( index_object ) );
+                grids_act = discretize( arrays_planar( index_object ).aperture, options_elements( index_object ) );
+
+                % specify cell arrays for apodization and distances
+                apodization_act = cell( size( grids_act ) );
+                time_delays_act = cell( size( grids_act ) );
+
+                % compute apodization weights
+                for index_element = 1:numel( grids_act )
+
+                    % compute normalized relative positions of the grid points
+                    positions_rel = grids_act( index_element ).positions - arrays_planar( index_object ).aperture( index_element ).pos_center;
+                    positions_rel_norm = 2 * positions_rel ./ arrays_planar( index_object ).parameters.element_width_axis;
+
+                    % compute apodization weights
+                    apodization_act{ index_element } = arrays_planar( index_object ).parameters.apodization( positions_rel_norm );
+
+                    % compute time delays for each coordinate axis
+                    temp = sum( sqrt( positions_rel.^2 + arrays_planar( index_object ).parameters.axial_focus_axis.^2 ), 2 ) / c_avg( index_object );
+                    time_delays_act{ index_element } = max( temp ) - temp;
+
+                end % for index_element = 1:numel( grids_act )
+
+                % create structures
+                structs_out{ index_object } = struct( 'grid', num2cell( grids_act ), 'apodization', apodization_act, 'time_delays', time_delays_act );
 
             end % for index_object = 1:numel( arrays_planar )
 
             % avoid cell array for single planar transducer array
             if isscalar( arrays_planar )
-                objects_out = objects_out{ 1 };
+                structs_out = structs_out{ 1 };
             end
 
-        end % function objects_out = discretize( arrays_planar, options_elements )
+        end % function structs_out = discretize( arrays_planar, c_avg, options_elements )
 
         %------------------------------------------------------------------
         % inverse index transform
@@ -196,8 +219,8 @@ classdef array_planar < transducers.array
 
                 % convert linear indices into subscripts
                 temp = cell( 1, arrays_planar( index_array ).N_dimensions );
-                [ temp{ : } ] = ind2sub( arrays_planar( index_array ).parameters.N_elements_axis, indices_linear{ index_array } + 1 );
-                indices_axis{ index_array } = cat( 2, temp{ : } ) - 1;
+                [ temp{ : } ] = ind2sub( arrays_planar( index_array ).parameters.N_elements_axis, indices_linear{ index_array }( : ) );
+                indices_axis{ index_array } = cat( 2, temp{ : } );
 
             end % for index_array = 1:numel( arrays_planar )
 

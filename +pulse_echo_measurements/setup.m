@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2019-03-28
+% modified: 2019-04-22
 %
 classdef setup < handle
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -17,6 +17,7 @@ classdef setup < handle
         FOV ( 1, 1 ) fields_of_view.field_of_view                       % field of view
         % TODO: properties of the lossy homogeneous fluid
         absorption_model ( 1, 1 ) absorption_models.absorption_model = absorption_models.time_causal( 0, 0.5, 1, 1540, 4e6, 1 )	% absorption model for the lossy homogeneous fluid
+% TODO: c_avg vs c_ref?
         c_avg = physical_values.meter_per_second( 1500 );               % average small-signal sound speed
         T_clk = physical_values.second( 1 / 80e6 );                     % time period of the clock signal
         str_name = 'default'                                            % name
@@ -24,7 +25,7 @@ classdef setup < handle
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -58,7 +59,7 @@ classdef setup < handle
         % spatial discretization
         %------------------------------------------------------------------
         function objects_out = discretize( setups, options_spatial )
-            % TODO: various types of discretization / parameter objects
+% TODO: various types of discretization / parameter objects
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -74,10 +75,11 @@ classdef setup < handle
             % 2.) discretize transducer arrays and fields of view
             %--------------------------------------------------------------
             % vector or cell array of discretized apertures
-            discretizations_elements = discretize( [ setups.xdc_array ], [ options_spatial.options_elements ] );
+% TODO: c_avg correct?
+            discretizations_elements = discretize( [ setups.xdc_array ], [ setups.c_avg ], [ options_spatial.options_elements ] );
 
             % matrix of discretized fields of view
-            discretization_FOV = discretize( [ setups.FOV ], [ options_spatial.options_FOV ] );
+            discretization_FOV = reshape( discretize( [ setups.FOV ], [ options_spatial.options_FOV ] ), size( setups ) );
 
             %--------------------------------------------------------------
             % 3.) construct spatial discretizations
@@ -159,15 +161,28 @@ classdef setup < handle
         end % function results = times_of_flight( object )
 
         %------------------------------------------------------------------
-        % compute hash value
+        % compute hash values
         %------------------------------------------------------------------
         function str_hash = hash( setups )
 
-            % use DataHash function to compute hash value
-            str_hash = auxiliary.DataHash( setups );
+            % specify cell array for str_hash
+            str_hash = cell( size( setups ) );
+
+            % iterate pulse-echo measurement setups
+            for index_object = 1:numel( setups )
+
+                % use DataHash function to compute hash value
+                str_hash{ index_object } = auxiliary.DataHash( setups( index_object ) );
+
+            end % for index_object = 1:numel( setups )
+
+            % avoid cell array for single pulse-echo measurement setup
+            if isscalar( setups )
+                str_hash = str_hash{ 1 };
+            end
 
         end % function str_hash = hash( setups )
 
     end % methods
 
-end % classdef setup
+end % classdef setup < handle

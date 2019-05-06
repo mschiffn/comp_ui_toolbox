@@ -146,7 +146,19 @@ classdef physical_quantity < physical_values.transparent_container
             elseif isequal( physical_quantity.exponents, [ 1, 0, -1, 0, 0, 0, 0, 0 ] )
                 result = physical_values.meter_per_second( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 2, 1, -3, -1, 0, 0, 0, 0 ] )
-                result = physical_values.volt( physical_quantity.values );
+                result = physical_values.voltage( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ -1, -1, 2, 1, 0, 0, 0, 0 ] )
+                result = physical_values.meter_per_volt_second( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ -1, -1, 1, 1, 0, 0, 0, 0 ] )
+                result = physical_values.meter_per_volt_squaresecond( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 1, 0, -1, -1, 0, 0, 0, 0 ] )
+                result = physical_values.volt_per_newton( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 1, 0, -2, -1, 0, 0, 0, 0 ] )
+                result = physical_values.volt_per_newton_second( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 2, 0, -1, -1, 0, 0, 0, 0 ] )
+                result = physical_values.volt_meter_per_newton( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 2, 0, -2, -1, 0, 0, 0, 0 ] )
+                result = physical_values.volt_meter_per_newton_second( physical_quantity.values );
             else
                 result = physical_values.physical_quantity_derived( physical_quantity.exponents, physical_quantity.values );
                 warning( 'Physical unit of unknown class!' );

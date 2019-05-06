@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-15
-% modified: 2019-04-09
+% modified: 2019-04-13
 %
 classdef options
 
@@ -14,7 +14,8 @@ classdef options
 
         % independent properties
         discretization ( 1, 1 ) discretizations.options = discretizations.options                       % spatiospectral discretization
-        spatial_aliasing ( 1, 1 ) scattering.options_aliasing = scattering.options_aliasing.include     % aliasing options
+        spatial_aliasing ( 1, 1 ) scattering.options_aliasing = scattering.options_aliasing.include     % aliasing
+        materials ( 1, 1 ) scattering.options_material = scattering.options_material.compressibility	% material parameters
 
     end % properties
 
@@ -55,8 +56,16 @@ classdef options
                     case 'scattering.options_aliasing'
                         object.spatial_aliasing = varargin{ index_arg };
 
-                    otherwise
+                    %------------------------------------------------------
+                    % material parameters
+                    %------------------------------------------------------
+                    case 'scattering.options_material'
+                        object.materials = varargin{ index_arg };
 
+                    %------------------------------------------------------
+                    % unknown
+                    %------------------------------------------------------
+                    otherwise
                         errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
                         errorStruct.identifier = 'options:UnknownClass';
                         error( errorStruct );

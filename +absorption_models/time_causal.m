@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-25
-% modified: 2019-04-06
+% modified: 2019-04-22
 %
 classdef time_causal < absorption_models.absorption_model
 
@@ -101,7 +101,7 @@ classdef time_causal < absorption_models.absorption_model
             %--------------------------------------------------------------
             % ensure class math.sequence_increasing
             if ~isa( axes_f, 'math.sequence_increasing' )
-                axes_f = math.math.sequence_increasing( axes_f );
+                axes_f = math.sequence_increasing( axes_f );
             end
 
             % multiple time_causal / single axes_f
