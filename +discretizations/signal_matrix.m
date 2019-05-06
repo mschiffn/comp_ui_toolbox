@@ -1,11 +1,11 @@
 %
-% superclass for all signal arrays
+% superclass for all signal matrices
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
 % modified: 2019-04-30
 %
-classdef signal_array
+classdef signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -29,7 +29,7 @@ classdef signal_array
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = signal_array( axes, samples )
+        function objects = signal_matrix( axes, samples )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -42,7 +42,7 @@ classdef signal_array
             % ensure class math.sequence_increasing
             if ~isa( axes, 'math.sequence_increasing' )
                 errorStruct.message     = 'axes must be math.sequence_increasing!';
-                errorStruct.identifier	= 'signal_array:NoIncreasingSequence';
+                errorStruct.identifier	= 'signal_matrix:NoIncreasingSequence';
                 error( errorStruct );
             end
 
@@ -55,25 +55,25 @@ classdef signal_array
             auxiliary.mustBeEqualSize( axes, samples );
 
             %--------------------------------------------------------------
-            % 2.) create signal arrays
+            % 2.) create signal matrices
             %--------------------------------------------------------------
-            % repeat default signal array
+            % repeat default signal matrix
             objects = repmat( objects, size( axes ) );
 
-            % iterate signal arrays
+            % iterate signal matrices
             for index_object = 1:numel( objects )
 
                 % ensure sample matrix
                 if ~ismatrix( samples{ index_object } )
                     errorStruct.message = sprintf( 'samples{ %d } must be a matrix!', index_object );
-                    errorStruct.identifier = 'signal_array:NoMatrix';
+                    errorStruct.identifier = 'signal_matrix:NoMatrix';
                     error( errorStruct );
                 end
 
                 % ensure correct sizes
                 if abs( axes( index_object ) ) ~= size( samples{ index_object }, 2 )
                     errorStruct.message = sprintf( 'Cardinality of axes( %d ) must match the size of samples{ %d } along the second dimension!', index_object, index_object );
-                    errorStruct.identifier = 'signal_array:SizeMismatch';
+                    errorStruct.identifier = 'signal_matrix:SizeMismatch';
                     error( errorStruct );
                 end
 
@@ -86,15 +86,15 @@ classdef signal_array
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = signal_array( axes, samples )
+        end % function objects = signal_matrix( axes, samples )
 
         %------------------------------------------------------------------
         % orthonormal discrete Fourier transform (DFT)
         %------------------------------------------------------------------
-        function [ signal_arrays, N_dft, deltas ] = DFT( signal_arrays, intervals_t, intervals_f )
+        function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, intervals_t, intervals_f )
 % TODO: generalize for arbitrary physical units
 % TODO: generalize for complex-valued samples
-% TODO: summarize multiple signals into signal array, if frequency axes are identical
+% TODO: summarize multiple signals into signal matrix, if frequency axes are identical
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -112,40 +112,40 @@ classdef signal_array
                 error( errorStruct );
             end
 
-            % multiple signal_arrays / single time interval
-            if ~isscalar( signal_arrays ) && isscalar( intervals_t )
-                intervals_t = repmat( intervals_t, size( signal_arrays ) );
+            % multiple signal_matrices / single time interval
+            if ~isscalar( signal_matrices ) && isscalar( intervals_t )
+                intervals_t = repmat( intervals_t, size( signal_matrices ) );
             end
 
-            % multiple signal_arrays / single frequency interval
-            if ~isscalar( signal_arrays ) && isscalar( intervals_f )
-                intervals_f = repmat( intervals_f, size( signal_arrays ) );
+            % multiple signal_matrices / single frequency interval
+            if ~isscalar( signal_matrices ) && isscalar( intervals_f )
+                intervals_f = repmat( intervals_f, size( signal_matrices ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_arrays, intervals_t, intervals_f );
+            auxiliary.mustBeEqualSize( signal_matrices, intervals_t, intervals_f );
 
             %--------------------------------------------------------------
             % 2.) compute orthonormal discrete Fourier transforms
             %--------------------------------------------------------------
             % extract axes and numbers of samples
-            axes = reshape( [ signal_arrays.axis ], size( signal_arrays ) );
+            axes = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
             N_samples_signal = abs( axes );
 
             % ensure regular temporal samples
             if ~isa( axes, 'math.sequence_increasing_regular' )
-                errorStruct.message = 'signal_arrays.axis must be regular!';
+                errorStruct.message = 'signal_matrices.axis must be regular!';
                 errorStruct.identifier = 'DFT:IrregularAxis';
                 error( errorStruct );
             end
 
             % extract deltas and lower bounds
-            deltas = reshape( [ axes.delta ], size( signal_arrays ) );
-            lbs_q_signal = reshape( [ axes.q_lb ], size( signal_arrays ) );
+            deltas = reshape( [ axes.delta ], size( signal_matrices ) );
+            lbs_q_signal = reshape( [ axes.q_lb ], size( signal_matrices ) );
 
             % ensure class physical_values.time
             if ~isa( deltas, 'physical_values.time' )
-                errorStruct.message = 'signal_arrays.axis must be a sequence of class physical_values.time!';
+                errorStruct.message = 'signal_matrices.axis must be a sequence of class physical_values.time!';
                 errorStruct.identifier = 'DFT:NoTimes';
                 error( errorStruct );
             end
@@ -153,8 +153,8 @@ classdef signal_array
             % quantize recording time intervals and determine lengths
             intervals_t_quantized = quantize( intervals_t, deltas );
             T_rec = abs( intervals_t_quantized );
-            lbs_q = reshape( [ intervals_t_quantized.q_lb ], size( signal_arrays ) );
-            ubs_q = reshape( [ intervals_t_quantized.q_ub ], size( signal_arrays ) );
+            lbs_q = reshape( [ intervals_t_quantized.q_lb ], size( signal_matrices ) );
+            ubs_q = reshape( [ intervals_t_quantized.q_ub ], size( signal_matrices ) );
             N_dft = double( ubs_q - lbs_q );
 
             % ensure that numbers of samples do not exceed the order of the DFT
@@ -169,14 +169,14 @@ classdef signal_array
             samples_shift = lbs_q_signal - lbs_q;
 
             % specify cell array for samples_dft
-            samples_dft = cell( size( signal_arrays ) );
+            samples_dft = cell( size( signal_matrices ) );
 
-            % iterate signal arrays
-            for index_object = 1:numel( signal_arrays )
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
 
                 % ensure real-valued samples
-                if ~isreal( signal_arrays( index_object ).samples )
-                    errorStruct.message = sprintf( 'signal_arrays( %d ).samples must be real-valued!', index_object );
+                if ~isreal( signal_matrices( index_object ).samples )
+                    errorStruct.message = sprintf( 'signal_matrices( %d ).samples must be real-valued!', index_object );
                     errorStruct.identifier = 'DFT:NoRealSamples';
                     error( errorStruct );
                 end
@@ -185,68 +185,68 @@ classdef signal_array
                 indices_relevant = double( axes_f( index_object ).q_lb:axes_f( index_object ).q_ub );
 
                 % zero-pad and shift samples
-                samples_act = [ signal_arrays( index_object ).samples, zeros( signal_arrays( index_object ).N_signals, N_dft( index_object ) - N_samples_signal( index_object ) ) ];
+                samples_act = [ signal_matrices( index_object ).samples, zeros( signal_matrices( index_object ).N_signals, N_dft( index_object ) - N_samples_signal( index_object ) ) ];
                 samples_act = circshift( samples_act, samples_shift( index_object ), 2 );
 
                 % compute and truncate DFT
                 DFT_act = fft( samples_act, N_dft( index_object ), 2 ) / sqrt( N_dft( index_object ) );
                 samples_dft{ index_object } = DFT_act( :, indices_relevant );
 
-            end % for index_object = 1:numel( signal_arrays )
+            end % for index_object = 1:numel( signal_matrices )
 
             %--------------------------------------------------------------
-            % 3.) create signal arrays
+            % 3.) create signal matrices
             %--------------------------------------------------------------
-            signal_arrays = discretizations.signal_array( axes_f, samples_dft );
+            signal_matrices = discretizations.signal_matrix( axes_f, samples_dft );
 
-        end % function [ signal_arrays, N_dft, deltas ] = DFT( signal_arrays, intervals_t, intervals_f )
+        end % function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
         % Fourier transform
         %------------------------------------------------------------------
-        function signal_arrays = fourier_transform( signal_arrays, intervals_t, intervals_f )
+        function signal_matrices = fourier_transform( signal_matrices, intervals_t, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) compute orthonormal discrete Fourier transforms (DFTs)
             %--------------------------------------------------------------
-            [ signal_arrays, N_dft, deltas ] = DFT( signal_arrays, intervals_t, intervals_f );
+            [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, intervals_t, intervals_f );
 
             %--------------------------------------------------------------
             % 2.) compute Fourier transform samples
             %--------------------------------------------------------------
-            for index_object = 1:numel( signal_arrays )
+            for index_object = 1:numel( signal_matrices )
 % TODO: correct scaling?
-                signal_arrays( index_object ).samples = deltas( index_object ) * sqrt( N_dft( index_object ) ) * signal_arrays( index_object ).samples;
+                signal_matrices( index_object ).samples = deltas( index_object ) * sqrt( N_dft( index_object ) ) * signal_matrices( index_object ).samples;
 
-            end % for index_object = 1:numel( signal_arrays )
+            end % for index_object = 1:numel( signal_matrices )
 
-        end % function signal_arrays = fourier_transform( signal_arrays, intervals_t, intervals_f )
+        end % function signal_matrices = fourier_transform( signal_matrices, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
         % Fourier coefficients
         %------------------------------------------------------------------
-        function signal_arrays = fourier_coefficients( signal_arrays, intervals_t, intervals_f )
+        function signal_matrices = fourier_coefficients( signal_matrices, intervals_t, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) compute orthonormal discrete Fourier transforms (DFTs)
             %--------------------------------------------------------------
-            [ signal_arrays, N_dft, deltas ] = DFT( signal_arrays, intervals_t, intervals_f );
+            [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, intervals_t, intervals_f );
 
             %--------------------------------------------------------------
             % 2.) compute Fourier series coefficients
             %--------------------------------------------------------------
-            for index_object = 1:numel( signal_arrays )
+            for index_object = 1:numel( signal_matrices )
 
-                signal_arrays( index_object ).samples = N_dft( index_object ) * signal_arrays( index_object ).samples;
+                signal_matrices( index_object ).samples = N_dft( index_object ) * signal_matrices( index_object ).samples;
 
-            end % for index_object = 1:numel( signal_arrays )
+            end % for index_object = 1:numel( signal_matrices )
 
-        end % function signal_arrays = fourier_coefficients( signal_arrays, intervals_t, intervals_f )
+        end % function signal_matrices = fourier_coefficients( signal_matrices, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
         % time-domain signal
         %------------------------------------------------------------------
-        function signal_arrays = signal( signal_arrays, lbs_q, delta )
+        function signal_matrices = signal( signal_matrices, lbs_q, delta )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -262,38 +262,38 @@ classdef signal_array
                 error( errorStruct );
             end
 
-            % multiple signal_arrays / single lbs_q
-            if ~isscalar( signal_arrays ) && isscalar( lbs_q )
-                lbs_q = repmat( lbs_q, size( signal_arrays ) );
+            % multiple signal_matrices / single lbs_q
+            if ~isscalar( signal_matrices ) && isscalar( lbs_q )
+                lbs_q = repmat( lbs_q, size( signal_matrices ) );
             end
 
-            % multiple signal_arrays / single delta
-            if ~isscalar( signal_arrays ) && isscalar( delta )
-                delta = repmat( delta, size( signal_arrays ) );
+            % multiple signal_matrices / single delta
+            if ~isscalar( signal_matrices ) && isscalar( delta )
+                delta = repmat( delta, size( signal_matrices ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_arrays, lbs_q, delta );
+            auxiliary.mustBeEqualSize( signal_matrices, lbs_q, delta );
 
             %--------------------------------------------------------------
             % 2.) compute time-domain signals
             %--------------------------------------------------------------
             % extract axes
-            axes = reshape( [ signal_arrays.axis ], size( signal_arrays ) );
+            axes = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
 
             % ensure regular samples
             if ~isa( axes, 'math.sequence_increasing_regular' )
-                errorStruct.message = 'signal_arrays.axis must be regular!';
+                errorStruct.message = 'signal_matrices.axis must be regular!';
                 errorStruct.identifier = 'signal:IrregularAxis';
                 error( errorStruct );
             end
 
             % extract deltas
-            deltas = reshape( [ axes.delta ], size( signal_arrays ) );
+            deltas = reshape( [ axes.delta ], size( signal_matrices ) );
 
             % ensure class physical_values.frequency
             if ~isa( deltas, 'physical_values.frequency' )
-                errorStruct.message = 'signal_arrays.axis must be a sequence of class physical_values.frequency!';
+                errorStruct.message = 'signal_matrices.axis must be a sequence of class physical_values.frequency!';
                 errorStruct.identifier = 'signal:NoFrequencies';
                 error( errorStruct );
             end
@@ -306,44 +306,44 @@ classdef signal_array
             index_shift = ceil( N_samples_t / 2 );
 
             % specify cell array for samples_td
-            samples_td = cell( size( signal_arrays ) );
+            samples_td = cell( size( signal_matrices ) );
 
-            % iterate signal arrays
-            for index_object = 1:numel( signal_arrays )
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
 
                 % zero-pad and shift samples
-                samples_act = [ signal_arrays( index_object ).samples, zeros( signal_arrays( index_object ).N_signals, index_shift( index_object ) - abs( signal_arrays( index_object ).axis ) ) ];
+                samples_act = [ signal_matrices( index_object ).samples, zeros( signal_matrices( index_object ).N_signals, index_shift( index_object ) - abs( signal_matrices( index_object ).axis ) ) ];
                 samples_act = circshift( samples_act, axes( index_object ).q_lb, 2 );
 
                 % compute signal samples
                 samples_td{ index_object } = N_samples_t * ifft( samples_act, N_samples_t, 2, 'symmetric' );
 
-            end % for index_object = 1:numel( signal_arrays )
+            end % for index_object = 1:numel( signal_matrices )
 
             %--------------------------------------------------------------
-            % 3.) create signal arrays
+            % 3.) create signal matrices
             %--------------------------------------------------------------
-            signal_arrays = discretizations.signal_array( axes_t, samples_td );
+            signal_matrices = discretizations.signal_matrix( axes_t, samples_td );
 
-        end % function signal_arrays = signal( signal_arrays, lbs_q, delta )
+        end % function signal_matrices = signal( signal_matrices, lbs_q, delta )
 
         %------------------------------------------------------------------
-        % merge compatible signal arrays
+        % merge compatible signal matrices
         %------------------------------------------------------------------
-        function signal_array = merge( signal_arrays )
+        function signal_matrix = merge( signal_matrices )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % quick exit for single signal_arrays
-            if isscalar( signal_arrays )
-                signal_array = signal_arrays;
+            % quick exit for single signal_matrices
+            if isscalar( signal_matrices )
+                signal_matrix = signal_matrices;
                 return;
             end
 
             % ensure identical axes
-            if ~isequal( signal_arrays.axis )
-                errorStruct.message = 'All signal arrays must have identical axes!';
+            if ~isequal( signal_matrices.axis )
+                errorStruct.message = 'All signal matrices must have identical axes!';
                 errorStruct.identifier = 'merge:AxesMismatch';
                 error( errorStruct );
             end
@@ -352,18 +352,18 @@ classdef signal_array
             % 2.) perform merging
             %--------------------------------------------------------------
             % extract common axis
-            axis_mgd = signal_arrays( 1 ).axis;
+            axis_mgd = signal_matrices( 1 ).axis;
 
             % concatenate samples along first dimension
-            samples_mgd = { signal_arrays.samples };
+            samples_mgd = { signal_matrices.samples };
             samples_mgd = cat( 1, samples_mgd{ : } );
 
             %--------------------------------------------------------------
-            % 3.) create signal array
+            % 3.) create signal matrix
             %--------------------------------------------------------------
-            signal_array = discretizations.signal_array( axis_mgd, samples_mgd );
+            signal_matrix = discretizations.signal_matrix( axis_mgd, samples_mgd );
 
-        end % function signal_array = merge( signal_arrays )
+        end % function signal_matrix = merge( signal_matrices )
 
         %------------------------------------------------------------------
         % element-wise multiplication (overload times method)
@@ -373,9 +373,9 @@ classdef signal_array
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure classes discretizations.signal_array
-            if ~( isa( args_1, 'discretizations.signal_array' ) && isa( args_2, 'discretizations.signal_array' ) )
-                errorStruct.message = 'args_1 and args_2 must be discretizations.signal_array!';
+            % ensure classes discretizations.signal_matrix
+            if ~( isa( args_1, 'discretizations.signal_matrix' ) && isa( args_2, 'discretizations.signal_matrix' ) )
+                errorStruct.message = 'args_1 and args_2 must be discretizations.signal_matrix!';
                 errorStruct.identifier = 'times:NoSignalArrays';
                 error( errorStruct );
             end
@@ -396,7 +396,7 @@ classdef signal_array
             %--------------------------------------------------------------
             % 2.) element-wise multiplications
             %--------------------------------------------------------------
-            % iterate signal arrays
+            % iterate signal matrices
             for index_object = 1:numel( args_1 )
 
                 % ensure identical axes
@@ -416,7 +416,7 @@ classdef signal_array
         %------------------------------------------------------------------
         % subsample
         %------------------------------------------------------------------
-        function signal_arrays = subsample( signal_arrays, indices_axes )
+        function signal_matrices = subsample( signal_matrices, indices_axes )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -431,92 +431,92 @@ classdef signal_array
                 indices_axes = { indices_axes };
             end
 
-            % multiple signal_arrays / single indices_axes
-            if ~isscalar( signal_arrays ) && isscalar( indices_axes )
-                indices_axes = repmat( indices_axes, size( signal_arrays ) );
+            % multiple signal_matrices / single indices_axes
+            if ~isscalar( signal_matrices ) && isscalar( indices_axes )
+                indices_axes = repmat( indices_axes, size( signal_matrices ) );
             end
 
-            % single signal_arrays / multiple indices_axes
-            if isscalar( signal_arrays ) && ~isscalar( indices_axes )
-                signal_arrays = repmat( signal_arrays, size( indices_axes ) );
+            % single signal_matrices / multiple indices_axes
+            if isscalar( signal_matrices ) && ~isscalar( indices_axes )
+                signal_matrices = repmat( signal_matrices, size( indices_axes ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_arrays, indices_axes );
+            auxiliary.mustBeEqualSize( signal_matrices, indices_axes );
 
             %--------------------------------------------------------------
             % 2.) perform subsampling
             %--------------------------------------------------------------
             % subsample axes
-            axes_sub = subsample( [ signal_arrays.axis ], indices_axes );
+            axes_sub = subsample( [ signal_matrices.axis ], indices_axes );
 
-            % iterate signal arrays
-            for index_object = 1:numel( signal_arrays )
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
 
                 % assign subsampled axes
-                signal_arrays( index_object ).axis = axes_sub( index_object );
+                signal_matrices( index_object ).axis = axes_sub( index_object );
 
                 % subsample samples
-                signal_arrays( index_object ).samples = signal_arrays( index_object ).samples( :, indices_axes{ index_object } );
+                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples( :, indices_axes{ index_object } );
 
-            end % for index_object = 1:numel( signal_arrays )
+            end % for index_object = 1:numel( signal_matrices )
 
-        end % function signal_arrays = subsample( signal_arrays, indices_axes )
+        end % function signal_matrices = subsample( signal_matrices, indices_axes )
 
         %------------------------------------------------------------------
         % energy
         %------------------------------------------------------------------
-        function energies = energy( signal_arrays )
+        function energies = energy( signal_matrices )
 
             % compute energy in samples
-            energies = reshape( cellfun( @( x ) norm( x( : ) ), { signal_arrays.samples } ), size( signal_arrays ) );
+            energies = reshape( cellfun( @( x ) norm( x( : ) ), { signal_matrices.samples } ), size( signal_matrices ) );
 
-        end % function energies = energy( signal_arrays )
+        end % function energies = energy( signal_matrices )
 
         %------------------------------------------------------------------
         % data volume
         %------------------------------------------------------------------
-        function volumes = data_volume( signal_arrays )
+        function volumes = data_volume( signal_matrices )
 
             % initialize data volumes
-            volumes = physical_values.byte( zeros( size( signal_arrays ) ) );
+            volumes = physical_values.byte( zeros( size( signal_matrices ) ) );
 
-            % iterate signal arrays
-            for index_object = 1:numel( signal_arrays )
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
 
-                samples_act = signal_arrays( index_object ).samples;
+                samples_act = signal_matrices( index_object ).samples;
                 S = whos( 'samples_act' );
                 volumes( index_object ) = physical_values.byte( S.bytes );
 
-            end % for index_object = 1:numel( signal_arrays )
+            end % for index_object = 1:numel( signal_matrices )
 
-        end % function volumes = data_volume( signal_arrays )
+        end % function volumes = data_volume( signal_matrices )
 
         %------------------------------------------------------------------
         % 2-D line plot
         %------------------------------------------------------------------
-        function hdl = show( signal_arrays )
+        function hdl = show( signal_matrices )
 
             % initialize hdl with zeros
-            hdl = zeros( size( signal_arrays ) );
+            hdl = zeros( size( signal_matrices ) );
 
-            % iterate signal arrays
-            for index_object = 1:numel( signal_arrays )
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
 
                 % create new figure
                 hdl( index_object ) = figure( index_object );
 
                 % plot all samples
-                if isreal( signal_arrays( index_object ).samples )
-                    plot( double( signal_arrays( index_object ).axis.members ), double( signal_arrays( index_object ).samples ) );
+                if isreal( signal_matrices( index_object ).samples )
+                    plot( double( signal_matrices( index_object ).axis.members ), double( signal_matrices( index_object ).samples ) );
                 else
-                    plot( double( signal_arrays( index_object ).axis.members ), double( abs( signal_arrays( index_object ).samples ) ) );
+                    plot( double( signal_matrices( index_object ).axis.members ), double( abs( signal_matrices( index_object ).samples ) ) );
                 end
 
-            end % for index_object = 1:numel( signal_arrays )
+            end % for index_object = 1:numel( signal_matrices )
 
-        end % function hdl = show( signal_arrays )
+        end % function hdl = show( signal_matrices )
 
     end % methods
 
-end % classdef signal_array
+end % classdef signal_matrix

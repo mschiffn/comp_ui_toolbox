@@ -14,7 +14,7 @@ classdef setting
 
         % independent properties
         indices_active ( 1, : ) double { mustBeInteger, mustBeFinite }	% indices of active array elements (1)
-        impulse_responses ( 1, : ) discretizations.signal_array         % impulse responses of active channels
+        impulse_responses ( 1, : ) discretizations.signal_matrix         % impulse responses of active channels
 
     end % properties
 
@@ -70,15 +70,15 @@ classdef setting
                         % ensure equal number of dimensions and sizes of cell array contents
                         auxiliary.mustBeEqualSize( indices_active{ index_object }, impulse_responses{ index_object } );
 
-                        % try to merge compatible signals into a single signal array
+                        % try to merge compatible signals into a single signal matrix
                         try
                             impulse_responses{ index_object } = merge( impulse_responses{ index_object } );
                         catch
                         end
 
-                    case 'discretizations.signal_array'
+                    case 'discretizations.signal_matrix'
 
-                        % ensure single signal array of correct size
+                        % ensure single signal matrix of correct size
                         if ~isscalar( impulse_responses{ index_object } ) || ( numel( indices_active{ index_object } ) ~= impulse_responses{ index_object }.N_signals )
                             errorStruct.message     = sprintf( 'impulse_responses{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
                             errorStruct.identifier	= 'setting:SizeMismatch';
@@ -132,7 +132,7 @@ classdef setting
                 % compute Fourier transform samples
                 settings( index_object ).impulse_responses = fourier_transform( settings( index_object ).impulse_responses, intervals_t( index_object ), intervals_f( index_object ) );
 
-                % merge transforms to ensure class signal_array
+                % merge transforms to ensure class signal_matrix
                 settings( index_object ).impulse_responses = merge( settings( index_object ).impulse_responses );
 
             end % for index_object = 1:numel( settings )

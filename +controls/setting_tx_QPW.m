@@ -84,7 +84,7 @@ classdef setting_tx_QPW < controls.setting_tx
                     samples( index_element, indices_q( index_element ) + 1 ) = 1;
                 end
 
-                impulse_responses{ index_object } = discretizations.signal_array( axis_t, samples );
+                impulse_responses{ index_object } = discretizations.signal_matrix( axis_t, samples );
 
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements

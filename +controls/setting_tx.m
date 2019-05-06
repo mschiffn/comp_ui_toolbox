@@ -13,7 +13,7 @@ classdef setting_tx < controls.setting
 	properties (SetAccess = private)
 
         % independent properties
-        excitation_voltages ( 1, : ) discretizations.signal_array	% voltages exciting the active channels
+        excitation_voltages ( 1, : ) discretizations.signal_matrix	% voltages exciting the active channels
 
     end % properties
 
@@ -32,8 +32,8 @@ classdef setting_tx < controls.setting
             %--------------------------------------------------------------
             if nargin == 0
                 indices_active = 1;
-                impulse_responses = discretizations.signal_array( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
-                excitation_voltages = discretizations.signal_array( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.voltage );
+                impulse_responses = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
+                excitation_voltages = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.voltage );
             end
 
             % ensure cell array for indices_active
@@ -77,15 +77,15 @@ classdef setting_tx < controls.setting
                         % ensure equal number of dimensions and sizes of cell array contents
                         auxiliary.mustBeEqualSize( indices_active{ index_object }, excitation_voltages{ index_object } );
 
-                        % try to merge compatible signals into a single signal array
+                        % try to merge compatible signals into a single signal matrix
                         try
                             excitation_voltages{ index_object } = merge( excitation_voltages{ index_object } );
                         catch
                         end
 
-                    case 'discretizations.signal_array'
+                    case 'discretizations.signal_matrix'
 
-                        % ensure single signal array of correct size
+                        % ensure single signal matrix of correct size
                         if ~isscalar( excitation_voltages{ index_object } ) || ( numel( indices_active{ index_object } ) ~= excitation_voltages{ index_object }.N_signals )
                             errorStruct.message = sprintf( 'excitation_voltages{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
                             errorStruct.identifier = 'setting:SizeMismatch';
@@ -153,7 +153,7 @@ classdef setting_tx < controls.setting
                 % compute Fourier coefficients
                 settings_tx( index_object ).excitation_voltages = fourier_coefficients( settings_tx( index_object ).excitation_voltages, intervals_t( index_object ), intervals_f( index_object ) );
 
-                % merge transforms to ensure class signal_array
+                % merge transforms to ensure class signal_matrix
                 settings_tx( index_object ).excitation_voltages = merge( settings_tx( index_object ).excitation_voltages );
 
 % TODO: ensure that excitation_voltages and impulse_responses have identical axes?
@@ -179,7 +179,7 @@ classdef setting_tx < controls.setting
             end
 
 % TODO: check matching dimensions
-% TODO: impulse_responses and excitation_voltages must be single signal arrays (ensured by Fourier transform)
+% TODO: impulse_responses and excitation_voltages must be single signal matrices (ensured by Fourier transform)
 % TODO: move part of functionality to superclass controls.setting
 
             %--------------------------------------------------------------
@@ -215,8 +215,8 @@ classdef setting_tx < controls.setting
 
             % create transfer functions and excitation voltages
             indices_active_unique = settings_tx_in( 1 ).indices_active;
-            impulse_responses_unique = discretizations.signal_array( axis_f_unique, samples_tf );
-            excitation_voltages_unique = discretizations.signal_array( axis_f_unique, samples_u_tx );
+            impulse_responses_unique = discretizations.signal_matrix( axis_f_unique, samples_tf );
+            excitation_voltages_unique = discretizations.signal_matrix( axis_f_unique, samples_u_tx );
 
             %--------------------------------------------------------------
             % 3.) create objects

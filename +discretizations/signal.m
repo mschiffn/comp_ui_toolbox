@@ -5,7 +5,7 @@
 % date: 2019-02-03
 % modified: 2019-05-04
 %
-classdef signal < discretizations.signal_array
+classdef signal < discretizations.signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -36,10 +36,10 @@ classdef signal < discretizations.signal_array
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.signal_array( axes, samples );
+            objects@discretizations.signal_matrix( axes, samples );
 
         end % function objects = signal( axes, samples )
 
     end % methods
 
-end % classdef signal < discretizations.signal_array
+end % classdef signal < discretizations.signal_matrix

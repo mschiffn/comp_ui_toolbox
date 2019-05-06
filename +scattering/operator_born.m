@@ -171,11 +171,11 @@ classdef operator_born < scattering.operator
                 end % for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
 
                 %----------------------------------------------------------
-                % create signal array or signals
+                % create signal matrix or signals
                 %----------------------------------------------------------
                 if isequal( axes_f.members )
-                    % create signal array for equal frequency axes
-                    u_M{ index_measurement } = discretizations.signal_array( axes_f( 1 ), cat( 1, u_M{ index_measurement }{ : } ) );
+                    % create signal matrix for equal frequency axes
+                    u_M{ index_measurement } = discretizations.signal_matrix( axes_f( 1 ), cat( 1, u_M{ index_measurement }{ : } ) );
                 else
                     % create signals for unequal frequency axes
                     u_M{ index_measurement } = discretizations.signal( axes_f, u_M{ index_measurement } );

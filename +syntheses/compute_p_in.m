@@ -95,11 +95,11 @@ function fields = compute_p_in( spatiospectral, varargin )
             end % if isa( spatiospectral.spatial, 'discretizations.spatial_grid_symmetric' )
 
             % compute summand for the incident pressure field
-            p_incident_summand = h_tx.samples .* v_d.samples( index_active, : );
+            p_incident_summand = double( h_tx.samples ) .* double( v_d.samples( index_active, : ) );
 
             % add summand to the incident pressure field
 % TODO: correct unit problem
-            p_incident{ index_incident } = p_incident{ index_incident } + physical_values.pascal( double( p_incident_summand ) );
+            p_incident{ index_incident } = p_incident{ index_incident } + physical_values.pascal( p_incident_summand );
             figure(1);imagesc( squeeze( abs( double( reshape( p_incident{ index_incident }( :, 1 ), [512,512] ) ) ) ) );
 
         end % for index_active = 1:numel( settings_tx( index_incident ).indices_active )

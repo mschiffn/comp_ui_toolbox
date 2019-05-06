@@ -62,7 +62,7 @@ classdef setting_rx_identity < controls.setting_rx
                     errorStruct.identifier	= 'setting_rx_identity:NoSetup';
                     error( errorStruct );
                 end
-                impulse_responses{ index_element } = discretizations.signal_array( axis_t, samples );
+                impulse_responses{ index_element } = discretizations.signal_matrix( axis_t, samples );
 
             end % for index_element = 1:setup.xdc_array.N_elements
 

@@ -33,11 +33,12 @@ T_s = physical_values.second( 1 / 20e6 );
 
 % specify bandwidth to perform simulation in
 f_tx = physical_values.hertz( 4e6 );
-frac_bw = 0.2;                  % fractional bandwidth of incident pulse
+frac_bw = 0.7;                  % fractional bandwidth of incident pulse
 frac_bw_ref = -60;              % dB value that determines frac_bw
 
 % properties of the homogeneous fluid
-c_ref = physical_values.meter_per_second( 1540 );
+% TODO: must match c_avg in setup?
+c_ref = physical_values.meter_per_second( 1500 );
 absorption_model = absorption_models.time_causal( 0, 0.5, 1, c_ref, f_tx, 1 );
 
 % directions of incidence

@@ -119,7 +119,7 @@ classdef spatiospectral
 
                 end % for index_measurement = 1:numel( spatiospectrals( index_object ).spectral )
 
-                % create signal array
+                % create signal matrix
                 prefactors{ index_object } = discretizations.signal( axes_f_unique, samples );
 
             end % for index_object = 1:numel( spatiospectrals )

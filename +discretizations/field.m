@@ -5,7 +5,7 @@
 % date: 2019-01-22
 % modified: 2019-04-30
 %
-classdef field < discretizations.signal_array
+classdef field < discretizations.signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -49,7 +49,7 @@ classdef field < discretizations.signal_array
             % 2.) create fields
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@discretizations.signal_array( axes, samples );
+            objects@discretizations.signal_matrix( axes, samples );
 
             % iterate fields
             for index_object = 1:numel( objects )
@@ -156,7 +156,7 @@ classdef field < discretizations.signal_array
             % 1.) use subsampling method of superclass
             %--------------------------------------------------------------
 % TODO: do not use superclass method for efficiency
-            fields = subsample@discretizations.signal_array( fields, indices_axes );
+            fields = subsample@discretizations.signal_matrix( fields, indices_axes );
 
             %--------------------------------------------------------------
             % 2.) check arguments
@@ -222,7 +222,7 @@ classdef field < discretizations.signal_array
 
                 % ensure class discretizations.grid_regular
                 if ~isa( fields( index_object ).grid_FOV, 'discretizations.grid_regular' )
-                    show@discretizations.signal_array( fields( index_object ) );
+                    show@discretizations.signal_matrix( fields( index_object ) );
                     continue;
                 end
 
@@ -297,4 +297,4 @@ classdef field < discretizations.signal_array
 
 	end % methods
 
-end % classdef field < discretizations.signal_array
+end % classdef field < discretizations.signal_matrix
