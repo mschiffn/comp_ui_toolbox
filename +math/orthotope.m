@@ -210,7 +210,7 @@ classdef orthotope
             %--------------------------------------------------------------
             % 3.) create orthogonal regular grids
             %--------------------------------------------------------------
-            objects_out = discretizations.grid_regular_orthogonal( offset_axis, delta_axis, N_points_axis );
+            objects_out = math.grid_regular_orthogonal( offset_axis, delta_axis, N_points_axis );
 
         end % function objects_out = discretize( orthotopes, parameters )
 

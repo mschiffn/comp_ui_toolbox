@@ -30,7 +30,7 @@ function results = greens_function( grids_element, grids_FOV, axes_k, varargin )
 	% 2.) compute mutual distances
 	%----------------------------------------------------------------------
 	D_act = mutual_distances( grids_element, grids_FOV, varargin{ : } );
-    % assertion: grids_element and grids_FOV are discretizations.grid arrays of equal sizes
+    % assertion: grids_element and grids_FOV are math.grid arrays of equal sizes
 
 	% ensure cell array for D_act
 	if ~iscell( D_act )

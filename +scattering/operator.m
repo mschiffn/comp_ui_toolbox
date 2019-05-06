@@ -186,7 +186,7 @@ classdef operator
 
                 % reset fluctuation
                 gamma_kappa( index_point ) = 0;
-
+% TODO: save results regularly
             end % for index_point = 1:N_points
 
         end % function E_rx = energy_rx( operators )

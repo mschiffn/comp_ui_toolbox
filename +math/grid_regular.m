@@ -5,7 +5,7 @@
 % date: 2018-01-23
 % modified: 2019-04-09
 %
-classdef grid_regular < discretizations.grid
+classdef grid_regular < math.grid
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -68,7 +68,7 @@ classdef grid_regular < discretizations.grid
             %--------------------------------------------------------------
             % 3.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.grid( positions );
+            objects@math.grid( positions );
 
             %--------------------------------------------------------------
             % 4.) set independent properties
@@ -243,4 +243,4 @@ classdef grid_regular < discretizations.grid
 
     end % methods
 
-end % classdef grid_regular < discretizations.grid
+end % classdef grid_regular < math.grid

@@ -71,9 +71,9 @@ classdef grid
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.grid
-            if ~( isa( grids_1, 'discretizations.grid' ) && isa( grids_2, 'discretizations.grid' ) )
-                errorStruct.message     = 'Both arguments must be discretizations.grid!';
+            % ensure class math.grid
+            if ~( isa( grids_1, 'math.grid' ) && isa( grids_2, 'math.grid' ) )
+                errorStruct.message     = 'Both arguments must be math.grid!';
                 errorStruct.identifier	= 'mutual_differences:NoGrids';
                 error( errorStruct );
             end
@@ -272,7 +272,7 @@ classdef grid
             %--------------------------------------------------------------
             % 3.) create grids
             %--------------------------------------------------------------
-            grids_out = discretizations.grid( positions_act );
+            grids_out = math.grid( positions_act );
 
         end % function grids_out = subgrid( grids_in, indices )
 

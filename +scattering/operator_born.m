@@ -75,7 +75,6 @@ classdef operator_born < scattering.operator
                 prefactors = prefactors .* impulse_responses_rx;
 
                 % map indices of the active elements to unique indices
-% TODO: map unique active elements to current active elements
                 indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
                 % frequency axes of all mixes
@@ -222,13 +221,17 @@ classdef operator_born < scattering.operator
                 % number of unique frequencies
                 N_samples_f_unique = abs( operator_born.discretization.spectral( index_measurement ).axis_k_tilde_unique );
 
-                % impulse responses underlying all mixed voltage signals
+                % extract impulse responses of mixing channels
                 impulse_responses_rx = reshape( [ operator_born.discretization.spectral( index_measurement ).rx.impulse_responses ], size( operator_born.discretization.spectral( index_measurement ).rx ) );
 
                 % extract prefactors for all mixes (current frequencies)
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
                 prefactors = subsample( operator_born.discretization.prefactors( index_measurement ), indices_f_to_unique );
+% TODO: compute elsewhere
                 prefactors = prefactors .* impulse_responses_rx;
+
+                % map indices of the active elements to unique indices
+                indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
                 % iterate mixed voltage signals
                 for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
@@ -261,7 +264,11 @@ classdef operator_born < scattering.operator
                             %----------------------------------------------
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
-                            indices_occupied_act = shift_lateral( operator_born.discretization.spatial, index_element );
+                            % shift reference spatial transfer function to infer that of the active array element
+                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, indices_active_rx_to_unique{ index_mix }( index_active ) );
+                            indices_occupied_act_old = shift_lateral( operator_born.discretization.spatial, index_element );
+                            norm( indices_occupied_act(:) - indices_occupied_act_old(:) )
+
                             % shift reference spatial transfer function to infer that of the active array element
 %                             h_rx = shift_lateral( operator_born.discretization.h_ref( index_measurement ), operator_born.discretization.spatial, index_element );
 

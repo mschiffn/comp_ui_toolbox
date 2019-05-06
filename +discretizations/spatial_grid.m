@@ -13,8 +13,8 @@ classdef spatial_grid < discretizations.spatial
 	properties (SetAccess = private)
 
         % independent properties
-        grids_elements %( :, : ) discretizations.grid	% grids representing the array elements, apodization weights, and focal distances
-        grid_FOV ( 1, 1 ) discretizations.grid          % grid representing the field-of-view
+        grids_elements %( :, : ) math.grid	% grids representing the array elements, apodization weights, and focal distances
+        grid_FOV ( 1, 1 ) math.grid          % grid representing the field-of-view
 
 	end % properties
 
@@ -36,9 +36,9 @@ classdef spatial_grid < discretizations.spatial
                 grids_elements = { grids_elements };
             end
 
-            % ensure class discretizations.grid
-            if ~isa( grids_FOV, 'discretizations.grid' )
-                errorStruct.message     = 'grids_FOV must be discretizations.grid!';
+            % ensure class math.grid
+            if ~isa( grids_FOV, 'math.grid' )
+                errorStruct.message     = 'grids_FOV must be math.grid!';
                 errorStruct.identifier	= 'spatial_grid:NoGrid';
                 error( errorStruct );
             end
@@ -57,9 +57,9 @@ classdef spatial_grid < discretizations.spatial
             %--------------------------------------------------------------
             for index_object = 1:numel( objects )
 
-                % ensure class discretizations.grid
-                if ~( isa( [ grids_elements{ index_object }.grid ], 'discretizations.grid' ) && isa( [ grids_elements{ index_object }.time_delays ], 'physical_values.time' ) )
-                    errorStruct.message     = sprintf( 'grids_elements{ %d } must be discretizations.grid!', index_object );
+                % ensure class math.grid
+                if ~( isa( [ grids_elements{ index_object }.grid ], 'math.grid' ) && isa( [ grids_elements{ index_object }.time_delays ], 'physical_values.time' ) )
+                    errorStruct.message     = sprintf( 'grids_elements{ %d } must be math.grid!', index_object );
                     errorStruct.identifier	= 'spatial_grid:NoGrid';
                     error( errorStruct );
                 end

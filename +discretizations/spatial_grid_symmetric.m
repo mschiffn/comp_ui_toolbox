@@ -35,18 +35,18 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
                 grids_elements = { grids_elements };
             end
 
-            % ensure class discretizations.grid_regular_orthogonal for grids_elements
+            % ensure class math.grid_regular_orthogonal for grids_elements
             for index_object = 1:numel( grids_elements )
-                if ~isa( [grids_elements{ index_object }.grid], 'discretizations.grid_regular_orthogonal' )
-                    errorStruct.message = sprintf( 'grids_elements{ %d } must be discretizations.grid_regular_orthogonal!', index_object );
+                if ~isa( [grids_elements{ index_object }.grid], 'math.grid_regular_orthogonal' )
+                    errorStruct.message = sprintf( 'grids_elements{ %d } must be math.grid_regular_orthogonal!', index_object );
                     errorStruct.identifier = 'spatial_grid_symmetric:NoRegularOrthogonalGrid';
                     error( errorStruct );
                 end
             end % for index_object = 1:numel( grids_elements )
 
-            % ensure class discretizations.grid_regular_orthogonal for grids_FOV
-            if ~isa( grids_FOV, 'discretizations.grid_regular_orthogonal' )
-                errorStruct.message = 'grids_FOV must be discretizations.grid_regular_orthogonal!';
+            % ensure class math.grid_regular_orthogonal for grids_FOV
+            if ~isa( grids_FOV, 'math.grid_regular_orthogonal' )
+                errorStruct.message = 'grids_FOV must be math.grid_regular_orthogonal!';
                 errorStruct.identifier = 'spatial_grid_symmetric:NoRegularOrthogonalGrid';
                 error( errorStruct );
             end

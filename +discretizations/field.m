@@ -13,7 +13,7 @@ classdef field < discretizations.signal_matrix
 	properties (SetAccess = private)
 
         % independent properties
-        grid_FOV ( 1, 1 ) discretizations.grid
+        grid_FOV ( 1, 1 ) math.grid
 
         % dependent properties
         size_bytes ( 1, 1 ) physical_values.byte	% memory consumption
@@ -35,9 +35,9 @@ classdef field < discretizations.signal_matrix
             %--------------------------------------------------------------
             % superclass ensures class math.sequence_increasing for axes
 
-            % ensure class discretizations.grid
-            if ~isa( grids_FOV, 'discretizations.grid' )
-                errorStruct.message = 'grids_FOV must be discretizations.grid!';
+            % ensure class math.grid
+            if ~isa( grids_FOV, 'math.grid' )
+                errorStruct.message = 'grids_FOV must be math.grid!';
                 errorStruct.identifier = 'field:NoGrids';
                 error( errorStruct );
             end
@@ -220,8 +220,8 @@ classdef field < discretizations.signal_matrix
                 % create figure
                 hdl( index_object ) = figure( index_object );
 
-                % ensure class discretizations.grid_regular
-                if ~isa( fields( index_object ).grid_FOV, 'discretizations.grid_regular' )
+                % ensure class math.grid_regular
+                if ~isa( fields( index_object ).grid_FOV, 'math.grid_regular' )
                     show@discretizations.signal_matrix( fields( index_object ) );
                     continue;
                 end

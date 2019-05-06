@@ -75,9 +75,9 @@ function fields = spatial_transfer_function( spatial_grid, spectral_points, vara
             % extract discretized element
             grid_element_act = spatial_grid.grids_elements( index_element );
 
-            % ensure class discretizations.grid_regular
-            if ~isa( grid_element_act.grid, 'discretizations.grid_regular' )
-                errorStruct.message     = 'grid_element_act.grid must be discretizations.grid_regular!';
+            % ensure class math.grid_regular
+            if ~isa( grid_element_act.grid, 'math.grid_regular' )
+                errorStruct.message     = 'grid_element_act.grid must be math.grid_regular!';
                 errorStruct.identifier	= 'spatial_transfer_function:NoRegularGrid';
                 error( errorStruct );
             end
