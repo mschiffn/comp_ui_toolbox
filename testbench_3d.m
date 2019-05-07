@@ -81,7 +81,7 @@ axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
 u_tx_tilde = discretizations.signal( axis_t, physical_values.voltage( pulse ) );
 
 % create pulse-echo measurement sequence
-sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 2 ), interval_t, interval_f );
+sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 4 ), interval_t, interval_f );
 %         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
 %         settings_rng_apo = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
 %         settings_rng_del = auxiliary.setting_rng( 3 * ones(1, 1), repmat({'twister'}, [ 1, 1 ]) );
@@ -94,7 +94,8 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 2 )
 % specify options
 %--------------------------------------------------------------------------
 % discretization options
-parameters_elements = discretizations.parameters_number( [ 4, 53 ] );
+parameters_elements = discretizations.parameters_number( [ 2, 4 ] );
+% parameters_elements = discretizations.parameters_number( [ 4, 53 ] );
 parameters_FOV = discretizations.parameters_distance( physical_values.meter( [ 76.2e-6, 4e-3, 76.2e-6 ] ) );
 options_disc_spatial = discretizations.options_spatial_grid( parameters_FOV, parameters_elements );
 options_disc_spectral = discretizations.options_spectral.signal;
@@ -111,13 +112,17 @@ operator_born = scattering.operator_born( sequence, options );
 %--------------------------------------------------------------------------
 % test scattering operator
 %--------------------------------------------------------------------------
-theta = zeros( 512^2, 1 );
+theta = zeros( 512^2, 2 );
 % indices = randperm( 512^2 );
 % indices = indices(1:20);
 % theta( indices ) = 1;
 theta(383*512+128) = 2;
 theta(255*512+256) = 2;
 theta(383*512+384) = 2;
+
+theta(512^2+383*512+64) = 2;
+theta(512^2+255*512+156) = 2;
+theta(512^2+383*512+284) = 2;
 
 profile on
 u_rx = operator_born * theta;

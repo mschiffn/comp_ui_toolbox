@@ -469,7 +469,7 @@ classdef signal_matrix
         function energies = energy( signal_matrices )
 
             % compute energy in samples
-            energies = reshape( cellfun( @( x ) norm( x( : ) ), { signal_matrices.samples } ), size( signal_matrices ) );
+            energies = reshape( cellfun( @( x ) norm( x( : ) )^2, { signal_matrices.samples } ), size( signal_matrices ) );
 
         end % function energies = energy( signal_matrices )
 

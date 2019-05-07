@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-05-03
+% modified: 2019-05-06
 %
 classdef operator
 
@@ -19,6 +19,7 @@ classdef operator
         % dependent properties
         discretization ( 1, 1 ) discretizations.spatiospectral      % results of the spatiospectral discretization
         incident_waves ( :, : ) syntheses.incident_wave             % incident waves
+        E_rx ( :, 1 ) %physical_values.voltage
 
     end % properties
 
@@ -69,6 +70,11 @@ classdef operator
             % 4.) incident acoustic fields (unique frequencies)
             %--------------------------------------------------------------
             object.incident_waves = syntheses.incident_wave( object.sequence.setup, object.discretization );
+
+            %--------------------------------------------------------------
+            % 5.) compute received energy
+            %--------------------------------------------------------------
+            object.E_rx = energy_rx( object );
 
         end % function object = operator( sequence, options )
 
