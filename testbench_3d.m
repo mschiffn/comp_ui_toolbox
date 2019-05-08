@@ -112,7 +112,8 @@ operator_born = scattering.operator_born( sequence, options );
 %--------------------------------------------------------------------------
 % test scattering operator
 %--------------------------------------------------------------------------
-theta = zeros( 512^2, 2 );
+% specify coefficient vector
+theta = zeros( 512^2, 1 );
 % indices = randperm( 512^2 );
 % indices = indices(1:20);
 % theta( indices ) = 1;
@@ -120,14 +121,21 @@ theta(383*512+128) = 2;
 theta(255*512+256) = 2;
 theta(383*512+384) = 2;
 
-theta(512^2+383*512+64) = 2;
-theta(512^2+255*512+156) = 2;
-theta(512^2+383*512+284) = 2;
+% theta(512^2+383*512+64) = 2;
+% theta(512^2+255*512+156) = 2;
+% theta(512^2+383*512+284) = 2;
 
+% define linear transform
+% TODO: enumerate wavelet names / install wavelet toolbox
+% LT_d20 = linear_transforms.wavelet( 'daubechies', 20, 512, 0 );
+LT_fourier_blk = linear_transforms.fourier_block( operator_born.discretizations.spatial.grid_FOV.N_points_axis, operator_born.discretizations.spatial.grid_FOV.N_points_axis / 256 );
+
+% perform forward scattering
 profile on
 u_rx = operator_born * theta;
 profile viewer
 
+% perform adjoint scattering
 theta_hat = adjoint( operator_born, u_rx );
 
 u_rx_tilde = signal( u_rx, 0, T_s );
@@ -140,3 +148,6 @@ subplot(1,2,1);
 imagesc( double( u_rx_tilde.samples )' );
 subplot(1,2,2);
 imagesc( illustration.dB( abs( hilbert( double( u_rx_tilde.samples )' ) ), 20 ), [ -60, 0 ] );
+
+
+

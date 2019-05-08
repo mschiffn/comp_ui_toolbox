@@ -68,26 +68,22 @@ classdef operator_born < scattering.operator
             for index_measurement = 1:numel( operator_born.discretization.spectral )
 
                 %----------------------------------------------------------
-                % compute prefactors
+                % prefactors
                 %----------------------------------------------------------
-                % extract occupied grid points from incident pressure
-                p_incident_occupied = double( operator_born.incident_waves( index_measurement ).p_incident.samples( indices_occupied, : ) );
-
-                % extract impulse responses of mixing channels
-                impulse_responses_rx = reshape( [ operator_born.discretization.spectral( index_measurement ).rx.impulse_responses ], size( operator_born.discretization.spectral( index_measurement ).rx ) );
-
-                % extract prefactors for all mixes (current frequencies)
+                % map frequencies of mixed voltage signals to unique frequencies
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
-                prefactors = subsample( operator_born.discretization.prefactors( index_measurement ), indices_f_to_unique );
-% TODO: compute in spatiospectral?
-                prefactors = prefactors .* impulse_responses_rx;
 
                 % map indices of the active elements to unique indices
                 indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
-                % frequency axes of all mixes
-% TODO: check if mixes have identical frequency axes?
-                axes_f = reshape( [ impulse_responses_rx.axis ], size( operator_born.discretization.spectral( index_measurement ).rx ) );
+                % extract occupied grid points from incident pressure
+                p_incident_occupied = double( operator_born.incident_waves( index_measurement ).p_incident.samples( indices_occupied, : ) );
+
+                % extract prefactors for all mixes (current frequencies)
+                prefactors = operator_born.discretization.prefactors{ index_measurement };
+
+                % numbers of frequencies in mixed voltage signals
+                axes_f = reshape( [ prefactors.axis ], size( prefactors ) );
                 N_samples_f = abs( axes_f );
 
                 %----------------------------------------------------------
@@ -215,17 +211,14 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % compute prefactors
                 %----------------------------------------------------------
-                % extract impulse responses of mixing channels
-                impulse_responses_rx = reshape( [ operator_born.discretization.spectral( index_measurement ).rx.impulse_responses ], size( operator_born.discretization.spectral( index_measurement ).rx ) );
-
-                % extract prefactors for all mixes (current frequencies)
+                % map frequencies of mixed voltage signals to unique frequencies
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
-                prefactors = subsample( operator_born.discretization.prefactors( index_measurement ), indices_f_to_unique );
-% TODO: compute elsewhere
-                prefactors = prefactors .* impulse_responses_rx;
 
                 % map indices of the active elements to unique indices
                 indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
+
+                % extract prefactors for all mixes (current frequencies)
+                prefactors = operator_born.discretization.prefactors{ index_measurement };
 
                 % iterate mixed voltage signals
                 for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
@@ -433,23 +426,19 @@ classdef operator_born < scattering.operator
             for index_measurement = 1:numel( operator_born.discretization.spectral )
 
                 %----------------------------------------------------------
-                % compute prefactors
+                % prefactors
                 %----------------------------------------------------------
-                % extract impulse responses of mixing channels
-                impulse_responses_rx = reshape( [ operator_born.discretization.spectral( index_measurement ).rx.impulse_responses ], size( operator_born.discretization.spectral( index_measurement ).rx ) );
-
-                % extract prefactors for all mixes (current frequencies)
+                % map frequencies of mixed voltage signals to unique frequencies
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
-                prefactors = subsample( operator_born.discretization.prefactors( index_measurement ), indices_f_to_unique );
-% TODO: compute elsewhere
-                prefactors = prefactors .* impulse_responses_rx;
 
                 % map indices of the active elements to unique indices
                 indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
-                % frequency axes of all mixes
-% TODO: check if mixes have identical frequency axes?
-                axes_f = reshape( [ impulse_responses_rx.axis ], size( operator_born.discretization.spectral( index_measurement ).rx ) );
+                % extract prefactors for all mixes (current frequencies)
+                prefactors = operator_born.discretization.prefactors{ index_measurement };
+
+                % numbers of frequencies in mixed voltage signals
+                axes_f = reshape( [ prefactors.axis ], size( prefactors ) );
                 N_samples_f = abs( axes_f );
 
                 %----------------------------------------------------------
@@ -476,9 +465,6 @@ classdef operator_born < scattering.operator
                     % iterate active array elements
                     for index_active = 1:N_elements_active
 
-                        % index of active array element
-                        index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
-
                         % spatial transfer function of the active array element
                         if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
@@ -496,6 +482,9 @@ classdef operator_born < scattering.operator
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
+                            % index of active array element
+                            index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
+
                             % spatial transfer function of the active array element
 % TODO: computes for unique frequencies?
                             h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
@@ -513,7 +502,6 @@ classdef operator_born < scattering.operator
                         %--------------------------------------------------
                         % compute energies
                         %--------------------------------------------------
-% TODO: compute product p_incident_act .* prefactors_act outside of loop
                         Phi_act = double( h_rx ) .* p_incident_act .* double( prefactors( index_mix ).samples( index_active, : ) );
                         Phi_M = Phi_M + Phi_act;
 
@@ -531,7 +519,7 @@ classdef operator_born < scattering.operator
             %----------------------------------------------------------
             % create signal matrix or signals
             %----------------------------------------------------------
-%             E_M = sqrt( E_M );
+            E_M = physical_values.voltage( E_M ) * physical_values.voltage;
 
             % infer and print elapsed time
             time_elapsed = toc( time_start );

@@ -192,7 +192,6 @@ classdef setting_tx < controls.setting
             end
 
             % extract unique frequency axis
-% TODO: create regular sequence if possible
             [ axis_f_unique, indices_unique_to_f, indices_f_to_unique ] = unique( axes_f );
             N_samples_f_unique = numel( indices_unique_to_f );
 

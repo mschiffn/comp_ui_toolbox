@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-05
+% modified: 2019-05-08
 %
 classdef spectral_points < discretizations.spectral
 
@@ -19,7 +19,6 @@ classdef spectral_points < discretizations.spectral
         % dependent properties
         tx_unique ( :, : ) controls.setting_tx
         indices_f_to_unique
-        indices_unique_to_f
         indices_active_rx_unique ( 1, : ) double
         indices_active_rx_to_unique
         axis_k_tilde_unique ( 1, 1 ) math.sequence_increasing % axis of complex-valued wavenumbers
@@ -84,7 +83,7 @@ classdef spectral_points < discretizations.spectral
                 objects( index_object ).rx = settings_rx{ index_object };
 
                 % set dependent properties
-                [ objects( index_object ).tx_unique, objects( index_object ).indices_unique_to_f, objects( index_object ).indices_f_to_unique ] = unique( objects( index_object ).tx );
+                [ objects( index_object ).tx_unique, ~, objects( index_object ).indices_f_to_unique ] = unique( objects( index_object ).tx );
                 [ objects( index_object ).indices_active_rx_unique, objects( index_object ).indices_active_rx_to_unique ] = unique_indices_active( objects( index_object ).rx );
                 objects( index_object ).axis_k_tilde_unique = compute_wavenumbers( absorption_model, objects( index_object ).tx_unique.excitation_voltages.axis );
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-05-05
+% modified: 2019-05-08
 %
 classdef sequence_increasing
 
@@ -73,7 +73,7 @@ classdef sequence_increasing
         %------------------------------------------------------------------
         % unique values in array (overload unique function)
         %------------------------------------------------------------------
-        function [ sequence_out, indices_unique_to_f, indices_f_to_unique ] = unique( sequences_in )
+        function [ sequence_out, indices_unique_to_local, indices_local_to_unique ] = unique( sequences_in )
 
             %--------------------------------------------------------------
             % 1.) numbers of members and cumulative sum
@@ -89,6 +89,7 @@ classdef sequence_increasing
             N_members_unique = numel( members_unique );
 
             % create sequence of unique members
+% TODO: create regular sequence if possible; use diff function?
             sequence_out = math.sequence_increasing( members_unique );
 
             %--------------------------------------------------------------
@@ -99,27 +100,27 @@ classdef sequence_increasing
             indices_f = ia - N_members_cs( indices_object );
 
             % create structures with object and member indices for each unique member
-            indices_unique_to_f( N_members_unique ).index_object = indices_object( N_members_unique );
-            indices_unique_to_f( N_members_unique ).index_f = indices_f( N_members_unique );
+            indices_unique_to_local( N_members_unique ).index_object = indices_object( N_members_unique );
+            indices_unique_to_local( N_members_unique ).index_f = indices_f( N_members_unique );
             for index_f_unique = 1:( N_members_unique - 1 )
-                indices_unique_to_f( index_f_unique ).index_object = indices_object( index_f_unique );
-                indices_unique_to_f( index_f_unique ).index_f = indices_f( index_f_unique );
+                indices_unique_to_local( index_f_unique ).index_object = indices_object( index_f_unique );
+                indices_unique_to_local( index_f_unique ).index_f = indices_f( index_f_unique );
             end
 
             %--------------------------------------------------------------
             % 4.) map members in each sequence to the unique members
             %--------------------------------------------------------------
-            indices_f_to_unique = cell( size( sequences_in ) );
+            indices_local_to_unique = cell( size( sequences_in ) );
 
             for index_set = 1:numel( sequences_in )
 
                 index_start = N_members_cs( index_set ) + 1;
                 index_stop = index_start + N_members( index_set ) - 1;
 
-                indices_f_to_unique{ index_set } = ic( index_start:index_stop );
+                indices_local_to_unique{ index_set } = ic( index_start:index_stop );
             end
 
-        end % function [ sequence_out, indices_unique_to_f, indices_f_to_unique ] = unique( sequences_in )
+        end % function [ sequence_out, indices_unique_to_local, indices_local_to_unique ] = unique( sequences_in )
 
         %------------------------------------------------------------------
         % subsample
@@ -177,13 +178,8 @@ classdef sequence_increasing
         %------------------------------------------------------------------
         function N_members = abs( sequences )
 
-            % initialize N_members with zeros
-            N_members = zeros( size( sequences ) );
-
-            % iterate sequences
-            for index_object = 1:numel( sequences )
-                N_members( index_object ) = numel( sequences( index_object ).members );
-            end
+            % compute numbers of members
+            N_members = reshape( cellfun( @numel, { sequences.members } ), size( sequences ) );
 
         end % function N_members = abs( sequences )
 
