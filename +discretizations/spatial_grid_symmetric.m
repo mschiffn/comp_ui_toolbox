@@ -76,6 +76,29 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
                     error( errorStruct );
                 end
 %TODO: check minimal # of lateral grid points
+% minimum number of grid points on x-axis [ FOV_pos_x(1) <= XDC_pos_ctr_x(1) ]
+% 1.) x-coordinates of grid points coincide with centroids of vibrating faces:
+%   a) XDC_N_elements:odd, FOV_N_points_axis(1):odd  / b) XDC_N_elements:even, FOV_N_points_axis(1):odd, factor_interp_tx:even / c) XDC_N_elements:even, FOV_N_points_axis(1):even, factor_interp_tx:odd
+%   N_lattice_axis_x_lb = ( XDC_N_elements - 1 ) * factor_interp_tx + 1;
+% 2.) x-coordinates of grid points do not coincide with centroids of vibrating faces:
+%   a) XDC_N_elements:odd, FOV_N_points_axis(1):even / b) XDC_N_elements:even, FOV_N_points_axis(1):odd, factor_interp_tx:odd  / c) XDC_N_elements:even, FOV_N_points_axis(1):even, factor_interp_tx:even
+%   N_lattice_axis_x_lb = ( XDC_N_elements - 1 ) * factor_interp_tx;
+% if mod( XDC_N_elements, 2 ) ~= 0
+% 	% 1.) odd number of physical transducer elements
+% 	N_lattice_axis_x_lb = ( XDC_N_elements - 1 ) * factor_interp_tx + mod( FOV_N_points_axis(1), 2 );
+% else
+%     % 2.) even number of physical transducer elements
+%     N_lattice_axis_x_lb = ( XDC_N_elements - 1 ) * factor_interp_tx + mod( FOV_N_points_axis(1), 2 ) * ( 1 - mod( factor_interp_tx, 2 ) ) + ( 1 - mod( FOV_N_points_axis(1), 2 ) ) * mod( factor_interp_tx, 2 );
+% end
+% N_lattice_axis_x_symmetry_left = ( FOV_N_points_axis( 1 ) - N_lattice_axis_x_lb ) / 2;
+% 
+% % check excess number of grid points on x-axis
+% if N_lattice_axis_x_symmetry_left < 0
+% 	errorStruct.message	   = sprintf( 'Number of grid points along the r1-axis must be equal to or greater than %d!\n', N_lattice_axis_x_lb );
+% 	errorStruct.identifier = sprintf( '%s:DiscretizationError', NAME );
+% 	error( errorStruct );
+% end
+% % assertion: N_lattice_axis_x_symmetry_left >= 0
                 %----------------------------------------------------------
                 % b) lateral spacing is an integer fraction of the element pitch
                 %    => translational invariance by shifts of factor_interp_tx points
@@ -143,6 +166,11 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
             % multiple spatial_grids_symmetric / single indices_element
             if ~isscalar( spatial_grids_symmetric ) && isscalar( indices_element )
                 indices_element = repmat( indices_element, size( spatial_grids_symmetric ) );
+            end
+
+            % single spatial_grids_symmetric / multiple indices_element
+            if isscalar( spatial_grids_symmetric ) && ~isscalar( indices_element )
+                spatial_grids_symmetric = repmat( spatial_grids_symmetric, size( indices_element ) );
             end
 
             % multiple spatial_grids_symmetric / single indices_grids

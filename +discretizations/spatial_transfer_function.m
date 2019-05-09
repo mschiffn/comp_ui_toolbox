@@ -5,7 +5,7 @@ function fields = spatial_transfer_function( spatial_grid, spectral_points, vara
 % date: 2019-03-19
 % modified: 2019-05-04
 
-    N_points_max = 4;
+    N_points_max = 5;
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
@@ -48,7 +48,7 @@ function fields = spatial_transfer_function( spatial_grid, spectral_points, vara
 	% 2.) compute spatial transfer functions
 	%----------------------------------------------------------------------
 	% specify cell array for fields
-    fields = cell( size( spectral_points ) );
+	fields = cell( size( spectral_points ) );
 
     % iterate spectral discretizations based on pointwise sampling
     for index_object = 1:numel( spectral_points )
@@ -64,10 +64,13 @@ function fields = spatial_transfer_function( spatial_grid, spectral_points, vara
             error( errorStruct );
         end
 
-        % extract axis of unique frequencies
+        % extract frequency axis and complex-valued wavenumbers (unique frequencies)
         axis_f = spectral_points( index_object ).tx_unique.excitation_voltages.axis;
         axis_k_tilde = spectral_points( index_object ).axis_k_tilde_unique;
         N_samples_f = abs( axis_f );
+
+        % specify cell array for h_tx
+        h_tx = cell( size( indices_element{ index_object } ) );
 
         % iterate specified elements
         for index_element = indices_element{ index_object }
@@ -86,7 +89,7 @@ function fields = spatial_transfer_function( spatial_grid, spectral_points, vara
             weights = reshape( grid_element_act.apodization .* exp( - 2j * pi * grid_element_act.time_delays * axis_f.members ), [ grid_element_act.grid.N_points, 1, N_samples_f ] );
 
             % initialize results with zeros
-            h_tx{ index_object } = physical_values.meter( zeros( spatial_grid.grid_FOV.N_points, N_samples_f ) );
+            h_tx{ index_element } = physical_values.meter( zeros( spatial_grid.grid_FOV.N_points, N_samples_f ) );
 
             % partition grid points into batches to save memory
             N_batches = ceil( grid_element_act.grid.N_points / N_points_max );
@@ -106,14 +109,14 @@ function fields = spatial_transfer_function( spatial_grid, spectral_points, vara
                 temp = weights( indices{ index_batch }, :, : ) .* temp;
 
                 % integrate over aperture
-                h_tx{ index_object } = h_tx{ index_object } - 2 * grid_element_act.grid.cell_ref.volume * squeeze( sum( temp, 1 ) );
+                h_tx{ index_element } = h_tx{ index_element } - 2 * grid_element_act.grid.cell_ref.volume * squeeze( sum( temp, 1 ) );
 
             end % for index_batch = 1:N_batches
 
         end % for index_element = indices_element{ index_object }
 
         % create fields
-        fields{ index_object } = discretizations.field( axis_f, spatial_grid.grid_FOV, h_tx );
+        fields{ index_object } = discretizations.field( repmat( axis_f, size( h_tx ) ), repmat( spatial_grid.grid_FOV, size( h_tx ) ), h_tx );
 
     end % for index_object = 1:numel( spectral_points )
 

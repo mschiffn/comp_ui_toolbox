@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-08
+% modified: 2019-05-09
 %
 classdef spatiospectral
 
@@ -14,13 +14,14 @@ classdef spatiospectral
 
         % independent properties
         spatial ( 1, 1 ) discretizations.spatial        % spatial discretization
-        spectral ( :, : ) discretizations.spectral      % spectral discretization
+        spectral ( :, 1 ) discretizations.spectral      % spectral discretization
 
         % dependent properties
-        prefactors % ( :, : ) discretizations.signal      % prefactors for scattering (local frequencies)
+        prefactors                                      % prefactors for scattering (local frequencies)
+        size ( 1, : ) double                            % size of the discretization
 
         % optional properties
-        h_ref ( :, : ) discretizations.field            % reference spatial transfer functions (unique frequencies)
+        h_ref ( :, 1 ) discretizations.field            % reference spatial transfer functions (unique frequencies)
         h_ref_grad ( :, : ) discretizations.field       % spatial gradients of the reference spatial transfer functions (unique frequencies)
         indices_grid_FOV_shift ( :, : )                 % indices of laterally shifted grid points
 
@@ -74,16 +75,21 @@ classdef spatiospectral
                     objects( index_object ).prefactors = compute_prefactors( objects( index_object ) );
                 end
 
+                % size of the discretization
+                objects( index_object ).size = [ sum( cellfun( @( x ) sum( x( : ) ), { objects( index_object ).spectral.N_observations } ) ), objects( index_object ).spatial.grid_FOV.N_points ];
+
                 %----------------------------------------------------------
                 % c) set optional properties for symmetric spatial discretizations based on orthogonal regular grids
                 %----------------------------------------------------------
                 if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
 
                     % lateral shift of grid points
-                    objects( index_object ).indices_grid_FOV_shift = shift_lateral( objects( index_object ).spatial, objects( index_object ).spectral.indices_active_rx_unique );
+                    objects( index_object ).indices_grid_FOV_shift = shift_lateral( objects( index_object ).spatial, { objects( index_object ).spectral.indices_active_rx_unique } );
 
                     % reference spatial transfer functions (unique frequencies)
-                    objects( index_object ).h_ref = discretizations.spatial_transfer_function( objects( index_object ).spatial, objects( index_object ).spectral );
+% TODO: when are h_ref identical?
+                    h_ref = discretizations.spatial_transfer_function( objects( index_object ).spatial, objects( index_object ).spectral );
+                    objects( index_object ).h_ref = cat( 1, h_ref{ : } );
 
                 end % if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
 
@@ -94,7 +100,7 @@ classdef spatiospectral
         end % function objects = spatiospectral( spatials, spectrals )
 
         %------------------------------------------------------------------
-        % compute prefactors
+        % compute prefactors (local frequencies)
         %------------------------------------------------------------------
         function prefactors = compute_prefactors( spatiospectrals )
 

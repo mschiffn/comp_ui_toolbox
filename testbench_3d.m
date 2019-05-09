@@ -115,28 +115,34 @@ operator_born = scattering.operator_born( sequence, options );
 % specify coefficient vector
 theta = zeros( 512^2, 1 );
 % indices = randperm( 512^2 );
-% indices = indices(1:20);
+% indices = indices(1:10);
 % theta( indices ) = 1;
-theta(383*512+128) = 2;
-theta(255*512+256) = 2;
-theta(383*512+384) = 2;
-
+theta(383*512+128) = 1;
+theta(255*512+256) = 1;
+theta(383*512+384) = 1;
+% 
 % theta(512^2+383*512+64) = 2;
 % theta(512^2+255*512+156) = 2;
 % theta(512^2+383*512+284) = 2;
 
-% define linear transform
+% define linear transforms
 % TODO: enumerate wavelet names / install wavelet toolbox
 % LT_d20 = linear_transforms.wavelet( 'daubechies', 20, 512, 0 );
-LT_fourier_blk = linear_transforms.fourier_block( operator_born.discretizations.spatial.grid_FOV.N_points_axis, operator_born.discretizations.spatial.grid_FOV.N_points_axis / 256 );
+LT_weighting = linear_transforms.weighting( 1 ./ sqrt( double( operator_born.E_rx ) ) );
+LT_fourier_blk = linear_transforms.fourier_block( operator_born.discretization.spatial.grid_FOV.N_points_axis([1,3]), operator_born.discretization.spatial.grid_FOV.N_points_axis([1,3]) / 16 );
 
 % perform forward scattering
 profile on
-u_rx = operator_born * theta;
+u_rx = forward_quick( operator_born, theta, LT_weighting );
+u_rx = forward( operator_born, theta );
 profile viewer
 
 % perform adjoint scattering
-theta_hat = adjoint( operator_born, u_rx );
+theta_hat = adjoint_quick( operator_born, u_rx );
+theta_hat_weighting = adjoint_quick( operator_born, u_rx, LT_weighting );
+
+% transform point spread functions
+[ theta_hat_tpsf, E_rx, adjointness ] = tpsf( operator_born, [ 383*512+128 ], LT_weighting );
 
 u_rx_tilde = signal( u_rx, 0, T_s );
 

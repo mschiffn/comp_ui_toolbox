@@ -1,12 +1,14 @@
 %
 % compute effect of diagonal weighting matrix
-% author: Martin Schiffner
+%
+% author: Martin F. Schiffner
 % date: 2016-08-13
+% modified: 2019-05-08
 %
 classdef weighting < linear_transforms.invertible_linear_transform
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
         weights
@@ -14,7 +16,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
@@ -24,11 +26,11 @@ classdef weighting < linear_transforms.invertible_linear_transform
         function LT_weighting = weighting( weights )
 
             % check for zero weights
-            indicator = abs( weights(:) ) < eps;
-            if sum( indicator, 1 ) > 0
-                fprintf('small weights detected!\n');
-                return
-            end
+%             indicator = abs( weights(:) ) < eps;
+%             if sum( indicator, 1 ) > 0
+%                 fprintf('small weights detected!\n');
+% %                 return
+%             end
 
             % number of weights
             N_weights = numel( weights );
