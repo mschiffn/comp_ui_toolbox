@@ -1,34 +1,34 @@
 %
-% superclass for all voltages
+% superclass for physical quantities with the unit meter per Volt squaresecond
 %
 % author: Martin F. Schiffner
-% date: 2019-01-15
-% modified: 2019-03-27
+% date: 2019-05-05
+% modified: 2019-05-05
 %
-classdef voltage < physical_values.physical_quantity_derived
+classdef meter_per_volt_squaresecond < physical_values.physical_quantity_derived
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% methods
+	%% methods
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = voltage( varargin )
+        function objects = meter_per_volt_squaresecond( varargin )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
             exponents = zeros( 1, 8 );
-            exponents( 1 ) = 2;     % length
-            exponents( 2 ) = 1;     % mass
-            exponents( 3 ) = -3;    % time
-            exponents( 4 ) = -1;    % electric current
+            exponents( 1 ) = -1;	% length
+            exponents( 2 ) = -1;	% mass
+            exponents( 3 ) = 1;     % time
+            exponents( 4 ) = 1;     % electric current
             objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
 
-        end % function objects = voltage( varargin )
+        end % function objects = meter_per_volt_squaresecond( varargin )
 
 	end % methods
 
-end % classdef voltage < physical_values.physical_quantity_derived
+end % classdef meter_per_volt_squaresecond < physical_values.physical_quantity_derived

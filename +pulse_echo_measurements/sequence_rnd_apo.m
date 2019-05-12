@@ -4,29 +4,42 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-28
-% modified: 2019-01-28
+% modified: 2019-05-10
 %
 classdef sequence_rnd_apo < pulse_echo_measurements.sequence
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = sequence_rnd_apo( setup, excitation_voltages_common, settings_rng )
+        function object = sequence_rnd_apo( setup, u_tx_tilde, settings_rng, interval_t, interval_f )
 
             %--------------------------------------------------------------
             % 1.) create synthesis settings
             %--------------------------------------------------------------
-            settings_tx = syntheses.setting_rnd_apo( setup, excitation_voltages_common, settings_rng );
+            settings_tx = controls.setting_tx_rnd_apo( setup, u_tx_tilde, settings_rng );
 
             %--------------------------------------------------------------
-            % 2.) constructor of superclass
+            % 2.) create reception settings (estimate recording time intervals via options?)
             %--------------------------------------------------------------
-            object@pulse_echo_measurements.sequence( setup, settings_tx );
-        end
+            settings_rx = repmat( { controls.setting_rx_identity( setup, interval_t, interval_f ) }, size( settings_tx ) );
+
+            %--------------------------------------------------------------
+            % 3.) create pulse-echo measurement settings
+            %--------------------------------------------------------------
+            settings = pulse_echo_measurements.setting( settings_tx, settings_rx );
+
+            %--------------------------------------------------------------
+            % 4.) constructor of superclass
+            %--------------------------------------------------------------
+            object@pulse_echo_measurements.sequence( setup, settings );
+
+        end % function object = sequence_rnd_apo( setup, u_tx_tilde, settings_rng, interval_t, interval_f )
+
 	end % methods
+
 end % classdef sequence_rnd_apo

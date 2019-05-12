@@ -32,6 +32,10 @@ classdef spatiospectral
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
+% TODO: anti-aliasing
+% e_r_x_abs = abs( dist_x ) ./ D;
+% flag = pi ./ ( element_pitch * e_r_x_abs );
+
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
@@ -89,7 +93,11 @@ classdef spatiospectral
                     % reference spatial transfer functions (unique frequencies)
 % TODO: when are h_ref identical?
                     h_ref = discretizations.spatial_transfer_function( objects( index_object ).spatial, objects( index_object ).spectral );
-                    objects( index_object ).h_ref = cat( 1, h_ref{ : } );
+                    if iscell( h_ref )
+                        objects( index_object ).h_ref = cat( 1, h_ref{ : } );
+                    else
+                        objects( index_object ).h_ref = h_ref;
+                    end
 
                 end % if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
 

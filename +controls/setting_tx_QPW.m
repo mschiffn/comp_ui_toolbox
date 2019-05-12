@@ -30,8 +30,8 @@ classdef setting_tx_QPW < controls.setting_tx
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class pulse_echo_measurements.setup
-            if ~isa( setup, 'pulse_echo_measurements.setup' ) || numel( setup ) ~= 1
+            % ensure class pulse_echo_measurements.setup (scalar)
+            if ~( isa( setup, 'pulse_echo_measurements.setup' ) && isscalar( setup ) )
                 errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
                 errorStruct.identifier	= 'setting_tx_QPW:NoSetup';
                 error( errorStruct );

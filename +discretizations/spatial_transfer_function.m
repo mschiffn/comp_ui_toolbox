@@ -7,6 +7,11 @@ function fields = spatial_transfer_function( spatial_grid, spectral_points, vara
 
     N_points_max = 5;
 
+    % print status
+	time_start = tic;
+	str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+	fprintf( '\t %s: computing spatial transfer function...', str_date_time );
+
 	%----------------------------------------------------------------------
 	% 1.) check arguments
 	%----------------------------------------------------------------------
@@ -124,5 +129,9 @@ function fields = spatial_transfer_function( spatial_grid, spectral_points, vara
 	if isscalar( spectral_points )
         fields = fields{ 1 };
     end
+
+    % infer and print elapsed time
+	time_elapsed = toc( time_start );
+	fprintf( 'done! (%f s)\n', time_elapsed );
 
 end % function fields = spatial_transfer_function( spatial_grid, spectral_points, varargin )

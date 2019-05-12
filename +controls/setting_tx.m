@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-04-28
+% modified: 2019-05-11
 %
 classdef setting_tx < controls.setting
 
@@ -33,7 +33,7 @@ classdef setting_tx < controls.setting
             if nargin == 0
                 indices_active = 1;
                 impulse_responses = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
-                excitation_voltages = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.voltage );
+                excitation_voltages = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.volt );
             end
 
             % ensure cell array for indices_active
@@ -94,9 +94,9 @@ classdef setting_tx < controls.setting
 
                 end % switch class( excitation_voltages{ index_object } )
 
-                % ensure class physical_values.voltage
-%                 if ~isa( [ excitation_voltages{ index_object }.samples ], 'physical_values.voltage' )
-%                     errorStruct.message = sprintf( 'excitation_voltages{ %d }.samples has to be physical_values.voltage!', index_object );
+                % ensure class physical_values.volt
+%                 if ~isa( [ excitation_voltages{ index_object }.samples ], 'physical_values.volt' )
+%                     errorStruct.message = sprintf( 'excitation_voltages{ %d }.samples has to be physical_values.volt!', index_object );
 %                     errorStruct.identifier = 'setting:NoVoltages';
 %                     error( errorStruct );
 %                 end

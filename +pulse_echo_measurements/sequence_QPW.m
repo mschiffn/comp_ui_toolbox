@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-03-03
+% modified: 2019-05-10
 %
 classdef sequence_QPW < pulse_echo_measurements.sequence
 
@@ -44,7 +44,7 @@ classdef sequence_QPW < pulse_echo_measurements.sequence
             %--------------------------------------------------------------
             object@pulse_echo_measurements.sequence( setup, settings );
 
-        end
+        end % function object = sequence_QPW( setup, u_tx_tilde, e_theta, interval_t, interval_f )
 
 	end % methods
 

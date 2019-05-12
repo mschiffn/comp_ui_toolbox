@@ -77,7 +77,7 @@ tc = gauspuls( 'cutoff', double( f_tx ), frac_bw, frac_bw_ref, -60 );     % calc
 t = (-tc:double(T_s):tc);
 pulse = gauspuls( t, double( f_tx ), frac_bw, frac_bw_ref );
 axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
-u_tx_tilde = discretizations.signal( axis_t, physical_values.voltage( pulse ) );
+u_tx_tilde = discretizations.signal( axis_t, physical_values.volt( pulse ) );
 
 % create pulse-echo measurement sequence
 sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 6 ), interval_t, interval_f );

@@ -97,6 +97,11 @@ classdef transparent_container
             end
         end
 
+        % double-precision arrays
+        function results = double( container )
+            results = double( container.values );
+        end
+
         % indicate last array index
         function index_end = end( container, index_end, N_indices )
 
@@ -201,6 +206,12 @@ classdef transparent_container
         function container = reshape( container, varargin )
             container.values = reshape( container.values, varargin{ : } );
         end
+
+        % single-precision arrays
+        function results = single( container )
+            results = single( container.values );
+        end
+% TODO: logical, struct
 
         % array size
         function varargout = size( container, varargin )

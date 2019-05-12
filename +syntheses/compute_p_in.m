@@ -4,8 +4,13 @@ function fields = compute_p_in( spatiospectral, varargin )
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-05-05
+% modified: 2019-05-11
 %
+
+	% print status
+	time_start = tic;
+	str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+	fprintf( '\t %s: computing incident acoustic pressure field (kappa)...', str_date_time );
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
@@ -108,5 +113,9 @@ function fields = compute_p_in( spatiospectral, varargin )
 	% 3.) create field objects
 	%----------------------------------------------------------------------
 	fields = discretizations.field( axes_f_unique, repmat( spatiospectral.spatial.grid_FOV, size( indices_incident ) ), p_incident );
+
+	% infer and print elapsed time
+	time_elapsed = toc( time_start );
+	fprintf( 'done! (%f s)\n', time_elapsed );
 
 end % function fields = compute_p_in( spatiospectral, varargin )

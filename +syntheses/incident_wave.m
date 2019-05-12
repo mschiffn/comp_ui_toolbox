@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-04-06
-% modified: 2019-04-11
+% modified: 2019-05-11
 %
 classdef incident_wave
 
@@ -34,14 +34,14 @@ classdef incident_wave
             % ensure class pulse_echo_measurements.setup (scalar)
             if ~( isa( setup, 'pulse_echo_measurements.setup' ) && isscalar( setup ) )
                 errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'sequence:NoSingleSetup';
+                errorStruct.identifier	= 'incident_wave:NoSingleSetup';
                 error( errorStruct );
             end
 
             % ensure class discretizations.spatiospectral
             if ~isa( spatiospectral, 'discretizations.spatiospectral' )
                 errorStruct.message     = 'spatiospectral must be discretizations.spatiospectral!';
-                errorStruct.identifier	= 'sequence:NoSpatiospectral';
+                errorStruct.identifier	= 'incident_wave:NoSpatiospectral';
                 error( errorStruct );
             end
 
@@ -63,8 +63,6 @@ classdef incident_wave
             % iterate incident waves
             for index_object = 1:N_objects
 
-                fprintf( 'index_object = %d of %d:\n', index_object, N_objects );
-
                 %----------------------------------------------------------
                 % a) check for and inspect file on disk
                 %----------------------------------------------------------
@@ -80,12 +78,12 @@ classdef incident_wave
                 if indicator_file_exists
 
                     % load configuration
-                    temp = load( str_name_file, 'setup', 'spatial', 'spectral_points_tx' );
+                    temp = load( str_name_file, 'spatial', 'settings_tx_unique' );
 
                     % ensure equality of configuration
-                    if ~( isequal( temp.setup, setup ) && isequal( temp.spatial, spatiospectral.spatial ) && isequal( temp.spectral_points_tx, spatiospectral.spectral( index_object ).tx_unique ) )
-                        errorStruct.message     = sprintf( 'Hash collision for %s!', str_name_file );
-                        errorStruct.identifier	= 'pressure_incident:WrongObjects';
+                    if ~( isequal( temp.spatial, spatiospectral.spatial ) && isequal( temp.settings_tx_unique, spatiospectral.spectral( index_object ).tx_unique ) )
+                        errorStruct.message = sprintf( 'Hash collision for %s!', str_name_file );
+                        errorStruct.identifier	= 'incident_wave:HashCollision';
                         error( errorStruct );
                     end
 
@@ -94,23 +92,29 @@ classdef incident_wave
                 %----------------------------------------------------------
                 % b) load or compute incident acoustic pressure field
                 %----------------------------------------------------------
-                time_start = tic;
-                str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
                 if indicator_pressure_exists
 
                     %------------------------------------------------------
                     % a) load incident acoustic pressure field
                     %------------------------------------------------------
-%                     fprintf( '\t %s: loading incident acoustic pressure field (kappa, %.2f MiB)...', str_date_time, mebibyte( objects( index_object ).size_bytes ) );
+                    % print status
+                    time_start = tic;
+                    str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+                    fprintf( '\t %s: loading incident acoustic pressure field (kappa)...', str_date_time );
+
+                    % load p_incident from file
                     temp = load( str_name_file, 'p_incident' );
                     objects( index_object ).p_incident = temp.p_incident;
+
+                    % infer and print elapsed time
+                    time_elapsed = toc( time_start );
+                    fprintf( 'done! (%f s)\n', time_elapsed );
 
                 else
 
                     %------------------------------------------------------
                     % b) compute incident acoustic pressure field
                     %------------------------------------------------------
-%                     fprintf( '\t %s: computing incident acoustic pressure field (kappa, %.2f MiB)...', str_date_time, mebibyte( objects( index_object ).size_bytes ) );
                     objects( index_object ).p_incident = syntheses.compute_p_in( spatiospectral, index_object );
 
                     %------------------------------------------------------
@@ -122,7 +126,7 @@ classdef incident_wave
                         % specify data structures to save
                         p_incident = objects( index_object ).p_incident;
                         spatial = spatiospectral.spatial;
-                        spectral_points_tx = spatiospectral.spectral( index_object ).tx_unique;
+                        settings_tx_unique = spatiospectral.spectral( index_object ).tx_unique;
 
                         % append or create file
                         if indicator_file_exists
@@ -139,15 +143,13 @@ classdef incident_wave
                             end
 
                             % create new file
-                            save( str_name_file, 'p_incident', 'setup', 'spatial', 'spectral_points_tx', '-v7.3' );
+                            save( str_name_file, 'p_incident', 'spatial', 'settings_tx_unique', '-v7.3' );
 
-                        end % indicator_file_exists
+                        end % if indicator_file_exists
+
                     end % if N_elements_active >= 2
 
                 end % if indicator_pressure_exists
-
-                time_elapsed = toc( time_start );
-                fprintf( 'done! (%f s)\n', time_elapsed );
 
             end % for index_object = 1:N_objects
 

@@ -78,7 +78,7 @@ tc = gauspuls( 'cutoff', double( f_tx ), frac_bw, frac_bw_ref, -60 );     % calc
 t = (-tc:double(T_s):tc);
 pulse = gauspuls( t, double( f_tx ), frac_bw, frac_bw_ref );
 axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
-u_tx_tilde = discretizations.signal( axis_t, physical_values.voltage( pulse ) );
+u_tx_tilde = discretizations.signal( axis_t, physical_values.volt( pulse ) );
 
 % create pulse-echo measurement sequence
 sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 4 ), interval_t, interval_f );
@@ -94,8 +94,7 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 4 )
 % specify options
 %--------------------------------------------------------------------------
 % discretization options
-parameters_elements = discretizations.parameters_number( [ 2, 4 ] );
-% parameters_elements = discretizations.parameters_number( [ 4, 53 ] );
+parameters_elements = discretizations.parameters_number( [ 4, 53 ] );
 parameters_FOV = discretizations.parameters_distance( physical_values.meter( [ 76.2e-6, 4e-3, 76.2e-6 ] ) );
 options_disc_spatial = discretizations.options_spatial_grid( parameters_FOV, parameters_elements );
 options_disc_spectral = discretizations.options_spectral.signal;

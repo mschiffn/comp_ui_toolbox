@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-05-06
+% modified: 2019-05-11
 %
 classdef operator
 
@@ -19,7 +19,7 @@ classdef operator
         % dependent properties
         discretization ( 1, 1 ) discretizations.spatiospectral      % results of the spatiospectral discretization
         incident_waves ( :, : ) syntheses.incident_wave             % incident waves
-        E_rx ( :, 1 ) %physical_values.voltage
+        E_rx ( :, 1 ) %physical_values.volt
 
     end % properties
 
@@ -179,7 +179,7 @@ classdef operator
             E_rx = zeros( N_points, 1 );
 
             % iterate grid points
-            for index_point = 1:512%N_points
+            for index_point = 1:N_points
 
                 % specify fluctuation
                 gamma_kappa( index_point ) = 1;

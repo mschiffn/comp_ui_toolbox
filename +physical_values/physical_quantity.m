@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-04-04
+% modified: 2019-05-11
 %
 classdef physical_quantity < physical_values.transparent_container
 
@@ -146,7 +146,7 @@ classdef physical_quantity < physical_values.transparent_container
             elseif isequal( physical_quantity.exponents, [ 1, 0, -1, 0, 0, 0, 0, 0 ] )
                 result = physical_values.meter_per_second( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 2, 1, -3, -1, 0, 0, 0, 0 ] )
-                result = physical_values.voltage( physical_quantity.values );
+                result = physical_values.volt( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ -1, -1, 2, 1, 0, 0, 0, 0 ] )
                 result = physical_values.meter_per_volt_second( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ -1, -1, 1, 1, 0, 0, 0, 0 ] )
@@ -213,16 +213,6 @@ classdef physical_quantity < physical_values.transparent_container
             % return result of binary conversion
             size_gibibyte = convert_binary( objects, 2, 30 );
         end
-
-        %------------------------------------------------------------------
-        %% 3.) overload built-in type conversion functions
-        %------------------------------------------------------------------
-        % double-precision arrays
-        function results = double( physical_quantity )
-            results = double( physical_quantity.values );
-        end
-
-        % TODO: logical, struct
 
         %------------------------------------------------------------------
         %% 4.) overload built-in concatenation functions
