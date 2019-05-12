@@ -33,6 +33,9 @@ classdef spatiospectral
 	methods
 
 % TODO: anti-aliasing
+% dist_x = repmat( lattice_pos_x_elements_virtual_rx', [1, N_lattice] ) - repmat( lattice_pos( :, 1 )', [N_elements_virtual_rx, 1] );
+% dist_z = repmat( lattice_pos( :, 2 )', [N_elements_virtual_rx, 1] );
+% D = sqrt( dist_x.^2 + dist_z.^2 );
 % e_r_x_abs = abs( dist_x ) ./ D;
 % flag = pi ./ ( element_pitch * e_r_x_abs );
 
