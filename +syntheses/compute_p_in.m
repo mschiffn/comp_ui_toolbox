@@ -4,7 +4,7 @@ function fields = compute_p_in( spatiospectral, varargin )
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-05-11
+% modified: 2019-05-16
 %
 
 	% print status
@@ -43,6 +43,9 @@ function fields = compute_p_in( spatiospectral, varargin )
 	%----------------------------------------------------------------------
 	% 2.) compute incident acoustic pressure fields
 	%----------------------------------------------------------------------
+	% map unique frequencies of pulse-echo measurements to unique frequencies
+	indices_f_to_unique_measurement = spatiospectral.indices_f_to_unique( indices_incident );
+
 	% extract transducer control settings in synthesis mode (unique frequencies)
 	settings_tx_unique = reshape( [ spatiospectral.spectral( indices_incident ).tx_unique ], size( indices_incident ) );
 
@@ -61,6 +64,9 @@ function fields = compute_p_in( spatiospectral, varargin )
 
         % index of incident wave
         index_incident = indices_incident( index_incident_sel );
+
+        % extract
+        indices_f_to_unique_act = indices_f_to_unique_measurement{ index_incident_sel };
 
         %------------------------------------------------------------------
         % b) superimpose quasi-(d-1)-spherical waves
@@ -81,11 +87,11 @@ function fields = compute_p_in( spatiospectral, varargin )
                 % a) symmetric spatial discretization based on orthogonal regular grids
                 %----------------------------------------------------------
                 % shift reference spatial transfer function to infer that of the active array element
-%                 indices_occupied_act = spatiospectral.indices_grid_FOV_shift( :, indices_active_rx_to_unique{ index_mix }( index_active ) );
+                indices_occupied_act = spatiospectral.indices_grid_FOV_shift( :, index_element );
 
                 % extract current frequencies from unique frequencies
-%                 h_tx_unique = spatiospectral.h_ref( index_incident ).samples( indices_occupied_act, : );
-                h_tx_unique = shift_lateral( spatiospectral.h_ref( index_incident ), spatiospectral.spatial, index_element );
+                h_tx_unique = double( spatiospectral.h_ref.samples( indices_occupied_act, indices_f_to_unique_act ) );
+%                 h_tx_unique = shift_lateral( spatiospectral.h_ref( index_incident ), spatiospectral.spatial, index_element );
 
             else
 
@@ -98,12 +104,12 @@ function fields = compute_p_in( spatiospectral, varargin )
             end % if isa( spatiospectral.spatial, 'discretizations.spatial_grid_symmetric' )
 
             % compute summand for the incident pressure field
-            p_incident_summand = double( h_tx_unique.samples ) .* double( v_d_unique( index_incident_sel ).samples( index_active, : ) );
+            p_incident_summand = h_tx_unique .* double( v_d_unique( index_incident_sel ).samples( index_active, : ) );
 
             % add summand to the incident pressure field
 % TODO: correct unit problem
             p_incident{ index_incident_sel } = p_incident{ index_incident_sel } + physical_values.pascal( p_incident_summand );
-            figure(index_incident_sel);imagesc( abs( double( reshape( p_incident{ index_incident_sel }( :, 1 ), [512,512] ) ) ) );
+            figure(index_incident_sel);imagesc( abs( double( squeeze( reshape( p_incident{ index_incident_sel }( :, 1 ), spatiospectral.spatial.grid_FOV.N_points_axis ) ) ) ) );
 
         end % for index_active = 1:numel( settings_tx_unique( index_incident_sel ).indices_active )
 

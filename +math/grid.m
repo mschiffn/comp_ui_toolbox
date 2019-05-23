@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21
-% modified: 2019-05-03
+% modified: 2019-05-14
 %
 classdef grid
 
@@ -16,8 +16,8 @@ classdef grid
         positions ( :, : ) physical_values.length	% discrete positions of the grid points
 
         % dependent properties
-        N_dimensions ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 2	% number of dimensions (1)
-        N_points ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 16384	% total number of grid points (1)
+        N_dimensions ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 3	% number of dimensions (1)
+        N_points ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 1      % total number of grid points (1)
 
     end % properties
 
@@ -36,6 +36,7 @@ classdef grid
             %--------------------------------------------------------------
             % return for no input arguments
             if nargin == 0
+                objects.positions = physical_values.meter( zeros( 1, 3 ) );
                 return;
             end
 

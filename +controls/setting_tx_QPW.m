@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-05-05
+% modified: 2019-05-21
 %
 classdef setting_tx_QPW < controls.setting_tx
 
@@ -13,7 +13,7 @@ classdef setting_tx_QPW < controls.setting_tx
 	properties (SetAccess = private)
 
         % independent properties
-        e_theta ( 1, 1 ) math.unit_vector	% preferred direction of propagation (1)
+        e_theta ( 1, 1 ) math.unit_vector	% preferred direction of propagation
 
     end % properties
 
@@ -32,8 +32,8 @@ classdef setting_tx_QPW < controls.setting_tx
             %--------------------------------------------------------------
             % ensure class pulse_echo_measurements.setup (scalar)
             if ~( isa( setup, 'pulse_echo_measurements.setup' ) && isscalar( setup ) )
-                errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'setting_tx_QPW:NoSetup';
+                errorStruct.message = 'setup must be a single pulse_echo_measurements.setup!';
+                errorStruct.identifier = 'setting_tx_QPW:NoSetup';
                 error( errorStruct );
             end
 
@@ -41,8 +41,8 @@ classdef setting_tx_QPW < controls.setting_tx
 
             % ensure class math.unit_vector
             if ~isa( e_theta, 'math.unit_vector' )
-                errorStruct.message     = 'e_theta must be math.unit_vector!';
-                errorStruct.identifier	= 'setting_rnd_del:NoUnitVectors';
+                errorStruct.message = 'e_theta must be math.unit_vector!';
+                errorStruct.identifier = 'setting_tx_QPW:NoUnitVector';
                 error( errorStruct );
             end
 
@@ -77,14 +77,7 @@ classdef setting_tx_QPW < controls.setting_tx
 
                 % specify impulse responses
                 indices_q = round( time_delays_act / setup.T_clk );
-                axis_t = math.sequence_increasing_regular( min( indices_q ), max( indices_q ), setup.T_clk );
-
-                samples = physical_values.meter_per_volt_squaresecond( zeros( setup.xdc_array.N_elements, abs( axis_t ) ) );
-                for index_element = 1:setup.xdc_array.N_elements
-                    samples( index_element, indices_q( index_element ) + 1 ) = 1;
-                end
-
-                impulse_responses{ index_object } = discretizations.signal_matrix( axis_t, samples );
+                impulse_responses{ index_object } = discretizations.delta_matrix( indices_q, setup.T_clk, physical_values.meter_per_volt_second( ones( size( indices_q ) ) ) );
 
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements
@@ -102,7 +95,10 @@ classdef setting_tx_QPW < controls.setting_tx
             % 4.) set independent properties
             %--------------------------------------------------------------
             for index_object = 1:N_objects
+
+                % preferred direction of propagation
                 objects( index_object ).e_theta = e_theta( index_object );
+
             end
 
         end % function objects = setting_tx_QPW( setup, excitation_voltages_common, e_theta )

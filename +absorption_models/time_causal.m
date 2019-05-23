@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-25
-% modified: 2019-04-22
+% modified: 2019-05-16
 %
 classdef time_causal < absorption_models.absorption_model
 
@@ -100,6 +100,7 @@ classdef time_causal < absorption_models.absorption_model
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class math.sequence_increasing
+% TODO: ensure physical_values.frequency
             if ~isa( axes_f, 'math.sequence_increasing' )
                 axes_f = math.sequence_increasing( axes_f );
             end

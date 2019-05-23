@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-05-10
+% modified: 2019-05-21
 %
 classdef setting_tx_rnd_apo < controls.setting_tx
 
@@ -33,7 +33,7 @@ classdef setting_tx_rnd_apo < controls.setting_tx
             % ensure class pulse_echo_measurements.setup (scalar)
             if ~( isa( setup, 'pulse_echo_measurements.setup' ) && isscalar( setup ) )
                 errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'setting_tx_QPW:NoSetup';
+                errorStruct.identifier	= 'setting_tx_rnd_apo:NoSetup';
                 error( errorStruct );
             end
 
@@ -55,7 +55,7 @@ classdef setting_tx_rnd_apo < controls.setting_tx
             % number of sequential syntheses
             N_objects = numel( excitation_voltages_common );
 
-            % allocate cell arrays to store synthesis settings
+            % specify cell arrays to store synthesis settings
             indices_active = cell( size( excitation_voltages_common ) );
             impulse_responses = cell( size( excitation_voltages_common ) );
             excitation_voltages = cell( size( excitation_voltages_common ) );
@@ -81,10 +81,7 @@ classdef setting_tx_rnd_apo < controls.setting_tx
                 apodization_weights_act( ~indicator ) = -1;
 
                 % specify impulse responses
-                axis_t = math.sequence_increasing_regular( 0, 0, setup.T_clk );
-                samples = physical_values.meter_per_volt_squaresecond( apodization_weights_act );
-
-                impulse_responses{ index_object } = discretizations.signal_matrix( axis_t, samples );
+                impulse_responses{ index_object } = discretizations.delta_matrix( zeros( setup.xdc_array.N_elements, 1 ), setup.T_clk, physical_values.meter_per_volt_second( apodization_weights_act ) );
 
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements
@@ -102,7 +99,10 @@ classdef setting_tx_rnd_apo < controls.setting_tx
             % 4.) set independent properties
             %--------------------------------------------------------------
             for index_object = 1:N_objects
+
+                % settings of the random number generator
                 objects( index_object ).setting_rng = settings_rng( index_object );
+
             end
 
         end % function objects = setting_tx_rnd_apo( setup, excitation_voltages_common, settings_rng )

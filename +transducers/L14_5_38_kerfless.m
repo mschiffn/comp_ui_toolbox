@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-05-03
-% modified: 2019-04-11
+% modified: 2019-05-16
 %
 classdef L14_5_38_kerfless < transducers.array_planar
 
@@ -17,55 +17,32 @@ classdef L14_5_38_kerfless < transducers.array_planar
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function obj = L14_5_38_kerfless( varargin )
+        function object = L14_5_38_kerfless( varargin )
 
             %--------------------------------------------------------------
-            % optional number of dimensions
+            % 1.) check arguments
             %--------------------------------------------------------------
-            % specify two-dimensional transducer array as default
-            N_dimensions = 2;
-
-            % process optional argument
-            if numel( varargin ) > 0
-
-                % ensure correct number of dimensions
-                if ~( ( varargin{ 1 } == 1 ) || ( varargin{ 1 } == 2 ) )
-                    errorStruct.message     = 'Number of dimensions N_dimensions must equal either 1 or 2!';
-                    errorStruct.identifier	= 'L14_5_38:DimensionMismatch';
-                    error( errorStruct );
-                end
+            % ensure nonempty N_dimensions
+            if nargin >= 1 && ~isempty( varargin{ 1 } )
                 N_dimensions = varargin{ 1 };
+            else
+                % specify two-dimensional transducer array as default
+                N_dimensions = 2;
             end
-            % assertion: N_dimensions == 1 || N_dimensions == 2
+
+            % ensure correct number of dimensions
+            if ~( ( N_dimensions == 1 ) || ( N_dimensions == 2 ) )
+                errorStruct.message     = 'Number of dimensions must equal either 1 or 2!';
+                errorStruct.identifier	= 'L14_5_38_kerfless:InvalidNumberOfDimensions';
+                error( errorStruct );
+            end
 
             %--------------------------------------------------------------
-            % name and vendor (Ultrasonix Medical Corporation, L14-5/38)
+            % 2.) constructor of superclass
             %--------------------------------------------------------------
-            str_name = 'L14-5/38 (Ultrasonix Medical Corporation)';
+            object@transducers.array_planar( transducers.parameters_L14_5_38_kerfless, N_dimensions );
 
-            %--------------------------------------------------------------
-            % geometrical specifications
-            %--------------------------------------------------------------
-            N_elements_axis	= [128, 1];                 % number of physical elements along each coordinate axis (1)
-            element_width	= [304.8, 4000] * 1e-6;     % widths of physical elements along each coordinate axis (m)
-            element_kerf	= zeros(1, 2);              % kerfs between physical elements along each coordinate axis (m)
-
-            %--------------------------------------------------------------
-            % acoustic lens specifications
-            %--------------------------------------------------------------
-            elevational_focus = 16e-3;                  % axial distance of the elevational focus (m)
-
-            %--------------------------------------------------------------
-            % electromechanical specifications
-            %--------------------------------------------------------------
-            f_center  = 7.5e6;                          % temporal center frequency (Hz)
-            B_frac_lb = 0.65;                           % fractional bandwidth at -6 dB (1)
-
-            %--------------------------------------------------------------
-            % constructor of superclass
-            %--------------------------------------------------------------
-            obj@transducers.array_planar( N_elements_axis( 1:N_dimensions ), element_width( 1:N_dimensions ), element_kerf( 1:N_dimensions ), str_name );
-        end
+        end % function object = L14_5_38_kerfless( varargin )
 
 	end % methods
 

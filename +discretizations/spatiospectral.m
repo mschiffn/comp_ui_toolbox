@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-09
+% modified: 2019-05-13
 %
 classdef spatiospectral
 
@@ -17,13 +17,16 @@ classdef spatiospectral
         spectral ( :, 1 ) discretizations.spectral      % spectral discretization
 
         % dependent properties
+        axis_f_unique ( 1, 1 ) math.sequence_increasing         % axis of unique frequencies
+        indices_f_to_unique                                     % cell array mapping unique frequencies of each pulse-echo measurement to global unique frequencies
+        axis_k_tilde_unique ( 1, 1 ) math.sequence_increasing	% axis of complex-valued wavenumbers (unique frequencies)
         prefactors                                      % prefactors for scattering (local frequencies)
         size ( 1, : ) double                            % size of the discretization
 
         % optional properties
-        h_ref ( :, 1 ) discretizations.field            % reference spatial transfer functions (unique frequencies)
-        h_ref_grad ( :, : ) discretizations.field       % spatial gradients of the reference spatial transfer functions (unique frequencies)
         indices_grid_FOV_shift ( :, : )                 % indices of laterally shifted grid points
+        h_ref ( 1, : ) discretizations.field            % reference spatial transfer function (unique frequencies)
+        h_ref_grad ( 1, : ) discretizations.field       % spatial gradient of the reference spatial transfer function (unique frequencies)
 
     end % properties
 
@@ -31,13 +34,6 @@ classdef spatiospectral
     %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
-
-% TODO: anti-aliasing
-% dist_x = repmat( lattice_pos_x_elements_virtual_rx', [1, N_lattice] ) - repmat( lattice_pos( :, 1 )', [N_elements_virtual_rx, 1] );
-% dist_z = repmat( lattice_pos( :, 2 )', [N_elements_virtual_rx, 1] );
-% D = sqrt( dist_x.^2 + dist_z.^2 );
-% e_r_x_abs = abs( dist_x ) ./ D;
-% flag = pi ./ ( element_pitch * e_r_x_abs );
 
         %------------------------------------------------------------------
         % constructor
@@ -69,6 +65,8 @@ classdef spatiospectral
             % iterate spatiospectral discretizations
             for index_object = 1:numel( spatials )
 
+% TODO: check for valid spatial discretization (sampling theorem)
+
                 %----------------------------------------------------------
                 % a) set independent properties
                 %----------------------------------------------------------
@@ -78,7 +76,14 @@ classdef spatiospectral
                 %----------------------------------------------------------
                 % b) set dependent properties
                 %----------------------------------------------------------
-                if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
+                % extract unique frequency axis
+                v_d_unique = reshape( [ objects( index_object ).spectral.v_d_unique ], size( objects( index_object ).spectral ) );
+                [ objects( index_object ).axis_f_unique, ~, objects( index_object ).indices_f_to_unique ] = unique( [ v_d_unique.axis ] );
+                objects( index_object ).axis_k_tilde_unique = compute_wavenumbers( objects( index_object ).spatial.absorption_model, objects( index_object ).axis_f_unique );
+
+                % compute prefactors for scattering (local frequencies)
+% TODO: What is the exact requirement?
+                if isa( objects( index_object ).spatial.grid_FOV, 'math.grid_regular' )
                     objects( index_object ).prefactors = compute_prefactors( objects( index_object ) );
                 end
 
@@ -90,21 +95,16 @@ classdef spatiospectral
                 %----------------------------------------------------------
                 if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
 
-                    % lateral shift of grid points
-                    objects( index_object ).indices_grid_FOV_shift = shift_lateral( objects( index_object ).spatial, { objects( index_object ).spectral.indices_active_rx_unique } );
+                    % lateral shifts of grid points for each array element
+                    objects( index_object ).indices_grid_FOV_shift = shift_lateral( objects( index_object ).spatial, ( 1:numel( objects( index_object ).spatial.grids_elements ) ) );
 
-                    % reference spatial transfer functions (unique frequencies)
-% TODO: when are h_ref identical?
-                    h_ref = discretizations.spatial_transfer_function( objects( index_object ).spatial, objects( index_object ).spectral );
-                    if iscell( h_ref )
-                        objects( index_object ).h_ref = cat( 1, h_ref{ : } );
-                    else
-                        objects( index_object ).h_ref = h_ref;
-                    end
+                    % create format string for filename
+                    str_format = sprintf( 'data/%s/spatial_%%s/h_ref_axis_f_unique_%%s.mat', objects( index_object ).spatial.str_name );
+
+                    % load or compute reference spatial transfer function (unique frequencies)
+                    objects( index_object ).h_ref = auxiliary.compute_or_load_hash( str_format, @discretizations.spatial_transfer_function, [], [], objects( index_object ).spatial, objects( index_object ).axis_f_unique );
 
                 end % if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
-
-%                 objects( index_object ).set_f_unique = union( [ objects( index_object ).spectral.set_f_unique ] );
 
             end % for index_object = 1:numel( spatials )
 
@@ -114,26 +114,37 @@ classdef spatiospectral
         % compute prefactors (local frequencies)
         %------------------------------------------------------------------
         function prefactors = compute_prefactors( spatiospectrals )
-
+% TODO: partially move to spatial
             % specify cell array for prefactors
             prefactors = cell( size( spatiospectrals ) );
 
             % iterate spatiospectral discretizations
             for index_object = 1:numel( spatiospectrals )
 
-                % geometric volume elements
-% TODO: check availability
-%                 delta_A = spatiospectrals( index_object ).spatial.grids_elements( 1 ).grid.cell_ref.volume;
+                % ensure class math.grid_regular
+                if ~isa( spatiospectrals( index_object ).spatial.grid_FOV, 'math.grid_regular' )
+                    errorStruct.message = sprintf( 'spatiospectrals( %d ).spatial.grid_FOV must be math.grid_regular!', index_object );
+                    errorStruct.identifier = 'compute_prefactors:NoRegularGrid';
+                    error( errorStruct );
+                end
+
+                % geometric volume element
                 delta_V = spatiospectrals( index_object ).spatial.grid_FOV.cell_ref.volume;
 
+                % map unique frequencies of each pulse-echo measurement to global unique frequencies
+                indices_f_to_unique_measurement = spatiospectrals( index_object ).indices_f_to_unique;
+
+                % compute samples of prefactors (unique frequencies)
+                samples_unique = - delta_V * spatiospectrals( index_object ).axis_k_tilde_unique.members.^2;
+
                 % specify cell array for prefactors{ index_object }
-                prefactors{ index_object } = cell( size(  spatiospectrals( index_object ).spectral ) );
+                prefactors{ index_object } = cell( size( spatiospectrals( index_object ).spectral ) );
 
                 % iterate sequential pulse-echo measurements
                 for index_measurement = 1:numel( spatiospectrals( index_object ).spectral )
 
-                    % map frequencies of mixed voltage signals to unique frequencies
-                    indices_f_to_unique = spatiospectrals( index_object ).spectral( index_measurement ).indices_f_to_unique;
+                    % map frequencies of each mixed voltage signal to unique frequencies of current pulse-echo measurement
+                    indices_f_to_unique_mix = spatiospectrals( index_object ).spectral( index_measurement ).indices_f_to_unique;
 
                     % extract impulse responses of mixing channels
                     impulse_responses_rx = reshape( [ spatiospectrals( index_object ).spectral( index_measurement ).rx.impulse_responses ], size( spatiospectrals( index_object ).spectral( index_measurement ).rx ) );
@@ -141,16 +152,13 @@ classdef spatiospectral
                     % frequency axes of all mixed voltage signals
                     axes_f = reshape( [ impulse_responses_rx.axis ], size( spatiospectrals( index_object ).spectral( index_measurement ).rx ) );
 
-                    % compute samples of prefactors (unique frequencies)
-                    samples_unique = - delta_V * spatiospectrals( index_object ).spectral( index_measurement ).axis_k_tilde_unique.members.^2;
-
                     % specify cell array for samples
                     samples = cell( size( spatiospectrals( index_object ).spectral( index_measurement ).rx ) );
 
                     % iterate mixed voltage signals
                     for index_mix = 1:numel( spatiospectrals( index_object ).spectral( index_measurement ).rx )
 
-                        samples{ index_mix } = samples_unique( indices_f_to_unique{ index_mix } ) .* impulse_responses_rx( index_mix ).samples;
+                        samples{ index_mix } = samples_unique( indices_f_to_unique_measurement{ index_measurement }( indices_f_to_unique_mix{ index_mix } ) ) .* impulse_responses_rx( index_mix ).samples;
 
                     end % for index_mix = 1:numel( spatiospectrals( index_object ).spectral( index_measurement ).rx )
 

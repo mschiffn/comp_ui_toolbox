@@ -3,36 +3,38 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-05-10
+% modified: 2019-05-22
 %
 classdef sequence_QPW < pulse_echo_measurements.sequence
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
         function object = sequence_QPW( setup, u_tx_tilde, e_theta, interval_t, interval_f )
-% TODO: determine interval_t from times-of-flight
+
             %--------------------------------------------------------------
             % 1.) create synthesis settings
             %--------------------------------------------------------------
             settings_tx = controls.setting_tx_QPW( setup, u_tx_tilde, e_theta );
 
             %--------------------------------------------------------------
-            % 2.) create reception settings (estimate recording time intervals via options?)
+            % 2.) create reception settings
             %--------------------------------------------------------------
-            settings_rx = repmat( { controls.setting_rx_identity( setup, interval_t, interval_f ) }, size( settings_tx ) );
-%             indices = randperm( 128 );
-%             indices = indices(1:2);
-%             settings_rx = repmat( { temp( indices ) }, size( settings_tx ) );
+            % specify cell array for settings_rx
+            settings_rx = cell( size( settings_tx ) );
 
-            % determine frequency intervals
-            % TODO: assertion: f_lb > 0, f_ub >= f_lb + 1 / T_rec
-%             [ intervals_t, hulls ] = determine_interval_t( object );
+            % iterate transducer control settings in synthesis mode
+            for index_object = 1:numel( settings_tx )
+
+                % create reception settings w/o mixing
+                settings_rx{ index_object } = controls.setting_rx_identity( setup, settings_tx( index_object ), interval_f, interval_t );
+
+            end % for index_object = 1:numel( settings_tx )
 
             %--------------------------------------------------------------
             % 3.) create pulse-echo measurement settings

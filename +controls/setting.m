@@ -172,29 +172,6 @@ classdef setting
         end % function [ indices_unique, indices_local_to_unique ] = unique_indices_active( settings )
 
         %------------------------------------------------------------------
-        % compute hash values
-        %------------------------------------------------------------------
-        function str_hash = hash( settings )
-
-            % specify cell array for str_hash
-            str_hash = cell( size( settings ) );
-
-            % iterate transducer control settings
-            for index_object = 1:numel( settings )
-
-                % use DataHash function to compute hash value
-                str_hash{ index_object } = auxiliary.DataHash( settings( index_object ) );
-
-            end % for index_object = 1:numel( settings )
-
-            % avoid cell array for single transducer control setting
-            if isscalar( settings )
-                str_hash = str_hash{ 1 };
-            end
-
-        end % function str_hash = hash( settings )
-
-        %------------------------------------------------------------------
         % support
         %------------------------------------------------------------------
         function results = support( objects )

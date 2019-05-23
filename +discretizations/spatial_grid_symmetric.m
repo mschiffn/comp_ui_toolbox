@@ -25,11 +25,13 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = spatial_grid_symmetric( grids_elements, grids_FOV, N_points_per_pitch_axis )
+        function objects = spatial_grid_symmetric( absorption_models, strs_name, grids_elements, grids_FOV, N_points_per_pitch_axis )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % superclass ensures class absorption_models.absorption_model
+
             % ensure cell array for grids_elements
             if ~iscell( grids_elements )
                 grids_elements = { grids_elements };
@@ -37,7 +39,7 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
 
             % ensure class math.grid_regular_orthogonal for grids_elements
             for index_object = 1:numel( grids_elements )
-                if ~isa( [grids_elements{ index_object }.grid], 'math.grid_regular_orthogonal' )
+                if ~isa( [ grids_elements{ index_object }.grid ], 'math.grid_regular_orthogonal' )
                     errorStruct.message = sprintf( 'grids_elements{ %d } must be math.grid_regular_orthogonal!', index_object );
                     errorStruct.identifier = 'spatial_grid_symmetric:NoRegularOrthogonalGrid';
                     error( errorStruct );
@@ -59,7 +61,7 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.spatial_grid( grids_elements, grids_FOV );
+            objects@discretizations.spatial_grid( absorption_models, strs_name, grids_elements, grids_FOV );
 
             %--------------------------------------------------------------
             % 3.) confirm symmetry

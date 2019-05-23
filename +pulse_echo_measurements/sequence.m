@@ -83,93 +83,14 @@ classdef sequence
                 objects( index_object ).settings = settings{ index_object };
 
                 % set dependent properties
-                objects( index_object ).interval_t = hull( [ objects( index_object ).settings.interval_t ] );
-                objects( index_object ).interval_f = hull( [ objects( index_object ).settings.interval_f ] );
+% TODO: quantize time interval
+                [ objects( index_object ).interval_t, objects( index_object ).interval_f ] = hulls( objects( index_object ).settings );
 
             end % for index_object = 1:numel( objects )
 
         end % function objects = sequence( setups, settings )
 
-        %------------------------------------------------------------------
-        % estimate recording time intervals
-        %------------------------------------------------------------------
-        function [ intervals_t, hulls ] = determine_interval_t( object )
-
-            %--------------------------------------------------------------
-            % 1.) lower and upper bounds on the times-of-flight
-            %--------------------------------------------------------------
-            tof = times_of_flight( object.setup );
-
-            %--------------------------------------------------------------
-            % 2.) estimate support of each mix
-            %--------------------------------------------------------------
-            N_incident = numel( object.settings );
-            intervals_t = cell( N_incident, 1 );
-            hulls = repmat( tof( 1, 1 ), [ N_incident, 1 ] );
-
-            for index_incident = 1:N_incident
-
-                % indices of active tx elements
-                indices_tx_act = object.settings( index_incident ).tx.indices_active;
-                N_elements_tx = numel( indices_tx_act );
-
-                % determine support of each mix
-                N_mix = numel( object.settings( index_incident ).mixes );
-
-                % initialize lower and upper bounds on the support
-                t_lbs = physical_values.time( zeros( 1, N_mix ) );
-                t_ubs = physical_values.time( zeros( 1, N_mix ) );
-
-                for index_mix = 1:N_mix
-
-                    % indices of active rx elements
-                    indices_rx_act = object.settings( index_incident ).rx( index_mix ).indices_active;
-                    N_elements_rx = numel( indices_rx_act );
-
-                    % allocate memory
-                    t_lbs_all = physical_values.time( zeros( N_elements_tx, N_elements_rx ) );
-                    t_ubs_all = physical_values.time( zeros( N_elements_tx, N_elements_rx ) );
-
-                    % check all combinations of active tx and rx elements
-                    for index_tx = 1:N_elements_tx
-
-                        % index of tx array element
-                        index_element_tx = indices_tx_act( index_tx );
-
-                        % support of excitation voltage
-                        t_lb_tx_act = object.settings( index_incident ).tx.excitation_voltages( index_tx ).set_t.S( 1 ) + object.settings( index_incident ).tx.time_delays( index_tx );
-                        t_ub_tx_act = object.settings( index_incident ).tx.excitation_voltages( index_tx ).set_t.S( end ) + object.settings( index_incident ).tx.time_delays( index_tx );
-
-                        for index_rx = 1:N_elements_rx
-
-                            % index of rx array element
-                            index_element_rx = indices_rx_act( index_rx );
-
-                            % support of impulse response
-                            t_lb_rx_act = object.settings( index_incident ).rx( index_mix ).impulse_responses( index_rx ).set_t.S( 1 );
-                            t_ub_rx_act = object.settings( index_incident ).rx( index_mix ).impulse_responses( index_rx ).set_t.S( end );
-
-                            t_lbs_all( index_tx, index_rx ) = t_lb_tx_act + tof( index_element_tx, index_element_rx ).bounds( 1 ) + t_lb_rx_act;
-                            t_ubs_all( index_tx, index_rx ) = t_ub_tx_act + tof( index_element_tx, index_element_rx ).bounds( 2 ) + t_ub_rx_act;
-
-                        end % for index_rx = 1:N_elements_rx
-                    end % for index_tx = 1:N_elements_tx
-
-                    t_lbs( index_mix ) = min( t_lbs_all );
-                    t_ubs( index_mix ) = max( t_ubs_all );
-
-                end % for index_mix = 1:N_mix
-
-                % create time intervals for all mixes
-                intervals_t{ index_incident } = math.interval_time( t_lbs, t_ubs );
-
-                % determine hull of time intervals
-                hulls( index_incident ) = hull( intervals_t{ index_incident } );
-
-            end % for index_incident = 1:N_incident
-
-        end % function [ intervals_t, hulls ] = determine_interval_t( object )
-
+        
         %------------------------------------------------------------------
         % spatiospectral discretizations
         %------------------------------------------------------------------
@@ -204,7 +125,7 @@ classdef sequence
             for index_object = 1:numel( sequences )
 
                 % discretize pulse-echo measurement settings
-                spectrals{ index_object } = discretize( sequences( index_object ).settings, setups( index_object ).absorption_model, options( index_object ).spectral );
+                spectrals{ index_object } = discretize( sequences( index_object ).settings, options( index_object ).spectral );
 
             end % for index_object = 1:numel( sequences )
 

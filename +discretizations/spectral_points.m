@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-09
+% modified: 2019-05-13
 %
 classdef spectral_points < discretizations.spectral
 
@@ -22,7 +22,6 @@ classdef spectral_points < discretizations.spectral
         indices_f_to_unique
         indices_active_rx_unique ( 1, : ) double
         indices_active_rx_to_unique
-        axis_k_tilde_unique ( 1, 1 ) math.sequence_increasing	% axis of complex-valued wavenumbers (unique frequencies)
         N_observations ( :, : ) double                          % numbers of observations in each mixed voltage signal
 
     end % properties
@@ -35,7 +34,7 @@ classdef spectral_points < discretizations.spectral
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = spectral_points( settings_tx, settings_rx, absorption_model )
+        function objects = spectral_points( settings_tx, settings_rx )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -48,13 +47,6 @@ classdef spectral_points < discretizations.spectral
             % ensure cell array for settings_rx
             if ~iscell( settings_rx )
                 settings_rx = { settings_rx };
-            end
-
-            % ensure class absorption_models.absorption_model (scalar)
-            if ~( isa( absorption_model, 'absorption_models.absorption_model' ) && isscalar( absorption_model ) )
-                errorStruct.message = 'absorption_model must be absorption_models.absorption_model!';
-                errorStruct.identifier = 'spectral_points:NoAbsorptionModel';
-                error( errorStruct );
             end
 
             % ensure equal number of dimensions and sizes
@@ -74,7 +66,7 @@ classdef spectral_points < discretizations.spectral
 % TODO: ensure identical frequency axes ?
 
                 % ensure correct number of settings_tx{ index_object }
-                if ~( numel( settings_tx{ index_object } ) == 1 || numel( settings_tx{ index_object } ) == numel( settings_rx{ index_object } ) )
+                if ~( isscalar( settings_tx{ index_object } ) || numel( settings_tx{ index_object } ) == numel( settings_rx{ index_object } ) )
                     errorStruct.message = sprintf( 'Number of elements in settings_tx{ %d } must be one or match settings_rx{ %d }!', index_object, index_object );
                     errorStruct.identifier = 'spectral_points:SizeMismatch';
                     error( errorStruct );
@@ -91,7 +83,8 @@ classdef spectral_points < discretizations.spectral
                 %----------------------------------------------------------
                 [ objects( index_object ).tx_unique, ~, objects( index_object ).indices_f_to_unique ] = unique( objects( index_object ).tx );
                 [ objects( index_object ).indices_active_rx_unique, objects( index_object ).indices_active_rx_to_unique ] = unique_indices_active( objects( index_object ).rx );
-                objects( index_object ).axis_k_tilde_unique = compute_wavenumbers( absorption_model, objects( index_object ).tx_unique.excitation_voltages.axis );
+
+                % numbers of observations in each mixed voltage signal
                 objects( index_object ).N_observations = compute_N_observations( objects( index_object ) );
 
                 % compute normal velocities (unique frequencies)
@@ -99,7 +92,7 @@ classdef spectral_points < discretizations.spectral
 
             end % for index_object = 1:numel( settings_tx )
 
-        end % function objects = spectral_points( settings_tx, settings_rx, absorption_model )
+        end % function objects = spectral_points( settings_tx, settings_rx )
 
         %------------------------------------------------------------------
         % compute normal velocities (unique frequencies)

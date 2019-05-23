@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2019-04-30
+% modified: 2019-05-20
 %
 classdef signal_matrix
 
@@ -182,7 +182,7 @@ classdef signal_matrix
                 end
 
                 % specify relevant indices
-                indices_relevant = double( axes_f( index_object ).q_lb:axes_f( index_object ).q_ub );
+                indices_relevant = double( axes_f( index_object ).q_lb:axes_f( index_object ).q_ub ) + 1;
 
                 % zero-pad and shift samples
                 samples_act = [ signal_matrices( index_object ).samples, zeros( signal_matrices( index_object ).N_signals, N_dft( index_object ) - N_samples_signal( index_object ) ) ];
@@ -257,8 +257,8 @@ classdef signal_matrix
 
             % ensure class physical_values.time
             if ~isa( delta, 'physical_values.time' )
-                errorStruct.message     = 'delta must be physical_values.time!';
-                errorStruct.identifier	= 'signal:NoTime';
+                errorStruct.message = 'delta must be physical_values.time!';
+                errorStruct.identifier = 'signal:NoTime';
                 error( errorStruct );
             end
 
@@ -279,17 +279,18 @@ classdef signal_matrix
             % 2.) compute time-domain signals
             %--------------------------------------------------------------
             % extract axes
-            axes = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
+            axes_f = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
+            N_samples_f = abs( axes_f );
 
             % ensure regular samples
-            if ~isa( axes, 'math.sequence_increasing_regular' )
+            if ~isa( axes_f, 'math.sequence_increasing_regular' )
                 errorStruct.message = 'signal_matrices.axis must be regular!';
                 errorStruct.identifier = 'signal:IrregularAxis';
                 error( errorStruct );
             end
 
             % extract deltas
-            deltas = reshape( [ axes.delta ], size( signal_matrices ) );
+            deltas = reshape( [ axes_f.delta ], size( signal_matrices ) );
 
             % ensure class physical_values.frequency
             if ~isa( deltas, 'physical_values.frequency' )
@@ -300,6 +301,7 @@ classdef signal_matrix
 
             % compute time axes
             T_rec = 1 ./ deltas;
+% TODO: noninteger?
             N_samples_t = T_rec ./ delta;
 % TODO: N_samples_t odd?
             axes_t = math.sequence_increasing_regular( lbs_q, lbs_q + N_samples_t - 1, delta );
@@ -312,11 +314,14 @@ classdef signal_matrix
             for index_object = 1:numel( signal_matrices )
 
                 % zero-pad and shift samples
-                samples_act = [ signal_matrices( index_object ).samples, zeros( signal_matrices( index_object ).N_signals, index_shift( index_object ) - abs( signal_matrices( index_object ).axis ) ) ];
-                samples_act = circshift( samples_act, axes( index_object ).q_lb, 2 );
+                samples_act = [ signal_matrices( index_object ).samples, zeros( signal_matrices( index_object ).N_signals, index_shift( index_object ) - N_samples_f( index_object ) ) ];
+                samples_act = circshift( samples_act, axes_f( index_object ).q_lb, 2 );
 
                 % compute signal samples
                 samples_td{ index_object } = N_samples_t * ifft( samples_act, N_samples_t, 2, 'symmetric' );
+
+                % shift samples
+                samples_td{ index_object } = circshift( samples_td{ index_object }, -axes_t( index_object ).q_lb, 2 );
 
             end % for index_object = 1:numel( signal_matrices )
 

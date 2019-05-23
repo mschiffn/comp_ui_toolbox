@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-05-11
+% modified: 2019-05-17
 %
 classdef physical_quantity < physical_values.transparent_container
 
@@ -147,6 +147,8 @@ classdef physical_quantity < physical_values.transparent_container
                 result = physical_values.meter_per_second( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 2, 1, -3, -1, 0, 0, 0, 0 ] )
                 result = physical_values.volt( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 4, 2, -6, -2, 0, 0, 0, 0 ] )
+                result = physical_values.squarevolt( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ -1, -1, 2, 1, 0, 0, 0, 0 ] )
                 result = physical_values.meter_per_volt_second( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ -1, -1, 1, 1, 0, 0, 0, 0 ] )
@@ -396,7 +398,7 @@ classdef physical_quantity < physical_values.transparent_container
 
             % ensure numeric nonempty power
 % TODO: scalar vs matrix
-            if ~( isnumeric( power ) && isscalar( power ) ) || isempty( power)
+            if ~( isnumeric( power ) && isscalar( power ) ) || isempty( power )
                 errorStruct.message     = 'power must be numeric and nonempty!';
                 errorStruct.identifier	= 'power:InvalidPower';
                 error( errorStruct );
@@ -405,6 +407,24 @@ classdef physical_quantity < physical_values.transparent_container
             % compute element-wise power
             physical_quantity.exponents = power * physical_quantity.exponents;
             physical_quantity.values = physical_quantity.values.^power;
+            physical_quantity = determine_class( physical_quantity );
+
+        end
+
+        % matrix power
+        function physical_quantity = mpower( physical_quantity, power )
+
+            % ensure numeric nonempty power
+% TODO: scalar vs matrix
+            if ~( isnumeric( power ) && isscalar( power ) ) || isempty( power )
+                errorStruct.message     = 'power must be numeric and nonempty!';
+                errorStruct.identifier	= 'mpower:InvalidPower';
+                error( errorStruct );
+            end
+
+            % compute matrix power
+            physical_quantity.exponents = power * physical_quantity.exponents;
+            physical_quantity.values = physical_quantity.values^power;
             physical_quantity = determine_class( physical_quantity );
 
         end

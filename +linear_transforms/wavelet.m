@@ -1,23 +1,27 @@
 %
 % compute two-dimensional discrete wavelet transform for various options
-% author: Martin Schiffner
+%
+% author: Martin F. Schiffner
 % date: 2016-08-13
+% modified: 2019-05-21
 %
 classdef wavelet < linear_transforms.orthonormal_linear_transform
-    
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
+
         wavelet_name
         wavelet_parameter
         N_points
         scale_coarsest
         quadrature_mirror_filter
+
     end % properties
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
@@ -50,7 +54,8 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
 
             % compute quadrature mirror filter (QMF)
             LT_wavelet.quadrature_mirror_filter = MakeONFilter( wavelet_name, wavelet_parameter );
-        end
+
+        end % function LT_wavelet = wavelet( wavelet_name, wavelet_parameter, N_points, scale_coarsest )
 
         %------------------------------------------------------------------
         % overload method: forward transform (forward DWT)
@@ -75,5 +80,5 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
         end
 
     end % methods
-    
-end % classdef wavelet
+
+end % classdef wavelet < linear_transforms.orthonormal_linear_transform

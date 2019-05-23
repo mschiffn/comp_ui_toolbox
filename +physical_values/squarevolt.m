@@ -5,7 +5,7 @@
 % date: 2019-01-15
 % modified: 2019-05-16
 %
-classdef volt < physical_values.physical_quantity_derived
+classdef squarevolt < physical_values.physical_quantity_derived
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,20 +15,20 @@ classdef volt < physical_values.physical_quantity_derived
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = volt( varargin )
+        function objects = squarevolt( varargin )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
             exponents = zeros( 1, 8 );
-            exponents( 1 ) = 2;     % length
-            exponents( 2 ) = 1;     % mass
-            exponents( 3 ) = -3;    % time
-            exponents( 4 ) = -1;    % electric current
+            exponents( 1 ) = 4;     % length
+            exponents( 2 ) = 2;     % mass
+            exponents( 3 ) = -6;    % time
+            exponents( 4 ) = -2;    % electric current
             objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
 
-        end % function objects = volt( varargin )
+        end % function objects = squarevolt( varargin )
 
 	end % methods
 
-end % classdef volt < physical_values.physical_quantity_derived
+end % classdef squarevolt < physical_values.physical_quantity_derived

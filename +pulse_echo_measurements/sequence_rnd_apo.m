@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-28
-% modified: 2019-05-10
+% modified: 2019-05-15
 %
 classdef sequence_rnd_apo < pulse_echo_measurements.sequence
 
@@ -42,4 +42,4 @@ classdef sequence_rnd_apo < pulse_echo_measurements.sequence
 
 	end % methods
 
-end % classdef sequence_rnd_apo
+end % classdef sequence_rnd_apo < pulse_echo_measurements.sequence

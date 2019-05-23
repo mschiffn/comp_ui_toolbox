@@ -1,37 +1,36 @@
 %
 % superclass for all invertible linear transforms
-% author: Martin Schiffner
+%
+% author: Martin F. Schiffner
 % date: 2016-08-12
-% 
+% modified: 2019-05-20
+%
 classdef invertible_linear_transform < linear_transforms.linear_transform
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-    end % properties
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function LT = invertible_linear_transform( N_lattice, str_name )
+        function objects = invertible_linear_transform( N_points )
 
-            % constructor of superclass
-            % invertible linear transforms are square-shaped
-            LT@linear_transforms.linear_transform( N_lattice, N_lattice, str_name );
-        end
+            %--------------------------------------------------------------
+            % 1.) constructor of superclass
+            %--------------------------------------------------------------
+            % construct square-shaped linear transforms
+            objects@linear_transforms.linear_transform( N_points, N_points );
+
+        end % function objects = invertible_linear_transform( N_points )
 
         %------------------------------------------------------------------
         % inverse transform
         %------------------------------------------------------------------
-        function y = inverse_transform( LT, x )
+        function y = inverse_transform( LTs, x )
 
-        end
+        end % function y = inverse_transform( LTs, x )
 
     end % methods
 

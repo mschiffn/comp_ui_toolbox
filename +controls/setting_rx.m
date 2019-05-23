@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-04-04
+% modified: 2019-05-22
 %
 classdef setting_rx < controls.setting
 
@@ -59,6 +59,9 @@ classdef setting_rx < controls.setting
             if ~isscalar( objects ) && isscalar( intervals_f )
                 intervals_f = repmat( intervals_f, size( objects ) );
             end
+
+% TODO: determine frequency intervals / assertion: f_lb > 0, f_ub >= f_lb + 1 / T_rec
+%             [ intervals_t, hulls ] = determine_interval_t( object );
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( objects, intervals_t, intervals_f );
@@ -132,7 +135,7 @@ classdef setting_rx < controls.setting
         % convex hulls of all intervals
         %------------------------------------------------------------------
         function [ interval_hull_t, interval_hull_f ] = hulls( settings_rx )
-
+% TODO: quantize intervals? check T_s foc compatibility
             % convex hull of all recording time intervals
             interval_hull_t = hull( [ settings_rx.interval_t ] );
 
@@ -140,6 +143,83 @@ classdef setting_rx < controls.setting
             interval_hull_f = hull( [ settings_rx.interval_f ] );
 
         end % function [ interval_hull_t, interval_hull_f ] = hulls( settings_rx )
+
+        %------------------------------------------------------------------
+        % estimate recording time intervals
+        %------------------------------------------------------------------
+        function intervals_t = determine_interval_t( settings_rx, setup, settings_tx )
+
+            %--------------------------------------------------------------
+            % 1.) lower and upper bounds on the times-of-flight
+            %--------------------------------------------------------------
+            intervals_tof = times_of_flight( setup, { settings_tx.indices_active }, { settings_rx.indices_active } );
+
+            %--------------------------------------------------------------
+            % 2.) estimate support of each mix
+            %--------------------------------------------------------------
+            N_incident = numel( object.settings );
+            intervals_t = cell( N_incident, 1 );
+            hulls = repmat( tof( 1, 1 ), [ N_incident, 1 ] );
+
+            for index_incident = 1:N_incident
+
+                % indices of active tx elements
+                indices_tx_act = object.settings( index_incident ).tx.indices_active;
+                N_elements_tx = numel( indices_tx_act );
+
+                % determine support of each mix
+                N_mix = numel( object.settings( index_incident ).mixes );
+
+                % initialize lower and upper bounds on the support
+                t_lbs = physical_values.time( zeros( 1, N_mix ) );
+                t_ubs = physical_values.time( zeros( 1, N_mix ) );
+
+                for index_mix = 1:N_mix
+
+                    % indices of active rx elements
+                    indices_rx_act = object.settings( index_incident ).rx( index_mix ).indices_active;
+                    N_elements_rx = numel( indices_rx_act );
+
+                    % allocate memory
+                    t_lbs_all = physical_values.time( zeros( N_elements_tx, N_elements_rx ) );
+                    t_ubs_all = physical_values.time( zeros( N_elements_tx, N_elements_rx ) );
+
+                    % check all combinations of active tx and rx elements
+                    for index_tx = 1:N_elements_tx
+
+                        % index of tx array element
+                        index_element_tx = indices_tx_act( index_tx );
+
+                        % support of excitation voltage
+                        t_lb_tx_act = object.settings( index_incident ).tx.excitation_voltages( index_tx ).set_t.S( 1 ) + object.settings( index_incident ).tx.time_delays( index_tx );
+                        t_ub_tx_act = object.settings( index_incident ).tx.excitation_voltages( index_tx ).set_t.S( end ) + object.settings( index_incident ).tx.time_delays( index_tx );
+
+                        for index_rx = 1:N_elements_rx
+
+                            % index of rx array element
+                            index_element_rx = indices_rx_act( index_rx );
+
+                            % support of impulse response
+                            t_lb_rx_act = object.settings( index_incident ).rx( index_mix ).impulse_responses( index_rx ).set_t.S( 1 );
+                            t_ub_rx_act = object.settings( index_incident ).rx( index_mix ).impulse_responses( index_rx ).set_t.S( end );
+
+                            t_lbs_all( index_tx, index_rx ) = t_lb_tx_act + tof( index_element_tx, index_element_rx ).bounds( 1 ) + t_lb_rx_act;
+                            t_ubs_all( index_tx, index_rx ) = t_ub_tx_act + tof( index_element_tx, index_element_rx ).bounds( 2 ) + t_ub_rx_act;
+
+                        end % for index_rx = 1:N_elements_rx
+                    end % for index_tx = 1:N_elements_tx
+
+                    t_lbs( index_mix ) = min( t_lbs_all );
+                    t_ubs( index_mix ) = max( t_ubs_all );
+
+                end % for index_mix = 1:N_mix
+
+                % create time intervals for all mixes
+                intervals_t{ index_incident } = math.interval_time( t_lbs, t_ubs );
+
+            end % for index_incident = 1:N_incident
+
+        end % function [ intervals_t, hulls ] = determine_interval_t( object )
 
 	end % methods
 

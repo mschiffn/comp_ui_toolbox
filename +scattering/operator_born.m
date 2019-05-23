@@ -8,16 +8,6 @@
 classdef operator_born < scattering.operator
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-
-        % dependent properties
-        
-
-    end % properties
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
@@ -83,7 +73,7 @@ classdef operator_born < scattering.operator
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
 
                 % map indices of the active elements to unique indices
-                indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
+%                 indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
                 % extract occupied grid points from incident pressure
                 p_incident_occupied = double( operator_born.incident_waves( index_measurement ).p_incident.samples( indices_occupied, : ) );
@@ -122,6 +112,9 @@ classdef operator_born < scattering.operator
                     % iterate active array elements
                     for index_active = 1:N_elements_active
 
+                        % index of active array element
+                        index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
+
                         % spatial transfer function of the active array element
                         if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
@@ -129,19 +122,16 @@ classdef operator_born < scattering.operator
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
                             % shift reference spatial transfer function to infer that of the active array element
-                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( indices_occupied, indices_active_rx_to_unique{ index_mix }( index_active ) );
+                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( indices_occupied, index_element );
 
                             % extract current frequencies from unique frequencies
-                            h_rx = operator_born.discretization.h_ref( index_measurement ).samples( indices_occupied_act, indices_f_to_unique{ index_mix } );
+                            h_rx = operator_born.discretization.h_ref.samples( indices_occupied_act, indices_f_to_unique{ index_mix } );
 
                         else
 
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
-                            % index of active array element
-                            index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
-
                             % spatial transfer function of the active array element
 % TODO: computes for unique frequencies?
                             h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
@@ -220,7 +210,7 @@ classdef operator_born < scattering.operator
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
 
                 % map indices of the active elements to unique indices
-                indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
+%                 indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
                 % extract occupied grid points from incident pressure
                 p_incident_occupied = double( operator_born.incident_waves( index_measurement ).p_incident.samples( indices_occupied, : ) );
@@ -259,6 +249,9 @@ classdef operator_born < scattering.operator
                     % iterate active array elements
                     for index_active = 1:N_elements_active
 
+                        % index of active array element
+                        index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
+
                         % spatial transfer function of the active array element
                         if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
@@ -266,19 +259,16 @@ classdef operator_born < scattering.operator
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
                             % shift reference spatial transfer function to infer that of the active array element
-                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift{ index_measurement }( indices_occupied, indices_active_rx_to_unique{ index_mix }( index_active ) );
+                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( indices_occupied, index_element );
 
                             % extract current frequencies from unique frequencies
-                            h_rx = operator_born.discretization.h_ref( index_measurement ).samples( indices_occupied_act, indices_f_to_unique{ index_mix } );
+                            h_rx = operator_born.discretization.h_ref.samples( indices_occupied_act, indices_f_to_unique{ index_mix } );
 
                         else
 
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
-                            % index of active array element
-                            index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
-
                             % spatial transfer function of the active array element
 % TODO: computes for unique frequencies?
                             h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
@@ -367,11 +357,11 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % compute prefactors
                 %----------------------------------------------------------
+                % map unique frequencies of pulse-echo measurements to unique frequencies
+                indices_f_to_unique_measurement = operator_born.discretization.indices_f_to_unique{ index_measurement };
+
                 % map frequencies of mixed voltage signals to unique frequencies
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
-
-                % map indices of the active elements to unique indices
-                indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
                 % extract prefactors for all mixes (current frequencies)
                 prefactors = operator_born.discretization.prefactors{ index_measurement };
@@ -388,11 +378,14 @@ classdef operator_born < scattering.operator
                     % extract incident acoustic pressure field for current frequencies
                     p_incident_act = double( operator_born.incident_waves( index_measurement ).p_incident.samples );
                     if numel( indices_f_to_unique{ index_mix } ) < abs( operator_born.incident_waves( index_measurement ).p_incident.axis )
-                        p_incident_act = double( operator_born.incident_waves( index_measurement ).p_incident.samples( :, indices_f_to_unique{ index_mix } ) );
+                        p_incident_act = p_incident_act( :, indices_f_to_unique{ index_mix } );
                     end
 
                     % iterate active array elements
                     for index_active = 1:N_elements_active
+
+                        % index of active array element
+                        index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
 
                         % spatial transfer function of the active array element
                         if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
@@ -401,14 +394,13 @@ classdef operator_born < scattering.operator
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
                             % shift reference spatial transfer function to infer that of the active array element
-%                             indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift{ index_measurement }( :, indices_active_rx_to_unique{ index_mix }( index_active ) );
-                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, indices_active_rx_to_unique{ index_mix }( index_active ) );
+                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, index_element );
 
                             % extract current frequencies from unique frequencies
-                            if abs( operator_born.incident_waves( index_measurement ).p_incident.axis ) == numel( indices_f_to_unique{ index_mix } )
-                                h_rx = double( operator_born.discretization.h_ref( index_measurement ).samples( indices_occupied_act, : ) );
+                            if numel( indices_f_to_unique{ index_mix } ) < abs( operator_born.discretization.h_ref.axis )
+                                h_rx = double( operator_born.discretization.h_ref.samples( indices_occupied_act, indices_f_to_unique_measurement( indices_f_to_unique{ index_mix } ) ) );
                             else
-                                h_rx = double( operator_born.discretization.h_ref( index_measurement ).samples( indices_occupied_act, indices_f_to_unique{ index_mix } ) );
+                                h_rx = double( operator_born.discretization.h_ref.samples( indices_occupied_act, : ) );
                             end
 
                         else
@@ -416,9 +408,6 @@ classdef operator_born < scattering.operator
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
-                            % index of active array element
-                            index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
-
                             % spatial transfer function of the active array element
                             h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
 
@@ -441,10 +430,6 @@ classdef operator_born < scattering.operator
 
                     end % for index_active = 1:N_elements_active
 
-                    % illustrate
-                    figure(1);
-                    imagesc( illustration.dB( squeeze( reshape( double( abs( theta_hat( :, 1 ) ) ), operator_born.discretization.spatial.grid_FOV.N_points_axis ) ), 20 ), [ -60, 0 ] );
-
                 end % for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
 
             end % for index_measurement = 1:numel( operator_born.discretization.spectral )
@@ -456,6 +441,10 @@ classdef operator_born < scattering.operator
                 % apply forward linear transform
                 theta_hat = operator_transform( varargin{ 1 }, theta_hat, 1 );
             end
+
+            % illustrate
+            figure(999);
+            imagesc( illustration.dB( squeeze( reshape( double( abs( theta_hat( :, 1 ) ) ), operator_born.discretization.spatial.grid_FOV.N_points_axis ) ), 20 ), [ -60, 0 ] );
 
             % infer and print elapsed time
             time_elapsed = toc( time_start );
@@ -492,7 +481,7 @@ classdef operator_born < scattering.operator
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
 
                 % map indices of the active elements to unique indices
-                indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
+%                 indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
                 % extract prefactors for all mixes (current frequencies)
                 prefactors = operator_born.discretization.prefactors{ index_measurement };
@@ -512,6 +501,9 @@ classdef operator_born < scattering.operator
                     % iterate active array elements
                     for index_active = 1:N_elements_active
 
+                        % index of active array element
+                        index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
+
                         % spatial transfer function of the active array element
                         if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
@@ -519,19 +511,16 @@ classdef operator_born < scattering.operator
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
                             % shift reference spatial transfer function to infer that of the active array element
-                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, indices_active_rx_to_unique{ index_mix }( index_active ) );
+                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, index_element );
 
                             % extract current frequencies from unique frequencies
-                            h_rx = operator_born.discretization.h_ref( index_measurement ).samples( indices_occupied_act, indices_f_to_unique{ index_mix } );
+                            h_rx = operator_born.discretization.h_ref.samples( indices_occupied_act, indices_f_to_unique{ index_mix } );
 
                         else
 
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
-                            % index of active array element
-                            index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
-
                             % spatial transfer function of the active array element
                             h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
 
@@ -610,7 +599,7 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 2.) compute TPSFs
             %--------------------------------------------------------------
-            % specify cell array for psf
+            % specify cell array for tpsf
             theta_hat = cell( size( operators_born ) );
             E_rx = cell( size( operators_born ) );
             adjointness = cell( size( operators_born ) );
@@ -667,11 +656,11 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % prefactors
                 %----------------------------------------------------------
+                % map unique frequencies of pulse-echo measurements to unique frequencies
+                indices_f_to_unique_measurement = operator_born.discretization.indices_f_to_unique{ index_measurement };
+
                 % map frequencies of mixed voltage signals to unique frequencies
                 indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
-
-                % map indices of the active elements to unique indices
-                indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
 
                 % extract prefactors for all mixes (current frequencies)
                 prefactors = operator_born.discretization.prefactors{ index_measurement };
@@ -704,6 +693,9 @@ classdef operator_born < scattering.operator
                     % iterate active array elements
                     for index_active = 1:N_elements_active
 
+                        % index of active array element
+                        index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
+
                         % spatial transfer function of the active array element
                         if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
@@ -711,20 +703,16 @@ classdef operator_born < scattering.operator
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
                             % shift reference spatial transfer function to infer that of the active array element
-%                             indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift{ index_measurement }( :, indices_active_rx_to_unique{ index_mix }( index_active ) );
-                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, indices_active_rx_to_unique{ index_mix }( index_active ) );
+                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, index_element );
 
                             % extract current frequencies from unique frequencies
-                            h_rx = operator_born.discretization.h_ref( index_measurement ).samples( indices_occupied_act, indices_f_to_unique{ index_mix } );
+                            h_rx = operator_born.discretization.h_ref.samples( indices_occupied_act, indices_f_to_unique_measurement( indices_f_to_unique{ index_mix } ) );
 
                         else
 
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
-                            % index of active array element
-                            index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
-
                             % spatial transfer function of the active array element
 % TODO: computes for unique frequencies?
                             h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
@@ -757,7 +745,6 @@ classdef operator_born < scattering.operator
             end % for index_measurement = 1:numel( operator_born.discretization.spectral )
 
             %----------------------------------------------------------
-            % create signal matrix or signals
             %----------------------------------------------------------
             E_M = physical_values.volt( E_M ) * physical_values.volt;
 
@@ -765,7 +752,7 @@ classdef operator_born < scattering.operator
             time_elapsed = toc( time_start );
             fprintf( 'done! (%f s)\n', time_elapsed );
 
-        end % function E_rx = energy_rx( operators_born )
+        end % function E_M = energy_rx( operator_born )
 
         %------------------------------------------------------------------
         % matrix multiplication (overload mtimes function)

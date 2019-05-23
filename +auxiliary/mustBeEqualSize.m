@@ -1,9 +1,11 @@
 function mustBeEqualSize( varargin )
+%
 % ensure equal number of dimensions and sizes of the arguments
 %
 % author: Martin F. Schiffner
 % date: 2019-02-01
-% modified: 2019-04-28
+% modified: 2019-05-16
+%
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments

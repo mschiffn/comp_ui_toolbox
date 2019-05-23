@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-04-30
+% modified: 2019-05-16
 %
 classdef spatial_grid < discretizations.spatial
 
@@ -26,11 +26,13 @@ classdef spatial_grid < discretizations.spatial
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = spatial_grid( grids_elements, grids_FOV )
+        function objects = spatial_grid( absorption_models, strs_name, grids_elements, grids_FOV )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % superclass ensures class absorption_models.absorption_model
+
             % ensure cell array for grids_elements
             if ~iscell( grids_elements )
                 grids_elements = { grids_elements };
@@ -44,13 +46,12 @@ classdef spatial_grid < discretizations.spatial
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( grids_elements, grids_FOV );
+            auxiliary.mustBeEqualSize( absorption_models, grids_elements, grids_FOV );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.spatial();
-            objects = repmat( objects, size( grids_elements ) );
+            objects@discretizations.spatial( absorption_models, strs_name );
 
             %--------------------------------------------------------------
             % 3.) check and set independent properties
@@ -58,6 +59,7 @@ classdef spatial_grid < discretizations.spatial
             for index_object = 1:numel( objects )
 
                 % ensure class math.grid
+% TODO: introduce class for discretized face
                 if ~( isa( [ grids_elements{ index_object }.grid ], 'math.grid' ) && isa( [ grids_elements{ index_object }.time_delays ], 'physical_values.time' ) )
                     errorStruct.message     = sprintf( 'grids_elements{ %d } must be math.grid!', index_object );
                     errorStruct.identifier	= 'spatial_grid:NoGrid';
@@ -70,8 +72,8 @@ classdef spatial_grid < discretizations.spatial
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = spatial_grid( grids_elements, grids_FOV )
-
+        end % function objects = spatial_grid( absorption_models, grids_elements, grids_FOV )
+      
         %------------------------------------------------------------------
         % check for symmetry
         %------------------------------------------------------------------

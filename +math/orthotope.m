@@ -77,7 +77,7 @@ classdef orthotope
         %------------------------------------------------------------------
         function objects_out = vertices( orthotopes )
 
-            % initialize results
+            % specify cell array for objects_out
             objects_out = cell( size( orthotopes ) );
 
             % iterate orthotopes
@@ -92,15 +92,20 @@ classdef orthotope
 
                 % extract vertices
                 for index_vertex = 1:N_vertices_act
+
                     indices_bounds_act = dec2bin( index_vertex - 1, N_dimensions_act ) - '0' + 1;
+
                     for index_dimension = 1:N_dimensions_act
+
                         if indices_bounds_act( index_dimension ) == 1
                             objects_out{ index_object }( index_vertex, index_dimension ) = orthotopes( index_object ).intervals( index_dimension ).lb;
                         else
                             objects_out{ index_object }( index_vertex, index_dimension ) = orthotopes( index_object ).intervals( index_dimension ).ub;
                         end
-                    end
-                end
+
+                    end % for index_dimension = 1:N_dimensions_act
+
+                end % for index_vertex = 1:N_vertices_act
 
             end % for index_object = 1:numel( orthotopes )
 
