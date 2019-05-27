@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2019-05-20
+% modified: 2019-05-27
 %
 classdef signal_matrix
 
@@ -49,6 +49,11 @@ classdef signal_matrix
             % ensure cell array for samples
             if ~iscell( samples )
                 samples = { samples };
+            end
+
+            % single axes / multiple samples
+            if isscalar( axes ) && ~isscalar( samples )
+                axes = repmat( axes, size( samples ) );
             end
 
             % ensure equal number of dimensions and sizes
@@ -467,6 +472,46 @@ classdef signal_matrix
             end % for index_object = 1:numel( signal_matrices )
 
         end % function signal_matrices = subsample( signal_matrices, indices_axes )
+
+        %------------------------------------------------------------------
+        % cut out submatrix
+        %------------------------------------------------------------------
+        function signal_matrices = cut_out( signal_matrices, lbs, ubs )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.signal_matrix
+            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+                errorStruct.identifier = 'cut_out:NoSignalMatrices';
+                error( errorStruct );
+            end
+
+            % method cut_out in math.sequence_increasing ensures correct arguments
+
+            %--------------------------------------------------------------
+            % 2.) perform cut out
+            %--------------------------------------------------------------
+            % cut out axes
+            axes = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
+            [ axes_cut, indicators ] = cut_out( axes, lbs, ubs );
+
+            % ensure cell array for indicators
+            if ~iscell( indicators )
+                indicators = { indicators };
+            end
+
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
+
+                % cut out samples
+                signal_matrices( index_object ).axis = axes_cut( index_object );
+                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples( :, indicators{ index_object } );
+
+            end % for index_object = 1:numel( signal_matrices )
+
+        end % function signal_matrices = cut_out( signal_matrices, lbs, ubs )
 
         %------------------------------------------------------------------
         % energy

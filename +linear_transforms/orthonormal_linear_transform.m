@@ -1,38 +1,39 @@
 %
 % superclass for all orthonormal linear transforms
-% author: Martin Schiffner
+%
+% author: Martin F. Schiffner
 % date: 2016-08-13
-% 
+% modified: 2019-05-27
+%
 classdef orthonormal_linear_transform < linear_transforms.invertible_linear_transform
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-    end % properties
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function LT = orthonormal_linear_transform( N_lattice, str_name )
+        function objects = orthonormal_linear_transform( N_points )
 
-            % constructor of superclass
-            LT@linear_transforms.invertible_linear_transform( N_lattice, str_name );
-        end
+            %--------------------------------------------------------------
+            % 1.) constructor of superclass
+            %--------------------------------------------------------------
+            % construct invertible linear transforms
+            objects@linear_transforms.invertible_linear_transform( N_points );
+
+        end % function objects = orthonormal_linear_transform( N_points )
 
         %------------------------------------------------------------------
-        % overload method: inverse transform
+        % inverse transform (overload inverse_transform method)
         %------------------------------------------------------------------
-        function y = inverse_transform( LT, x )
+        function y = inverse_transform( LTs, x )
 
             % orthonormal transform : inverse transform is adjoint transform
-            y = LT.adjoint_transform( x );
-        end
+            y = adjoint_transform( LTs, x );
+
+        end % function y = inverse_transform( LTs, x )
 
     end % methods
 

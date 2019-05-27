@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-20
-% modified: 2019-03-18
+% modified: 2019-05-23
 %
 classdef options_spectral
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% enumeration
+	%% enumeration
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	enumeration
 

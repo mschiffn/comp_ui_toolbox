@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-05-22
+% modified: 2019-05-27
 %
 classdef setting_rx_identity < controls.setting_rx
 
@@ -15,7 +15,7 @@ classdef setting_rx_identity < controls.setting_rx
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_rx_identity( setup, setting_tx, interval_f, interval_t )
+        function objects = setting_rx_identity( setup, setting_tx, interval_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -99,9 +99,6 @@ classdef setting_rx_identity < controls.setting_rx
             % create time intervals for all mixes
             intervals_t = math.interval( t_lbs, t_ubs );
 
-            % create time intervals
-%             intervals_t = repmat( interval_t, [ 1, setup.xdc_array.N_elements ] );
-
             % create frequency intervals
             intervals_f = repmat( interval_f, [ 1, setup.xdc_array.N_elements ] );
 
@@ -110,7 +107,7 @@ classdef setting_rx_identity < controls.setting_rx
             %--------------------------------------------------------------
             objects@controls.setting_rx( indices_active, impulse_responses, intervals_t, intervals_f );
 
-        end % function objects = setting_rx_identity( setup, interval_t, interval_f )
+        end % function objects = setting_rx_identity( setup, setting_tx, interval_f )
 
 	end % methods
 

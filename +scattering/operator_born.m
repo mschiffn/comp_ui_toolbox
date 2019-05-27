@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-05-11
+% modified: 2019-05-27
 %
 classdef operator_born < scattering.operator
 
@@ -171,7 +171,7 @@ classdef operator_born < scattering.operator
         end % function u_M = forward_quick( operator_born, fluctuations )
 
         %------------------------------------------------------------------
-        % forward scattering (overload forward function)
+        % forward scattering (overload forward method)
         %------------------------------------------------------------------
         function u_M = forward( operator_born, fluctuations, varargin )
 % TODO: compute rx signals for active elements for unique frequencies
@@ -453,9 +453,9 @@ classdef operator_born < scattering.operator
         end % function theta_hat = adjoint_quick( operator_born, u_M, varargin )
 
         %------------------------------------------------------------------
-        % adjoint scattering (overload adjoint function)
+        % adjoint scattering (overload adjoint method)
         %------------------------------------------------------------------
-        function fluctuations_hat = adjoint( operator_born, u_M )
+        function fluctuations_hat = adjoint( operator_born, u_M, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -552,7 +552,7 @@ classdef operator_born < scattering.operator
 
             end % for index_measurement = 1:numel( operator_born.discretization.spectral )
 
-        end % function fluctuations_hat = adjoint( operator_born, u_M )
+        end % function fluctuations_hat = adjoint( operator_born, u_M, varargin )
 
         %------------------------------------------------------------------
         % combined
@@ -581,9 +581,9 @@ classdef operator_born < scattering.operator
         end % function y = combined( operator_born, x, mode, varargin )
 
         %------------------------------------------------------------------
-        % transform point spread function (overload tpsf function)
+        % transform point spread function (overload tpsf method)
         %------------------------------------------------------------------
-        function [ theta_hat, E_rx, adjointness ] = tpsf( operators_born, indices, varargin )
+        function [ theta_hat, E_M, adjointness ] = tpsf( operators_born, indices, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -601,7 +601,7 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % specify cell array for tpsf
             theta_hat = cell( size( operators_born ) );
-            E_rx = cell( size( operators_born ) );
+            E_M = cell( size( operators_born ) );
             adjointness = cell( size( operators_born ) );
 
             % iterate scattering operators
@@ -620,25 +620,25 @@ classdef operator_born < scattering.operator
 
                 % quick forward scattering and received energies
                 u_M = forward_quick( operators_born( index_object ), theta, varargin{ : } );
-                E_rx{ index_object } = vecnorm( u_M, 2, 1 ).^2;
+                E_M{ index_object } = vecnorm( u_M, 2, 1 ).^2;
 
                 % quick adjoint scattering and test for adjointness
                 theta_hat{ index_object } = adjoint_quick( operators_born( index_object ), u_M, varargin{ : } );
-                adjointness{ index_object } = E_rx{ index_object } - theta_hat{ index_object }( indices_tpsf );
+                adjointness{ index_object } = E_M{ index_object } - theta_hat{ index_object }( indices_tpsf );
 
             end % for index_object = 1:numel( operators_born )
 
             % avoid cell array for single operators_born
             if isscalar( operators_born )
                 theta_hat = theta_hat{ 1 };
-                E_rx = E_rx{ 1 };
+                E_M = E_M{ 1 };
                 adjointness = adjointness{ 1 };
             end
 
-        end % function [ theta_hat, E_rx, adjointness ] = tpsf( operators_born, indices, varargin )
+        end % function [ theta_hat, E_M, adjointness ] = tpsf( operators_born, indices, varargin )
 
         %------------------------------------------------------------------
-        % received energy (overload energy_rx function)
+        % received energy (overload energy_rx method)
         %------------------------------------------------------------------
         function E_M = energy_rx( operator_born )
 
@@ -755,7 +755,7 @@ classdef operator_born < scattering.operator
         end % function E_M = energy_rx( operator_born )
 
         %------------------------------------------------------------------
-        % matrix multiplication (overload mtimes function)
+        % matrix multiplication (overload mtimes method)
         %------------------------------------------------------------------
         function u_M = mtimes( operator_born, fluctuations )
 

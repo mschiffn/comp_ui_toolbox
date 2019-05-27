@@ -71,8 +71,8 @@ classdef physical_quantity < physical_values.transparent_container
 
             % single argument is always compatible
             if nargin < 2
-                errorStruct.message     = 'At least two arguments are required!';
-                errorStruct.identifier	= 'mustBeCompatible:FewArguments';
+                errorStruct.message = 'At least two arguments are required!';
+                errorStruct.identifier = 'mustBeCompatible:FewArguments';
                 error( errorStruct );
             end
 
@@ -373,6 +373,34 @@ classdef physical_quantity < physical_values.transparent_container
             % 2.) perform colon operation
             %--------------------------------------------------------------
             physical_quantity_start.values = physical_quantity_start.values:step.values:physical_quantity_stop.values;
+
+        end
+
+        % maximum elements of an array
+        function varargout = max( physical_quantity, varargin )
+
+            % check for comparison of physical quantities
+            if nargin >= 2 && ~isempty( varargin{ 1 } )
+                % ensure compatible physical units
+                mustBeCompatible( physical_quantity, varargin{ 1 } );
+            end
+
+            % call max method of superclass
+            [ varargout{ 1:nargout } ] = max@physical_values.transparent_container( physical_quantity, varargin{ : } );
+
+        end
+
+        % minimum elements of an array
+        function varargout = min( physical_quantity, varargin )
+
+            % check for comparison of physical quantities
+            if nargin >= 2 && ~isempty( varargin{ 1 } )
+                % ensure compatible physical units
+                mustBeCompatible( physical_quantity, varargin{ 1 } );
+            end
+
+            % call min method of superclass
+            [ varargout{ 1:nargout } ] = min@physical_values.transparent_container( physical_quantity, varargin{ : } );
 
         end
 

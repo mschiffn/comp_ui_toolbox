@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-19
-% modified: 2019-03-19
+% modified: 2019-05-23
 %
 classdef options_spatial_grid < discretizations.options_spatial
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -19,22 +19,22 @@ classdef options_spatial_grid < discretizations.options_spatial
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_spatial_grid( options_FOV, options_elements )
+        function objects = options_spatial_grid( options_elements, options_FOV )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % specify default values
             if nargin == 0
-                options_FOV = discretizations.parameters_distance;
                 options_elements = discretizations.parameters_number;
+                options_FOV = discretizations.parameters_distance;
             end
 
             % ensure cell array for options_elements
@@ -43,22 +43,24 @@ classdef options_spatial_grid < discretizations.options_spatial
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options_FOV, options_elements );
+            auxiliary.mustBeEqualSize( options_elements, options_FOV );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.options_spatial( options_FOV );
+            objects@discretizations.options_spatial( options_elements );
 
             %--------------------------------------------------------------
             % 3.) set independent properties
             %--------------------------------------------------------------
             for index_object = 1:numel( objects )
-                objects( index_object ).options_FOV = options_FOV( index_object );
-                objects( index_object ).options_elements = options_elements{ index_object };
-            end
 
-        end % function objects = options_spatial_grid( options_FOV, options_elements )
+                objects( index_object ).options_elements = options_elements{ index_object };
+                objects( index_object ).options_FOV = options_FOV( index_object );
+
+            end % for index_object = 1:numel( objects )
+
+        end % function objects = options_spatial_grid( options_elements, options_FOV )
 
 	end % methods
 

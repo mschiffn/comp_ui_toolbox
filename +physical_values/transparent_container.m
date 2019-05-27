@@ -150,9 +150,17 @@ classdef transparent_container
 
         % maximum elements of an array
         function varargout = max( container, varargin )
-            % TODO: exclude problematic cases
+
+            % initialize output
             varargout{ 1 } = container;
-            [ varargout{ 1 }.values, varargout{ 2:nargout } ] = max( container.values, varargin{ : } );
+
+            % check for comparison of transparent containers
+            if nargin >= 2 && isa( varargin{ 1 }, 'physical_values.transparent_container' )
+                [ varargout{ 1 }.values, varargout{ 2:nargout } ] = max( container.values, varargin{ 1 }.values, varargin{ 2:end } );
+            else
+                [ varargout{ 1 }.values, varargout{ 2:nargout } ] = max( container.values, varargin{ : } );
+            end
+
         end
 
         % average or mean value of array
@@ -167,9 +175,17 @@ classdef transparent_container
 
         % minimum elements of an array
         function varargout = min( container, varargin )
-            % TODO: exclude problematic cases
+
+            % initialize output
             varargout{ 1 } = container;
-            [ varargout{ 1 }.values, varargout{ 2:nargout } ] = min( container.values, varargin{ : } );
+
+            % check for comparison of transparent containers
+            if nargin >= 2 && isa( varargin{ 1 }, 'physical_values.transparent_container' )
+                [ varargout{ 1 }.values, varargout{ 2:nargout } ] = min( container.values, varargin{ 1 }.values, varargin{ 2:end } );
+            else
+                [ varargout{ 1 }.values, varargout{ 2:nargout } ] = min( container.values, varargin{ : } );
+            end
+
         end
 
         % number of array dimensions

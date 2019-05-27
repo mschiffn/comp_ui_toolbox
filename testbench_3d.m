@@ -29,7 +29,7 @@ xdc_array = transducers.L14_5_38( 2 );
 str_name = 'wire_phantom';
 
 % signal processing parameters
-T_s = physical_values.second( 1 / 20e6 );
+T_s = physical_values.second( 1 / 80e6 );
 
 % specify bandwidth to perform simulation in
 f_tx = physical_values.hertz( 4e6 );
@@ -62,7 +62,7 @@ FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral{ : }, FOV_interval_axia
 
 % specify recording time interval
 t_lb = 0 .* T_s;        % lower cut-off time
-t_ub = 1700 .* T_s;     % upper cut-off time
+t_ub = 4 * 1700 .* T_s;     % upper cut-off time
 interval_t = math.interval( t_lb, t_ub );
 
 % specify bandwidth to perform simulation in
@@ -81,7 +81,7 @@ axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
 u_tx_tilde = discretizations.signal( axis_t, physical_values.volt( pulse ) );
 
 % create pulse-echo measurement sequence
-sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 1 ), interval_t, interval_f );
+sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 1 ), interval_f );
 %         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
 %         settings_rng_apo = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
 %         settings_rng_del = auxiliary.setting_rng( 3 * ones(1, 1), repmat({'twister'}, [ 1, 1 ]) );
@@ -93,13 +93,17 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 1 )
 %--------------------------------------------------------------------------
 % specify options
 %--------------------------------------------------------------------------
-% discretization options
-parameters_elements = discretizations.parameters_number( [ 4, 1 ] );
+% spatial discretization options
+parameters_elements = discretizations.parameters_number( [ 4, 53 ] );
 parameters_FOV = discretizations.parameters_distance( physical_values.meter( [ 76.2e-6, 4e-3, 76.2e-6 ] ) );
-options_disc_spatial = discretizations.options_spatial_grid( parameters_FOV, parameters_elements );
+options_disc_spatial = discretizations.options_spatial_grid( parameters_elements, parameters_FOV );
+
+% spectral discretization options
 % options_disc_spectral = discretizations.options_spectral.signal;
 options_disc_spectral = discretizations.options_spectral.setting;
 % options_disc_spectral = discretizations.options_spectral.sequence;
+
+% create discretization options
 options_disc = discretizations.options( options_disc_spatial, options_disc_spectral );
 
 % scattering options

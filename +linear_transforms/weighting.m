@@ -23,7 +23,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -101,7 +101,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
             auxiliary.mustBeEqualSize( LTs, x );
 
             %--------------------------------------------------------------
-            % 2.) check arguments
+            % 2.) apply diagonal weighting matrix
             %--------------------------------------------------------------
             % specify cell array for y
             y = cell( size( LTs ) );
@@ -155,7 +155,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
             auxiliary.mustBeEqualSize( LTs, x );
 
             %--------------------------------------------------------------
-            % 2.) check arguments
+            % 2.) apply adjoint diagonal weighting matrix
             %--------------------------------------------------------------
             % specify cell array for y
             y = cell( size( LTs ) );
@@ -209,7 +209,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
             auxiliary.mustBeEqualSize( LTs, x );
 
             %--------------------------------------------------------------
-            % 2.) check arguments
+            % 2.) apply inverse diagonal weighting matrix
             %--------------------------------------------------------------
             % specify cell array for y
             y = cell( size( LTs ) );

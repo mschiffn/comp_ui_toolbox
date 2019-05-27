@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-04-22
+% modified: 2019-05-27
 %
 classdef setting
 
@@ -17,8 +17,8 @@ classdef setting
         rx ( :, : ) controls.setting_rx     % mixer settings
 
         % dependent properties
-        interval_t ( 1, 1 ) math.interval	% hull of all recording time intervals
-        interval_f ( 1, 1 ) math.interval	% hull of all frequency intervals
+        interval_hull_t ( 1, 1 ) math.interval	% hull of all recording time intervals
+        interval_hull_f ( 1, 1 ) math.interval	% hull of all frequency intervals
 
     end % properties
 
@@ -57,8 +57,7 @@ classdef setting
                 objects( index_object ).rx = settings_rx{ index_object };
 
                 % set dependent properties
-% TODO: quantize time interval
-                [ objects( index_object ).interval_t, objects( index_object ).interval_f ] = hulls( objects( index_object ).rx );
+                [ objects( index_object ).interval_hull_t, objects( index_object ).interval_hull_f ] = hulls( objects( index_object ).rx );
 
             end % for index_object = 1:numel( settings_tx )
 
@@ -97,6 +96,8 @@ classdef setting
                     %------------------------------------------------------
                     % iterate pulse-echo measurement settings
                     for index_object = 1:numel( settings )
+% TODO: quantize intervals_t
+% TODO: check method to determine Fourier coefficients
 
                         % time and frequency intervals of each recorded signal
                         intervals_t = reshape( [ settings( index_object ).rx.interval_t ], size( settings( index_object ).rx ) );
@@ -116,9 +117,21 @@ classdef setting
                     % iterate pulse-echo measurement settings
                     for index_object = 1:numel( settings )
 
+                        % extract unique deltas from current transducer control settings
+                        deltas_rx = unique_deltas( settings( index_object ).rx );
+                        deltas_tx = unique_deltas( settings( index_object ).tx );
+                        deltas = [ deltas_rx, deltas_tx ];
+
+                        % largest delta must be integer multiple of smaller deltas
+                        delta_max = max( deltas );
+                        mustBeInteger( delta_max ./ deltas );
+
+                        % quantize hull of all recording time intervals using largest delta
+                        interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_max );
+
                         % discretize rx and tx settings
-                        settings_rx{ index_object } = discretize( settings( index_object ).rx, settings( index_object ).interval_t, settings( index_object ).interval_f );
-                        settings_tx{ index_object } = discretize( settings( index_object ).tx, settings( index_object ).interval_t, settings( index_object ).interval_f );
+                        settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
+                        settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
 
                     end % for index_object = 1:numel( settings )
 
@@ -128,14 +141,27 @@ classdef setting
                     % c) common frequency axis for all recorded signals
                     %------------------------------------------------------
                     % determine hulls of all time and frequency intervals
-                    [ interval_t_hull, interval_f_hull ] = hulls( settings );
+% TODO: inject custom recording time interval
+                    [ interval_hull_t, interval_hull_f ] = hulls( settings );
+
+                    % extract unique deltas from all transducer control settings
+                    deltas_rx = unique_deltas( [ settings.rx ] );
+                    deltas_tx = unique_deltas( [ settings.tx ] );
+                    deltas = [ deltas_rx, deltas_tx ];
+
+                    % largest delta must be integer multiple of smaller deltas
+                    delta_max = max( deltas );
+                    mustBeInteger( delta_max ./ deltas );
+
+                    % quantize hull of all recording time intervals using largest delta
+                    interval_hull_t_quantized = quantize( interval_hull_t, delta_max );
 
                     % iterate pulse-echo measurement settings
                     for index_object = 1:numel( settings )
 
                         % discretize rx and tx settings
-                        settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_t_hull, interval_f_hull );
-                        settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_t_hull, interval_f_hull );
+                        settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, interval_hull_f );
+                        settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_hull_t_quantized, interval_hull_f );
 
                     end % for index_object = 1:numel( settings )
 
@@ -154,10 +180,10 @@ classdef setting
         function [ interval_hull_t, interval_hull_f ] = hulls( settings )
 
             % convex hull of all recording time intervals
-            interval_hull_t = hull( [ settings.interval_t ] );
+            interval_hull_t = hull( [ settings.interval_hull_t ] );
 
             % convex hull of all frequency intervals
-            interval_hull_f = hull( [ settings.interval_f ] );
+            interval_hull_f = hull( [ settings.interval_hull_f ] );
 
         end % function [ interval_hull_t, interval_hull_f ] = hulls( settings )
 

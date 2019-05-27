@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-11
+% modified: 2019-05-25
 %
 classdef setting_tx < controls.setting
 
@@ -39,11 +39,6 @@ classdef setting_tx < controls.setting
             % ensure cell array for indices_active
             if ~iscell( indices_active )
                 indices_active = { indices_active };
-            end
-
-            % ensure cell array for impulse_responses
-            if ~iscell( impulse_responses )
-                impulse_responses = { impulse_responses };
             end
 
             % ensure cell array for excitation_voltages
@@ -109,7 +104,7 @@ classdef setting_tx < controls.setting
         end % function objects = setting_tx( indices_active, impulse_responses, excitation_voltages )
 
         %------------------------------------------------------------------
-        % spectral discretization
+        % spectral discretization (overload discretize method)
         %------------------------------------------------------------------
         function settings_tx = discretize( settings_tx, intervals_t, intervals_f )
 
@@ -118,8 +113,8 @@ classdef setting_tx < controls.setting
             %--------------------------------------------------------------
             % ensure correct number of arguments
             if nargin ~= 3
-                errorStruct.message     = 'Three arguments are required!';
-                errorStruct.identifier	= 'discretize:NumberArguments';
+                errorStruct.message = 'Three arguments are required!';
+                errorStruct.identifier = 'discretize:NumberArguments';
                 error( errorStruct );
             end
 
@@ -156,7 +151,12 @@ classdef setting_tx < controls.setting
                 % merge transforms to ensure class signal_matrix
                 settings_tx( index_object ).excitation_voltages = merge( settings_tx( index_object ).excitation_voltages );
 
-% TODO: ensure that excitation_voltages and impulse_responses have identical axes?
+                % ensure that settings_tx( index_object ).excitation_voltages and settings_tx( index_object ).impulse_responses have identical frequency axes
+                if ~isequal( settings_tx( index_object ).excitation_voltages.axis, settings_tx( index_object ).impulse_responses.axis )
+                    errorStruct.message = sprintf( 'Excitation voltages and impulse responses in settings_tx( %d ) must have identical frequency axes!', index_object );
+                    errorStruct.identifier = 'discretize:AxesMismatch';
+                    error( errorStruct );
+                end
 
             end % for index_object = 1:numel( settings_tx )
 
@@ -173,8 +173,7 @@ classdef setting_tx < controls.setting
             % return settings_tx_in if only one argument
             if isscalar( settings_tx_in )
                 setting_tx_out = settings_tx_in;
-                indices_unique_to_f = [];
-                indices_f_to_unique = [];
+                [ axis_f_unique, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx_in.excitation_voltages.axis );
                 return;
             end
 
@@ -223,6 +222,73 @@ classdef setting_tx < controls.setting
             setting_tx_out = controls.setting_tx( indices_active_unique, impulse_responses_unique, excitation_voltages_unique );
 
         end % function [ setting_tx_out, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx_in )
+
+        %------------------------------------------------------------------
+        % unique deltas
+        %------------------------------------------------------------------
+        function deltas = unique_deltas( settings_tx )
+
+            % extract unique deltas from impulse_responses via superclass
+            deltas_impulse = unique_deltas@controls.setting( settings_tx );
+
+            % extract excitation_voltages
+            excitation_voltages = reshape( { settings_tx.excitation_voltages }, size( settings_tx ) );
+
+            % specify cell array for deltas
+            deltas = cell( size( settings_tx ) );
+
+            % iterate transducer control settings_tx
+            for index_setting = 1:numel( settings_tx )
+
+                % ensure class math.sequence_increasing_regular for axes
+% TODO: isa vs class; extract axes might fail for different classes
+                indicator_irregular = cellfun( @( x ) ~isa( x, 'math.sequence_increasing_regular' ), { excitation_voltages{ index_setting }.axis } );
+                if any( indicator_irregular )
+                    errorStruct.message = 'Axes must be math.sequence_increasing_regular!';
+                    errorStruct.identifier = 'unique_deltas:IrregularAxes';
+                    error( errorStruct );
+                end
+
+                % extract axes
+                axes = reshape( [ excitation_voltages{ index_setting }.axis ], size( excitation_voltages{ index_setting } ) );
+
+                % extract deltas
+                deltas{ index_setting } = reshape( [ axes.delta ], size( excitation_voltages{ index_setting } ) );
+
+            end % for index_setting = 1:numel( settings_tx )
+
+            % extract unique deltas
+            deltas = unique( cellfun( @unique, deltas ) );
+            deltas = unique( [ deltas_impulse, deltas ] );
+
+        end % function deltas = unique_deltas( settings_tx )
+
+        %------------------------------------------------------------------
+        % compute normal velocities
+        %------------------------------------------------------------------
+        function v_d = compute_normal_velocities( settings_tx )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.signal_matrix
+            if ~( isa( [ settings_tx.excitation_voltages ], 'discretizations.signal_matrix' ) && isa( [ settings_tx.impulse_responses ], 'discretizations.signal_matrix' ) )
+                errorStruct.message = 'excitation_voltages and impulse_responses must be discretizations.signal_matrix!';
+                errorStruct.identifier = 'compute_normal_velocities:NoSignalMatrices';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) compute normal velocities
+            %--------------------------------------------------------------
+            % extract excitation voltages and transfer functions for each transducer control settings in synthesis mode
+            excitation_voltages = reshape( [ settings_tx.excitation_voltages ], size( settings_tx ) );
+            impulse_responses = reshape( [ settings_tx.impulse_responses ], size( settings_tx ) );
+
+            % compute velocities for each transducer control settings in synthesis mode
+            v_d = excitation_voltages .* impulse_responses;
+
+        end % function v_d = compute_normal_velocities( settings_tx )
 
 	end % methods
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-05
+% modified: 2019-05-26
 %
 classdef setting
 
@@ -105,8 +105,8 @@ classdef setting
             %--------------------------------------------------------------
             % ensure correct number of arguments
             if nargin ~= 3
-                errorStruct.message     = 'Three arguments are required!';
-                errorStruct.identifier	= 'discretize:NumberArguments';
+                errorStruct.message = 'Three arguments are required!';
+                errorStruct.identifier = 'discretize:NumberArguments';
                 error( errorStruct );
             end
 
@@ -170,6 +170,42 @@ classdef setting
             end % for index_set = 1:numel( settings )
             
         end % function [ indices_unique, indices_local_to_unique ] = unique_indices_active( settings )
+
+        %------------------------------------------------------------------
+        % unique deltas
+        %------------------------------------------------------------------
+        function deltas = unique_deltas( settings )
+
+            % extract impulse_responses
+            impulse_responses = reshape( { settings.impulse_responses }, size( settings ) );
+
+            % specify cell array for deltas
+            deltas = cell( size( settings ) );
+
+            % iterate transducer control settings
+            for index_setting = 1:numel( settings )
+
+                % ensure class math.sequence_increasing_regular for axes
+% TODO: isa vs class; extract axes might fail for different classes
+                indicator_irregular = cellfun( @( x ) ~isa( x, 'math.sequence_increasing_regular' ), { impulse_responses{ index_setting }.axis } );
+                if any( indicator_irregular )
+                    errorStruct.message = 'Axes must be math.sequence_increasing_regular!';
+                    errorStruct.identifier = 'unique_deltas:IrregularAxes';
+                    error( errorStruct );
+                end
+
+                % extract axes
+                axes = reshape( [ impulse_responses{ index_setting }.axis ], size( impulse_responses{ index_setting } ) );
+
+                % extract deltas
+                deltas{ index_setting } = reshape( [ axes.delta ], size( impulse_responses{ index_setting } ) );
+
+            end % for index_setting = 1:numel( settings )
+
+            % extract unique deltas
+            deltas = unique( cellfun( @unique, deltas ) );
+
+        end % function deltas = unique_deltas( settings )
 
         %------------------------------------------------------------------
         % support

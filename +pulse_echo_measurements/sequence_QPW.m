@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-05-22
+% modified: 2019-05-23
 %
 classdef sequence_QPW < pulse_echo_measurements.sequence
 
@@ -15,7 +15,7 @@ classdef sequence_QPW < pulse_echo_measurements.sequence
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = sequence_QPW( setup, u_tx_tilde, e_theta, interval_t, interval_f )
+        function object = sequence_QPW( setup, u_tx_tilde, e_theta, interval_f )
 
             %--------------------------------------------------------------
             % 1.) create synthesis settings
@@ -32,7 +32,7 @@ classdef sequence_QPW < pulse_echo_measurements.sequence
             for index_object = 1:numel( settings_tx )
 
                 % create reception settings w/o mixing
-                settings_rx{ index_object } = controls.setting_rx_identity( setup, settings_tx( index_object ), interval_f, interval_t );
+                settings_rx{ index_object } = controls.setting_rx_identity( setup, settings_tx( index_object ), interval_f );
 
             end % for index_object = 1:numel( settings_tx )
 
@@ -46,7 +46,7 @@ classdef sequence_QPW < pulse_echo_measurements.sequence
             %--------------------------------------------------------------
             object@pulse_echo_measurements.sequence( setup, settings );
 
-        end % function object = sequence_QPW( setup, u_tx_tilde, e_theta, interval_t, interval_f )
+        end % function object = sequence_QPW( setup, u_tx_tilde, e_theta, interval_f )
 
 	end % methods
 

@@ -119,32 +119,39 @@ classdef interval
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( intervals, deltas );
+            % ensure class math.interval
+            if ~isa( intervals, 'math.interval' )
+                errorStruct.message = 'intervals must be math.interval!';
+                errorStruct.identifier = 'quantize:NoInterval';
+                error( errorStruct );
+            end
 
             % ensure equal subclasses of physical_values.physical_quantity
-            lbs = [ intervals.lb ];
+            lbs = reshape( [ intervals.lb ], size( intervals ) );
             auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', lbs, deltas );
+
+            % multiple intervals / single deltas
+            if ~isscalar( intervals ) && isscalar( deltas )
+                deltas = repmat( deltas, size( intervals ) );
+            end
+
+            % single intervals / multiple deltas
+            if isscalar( intervals ) && ~isscalar( deltas )
+                intervals = repmat( intervals, size( deltas ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( intervals, deltas );
 
             %--------------------------------------------------------------
             % 2.) compute boundary indices
             %--------------------------------------------------------------
-            % initialize boundary indices
-            lbs_q = zeros( size( intervals ) );
-            ubs_q = zeros( size( intervals ) );
+            % extract upper bounds
+            ubs = reshape( [ intervals.ub ], size( intervals ) );
 
             % compute lower and upper boundary indices
-            for index_object = 1:numel( intervals )
-
-                % compute boundary fractions
-                index_lb = intervals( index_object ).lb / deltas( index_object );
-                index_ub = intervals( index_object ).ub / deltas( index_object );
-
-                % compute boundary indices
-                lbs_q( index_object ) = ceil( index_lb );
-                ubs_q( index_object ) = floor( index_ub );
-
-            end % for index_object = 1:numel( intervals )
+            lbs_q = ceil( lbs ./ deltas );
+            ubs_q = floor( ubs ./ deltas );
 
             %--------------------------------------------------------------
             % 3.) create quantized intervals

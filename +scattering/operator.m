@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-05-16
+% modified: 2019-05-27
 %
 classdef operator
 
@@ -31,61 +31,80 @@ classdef operator
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = operator( sequence, options )
-
-% TODO: vectorize
+        function objects = operator( sequences, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class pulse_echo_measurements.sequence (scalar)
-            if ~( isa( sequence, 'pulse_echo_measurements.sequence' ) && isscalar( sequence ) )
-                errorStruct.message     = 'sequence must be a single pulse_echo_measurements.sequence!';
-                errorStruct.identifier	= 'operator:NoScalarSequence';
+            % ensure class pulse_echo_measurements.sequence
+            if ~isa( sequences, 'pulse_echo_measurements.sequence' )
+                errorStruct.message = 'sequences must be pulse_echo_measurements.sequence!';
+                errorStruct.identifier = 'operator:NoSequences';
                 error( errorStruct );
             end
 
-            % ensure class scattering.options (scalar)
-            if ~( isa( options, 'scattering.options' ) && isscalar( options ) )
-                errorStruct.message     = 'options must be a single scattering.options!';
-                errorStruct.identifier	= 'operator:NoScalarOptions';
+            % ensure class scattering.options
+            if ~isa( options, 'scattering.options' )
+                errorStruct.message = 'options must be scattering.options!';
+                errorStruct.identifier = 'operator:NoOptions';
                 error( errorStruct );
             end
 
-            %--------------------------------------------------------------
-            % 2.) set independent properties
-            %--------------------------------------------------------------
-            object.sequence = sequence;
-            object.options = options;
+            % multiple sequences / single options
+            if ~isscalar( sequences ) && isscalar( options )
+                options = repmat( options, size( sequences ) );
+            end
 
-            % TODO: check for identical recording time intervals / identical frequency intervals
-            % TODO: check method to determine Fourier coefficients
-            
-            %--------------------------------------------------------------
-            % 3.) spatiospectral discretization of the sequence
-            %--------------------------------------------------------------
-            object.discretization = discretize( object.sequence, object.options.discretization );
+            % single sequences / multiple options
+            if isscalar( sequences ) && ~isscalar( options )
+                sequences = repmat( sequences, size( options ) );
+            end
 
-            %--------------------------------------------------------------
-            % 4.) incident acoustic fields (unique frequencies)
-            %--------------------------------------------------------------
-            object.incident_waves = syntheses.incident_wave( object.discretization );
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, options );
 
             %--------------------------------------------------------------
-            % 5.) load or compute received energy
+            % 2.) create scattering operators
             %--------------------------------------------------------------
-            % create format string for filename
-            str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s.mat', object.discretization.spatial.str_name );
+            % repeat default scattering operator
+            objects = repmat( objects, size( sequences ) );
 
-            % load or compute received energy
-            object.E_M = auxiliary.compute_or_load_hash( str_format, @energy_rx, [ 2, 3 ], 1, object, object.discretization.spatial, object.discretization.spectral );
+            % iterate scattering operators
+            for index_object = 1:numel( objects )
 
-        end % function object = operator( sequence, options )
+                %----------------------------------------------------------
+                % a) set independent properties
+                %----------------------------------------------------------
+                objects( index_object ).sequence = sequences( index_object );
+                objects( index_object ).options = options( index_object );
+
+                %----------------------------------------------------------
+                % b) spatiospectral discretization of the sequence
+                %----------------------------------------------------------
+                objects( index_object ).discretization = discretize( objects( index_object ).sequence, objects( index_object ).options.discretization );
+
+                %----------------------------------------------------------
+                % c) incident acoustic fields (unique frequencies)
+                %----------------------------------------------------------
+                objects( index_object ).incident_waves = syntheses.incident_wave( objects( index_object ).discretization );
+
+                %----------------------------------------------------------
+                % d) load or compute received energy
+                %----------------------------------------------------------
+                % create format string for filename
+                str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s.mat', objects( index_object ).discretization.spatial.str_name );
+
+                % load or compute received energy
+                objects( index_object ).E_M = auxiliary.compute_or_load_hash( str_format, @energy_rx, [ 2, 3 ], 1, objects( index_object ), objects( index_object ).discretization.spatial, objects( index_object ).discretization.spectral );
+
+            end % for index_object = 1:numel( objects )
+
+        end % function objects = operator( sequences, options )
 
         %------------------------------------------------------------------
-        % point spread function (PSF)
+        % transform point spread function (TPSF)
         %------------------------------------------------------------------
-        function [ out, E_M, adjointness ] = psf( operators, indices )
+        function [ theta_hat, E_M, adjointness ] = tpsf( operators, indices, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -99,10 +118,10 @@ classdef operator
             auxiliary.mustBeEqualSize( operators, indices );
 
             %--------------------------------------------------------------
-            % 2.) compute PSFs
+            % 2.) compute TPSFs
             %--------------------------------------------------------------
             % specify cell array for psf
-            out = cell( size( operators ) );
+            theta_hat = cell( size( operators ) );
             E_M = cell( size( operators ) );
             adjointness = cell( size( operators ) );
 
@@ -113,7 +132,7 @@ classdef operator
                 N_psf = numel( indices{ index_object } );
 
                 % initialize coefficient vectors and output with zeros
-                out{ index_object } = zeros( operators( index_object ).discretization.spatial.grid_FOV.N_points, N_psf );
+                theta_hat{ index_object } = zeros( operators( index_object ).discretization.spatial.grid_FOV.N_points, N_psf );
 %                 if options.material_parameter ~= 0
 %                     theta = zeros(N_lattice, N_tpsf);
 %                     theta_recon = zeros(N_lattice, N_tpsf);
@@ -139,14 +158,14 @@ classdef operator
                     E_M{ index_object }( index_grid ) = energy( u_M );
 
                     % compute adjoint scattering
-                    out{ index_object }( :, index_grid ) = adjoint( operators( index_object ), u_M );
-                    adjointness{ index_object }( index_grid ) = E_M{ index_object }( index_grid ) - out{ index_object }( indices{ index_object }( index_grid ), index_grid );
+                    theta_hat{ index_object }( :, index_grid ) = adjoint( operators( index_object ), u_M );
+                    adjointness{ index_object }( index_grid ) = E_M{ index_object }( index_grid ) - theta_hat{ index_object }( indices{ index_object }( index_grid ), index_grid );
 
                     % delete current gamma_kappa
                     gamma_kappa( indices{ index_object }( index_grid ) ) = 0;
 
                     figure( index_grid );
-                    imagesc( squeeze( reshape( double( abs( out{ index_object }( :, index_grid ) ) ), operators( index_object ).discretization.spatial.grid_FOV.N_points_axis ) ) );
+                    imagesc( squeeze( reshape( double( abs( theta_hat{ index_object }( :, index_grid ) ) ), operators( index_object ).discretization.spatial.grid_FOV.N_points_axis ) ) );
 
                 end % for index_grid = 1:N_psf
 
@@ -163,12 +182,12 @@ classdef operator
 
             % avoid cell array for single operators
             if isscalar( operators )
-                out = out{ 1 };
+                theta_hat = theta_hat{ 1 };
                 E_M = E_M{ 1 };
                 adjointness = adjointness{ 1 };
             end
 
-        end % function [ out, E_M, adjointness ] = psf( operators, indices )
+        end % function [ theta_hat, E_M, adjointness ] = tpsf( operators, indices, varargin )
 
         %------------------------------------------------------------------
         % received energy

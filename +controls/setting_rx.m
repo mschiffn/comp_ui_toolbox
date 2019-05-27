@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-05-22
+% modified: 2019-05-23
 %
 classdef setting_rx < controls.setting
 
@@ -95,7 +95,7 @@ classdef setting_rx < controls.setting
         end % function objects = setting_rx( indices_active, impulse_responses, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
-        % spectral discretization
+        % spectral discretization (overload discretize method)
         %------------------------------------------------------------------
         function settings_rx = discretize( settings_rx, varargin )
 
@@ -220,6 +220,42 @@ classdef setting_rx < controls.setting
             end % for index_incident = 1:N_incident
 
         end % function [ intervals_t, hulls ] = determine_interval_t( object )
+
+        %------------------------------------------------------------------
+        % compute numbers of observations
+        %------------------------------------------------------------------
+        function N_observations = compute_N_observations( settings_rx )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class controls.setting_rx
+            if ~isa( settings_rx, 'controls.setting_rx' )
+                errorStruct.message = 'settings_rx must be controls.setting_rx!';
+                errorStruct.identifier = 'compute_N_observations:NoSettingsRx';
+                error( errorStruct );
+            end
+
+            % extract impulse responses
+            impulse_responses = { settings_rx.impulse_responses };
+
+            % ensure class discretizations.signal_matrix
+            N_signal_matrices = cellfun( @numel, impulse_responses );
+            if any( N_signal_matrices ~= 1 )
+                errorStruct.message = 'excitation_voltages and impulse_responses must be discretizations.signal_matrix!';
+                errorStruct.identifier = 'compute_normal_velocities:NoSignalMatrices';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) extract numbers of observations
+            %--------------------------------------------------------------
+            % specify cell array for N_observations
+            impulse_responses = reshape( [ settings_rx.impulse_responses ], size( settings_rx ) );
+            axes = reshape( [ impulse_responses.axis ], size( settings_rx ) );
+            N_observations = abs( axes );
+
+        end % function N_observations = compute_N_observations( settings_rx )
 
 	end % methods
 

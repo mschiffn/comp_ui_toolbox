@@ -4,12 +4,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-03-29
+% modified: 2019-05-25
 %
 classdef sequence_increasing_regular < math.sequence_increasing
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -21,7 +21,7 @@ classdef sequence_increasing_regular < math.sequence_increasing
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -73,6 +73,72 @@ classdef sequence_increasing_regular < math.sequence_increasing
             end
 
         end % function objects = sequence_increasing_regular( lbs_q, ubs_q, deltas )
+
+        %------------------------------------------------------------------
+        % cut out subsequence
+        %------------------------------------------------------------------
+        function [ sequences, indicators ] = cut_out( sequences, lbs, ubs )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % superclass method cut_out ensures correct arguments
+
+            %--------------------------------------------------------------
+            % 2.) perform cut out
+            %--------------------------------------------------------------
+            % call cut out method in superclass
+            [ sequences, indicators ] = cut_out@math.sequence_increasing( sequences, lbs, ubs );
+
+            % ensure cell array for indicators
+            if ~iscell( indicators )
+                indicators = { indicators };
+            end
+
+            % iterate sequences
+            for index_object = 1:numel( sequences )
+
+                % find indices and values of nonzero elements
+                indices = find( indicators{ index_object } );
+
+                % update lower and upper integer bounds
+                sequences( index_object ).q_lb = sequences( index_object ).q_lb + indices( 1 ) - 1;
+                sequences( index_object ).q_ub = sequences( index_object ).q_lb + numel( indices ) - 1;
+
+            end % for index_object = 1:numel( sequences )
+
+            % avoid cell array for single sequence
+            if isscalar( sequences )
+                indicators = indicators{ 1 };
+            end
+
+        end % function [ sequences, indicators ] = cut_out( sequences, lbs, ubs )
+
+        %------------------------------------------------------------------
+        % remove last members
+        %------------------------------------------------------------------
+        function [ sequences, N_remove ] = remove_last( sequences, varargin )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % superclass method remove_last ensures correct arguments
+
+            %--------------------------------------------------------------
+            % 2.) remove last members
+            %--------------------------------------------------------------
+            % call remove_last method in superclass
+            [ sequences, N_remove ] = remove_last@math.sequence_increasing( sequences, varargin{ : } );
+
+            % iterate sequences
+            for index_object = 1:numel( sequences )
+
+                % update upper integer bounds
+                sequences( index_object ).q_ub = sequences( index_object ).q_ub - N_remove( index_object );
+
+            end % for index_object = 1:numel( sequences )
+
+        end % function [ sequences, N_remove ] = remove_last( sequences, varargin )
 
     end % methods
 

@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-03-04
+% modified: 2019-05-23
 %
 classdef options
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -19,7 +19,7 @@ classdef options
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
@@ -42,9 +42,10 @@ classdef options
             %--------------------------------------------------------------
             % 2.) create spatiospectral discretization options
             %--------------------------------------------------------------
-            % create objects
+            % repeat default spatiospectral discretization options
             objects = repmat( objects, size( spatial ) );
 
+            % iterate spatiospectral discretization options
             for index_object = 1:numel( spatial )
 
                 % set independent properties

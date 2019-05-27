@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-05-08
+% modified: 2019-05-25
 %
 classdef sequence_increasing
 
@@ -172,6 +172,104 @@ classdef sequence_increasing
             sequences_out = math.sequence_increasing( members_sub );
 
         end % function sequences_out = subsample( sequences_in, indices_axes )
+
+        %------------------------------------------------------------------
+        % cut out subsequence
+        %------------------------------------------------------------------
+        function [ sequences, indicators ] = cut_out( sequences, lbs, ubs )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.sequence_increasing
+            if ~isa( sequences, 'math.sequence_increasing' )
+                errorStruct.message = 'sequences must be math.sequence_increasing!';
+                errorStruct.identifier = 'cut_out:NoSequence';
+                error( errorStruct );
+            end
+
+            % ensure equal subclasses of physical_values.physical_quantity
+            members_cell = { sequences.members };
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', members_cell{ : }, lbs, ubs );
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, lbs, ubs );
+
+            %--------------------------------------------------------------
+            % 2.) perform cut out
+            %--------------------------------------------------------------
+            % specify cell array for indicators
+            indicators = cell( size( sequences ) );
+
+            % iterate sequences
+            for index_object = 1:numel( sequences )
+
+                % identify members to keep
+                indicators{ index_object } = ( members_cell{ index_object } >= lbs( index_object ) ) & ( members_cell{ index_object } <= ubs( index_object ) );
+
+                % cut out members
+                sequences( index_object ).members = members_cell{ index_object }( indicators{ index_object } );
+
+            end % for index_object = 1:numel( sequences )
+
+            % avoid cell array for single sequence
+            if isscalar( sequences )
+                indicators = indicators{ 1 };
+            end
+
+        end % function [ sequences, indicators ] = cut_out( sequences, lbs, ubs )
+
+        %------------------------------------------------------------------
+        % remove last members
+        %------------------------------------------------------------------
+        function [ sequences, N_remove ] = remove_last( sequences, varargin )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.sequence_increasing
+            if ~isa( sequences, 'math.sequence_increasing' )
+                errorStruct.message = 'sequences must be math.sequence_increasing!';
+                errorStruct.identifier = 'remove_last:NoSequence';
+                error( errorStruct );
+            end
+
+            % ensure nonempty N_remove
+            if nargin >= 2 && ~isempty( varargin{ 1 } )
+                N_remove = varargin{ 1 };
+            else
+                N_remove = ones( size( sequences ) );
+            end
+
+            % ensure positive integers
+            mustBePositive( N_remove );
+            mustBeInteger( N_remove );
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, N_remove );
+
+            % numbers of members in all sequences
+            N_members = abs( sequences );
+
+            % ensure that N_remove < N_members
+            if any( N_remove >= N_members )
+                errorStruct.message = 'N_remove must be smaller than N_members!';
+                errorStruct.identifier = 'remove_last:InvalidNumber';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) remove last members
+            %--------------------------------------------------------------
+            % iterate sequences
+            for index_object = 1:numel( sequences )
+
+                % remove N_remove( index_object ) last members
+                sequences( index_object ).members = sequences( index_object ).members( 1:( end - N_remove( index_object ) ) );
+
+            end % for index_object = 1:numel( sequences )
+
+        end % function [ sequences, N_remove ] = remove_last( sequences, varargin )
 
         %------------------------------------------------------------------
         % cardinality (overload abs function)
