@@ -4,7 +4,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
 %
 % author: Martin F. Schiffner
 % date: 2019-03-19
-% modified: 2019-05-16
+% modified: 2019-05-27
 %
 
     N_points_max = 2;
@@ -99,10 +99,10 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
             end
 
             % compute complex-valued apodization weights
-            weights = reshape( grid_element_act.apodization .* exp( - 2j * pi * grid_element_act.time_delays * axes_f( index_object ).members ), [ grid_element_act.grid.N_points, 1, N_samples_f( index_object ) ] );
+            weights = reshape( grid_element_act.apodization .* exp( - 2j * pi * grid_element_act.time_delays * axes_f( index_object ).members' ), [ grid_element_act.grid.N_points, 1, N_samples_f( index_object ) ] );
 
             % initialize results with zeros
-            h_tx{ index_element } = physical_values.meter( zeros( spatial_grids( index_object ).grid_FOV.N_points, N_samples_f( index_object ) ) );
+            h_tx{ index_element } = physical_values.meter( zeros( N_samples_f( index_object ), spatial_grids( index_object ).grid_FOV.N_points ) );
 
             % partition grid points into batches to save memory
             N_batches = ceil( grid_element_act.grid.N_points / N_points_max );
@@ -122,7 +122,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
                 temp = weights( indices{ index_batch }, :, : ) .* temp;
 
                 % integrate over aperture
-                h_tx{ index_element } = h_tx{ index_element } - 2 * grid_element_act.grid.cell_ref.volume * squeeze( sum( temp, 1 ) );
+                h_tx{ index_element } = h_tx{ index_element } - 2 * grid_element_act.grid.cell_ref.volume * squeeze( sum( temp, 1 ) ).';
 
                 % indices of current grid points
                 fprintf( '\b\b\b\b\b\b\b' );

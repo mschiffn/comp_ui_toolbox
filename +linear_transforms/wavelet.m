@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-05-27
+% modified: 2019-05-29
 %
 classdef wavelet < linear_transforms.orthonormal_linear_transform
 
@@ -13,7 +13,7 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
 	properties (SetAccess = private)
 
         % independent properties
-        type                                            % type of wavelet: 'Haar', 'Beylkin', 'Coiflet', 'Daubechies', 'Symmlet', 'Vaidyanathan', 'Battle'
+        type ( 1, 1 ) linear_transforms.wavelet_type = linear_transforms.wavelet_type.Daubechies	% type of wavelet
         parameter ( 1, 1 ) { mustBeInteger } = 20       % type-dependent parameter related to the support and vanishing moments of the wavelets
         N_dimensions ( 1, 1 ) { mustBePositive, mustBeInteger } = 2         % number of points ( dyadic )
         scale_finest ( 1, 1 ) { mustBeNonnegative, mustBeInteger } = 9      % finest scale ( fine level )
@@ -46,6 +46,7 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
             end
 
 % TODO: check number of dimensions
+% TODO: check enumeration methods
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( strs_type, parameters, N_dimensions, scales_finest, scales_coarsest );
@@ -59,13 +60,16 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
             % constructor of superclass
             objects@linear_transforms.orthonormal_linear_transform( N_points );
 
+            % convert strings to enumeration types
+            types = linear_transforms.wavelet_type( strs_type );
+
             % iterate discrete wavelet transforms
             for index_object = 1:numel( objects )
 
                 %----------------------------------------------------------
                 % a) set independent properties
                 %----------------------------------------------------------
-                objects( index_object ).type = strs_type{ index_object };
+                objects( index_object ).type = types( index_object );
                 objects( index_object ).parameter = parameters( index_object );
                 objects( index_object ).N_dimensions = N_dimensions( index_object );
                 objects( index_object ).scale_finest = scales_finest( index_object );

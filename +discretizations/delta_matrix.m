@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-21
-% modified: 2019-05-21
+% modified: 2019-05-27
 %
 classdef delta_matrix < discretizations.signal_matrix
 
@@ -76,7 +76,6 @@ classdef delta_matrix < discretizations.signal_matrix
                 % specify samples
                 samples{ index_object } = zeros( N_samples( index_object ), N_signals( index_object ) ) * weights{ index_object }( 1 ) / deltas( index_object );
                 samples{ index_object }( indices ) = weights{ index_object }( : ) / deltas( index_object );
-                samples{ index_object } = samples{ index_object }';
 
             end % for index_object = 1:numel( indices_q )
 

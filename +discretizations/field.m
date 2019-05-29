@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-04-30
+% modified: 2019-05-27
 %
 classdef field < discretizations.signal_matrix
 
@@ -134,7 +134,7 @@ classdef field < discretizations.signal_matrix
                 for index_shift = 1:numel( indices_element{ index_field } )
 
                     % resample according to current shift
-                    output{ index_field }( index_shift ).samples = fields( index_field ).samples( indices_shift{ index_field }( :, index_shift ), : );
+                    output{ index_field }( index_shift ).samples = fields( index_field ).samples( :, indices_shift{ index_field }( :, index_shift ) );
 
                 end % for index_shift = 1:numel( indices_element{ index_field } )
 
@@ -187,7 +187,7 @@ classdef field < discretizations.signal_matrix
                 fields( index_object ).grid_FOV = grids_FOV( index_object );
 
                 % subsample samples
-                fields( index_object ).samples = fields( index_object ).samples( indices_grids{ index_object }, : );
+                fields( index_object ).samples = fields( index_object ).samples( :, indices_grids{ index_object } );
                 fields( index_object ).N_signals = numel( indices_grids{ index_object } );
                 fields( index_object ).size_bytes = data_volume( fields( index_object ) );
 
@@ -227,7 +227,7 @@ classdef field < discretizations.signal_matrix
                 end
 
                 % extract and reshape samples
-                samples_act = reshape( fields( index_object ).samples, [ fields( index_object ).grid_FOV.N_points_axis, N_samples ] );
+                samples_act = reshape( fields( index_object ).samples, [ N_samples, fields( index_object ).grid_FOV.N_points_axis ] );
 
                 % check number of spatial dimensions
                 switch fields( index_object ).grid_FOV.N_dimensions
@@ -240,17 +240,17 @@ classdef field < discretizations.signal_matrix
                         axis_1 = double( fields( index_object ).grid_FOV.positions([1,262], 1) );
                         axis_2 = double( fields( index_object ).grid_FOV.positions([1,68644], 2) );
                         subplot( 2, 3, 1);
-                        imagesc( axis_2, axis_1, abs( double( samples_act( :, :, 1 ) ) ) );
+                        imagesc( axis_2, axis_1, abs( double( samples_act( 1, :, : ) ) ) );
                         subplot( 2, 3, 2);
-                        imagesc( axis_2, axis_1, abs( double( samples_act( :, :, index_shift ) ) ) );
+                        imagesc( axis_2, axis_1, abs( double( samples_act( index_shift, :, : ) ) ) );
                         subplot( 2, 3, 3);
-                        imagesc( axis_2, axis_1, abs( double( samples_act( :, :, end ) ) ) );
+                        imagesc( axis_2, axis_1, abs( double( samples_act( end, :, : ) ) ) );
                         subplot( 2, 3, 4);
-                        imagesc( axis_2, axis_1, angle( double( samples_act( :, :, 1 ) ) ) );
+                        imagesc( axis_2, axis_1, angle( double( samples_act( 1, :, : ) ) ) );
                         subplot( 2, 3, 5);
-                        imagesc( axis_2, axis_1, angle( double( samples_act( :, :, index_shift ) ) ) );
+                        imagesc( axis_2, axis_1, angle( double( samples_act( index_shift, :, : ) ) ) );
                         subplot( 2, 3, 6);
-                        imagesc( axis_2, axis_1, angle( double( samples_act( :, :, end ) ) ) );
+                        imagesc( axis_2, axis_1, angle( double( samples_act( end, :, : ) ) ) );
 
                     case 3
 
@@ -262,23 +262,23 @@ classdef field < discretizations.signal_matrix
                         axis_2 = double( fields( index_object ).grid_FOV.positions( [1,68644], 2 ) );
                         axis_3 = double( fields( index_object ).grid_FOV.positions( [1,68644], 3 ) );
                         subplot( 3, 3, 1);
-                        imagesc( abs( double( squeeze( samples_act( :, index_shift_pos( 2 ), :, 1 ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( 1, :, index_shift_pos( 2 ), : ) ) ) ) );
                         subplot( 3, 3, 2);
-                        imagesc( abs( double( squeeze( samples_act( :, index_shift_pos( 2 ), :, index_shift ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( index_shift, :, index_shift_pos( 2 ), : ) ) ) ) );
                         subplot( 3, 3, 3);
-                        imagesc( abs( double( squeeze( samples_act( :, index_shift_pos( 2 ), :, end ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( end, :, index_shift_pos( 2 ), : ) ) ) ) );
                         subplot( 3, 3, 4);
-                        imagesc( abs( double( squeeze( samples_act( :, :, 51, 1 ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( 1, :, :, 51 ) ) ) ) );
                         subplot( 3, 3, 5);
-                        imagesc( abs( double( squeeze( samples_act( :, :, 51, index_shift ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( index_shift, :, :, 51 ) ) ) ) );
                         subplot( 3, 3, 6);
-                        imagesc( abs( double( squeeze( samples_act( :, :, 51, end ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( end, :, :, 51 ) ) ) ) );
                         subplot( 3, 3, 7);
-                        imagesc( abs( double( squeeze( samples_act( index_shift_pos( 1 ), :, :, 1 ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( 1, index_shift_pos( 1 ), :, : ) ) ) ) );
                         subplot( 3, 3, 8);
-                        imagesc( abs( double( squeeze( samples_act( index_shift_pos( 1 ), :, :, index_shift ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( index_shift, index_shift_pos( 1 ), :, : ) ) ) ) );
                         subplot( 3, 3, 9);
-                        imagesc( abs( double( squeeze( samples_act( index_shift_pos( 1 ), :, :, end ) ) ) ) );
+                        imagesc( abs( double( squeeze( samples_act( end, index_shift_pos( 1 ), :, : ) ) ) ) );
 
                     otherwise
 

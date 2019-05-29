@@ -68,7 +68,7 @@ classdef setting_rx_identity < controls.setting_rx
                         t_lb_tx_act = setting_tx.excitation_voltages( index_active_tx ).axis.members( 1 );
                         t_ub_tx_act = setting_tx.excitation_voltages( index_active_tx ).axis.members( end );
                     else
-                        indicator = double( abs( setting_tx.excitation_voltages.samples( index_active_tx, : ) ) ) >= eps;
+                        indicator = double( abs( setting_tx.excitation_voltages.samples( :, index_active_tx ) ) ) >= eps;
                         members = setting_tx.excitation_voltages.axis.members( indicator );
                         t_lb_tx_act = members( 1 );
                         t_ub_tx_act = members( end );
@@ -79,7 +79,7 @@ classdef setting_rx_identity < controls.setting_rx
                         t_lb_tx_act = t_lb_tx_act + setting_tx.impulse_responses( index_active_tx ).axis.members( 1 );
                         t_ub_tx_act = t_ub_tx_act + setting_tx.impulse_responses( index_active_tx ).axis.members( end );
                     else
-                        indicator = double( abs( setting_tx.impulse_responses.samples( index_active_tx, : ) ) ) >= eps;
+                        indicator = double( abs( setting_tx.impulse_responses.samples( :, index_active_tx ) ) ) >= eps;
                         members = setting_tx.impulse_responses.axis.members( indicator );
                         t_lb_tx_act = t_lb_tx_act + members( 1 );
                         t_ub_tx_act = t_ub_tx_act + members( end );

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-05-25
+% modified: 2019-05-27
 %
 classdef sequence_increasing
 
@@ -13,7 +13,7 @@ classdef sequence_increasing
 	properties (SetAccess = private)
 
         % independent properties
-        members ( 1, : ) physical_values.physical_quantity
+        members ( :, 1 ) physical_values.physical_quantity
 
     end % properties
 
@@ -85,6 +85,7 @@ classdef sequence_increasing
             % 2.) create sequence of unique members
             %--------------------------------------------------------------
             % extract unique members
+% TODO: potential problem becaus of column vector?
             [ members_unique, ia, ic ] = unique( [ sequences_in.members ] );
             N_members_unique = numel( members_unique );
 

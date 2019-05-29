@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2019-05-27
+% modified: 2019-05-29
 %
 classdef signal_matrix
 
@@ -76,8 +76,8 @@ classdef signal_matrix
                 end
 
                 % ensure correct sizes
-                if abs( axes( index_object ) ) ~= size( samples{ index_object }, 2 )
-                    errorStruct.message = sprintf( 'Cardinality of axes( %d ) must match the size of samples{ %d } along the second dimension!', index_object, index_object );
+                if abs( axes( index_object ) ) ~= size( samples{ index_object }, 1 )
+                    errorStruct.message = sprintf( 'Cardinality of axes( %d ) must match the size of samples{ %d } along the first dimension!', index_object, index_object );
                     errorStruct.identifier = 'signal_matrix:SizeMismatch';
                     error( errorStruct );
                 end
@@ -87,7 +87,7 @@ classdef signal_matrix
                 objects( index_object ).samples = samples{ index_object };
 
                 % set dependent properties
-                objects( index_object ).N_signals = size( samples{ index_object }, 1 );
+                objects( index_object ).N_signals = size( samples{ index_object }, 2 );
 
             end % for index_object = 1:numel( objects )
 
@@ -162,9 +162,12 @@ classdef signal_matrix
             ubs_q = reshape( [ intervals_t_quantized.q_ub ], size( signal_matrices ) );
             N_dft = double( ubs_q - lbs_q );
 
+            % numbers of zeros to pad
+            N_zeros_pad = N_dft - N_samples_signal;
+
             % ensure that numbers of samples do not exceed the order of the DFT
-            if any( N_samples_signal(:) > N_dft(:) )
-                errorStruct.message = sprintf( 'Number of signal samples %d exceeds order of DFT %d!', N_samples_signal, N_dft );
+            if any( N_zeros_pad( : ) < 0 )
+                errorStruct.message = sprintf( 'Number of signal samples exceeds order of DFT!' );
                 errorStruct.identifier = 'DFT:IntervalMismatch';
                 error( errorStruct );
             end
@@ -190,12 +193,12 @@ classdef signal_matrix
                 indices_relevant = double( axes_f( index_object ).q_lb:axes_f( index_object ).q_ub ) + 1;
 
                 % zero-pad and shift samples
-                samples_act = [ signal_matrices( index_object ).samples, zeros( signal_matrices( index_object ).N_signals, N_dft( index_object ) - N_samples_signal( index_object ) ) ];
-                samples_act = circshift( samples_act, samples_shift( index_object ), 2 );
+                samples_act = [ signal_matrices( index_object ).samples; zeros( N_zeros_pad( index_object ), signal_matrices( index_object ).N_signals ) ];
+                samples_act = circshift( samples_act, samples_shift( index_object ), 1 );
 
                 % compute and truncate DFT
-                DFT_act = fft( samples_act, N_dft( index_object ), 2 ) / sqrt( N_dft( index_object ) );
-                samples_dft{ index_object } = DFT_act( :, indices_relevant );
+                DFT_act = fft( samples_act, N_dft( index_object ), 1 ) / sqrt( N_dft( index_object ) );
+                samples_dft{ index_object } = DFT_act( indices_relevant, : );
 
             end % for index_object = 1:numel( signal_matrices )
 
@@ -319,14 +322,14 @@ classdef signal_matrix
             for index_object = 1:numel( signal_matrices )
 
                 % zero-pad and shift samples
-                samples_act = [ signal_matrices( index_object ).samples, zeros( signal_matrices( index_object ).N_signals, index_shift( index_object ) - N_samples_f( index_object ) ) ];
-                samples_act = circshift( samples_act, axes_f( index_object ).q_lb, 2 );
+                samples_act = [ signal_matrices( index_object ).samples; zeros( index_shift( index_object ) - N_samples_f( index_object ), signal_matrices( index_object ).N_signals ) ];
+                samples_act = circshift( samples_act, axes_f( index_object ).q_lb, 1 );
 
                 % compute signal samples
-                samples_td{ index_object } = N_samples_t * ifft( samples_act, N_samples_t, 2, 'symmetric' );
+                samples_td{ index_object } = N_samples_t * ifft( samples_act, N_samples_t, 1, 'symmetric' );
 
                 % shift samples
-                samples_td{ index_object } = circshift( samples_td{ index_object }, -axes_t( index_object ).q_lb, 2 );
+                samples_td{ index_object } = circshift( samples_td{ index_object }, -axes_t( index_object ).q_lb, 1 );
 
             end % for index_object = 1:numel( signal_matrices )
 
@@ -364,9 +367,9 @@ classdef signal_matrix
             % extract common axis
             axis_mgd = signal_matrices( 1 ).axis;
 
-            % concatenate samples along first dimension
+            % concatenate samples along second dimension
             samples_mgd = { signal_matrices.samples };
-            samples_mgd = cat( 1, samples_mgd{ : } );
+            samples_mgd = cat( 2, samples_mgd{ : } );
 
             %--------------------------------------------------------------
             % 3.) create signal matrix
@@ -467,7 +470,7 @@ classdef signal_matrix
                 signal_matrices( index_object ).axis = axes_sub( index_object );
 
                 % subsample samples
-                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples( :, indices_axes{ index_object } );
+                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples( indices_axes{ index_object }, : );
 
             end % for index_object = 1:numel( signal_matrices )
 
@@ -507,11 +510,29 @@ classdef signal_matrix
 
                 % cut out samples
                 signal_matrices( index_object ).axis = axes_cut( index_object );
-                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples( :, indicators{ index_object } );
+                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples( indicators{ index_object }, : );
 
             end % for index_object = 1:numel( signal_matrices )
 
         end % function signal_matrices = cut_out( signal_matrices, lbs, ubs )
+
+        %------------------------------------------------------------------
+        % return vector
+        %------------------------------------------------------------------
+        function y = return_vector( signal_matrices )
+
+            % extract samples
+            samples_cell = { signal_matrices.samples };
+
+            % convert matrices into column vectors
+            for index_object = 1:numel( signal_matrices )
+                samples_cell{ index_object } = samples_cell{ index_object }( : );
+            end
+
+            % concatenate column vectors
+            y = cat( 1, samples_cell{ : } );
+
+        end % function y = return_vector( signal_matrices )
 
         %------------------------------------------------------------------
         % energy
@@ -558,9 +579,9 @@ classdef signal_matrix
 
                 % plot all samples
                 if isreal( signal_matrices( index_object ).samples )
-                    plot( double( signal_matrices( index_object ).axis.members ), double( signal_matrices( index_object ).samples ) );
+                    plot( double( signal_matrices( index_object ).axis.members ), double( signal_matrices( index_object ).samples.' ) );
                 else
-                    plot( double( signal_matrices( index_object ).axis.members ), double( abs( signal_matrices( index_object ).samples ) ) );
+                    plot( double( signal_matrices( index_object ).axis.members ), double( abs( signal_matrices( index_object ).samples ).' ) );
                 end
 
             end % for index_object = 1:numel( signal_matrices )

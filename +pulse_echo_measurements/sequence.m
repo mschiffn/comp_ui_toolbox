@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-05-25
+% modified: 2019-05-28
 %
 classdef sequence
 
@@ -143,6 +143,11 @@ classdef sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % split array of signal matrices into cell array
+            if strcmp( class( u_M ), 'discretizations.signal_matrix' )
+                u_M = num2cell( u_M );
+            end
+
             % ensure cell array for u_M
             if ~iscell( u_M )
                 u_M = { u_M };
@@ -219,10 +224,10 @@ classdef sequence
                     u_M{ index_measurement } = cut_out( u_M{ index_measurement }, lbs_max_min, ubs_min_max );
 
                     % numbers of samples in all windows
-                    indicator_lb = repmat( u_M{ index_measurement }.axis.members, [ numel( intervals_t ), 1 ] ) >= lbs_max( : );
-                    indicator_ub = repmat( u_M{ index_measurement }.axis.members, [ numel( intervals_t ), 1 ] ) <= ubs_min( : );
+                    indicator_lb = repmat( u_M{ index_measurement }.axis.members, [ 1, numel( intervals_t ) ] ) >= lbs_max(:).';
+                    indicator_ub = repmat( u_M{ index_measurement }.axis.members, [ 1, numel( intervals_t ) ] ) <= ubs_min(:).';
                     indicator = indicator_lb & indicator_ub;
-                    N_samples_window = sum( indicator, 2 );
+                    N_samples_window = sum( indicator, 1 );
 
                     % generate and apply window functions
                     samples = u_M{ index_measurement }.samples;
@@ -232,16 +237,16 @@ classdef sequence
                     for index_mix = 1:numel( sequence.settings( index_measurement ).rx )
 
                         % window function gateway
-                        samples_window = window( setting_window.handle, N_samples_window( index_mix ), setting_window.parameters{ : } )';
+                        samples_window = window( setting_window.handle, N_samples_window( index_mix ), setting_window.parameters{ : } );
 
                         % apply window function
-                        samples( index_mix, indicator( index_mix, : ) ) = samples( index_mix, indicator( index_mix, : ) ) .* samples_window;
+                        samples( indicator( :, index_mix ), index_mix ) = samples( indicator( :, index_mix ), index_mix ) .* samples_window;
 
                     end % for index_mix = 1:numel( sequence.settings( index_measurement ).rx )
 
                     % periodicity renders last sample redundant
                     axis = remove_last( u_M{ index_measurement }.axis );
-                    samples = samples( :, 1:( end - 1 ) );
+                    samples = samples( 1:( end - 1 ), : );
 
                     % create signal matrix
                     u_M{ index_measurement } = discretizations.signal_matrix( axis, samples );
@@ -250,10 +255,16 @@ classdef sequence
 
             end % for index_measurement = 1:numel( sequence.settings )
 
-            % avoid cell array for single pulse-echo measurement
-            if isscalar( u_M )
-                u_M = u_M{ 1 };
+            
+            indicator = cellfun( @( x ) ~isa( x, 'discretizations.signal' ), u_M );
+            if all( indicator(:) )
+                u_M = cat( 1, u_M{ : } );
             end
+
+            % avoid cell array for single pulse-echo measurement
+%             if isscalar( u_M )
+%                 u_M = u_M{ 1 };
+%             end
 
         end % function u_M = apply_window( sequence, u_M, varargin )
 

@@ -195,8 +195,8 @@ classdef setting_tx < controls.setting
             N_samples_f_unique = numel( indices_unique_to_f );
 
             % initialize unique samples
-            samples_tf = repmat( settings_tx_in( 1 ).impulse_responses.samples( 1 ), [ numel( settings_tx_in( 1 ).indices_active ), N_samples_f_unique ] );
-            samples_u_tx = repmat( settings_tx_in( 1 ).excitation_voltages.samples( 1 ), [ numel( settings_tx_in( 1 ).indices_active ), N_samples_f_unique ] );
+            samples_tf = repmat( settings_tx_in( 1 ).impulse_responses.samples( 1 ), [ N_samples_f_unique, numel( settings_tx_in( 1 ).indices_active ) ] );
+            samples_u_tx = repmat( settings_tx_in( 1 ).excitation_voltages.samples( 1 ), [ N_samples_f_unique, numel( settings_tx_in( 1 ).indices_active ) ] );
 
             % iterate unique frequencies
             for index_f_unique = 1:N_samples_f_unique
@@ -206,8 +206,8 @@ classdef setting_tx < controls.setting
                 index_f = indices_unique_to_f( index_f_unique ).index_f;
 
                 % extract samples
-                samples_tf( :, index_f_unique ) = settings_tx_in( index_object ).impulse_responses.samples( :, index_f );
-                samples_u_tx( :, index_f_unique ) = settings_tx_in( index_object ).excitation_voltages.samples( :, index_f );
+                samples_tf( index_f_unique, : ) = settings_tx_in( index_object ).impulse_responses.samples( index_f, : );
+                samples_u_tx( index_f_unique, : ) = settings_tx_in( index_object ).excitation_voltages.samples( index_f, : );
 
             end % for index_f_unique = 1:N_samples_f_unique
 
