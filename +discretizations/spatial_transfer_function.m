@@ -63,6 +63,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
 	N_samples_f = abs( axes_f );
 
 	% complex-valued wavenumbers
+% TODO: homogeneous_fluid
     axes_k_tilde = compute_wavenumbers( [ spatial_grids.absorption_model ], axes_f );
 
 	% specify cell array for fields
@@ -112,7 +113,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
             % iterate batches
             for index_batch = 1:N_batches
 
-                % indices of current grid points
+                % print progress in percent
                 fprintf( '%5.1f %%', ( index_batch - 1 ) / N_batches * 1e2 );
 
                 % compute Green's functions for specified pairs of grids and specified grid points
@@ -124,7 +125,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
                 % integrate over aperture
                 h_tx{ index_element } = h_tx{ index_element } - 2 * grid_element_act.grid.cell_ref.volume * squeeze( sum( temp, 1 ) ).';
 
-                % indices of current grid points
+                % erase progress in percent
                 fprintf( '\b\b\b\b\b\b\b' );
 
             end % for index_batch = 1:N_batches

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-05-21
+% modified: 2019-06-02
 %
 classdef setting_tx_QSW < controls.setting_tx
 
@@ -97,7 +97,7 @@ classdef setting_tx_QSW < controls.setting_tx
                 % b) impulse responses are delays
                 %----------------------------------------------------------
                 % compute time delays for each virtual source
-                time_delays_act = distances_src_ctr( indicator_active ) / setup.c_avg;
+                time_delays_act = distances_src_ctr( indicator_active ) / setup.homogeneous_fluid.c_avg;
                 time_delays_act = time_delays_act - min( time_delays_act );
 
                 % specify impulse responses

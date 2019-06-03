@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-05-05
+% modified: 2019-06-02
 %
 classdef spatial_grid_symmetric < discretizations.spatial_grid
 
@@ -25,12 +25,12 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = spatial_grid_symmetric( absorption_models, strs_name, grids_elements, grids_FOV, N_points_per_pitch_axis )
+        function objects = spatial_grid_symmetric( homogeneous_fluids, strs_name, grids_elements, grids_FOV, N_points_per_pitch_axis )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass ensures class absorption_models.absorption_model
+            % superclass ensures class pulse_echo_measurements.homogeneous_fluid
 
             % ensure cell array for grids_elements
             if ~iscell( grids_elements )
@@ -61,7 +61,7 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.spatial_grid( absorption_models, strs_name, grids_elements, grids_FOV );
+            objects@discretizations.spatial_grid( homogeneous_fluids, strs_name, grids_elements, grids_FOV );
 
             %--------------------------------------------------------------
             % 3.) confirm symmetry

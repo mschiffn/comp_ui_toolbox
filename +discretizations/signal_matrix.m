@@ -210,7 +210,7 @@ classdef signal_matrix
         end % function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
-        % Fourier transform
+        % Fourier transform (see book:Briggs1995, pp. 40, 41)
         %------------------------------------------------------------------
         function signal_matrices = fourier_transform( signal_matrices, intervals_t, intervals_f )
 
@@ -223,7 +223,7 @@ classdef signal_matrix
             % 2.) compute Fourier transform samples
             %--------------------------------------------------------------
             for index_object = 1:numel( signal_matrices )
-% TODO: correct scaling?
+
                 signal_matrices( index_object ).samples = deltas( index_object ) * sqrt( N_dft( index_object ) ) * signal_matrices( index_object ).samples;
 
             end % for index_object = 1:numel( signal_matrices )
@@ -231,7 +231,7 @@ classdef signal_matrix
         end % function signal_matrices = fourier_transform( signal_matrices, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
-        % Fourier coefficients
+        % Fourier coefficients (see book:Briggs1995, p. 40)
         %------------------------------------------------------------------
         function signal_matrices = fourier_coefficients( signal_matrices, intervals_t, intervals_f )
 
@@ -245,7 +245,7 @@ classdef signal_matrix
             %--------------------------------------------------------------
             for index_object = 1:numel( signal_matrices )
 
-                signal_matrices( index_object ).samples = N_dft( index_object ) * signal_matrices( index_object ).samples;
+                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples / sqrt( N_dft( index_object ) );
 
             end % for index_object = 1:numel( signal_matrices )
 
@@ -310,7 +310,7 @@ classdef signal_matrix
             % compute time axes
             T_rec = 1 ./ deltas;
 % TODO: noninteger?
-            N_samples_t = T_rec ./ delta;
+            N_samples_t = floor( T_rec ./ delta );
 % TODO: N_samples_t odd?
             axes_t = math.sequence_increasing_regular( lbs_q, lbs_q + N_samples_t - 1, delta );
             index_shift = ceil( N_samples_t / 2 );
@@ -326,7 +326,7 @@ classdef signal_matrix
                 samples_act = circshift( samples_act, axes_f( index_object ).q_lb, 1 );
 
                 % compute signal samples
-                samples_td{ index_object } = N_samples_t * ifft( samples_act, N_samples_t, 1, 'symmetric' );
+                samples_td{ index_object } = N_samples_t( index_object ) * ifft( samples_act, N_samples_t( index_object ), 1, 'symmetric' );
 
                 % shift samples
                 samples_td{ index_object } = circshift( samples_td{ index_object }, -axes_t( index_object ).q_lb, 1 );

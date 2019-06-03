@@ -3,18 +3,18 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-04-11
+% modified: 2019-06-03
 %
 classdef parameters
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
         N_elements_axis ( 1, : ) double { mustBeInteger, mustBePositive, mustBeNonempty } = [ 128, 1 ]	% numbers of elements along each coordinate axis (1)
-        apodization ( 1, : )                                % apodization function
+        apodization ( 1, : )                                % apodization function (r = normalized relative positions of the grid points)
         axial_focus_axis ( 1, : ) physical_values.length	% axial distances of the foci along each coordinate axis
         str_model = 'Default Array'             % model name
         str_vendor = 'Default Corporation'      % vendor name
@@ -22,9 +22,9 @@ classdef parameters
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -81,6 +81,8 @@ classdef parameters
                     errorStruct.identifier = 'parameters:SizeMismatch';
                     error( errorStruct );
                 end
+
+% TODO: ensure function handles
 
                 % ensure equal number of dimensions and sizes
                 auxiliary.mustBeEqualSize( axial_focus_axis{ index_object }, N_elements_axis{ index_object } );
@@ -143,13 +145,8 @@ classdef parameters
         %------------------------------------------------------------------
         function results = N_elements( parameters )
 
-            % initialize results
-            results = zeros( size( parameters ) );
-
-            % compute number of elements
-            for index_object = 1:numel( parameters )
-                results( index_object ) = prod( parameters( index_object ).N_elements_axis, 2 );
-            end
+            % compute numbers of elements
+            results = reshape( cellfun( @prod, { parameters.N_elements_axis } ), size( parameters ) );
 
         end % function results = N_elements( parameters )
 

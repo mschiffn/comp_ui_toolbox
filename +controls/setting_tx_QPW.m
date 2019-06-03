@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-05-21
+% modified: 2019-06-02
 %
 classdef setting_tx_QPW < controls.setting_tx
 
@@ -72,7 +72,7 @@ classdef setting_tx_QPW < controls.setting_tx
                 % b) impulse responses are delays
                 %----------------------------------------------------------
                 % compute time delays for each preferred direction of propagation
-                time_delays_act = e_theta( index_object ).components * centers( setup.xdc_array )' / setup.c_avg;
+                time_delays_act = e_theta( index_object ).components * centers( setup.xdc_array )' / setup.homogeneous_fluid.c_avg;
                 time_delays_act = time_delays_act - min( time_delays_act );
 
                 % specify impulse responses

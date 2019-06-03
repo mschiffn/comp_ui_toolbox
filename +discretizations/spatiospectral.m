@@ -79,7 +79,7 @@ classdef spatiospectral
                 % extract unique frequency axis
                 v_d_unique = reshape( [ objects( index_object ).spectral.v_d_unique ], size( objects( index_object ).spectral ) );
                 [ objects( index_object ).axis_f_unique, ~, objects( index_object ).indices_f_to_unique ] = unique( [ v_d_unique.axis ] );
-                objects( index_object ).axis_k_tilde_unique = compute_wavenumbers( objects( index_object ).spatial.absorption_model, objects( index_object ).axis_f_unique );
+                objects( index_object ).axis_k_tilde_unique = compute_wavenumbers( objects( index_object ).spatial.homogeneous_fluid.absorption_model, objects( index_object ).axis_f_unique );
 
                 % compute prefactors for scattering (local frequencies)
 % TODO: What is the exact requirement?

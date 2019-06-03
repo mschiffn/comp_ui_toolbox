@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-05-17
+% modified: 2019-06-03
 %
 classdef physical_quantity < physical_values.transparent_container
 
@@ -52,7 +52,7 @@ classdef physical_quantity < physical_values.transparent_container
             % ensure nonemptyness of the argument
             mustBeNonempty( values );
 %             mustBeReal( values );
-            mustBeFinite( values );
+%             mustBeFinite( values );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass

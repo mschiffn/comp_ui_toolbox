@@ -401,6 +401,8 @@ classdef operator_born < scattering.operator
                 N_observations = cellfun( @( x ) sum( x(:) ), { operators_born( index_object ).discretization.spectral.N_observations } );
                 u_M{ index_object } = mat2cell( u_M{ index_object }, N_observations, 1 );
 
+% TODO: complete generation of suitable data structure
+
                 % iterate sequential pulse-echo measurements
                 for index_measurement = 1:numel( operator_born.discretization.spectral )
 

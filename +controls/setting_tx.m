@@ -277,7 +277,7 @@ classdef setting_tx < controls.setting
                 errorStruct.identifier = 'compute_normal_velocities:NoSignalMatrices';
                 error( errorStruct );
             end
-
+% TODO: check for frequency domain!
             %--------------------------------------------------------------
             % 2.) compute normal velocities
             %--------------------------------------------------------------

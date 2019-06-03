@@ -33,8 +33,8 @@ classdef array_planar < transducers.array
             %--------------------------------------------------------------
             % ensure class transducers.parameters_planar
             if ~isa( parameters_planar, 'transducers.parameters_planar' )
-                errorStruct.message     = 'parameters_planar must be transducers.parameters_planar!';
-                errorStruct.identifier	= 'array_planar:NoParametersPlanar';
+                errorStruct.message = 'parameters_planar must be transducers.parameters_planar!';
+                errorStruct.identifier = 'array_planar:NoParametersPlanar';
                 error( errorStruct );
             end
 
@@ -126,10 +126,19 @@ classdef array_planar < transducers.array
         % discretize planar transducer array
         %------------------------------------------------------------------
         function structs_out = discretize( arrays_planar, c_avg, options_elements )
-
+% TODO: replace c_avg by material of acoustic lens
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure class transducers.array_planar
+            if ~isa( arrays_planar, 'transducers.array_planar' )
+                errorStruct.message = 'arrays_planar must be transducers.array_planar!';
+                errorStruct.identifier = 'array_planar:NoPlanarArray';
+                error( errorStruct );
+            end
+
+            % method discretize in orthotope ensures class discretizations.parameters for options_elements
+
             % multiple arrays_planar / scalar options_elements
             if ~isscalar( arrays_planar ) && isscalar( options_elements )
                 options_elements = repmat( options_elements, size( arrays_planar ) );
@@ -139,7 +148,7 @@ classdef array_planar < transducers.array
             auxiliary.mustBeEqualSize( arrays_planar, c_avg, options_elements );
 
             %--------------------------------------------------------------
-            % 2.) create fields
+            % 2.) create grids
             %--------------------------------------------------------------
             % specify cell array for structs_out
             structs_out = cell( size( arrays_planar ) );

@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-28
-% modified: 2019-05-15
+% modified: 2019-06-01
 %
 classdef sequence_rnd_del < pulse_echo_measurements.sequence
 
@@ -16,7 +16,7 @@ classdef sequence_rnd_del < pulse_echo_measurements.sequence
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = sequence_rnd_del( setup, u_tx_tilde, e_theta, settings_rng, interval_t, interval_f )
+        function object = sequence_rnd_del( setup, u_tx_tilde, e_theta, settings_rng, interval_f )
 
             %--------------------------------------------------------------
             % 1.) create synthesis settings
@@ -24,9 +24,18 @@ classdef sequence_rnd_del < pulse_echo_measurements.sequence
             settings_tx = controls.setting_tx_rnd_del( setup, u_tx_tilde, e_theta, settings_rng );
 
             %--------------------------------------------------------------
-            % 2.) create reception settings (estimate recording time intervals via options?)
+            % 2.) create reception settings
             %--------------------------------------------------------------
-            settings_rx = repmat( { controls.setting_rx_identity( setup, interval_t, interval_f ) }, size( settings_tx ) );
+            % specify cell array for settings_rx
+            settings_rx = cell( size( settings_tx ) );
+
+            % iterate transducer control settings in synthesis mode
+            for index_object = 1:numel( settings_tx )
+
+                % create reception settings w/o mixing
+                settings_rx{ index_object } = controls.setting_rx_identity( setup, settings_tx( index_object ), interval_f );
+
+            end % for index_object = 1:numel( settings_tx )
 
             %--------------------------------------------------------------
             % 3.) create pulse-echo measurement settings
@@ -38,7 +47,7 @@ classdef sequence_rnd_del < pulse_echo_measurements.sequence
             %--------------------------------------------------------------
             object@pulse_echo_measurements.sequence( setup, settings );
 
-        end % function object = sequence_rnd_del( setup, u_tx_tilde, e_theta, settings_rng, interval_t, interval_f )
+        end % function object = sequence_rnd_del( setup, u_tx_tilde, e_theta, settings_rng, interval_f )
 
 	end % methods
 

@@ -1,9 +1,11 @@
 %
 % superclass for all regular grids
 %
+% wikipedia: A regular grid is a tessellation of n-dimensional Euclidean space by congruent parallelotopes (e.g. bricks).
+%
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-04-09
+% modified: 2019-06-03
 %
 classdef grid_regular < math.grid
 
@@ -39,8 +41,8 @@ classdef grid_regular < math.grid
 
             % ensure class math.parallelotope
             if ~isa( cells_ref, 'math.parallelotope' )
-                errorStruct.message     = 'cells_ref must be math.parallelotope!';
-                errorStruct.identifier	= 'grid_regular:NoParallelotopes';
+                errorStruct.message = 'cells_ref must be math.parallelotope!';
+                errorStruct.identifier = 'grid_regular:NoParallelotopes';
                 error( errorStruct );
             end
 

@@ -3,23 +3,20 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2019-05-22
+% modified: 2019-06-02
 %
 classdef setup
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
-        xdc_array ( 1, 1 ) transducers.array = transducers.L14_5_38     % transducer array
-        FOV ( 1, 1 ) fields_of_view.field_of_view                       % field of view
-        % TODO: properties of the lossy homogeneous fluid
-        absorption_model ( 1, 1 ) absorption_models.absorption_model = absorption_models.time_causal( 0, 0.5, 1, physical_values.meter_per_second( 1540 ), physical_values.hertz( 4e6 ), 1 )	% absorption model for the lossy homogeneous fluid
-% TODO: c_avg vs c_ref?
-% TODO: homogeneous_fluid
-        c_avg = physical_values.meter_per_second( 1500 );               % average small-signal sound speed
+        xdc_array ( 1, 1 ) transducers.array = transducers.L14_5_38             % transducer array
+        homogeneous_fluid ( 1, 1 ) pulse_echo_measurements.homogeneous_fluid	% properties of the lossy homogeneous fluid
+        FOV ( 1, 1 ) fields_of_view.field_of_view                               % field of view
+
         T_clk = physical_values.second( 1 / 80e6 );                     % time period of the clock signal
         str_name = 'default'                                            % name
 
@@ -28,15 +25,15 @@ classdef setup
 
     end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setup( xdc_arrays, FOVs, absorption_models, strs_name )
+        function objects = setup( xdc_arrays, homogeneous_fluids, FOVs, strs_name )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -47,7 +44,7 @@ classdef setup
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( xdc_arrays, FOVs, absorption_models, strs_name );
+            auxiliary.mustBeEqualSize( xdc_arrays, homogeneous_fluids, FOVs, strs_name );
 
             %--------------------------------------------------------------
             % 2.) create pulse-echo measurement setups
@@ -69,8 +66,8 @@ classdef setup
                 % a) set independent properties
                 %----------------------------------------------------------
                 objects( index_object ).xdc_array = xdc_arrays( index_object );
+                objects( index_object ).homogeneous_fluid = homogeneous_fluids( index_object );
                 objects( index_object ).FOV = FOVs( index_object );
-                objects( index_object ).absorption_model = absorption_models( index_object );
                 objects( index_object ).str_name = strs_name{ index_object };
 
                 %----------------------------------------------------------
@@ -80,7 +77,7 @@ classdef setup
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = setup( xdc_arrays, FOVs, absorption_models, strs_name )
+        end % function objects = setup( xdc_arrays, homogeneous_fluids, FOVs, strs_name )
 
         %------------------------------------------------------------------
         % lower and upper bounds on the times-of-flight
@@ -192,7 +189,7 @@ classdef setup
                             %----------------------------------------------
                             % a) lower bound on the time-of-flight
                             %----------------------------------------------
-                            t_tof_lbs( index_active_tx, index_active_rx ) = 2 * sqrt( dist_focus_ctr^2 + setups( index_object ).FOV.intervals( end ).lb^2 ) / setups( index_object ).c_avg;
+                            t_tof_lbs( index_active_tx, index_active_rx ) = 2 * sqrt( dist_focus_ctr^2 + setups( index_object ).FOV.intervals( end ).lb^2 ) / setups( index_object ).homogeneous_fluid.c_avg;
                             t_tof_lbs( index_active_rx, index_active_tx ) = t_tof_lbs( index_active_tx, index_active_rx );
 
                             %----------------------------------------------
@@ -216,7 +213,7 @@ classdef setup
                             end
 
                             % compute upper bound
-                            t_tof_ubs( index_active_tx, index_active_rx ) = ( norm( pos_vertices{ index_object }( index_max, : ) - pos_tx ) + norm( pos_rx - pos_vertices{ index_object }( index_max, : ) ) ) / setups( index_object ).c_avg;
+                            t_tof_ubs( index_active_tx, index_active_rx ) = ( norm( pos_vertices{ index_object }( index_max, : ) - pos_tx ) + norm( pos_rx - pos_vertices{ index_object }( index_max, : ) ) ) / setups( index_object ).homogeneous_fluid.c_avg;
                             t_tof_ubs( index_active_rx, index_active_tx ) = t_tof_ubs( index_active_tx, index_active_rx );
 
 %                         else
@@ -268,12 +265,12 @@ classdef setup
             %--------------------------------------------------------------
             % 3.) construct spatial discretizations
             %--------------------------------------------------------------
-            % TODO: check symmetry of setups and choose class accordingly
+% TODO: check symmetry of setups and choose class accordingly
             if 1 %issymmetric( discretizations_elements, discretization_FOV )
                 N_points_per_pitch_axis = round( setups.xdc_array.element_pitch_axis ./ options_spatial.options_FOV.values( 1:(end - 1) ) );
-                objects_out = discretizations.spatial_grid_symmetric( [ setups.absorption_model ], [ setups.str_name ], discretizations_elements, discretization_FOV, N_points_per_pitch_axis );
+                objects_out = discretizations.spatial_grid_symmetric( [ setups.homogeneous_fluid ], [ setups.str_name ], discretizations_elements, discretization_FOV, N_points_per_pitch_axis );
             else
-                objects_out = discretizations.spatial_grid( [ setups.absorption_model ], [ setups.str_name ], discretizations_elements, discretization_FOV );
+                objects_out = discretizations.spatial_grid( [ setups.homogeneous_fluid ], [ setups.str_name ], discretizations_elements, discretization_FOV );
             end
 
         end % function objects_out = discretize( setups, options_spatial )

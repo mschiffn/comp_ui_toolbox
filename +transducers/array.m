@@ -8,7 +8,7 @@
 classdef array
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% properties
+	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
@@ -22,7 +22,7 @@ classdef array
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
@@ -36,8 +36,8 @@ classdef array
             %--------------------------------------------------------------
             % ensure class transducers.parameters
             if ~isa( parameters, 'transducers.parameters' )
-                errorStruct.message     = 'parameters must be transducers.parameters!';
-                errorStruct.identifier	= 'array:NoParameters';
+                errorStruct.message = 'parameters must be transducers.parameters!';
+                errorStruct.identifier = 'array:NoParameters';
                 error( errorStruct );
             end
 

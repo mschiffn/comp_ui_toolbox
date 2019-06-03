@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-05-16
+% modified: 2019-06-02
 %
 classdef spatial_grid < discretizations.spatial
 
@@ -26,12 +26,12 @@ classdef spatial_grid < discretizations.spatial
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = spatial_grid( absorption_models, strs_name, grids_elements, grids_FOV )
+        function objects = spatial_grid( homogeneous_fluids, strs_name, grids_elements, grids_FOV )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass ensures class absorption_models.absorption_model
+            % superclass ensures class pulse_echo_measurements.homogeneous_fluid
 
             % ensure cell array for grids_elements
             if ~iscell( grids_elements )
@@ -46,12 +46,12 @@ classdef spatial_grid < discretizations.spatial
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( absorption_models, grids_elements, grids_FOV );
+            auxiliary.mustBeEqualSize( homogeneous_fluids, grids_elements, grids_FOV );
 
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.spatial( absorption_models, strs_name );
+            objects@discretizations.spatial( homogeneous_fluids, strs_name );
 
             %--------------------------------------------------------------
             % 3.) check and set independent properties
@@ -72,7 +72,7 @@ classdef spatial_grid < discretizations.spatial
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = spatial_grid( absorption_models, grids_elements, grids_FOV )
+        end % function objects = spatial_grid( homogeneous_fluids, strs_name, grids_elements, grids_FOV )
       
         %------------------------------------------------------------------
         % check for symmetry

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-05-27
+% modified: 2019-06-01
 %
 classdef setting
 
@@ -118,16 +118,14 @@ classdef setting
                     for index_object = 1:numel( settings )
 
                         % extract unique deltas from current transducer control settings
-                        deltas_rx = unique_deltas( settings( index_object ).rx );
-                        deltas_tx = unique_deltas( settings( index_object ).tx );
-                        deltas = [ deltas_rx, deltas_tx ];
+                        deltas_unique = unique_deltas( settings( index_object ) );
 
-                        % largest delta must be integer multiple of smaller deltas
-                        delta_max = max( deltas );
-                        mustBeInteger( delta_max ./ deltas );
+                        % largest delta_unique must be integer multiple of smaller deltas_unique
+                        delta_unique_max = max( deltas_unique );
+                        mustBeInteger( delta_unique_max ./ deltas_unique );
 
                         % quantize hull of all recording time intervals using largest delta
-                        interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_max );
+                        interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_unique_max );
 
                         % discretize rx and tx settings
                         settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
@@ -140,21 +138,19 @@ classdef setting
                     %------------------------------------------------------
                     % c) common frequency axis for all recorded signals
                     %------------------------------------------------------
+                    % extract unique deltas from all transducer control settings
+                    deltas_unique = unique_deltas( settings );
+
+                    % largest delta_unique must be integer multiple of smaller deltas_unique
+                    delta_unique_max = max( deltas_unique );
+                    mustBeInteger( delta_unique_max ./ deltas_unique );
+
                     % determine hulls of all time and frequency intervals
 % TODO: inject custom recording time interval
                     [ interval_hull_t, interval_hull_f ] = hulls( settings );
 
-                    % extract unique deltas from all transducer control settings
-                    deltas_rx = unique_deltas( [ settings.rx ] );
-                    deltas_tx = unique_deltas( [ settings.tx ] );
-                    deltas = [ deltas_rx, deltas_tx ];
-
-                    % largest delta must be integer multiple of smaller deltas
-                    delta_max = max( deltas );
-                    mustBeInteger( delta_max ./ deltas );
-
-                    % quantize hull of all recording time intervals using largest delta
-                    interval_hull_t_quantized = quantize( interval_hull_t, delta_max );
+                    % quantize hull of all recording time intervals using delta_unique_max
+                    interval_hull_t_quantized = quantize( interval_hull_t, delta_unique_max );
 
                     % iterate pulse-echo measurement settings
                     for index_object = 1:numel( settings )
@@ -173,6 +169,19 @@ classdef setting
             objects_out = discretizations.spectral_points( settings_tx, settings_rx );
 
         end % function objects_out = discretize( settings, options_spectral )
+
+        %------------------------------------------------------------------
+        % unique deltas
+        %------------------------------------------------------------------
+        function deltas_unique = unique_deltas( settings )
+
+            % extract unique deltas from all transducer control settings
+            deltas_unique_tx = unique_deltas( [ settings.tx ] );
+% TODO: reat out of rx might cause problems if sizes are different
+            deltas_unique_rx = unique_deltas( [ settings.rx ] );
+            deltas_unique = unique( [ deltas_unique_tx, deltas_unique_rx ] );
+
+        end % function deltas_unique = unique_deltas( settings )
 
         %------------------------------------------------------------------
         % convex hulls of all intervals

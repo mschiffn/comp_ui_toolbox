@@ -5,12 +5,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-04-11
+% modified: 2019-06-03
 %
 classdef parameters_L14_5_38 < transducers.parameters_planar
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
@@ -35,8 +35,8 @@ classdef parameters_L14_5_38 < transducers.parameters_planar
             %--------------------------------------------------------------
             % 3.) acoustic lens specifications
             %--------------------------------------------------------------
-            apodization = @( r ) ones( size( r, 1 ), 1 );                   % apodization along each coordinate axis
-            axial_focus_axis = physical_values.meter( [ 1e6, 16e-3 ] );     % axial distance of the elevational focus (TODO: no focus possible using inf?)
+            apodization = @( pos_rel_norm ) ones( size( pos_rel_norm, 1 ), 1 );     % apodization along each coordinate axis (pos_rel_norm = normalized relative positions of the grid points)
+            axial_focus_axis = physical_values.meter( [ Inf, 16e-3 ] );             % axial distances of the lateral foci
 
             %--------------------------------------------------------------
             % 4.) electromechanical specifications

@@ -94,7 +94,7 @@ classdef setting_tx_rnd_apo_del < controls.setting_tx
 
                 % compute permissible maximum time shift
                 N_dimensions_lateral = setup.FOV.N_dimensions - 1;
-                t_shift_max = sum( ( setup.xdc_array.parameters.N_elements_axis( 1:N_dimensions_lateral ) - 1 ) .* setup.xdc_array.element_pitch_axis( 1:N_dimensions_lateral ) .* abs( e_theta( index_object ).components( 1:N_dimensions_lateral ) ), 2 ) / setup.c_avg;
+                t_shift_max = sum( ( setup.xdc_array.parameters.N_elements_axis( 1:N_dimensions_lateral ) - 1 ) .* setup.xdc_array.element_pitch_axis( 1:N_dimensions_lateral ) .* abs( e_theta( index_object ).components( 1:N_dimensions_lateral ) ), 2 ) / setup.homogeneous_fluid.c_avg;
                 % incorrect value for reproduction of old results: T_inc = t_shift_max / setup.xdc_array.N_elements;
                 T_inc = t_shift_max / ( setup.xdc_array.N_elements - 1 );
 
