@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-06-02
+% modified: 2019-06-06
 %
 classdef spatial_grid < discretizations.spatial
 
@@ -13,8 +13,8 @@ classdef spatial_grid < discretizations.spatial
 	properties (SetAccess = private)
 
         % independent properties
-        grids_elements %( :, : ) math.grid	% grids representing the array elements, apodization weights, and focal distances
-        grid_FOV ( 1, 1 ) math.grid          % grid representing the field-of-view
+        grids_elements ( :, 1 ) %math.grid	% grids representing the array elements, apodization weights, and focal distances
+        grid_FOV ( 1, 1 ) math.grid         % grid representing the field-of-view
 
 	end % properties
 
@@ -60,6 +60,7 @@ classdef spatial_grid < discretizations.spatial
 
                 % ensure class math.grid
 % TODO: introduce class for discretized face
+% TODO: validate N_dimensions, i.e. difference of unity!
                 if ~( isa( [ grids_elements{ index_object }.grid ], 'math.grid' ) && isa( [ grids_elements{ index_object }.time_delays ], 'physical_values.time' ) )
                     errorStruct.message     = sprintf( 'grids_elements{ %d } must be math.grid!', index_object );
                     errorStruct.identifier	= 'spatial_grid:NoGrid';

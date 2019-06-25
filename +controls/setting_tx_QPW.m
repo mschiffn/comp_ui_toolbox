@@ -37,6 +37,13 @@ classdef setting_tx_QPW < controls.setting_tx
                 error( errorStruct );
             end
 
+            % ensure class transducers.array_planar_regular_orthogonal
+            if ~isa( setup.xdc_array, 'transducers.array_planar_regular_orthogonal' )
+                errorStruct.message = 'setup.xdc_array must be transducers.array_planar_regular_orthogonal!';
+                errorStruct.identifier = 'setting_tx_QPW:NoRegularOrthogonalTransducerArray';
+                error( errorStruct );
+            end
+
             % excitation_voltages_common will be checked in superclass
 
             % ensure class math.unit_vector
@@ -72,7 +79,7 @@ classdef setting_tx_QPW < controls.setting_tx
                 % b) impulse responses are delays
                 %----------------------------------------------------------
                 % compute time delays for each preferred direction of propagation
-                time_delays_act = e_theta( index_object ).components * centers( setup.xdc_array )' / setup.homogeneous_fluid.c_avg;
+                time_delays_act = e_theta( index_object ).components * [ setup.xdc_array.positions_ctr, zeros( setup.xdc_array.N_elements, 1 ) ]' / setup.homogeneous_fluid.c_avg;
                 time_delays_act = time_delays_act - min( time_delays_act );
 
                 % specify impulse responses

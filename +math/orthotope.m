@@ -140,10 +140,49 @@ classdef orthotope
         end % function objects_out = center( orthotopes )
 
         %------------------------------------------------------------------
+        % move orthotope
+        %------------------------------------------------------------------
+        function orthotopes = move( orthotopes, centers )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.orthotope
+            if ~isa( orthotopes, 'math.orthotope' )
+                errorStruct.message = 'orthotopes must be math.orthotope!';
+                errorStruct.identifier = 'replicate:NoOrthotopes';
+                error( errorStruct );
+            end
+
+            % ensure cell array for centers
+            if ~iscell( centers )
+                centers = { centers };
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( orthotopes, centers );
+
+            %--------------------------------------------------------------
+            % 2.) move orthotopes
+            %--------------------------------------------------------------
+            % iterate orthotopes
+            for index_object = 1:numel( centers )
+
+                % ensure equal number of dimensions and sizes
+                auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, centers{ index_object } );
+
+                % move orthotope
+                orthotopes( index_object ).intervals = move( orthotopes( index_object ).intervals, centers{ index_object } );
+
+            end % for index_object = 1:numel( orthotopes )
+
+        end % function orthotopes = move( orthotopes, centers )
+
+        %------------------------------------------------------------------
         % discretize
         %------------------------------------------------------------------
         function objects_out = discretize( orthotopes, parameters )
-            % TODO: various types of discretization (subtype of regular grid) / parameter objects
+% TODO: various types of discretization (subtype of regular grid) / parameter objects
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -155,7 +194,7 @@ classdef orthotope
                 error( errorStruct );
             end
 
-            % multiple orthotopes / scalar parameters
+            % multiple orthotopes / single parameters
             if ~isscalar( orthotopes ) && isscalar( parameters )
                 parameters = repmat( parameters, size( orthotopes ) );
             end

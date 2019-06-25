@@ -85,7 +85,7 @@ classdef setting_tx_QSW < controls.setting_tx
                 %----------------------------------------------------------
                 % a) determine active array elements
                 %----------------------------------------------------------
-                vectors_src_ctr = centers( setup.xdc_array ) - repmat( positions_src( index_object, : ), [ setup.xdc_array.N_elements, 1 ] );
+                vectors_src_ctr = [ setup.xdc_array.positions_ctr, zeros( setup.xdc_array.N_elements, 1 ) ] - repmat( positions_src( index_object, : ), [ setup.xdc_array.N_elements, 1 ] );
                 distances_src_ctr = vecnorm( vectors_src_ctr, 2, 2 );
                 indicator_distance = double( distances_src_ctr ) >= eps;
                 indicator_active = false( size( setup.xdc_array.aperture ) );

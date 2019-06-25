@@ -1,18 +1,16 @@
 %
-% superclass for all array elements with orthotope shape
+% superclass for all planar vibrating faces with orthotope shape
+%
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-03-25
+% modified: 2019-06-04
 %
-classdef face_planar_orthotope < transducers.face_planar & math.orthotope
+classdef face_planar_orthotope < transducers.face_planar
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
-
-        % independent properties
-        pos_center ( 1, : ) physical_values.length	% center coordinates of vibrating face (m)
 
     end % properties
 
@@ -24,20 +22,19 @@ classdef face_planar_orthotope < transducers.face_planar & math.orthotope
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = face_planar_orthotope( varargin )
+        function objects = face_planar_orthotope( apodizations, lenses, varargin )
 
             %--------------------------------------------------------------
-            % 1.) constructors of superclasses
+            % 1.) create planar vibrating faces with orthotope shape
             %--------------------------------------------------------------
-            objects@transducers.face_planar();
-            objects@math.orthotope( varargin{ : } );
+            % create orthotopes
+            orthotopes = math.orthotope( varargin{ : } );
 
-            for index_object = 1:numel( objects )
-                objects( index_object ).pos_center = center( objects( index_object ) );
-            end
+            % constructor of superclass
+            objects@transducers.face_planar( orthotopes, apodizations, lenses );
 
-        end % function objects = face_planar_orthotope( varargin )
+        end % function objects = face_planar_orthotope( apodizations, lenses, varargin )
 
     end % methods
 
-end % classdef face_planar_orthotope
+end % classdef face_planar_orthotope < transducers.face_planar

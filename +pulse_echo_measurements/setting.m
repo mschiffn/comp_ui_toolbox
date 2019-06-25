@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-06-01
+% modified: 2019-06-07
 %
 classdef setting
 
@@ -175,11 +175,23 @@ classdef setting
         %------------------------------------------------------------------
         function deltas_unique = unique_deltas( settings )
 
-            % extract unique deltas from all transducer control settings
+            % extract unique deltas from all transducer control settings in synthesis mode
             deltas_unique_tx = unique_deltas( [ settings.tx ] );
-% TODO: reat out of rx might cause problems if sizes are different
-            deltas_unique_rx = unique_deltas( [ settings.rx ] );
-            deltas_unique = unique( [ deltas_unique_tx, deltas_unique_rx ] );
+
+            % iterate pulse-echo measurement settings
+            deltas_unique_rx = cell( size( settings ) );
+            for index_setting = 1:numel( settings )
+
+                % extract unique deltas from all transducer control settings in recording mode
+                deltas_unique_rx{ index_setting } = unique_deltas( settings( index_setting ).rx );
+
+            end % for index_setting = 1:numel( settings )
+
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', deltas_unique_tx, deltas_unique_rx{ : } );
+
+            % extract unique deltas from all transducer control settings
+            deltas_unique = unique( [ deltas_unique_tx, cat( 2, deltas_unique_rx{ : } ) ] );
 
         end % function deltas_unique = unique_deltas( settings )
 

@@ -4,7 +4,7 @@ function fields = compute_p_in( spatiospectral, varargin )
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-05-27
+% modified: 2019-06-07
 %
 
 	% print status
@@ -91,7 +91,6 @@ function fields = compute_p_in( spatiospectral, varargin )
 
                 % extract current frequencies from unique frequencies
                 h_tx_unique = double( spatiospectral.h_ref.samples( indices_f_to_unique_act, indices_occupied_act ) );
-%                 h_tx_unique = shift_lateral( spatiospectral.h_ref( index_incident ), spatiospectral.spatial, index_element );
 
             else
 
@@ -108,8 +107,12 @@ function fields = compute_p_in( spatiospectral, varargin )
 
             % add summand to the incident pressure field
 % TODO: correct unit problem
+
             p_incident{ index_incident_sel } = p_incident{ index_incident_sel } + physical_values.pascal( p_incident_summand );
-            figure(index_incident_sel);imagesc( abs( double( squeeze( reshape( p_incident{ index_incident_sel }( 1, : ), spatiospectral.spatial.grid_FOV.N_points_axis ) ) ) ) );
+
+            % display result
+            figure(index_incident_sel);
+            imagesc( abs( double( squeeze( reshape( p_incident{ index_incident_sel }( 1, : ), spatiospectral.spatial.grid_FOV.N_points_axis ) ) ) ) );
 
         end % for index_active = 1:numel( settings_tx_unique( index_incident_sel ).indices_active )
 

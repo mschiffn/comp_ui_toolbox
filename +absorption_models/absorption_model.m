@@ -3,33 +3,63 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-25
-% modified: 2019-04-07
+% modified: 2019-06-05
 %
 classdef absorption_model
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
-        str_name        % name of absorption model
+        % independent properties
+        str_name                    % name of absorption model
 
     end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods (concrete)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function ABS = absorption_model( str_name )
+        function objects = absorption_model( strs_name )
 
-            % internal properties
-            ABS.str_name	= str_name;
-        end
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for strs_name
+            if ~iscell( strs_name )
+                strs_name = { strs_name };
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create absorption models
+            %--------------------------------------------------------------
+            % repeat default absorption model
+            objects = repmat( objects, size( strs_name ) );
+
+            % iterate absorption models
+            for index_object = 1:numel( objects )
+
+                % internal properties
+                objects( index_object ).str_name = strs_name{ index_object };
+
+            end % for index_object = 1:numel( objects )
+
+        end % function objects = absorption_model( strs_name )
 
     end % methods
 
-end % classdef absorption_model
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% methods (abstract)
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    methods (Abstract)
+
+        axes_k_tilde = compute_wavenumbers( time_causal, axes_f )
+
+    end
+
+end % classdef (Abstract) absorption_model

@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-05-25
+% modified: 2019-06-08
 %
 classdef sequence_increasing_regular < math.sequence_increasing
 
@@ -38,7 +38,7 @@ classdef sequence_increasing_regular < math.sequence_increasing
             mustBeInteger( ubs_q );
 
             % ensure positive deltas
-            % (class physical_values.physical_quantity is ensured by superclass)
+            % (superclass ensures class physical_values.physical_quantity)
             mustBePositive( deltas );
 
             % multiple lbs_q / single deltas
@@ -73,6 +73,65 @@ classdef sequence_increasing_regular < math.sequence_increasing
             end
 
         end % function objects = sequence_increasing_regular( lbs_q, ubs_q, deltas )
+
+        %------------------------------------------------------------------
+        % subsample
+        %------------------------------------------------------------------
+%         function sequences_out = subsample( sequences_in, indices )
+% 
+%             %--------------------------------------------------------------
+%             % 1.) check arguments
+%             %--------------------------------------------------------------
+%             % ensure class math.sequence_increasing_regular
+%             if ~isa( sequences_in, 'math.sequence_increasing_regular' )
+%                 errorStruct.message = 'sequences_in must be math.sequence_increasing_regular!';
+%                 errorStruct.identifier = 'subsample:NoIncreasingSequences';
+%                 error( errorStruct );
+%             end
+% 
+%             %--------------------------------------------------------------
+%             % 2.) perform subsampling
+%             %--------------------------------------------------------------
+%             % specify cell array for sequences_out
+%             sequences_out = cell( size( sequences_in ) );
+% 
+%             % iterate sequences
+%             for index_object = 1:numel( sequences_in )
+% 
+%             % call method subsample in superclass
+%             subsample@math.sequence_increasing( sequences_in, indices )
+% 
+%             
+%             % extract cardinalities
+%             N_members = abs( sequences_in );
+% 
+%             % specify cell array for members_sub
+%             members_sub = cell( size( sequences_in ) );
+% 
+%             
+% 
+%                 % ensure positive integers
+%                 mustBeInteger( indices{ index_object } );
+%                 mustBePositive( indices{ index_object } );
+% 
+%                 % ensure that indices{ index_object } do not exceed N_members
+%                 if any( indices{ index_object } > N_members( index_object ) )
+%                     errorStruct.message = sprintf( 'indices{ %d } must not exceed %d!', index_object, N_members( index_object ) );
+%                     errorStruct.identifier = 'subsample:InvalidIndices';
+%                     error( errorStruct );
+%                 end
+% 
+%                 % subsample members
+%                 members_sub{ index_object } = sequences_in( index_object ).members( indices{ index_object } );
+% 
+%             end % for index_object = 1:numel( sequences_in )
+% 
+%             %--------------------------------------------------------------
+%             % 3.) create sequences
+%             %--------------------------------------------------------------
+%             sequences_out = math.sequence_increasing( members_sub );
+% 
+%         end % function sequences_out = subsample( sequences_in, indices )
 
         %------------------------------------------------------------------
         % cut out subsequence

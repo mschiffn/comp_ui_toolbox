@@ -3,12 +3,12 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-05-27
+% modified: 2019-06-09
 %
 classdef signal < discretizations.signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
+    %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 

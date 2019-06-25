@@ -188,6 +188,20 @@ classdef transparent_container
 
         end
 
+        % solve systems of linear equations Ax = B for x
+        function arg_1 = mldivide( arg_1, arg_2 )
+
+            if isa( arg_1, 'physical_values.transparent_container' ) && ~isa( arg_2, 'physical_values.transparent_container' )
+                arg_1.values = arg_1.values \ arg_2;
+            elseif ~isa( arg_1, 'physical_values.transparent_container' ) && isa( arg_2, 'physical_values.transparent_container' )
+                arg_2.values = arg_1 \ arg_2.values;
+                arg_1 = arg_2;
+            else
+                arg_1.values = arg_1.values \ arg_2.values;
+            end
+
+        end
+
         % number of array dimensions
         function result = ndims( container )
             result = ndims( container.values );

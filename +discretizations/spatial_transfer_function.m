@@ -7,7 +7,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
 % modified: 2019-05-27
 %
 
-    N_points_max = 2;
+    N_points_max = 6;
 
     % print status
 	time_start = tic;
@@ -25,7 +25,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
     end
 
 	% ensure class math.sequence_increasing
-	if ~( isa( axes_f, 'math.sequence_increasing' ) && isa( [ axes_f.members ], 'physical_values.frequency' ) )
+	if ~( isa( axes_f, 'math.sequence_increasing' ) && all( cellfun( @( x ) isa( x, 'physical_values.frequency' ), { axes_f.members } ) ) )
         errorStruct.message = 'axes_f must be math.sequence_increasing with physical_values.frequency members!';
         errorStruct.identifier = 'spatial_transfer_function:InvalidFrequencyAxis';
         error( errorStruct );
@@ -63,8 +63,8 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
 	N_samples_f = abs( axes_f );
 
 	% complex-valued wavenumbers
-% TODO: homogeneous_fluid
-    axes_k_tilde = compute_wavenumbers( [ spatial_grids.absorption_model ], axes_f );
+	homogeneous_fluids = [ spatial_grids.homogeneous_fluid ];
+    axes_k_tilde = compute_wavenumbers( [ homogeneous_fluids.absorption_model ], axes_f );
 
 	% specify cell array for fields
 	fields = cell( size( spatial_grids ) );
@@ -87,7 +87,10 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
         h_tx = cell( size( indices_element{ index_object } ) );
 
         % iterate specified elements
-        for index_element = indices_element{ index_object }
+        for index_selected = 1:numel( indices_element{ index_object } )
+
+            % index of the array element
+            index_element = indices_element{ index_object }( index_selected );
 
             % extract discretized element
             grid_element_act = spatial_grids( index_object ).grids_elements( index_element );
@@ -103,7 +106,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
             weights = reshape( grid_element_act.apodization .* exp( - 2j * pi * grid_element_act.time_delays * axes_f( index_object ).members' ), [ grid_element_act.grid.N_points, 1, N_samples_f( index_object ) ] );
 
             % initialize results with zeros
-            h_tx{ index_element } = physical_values.meter( zeros( N_samples_f( index_object ), spatial_grids( index_object ).grid_FOV.N_points ) );
+            h_tx{ index_selected } = physical_values.meter( zeros( N_samples_f( index_object ), spatial_grids( index_object ).grid_FOV.N_points ) );
 
             % partition grid points into batches to save memory
             N_batches = ceil( grid_element_act.grid.N_points / N_points_max );
@@ -123,14 +126,14 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
                 temp = weights( indices{ index_batch }, :, : ) .* temp;
 
                 % integrate over aperture
-                h_tx{ index_element } = h_tx{ index_element } - 2 * grid_element_act.grid.cell_ref.volume * squeeze( sum( temp, 1 ) ).';
+                h_tx{ index_selected } = h_tx{ index_selected } - 2 * grid_element_act.grid.cell_ref.volume * shiftdim( sum( temp, 1 ), 1 ).';
 
                 % erase progress in percent
                 fprintf( '\b\b\b\b\b\b\b' );
 
             end % for index_batch = 1:N_batches
 
-        end % for index_element = indices_element{ index_object }
+        end % for index_selected = numel( indices_element{ index_object } )
 
         % create fields
         fields{ index_object } = discretizations.field( repmat( axes_f( index_object ), size( h_tx ) ), repmat( spatial_grids( index_object ).grid_FOV, size( h_tx ) ), h_tx );

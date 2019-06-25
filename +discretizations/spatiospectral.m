@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-13
+% modified: 2019-06-20
 %
 classdef spatiospectral
 
@@ -114,7 +114,7 @@ classdef spatiospectral
         % compute prefactors (local frequencies)
         %------------------------------------------------------------------
         function prefactors = compute_prefactors( spatiospectrals )
-% TODO: partially move to spatial
+% TODO: partially move to spatial: -> samples unique
             % specify cell array for prefactors
             prefactors = cell( size( spatiospectrals ) );
 
@@ -131,8 +131,8 @@ classdef spatiospectral
                 % geometric volume element
                 delta_V = spatiospectrals( index_object ).spatial.grid_FOV.cell_ref.volume;
 
-                % map unique frequencies of each pulse-echo measurement to global unique frequencies
-                indices_f_to_unique_measurement = spatiospectrals( index_object ).indices_f_to_unique;
+                % map unique frequencies of all pulse-echo measurements to global unique frequencies
+                indices_f_measurement_to_global = spatiospectrals( index_object ).indices_f_to_unique;
 
                 % compute samples of prefactors (unique frequencies)
                 samples_unique = - delta_V * spatiospectrals( index_object ).axis_k_tilde_unique.members.^2;
@@ -143,8 +143,8 @@ classdef spatiospectral
                 % iterate sequential pulse-echo measurements
                 for index_measurement = 1:numel( spatiospectrals( index_object ).spectral )
 
-                    % map frequencies of each mixed voltage signal to unique frequencies of current pulse-echo measurement
-                    indices_f_to_unique_mix = spatiospectrals( index_object ).spectral( index_measurement ).indices_f_to_unique;
+                    % map frequencies of all mixed voltage signals to unique frequencies of current pulse-echo measurement
+                    indices_f_mix_to_measurement = spatiospectrals( index_object ).spectral( index_measurement ).indices_f_to_unique;
 
                     % extract impulse responses of mixing channels
                     impulse_responses_rx = reshape( [ spatiospectrals( index_object ).spectral( index_measurement ).rx.impulse_responses ], size( spatiospectrals( index_object ).spectral( index_measurement ).rx ) );
@@ -158,7 +158,7 @@ classdef spatiospectral
                     % iterate mixed voltage signals
                     for index_mix = 1:numel( spatiospectrals( index_object ).spectral( index_measurement ).rx )
 
-                        samples{ index_mix } = samples_unique( indices_f_to_unique_measurement{ index_measurement }( indices_f_to_unique_mix{ index_mix } ) ) .* impulse_responses_rx( index_mix ).samples;
+                        samples{ index_mix } = samples_unique( indices_f_measurement_to_global{ index_measurement }( indices_f_mix_to_measurement{ index_mix } ) ) .* impulse_responses_rx( index_mix ).samples;
 
                     end % for index_mix = 1:numel( spatiospectrals( index_object ).spectral( index_measurement ).rx )
 

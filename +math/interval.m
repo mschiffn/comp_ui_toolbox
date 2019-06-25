@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-05-06
+% modified: 2019-06-15
 %
 classdef interval
 
@@ -13,8 +13,8 @@ classdef interval
 	properties (SetAccess = private)
 
         % independent properties
-        lb physical_values.physical_quantity	% lower bound
-        ub physical_values.physical_quantity	% upper bound
+        lb ( 1, 1 ) physical_values.physical_quantity	% lower bound
+        ub ( 1, 1 ) physical_values.physical_quantity	% upper bound
 
     end % properties
 
@@ -47,9 +47,9 @@ classdef interval
             auxiliary.mustBeEqualSize( lbs, ubs );
 
             % ensure strictly monotonic increasing bounds
-            if ~all( ubs > lbs, 'all' )
-                errorStruct.message     = 'Interval bounds must increase strictly monotonic!';
-                errorStruct.identifier	= 'interval:NoStrictIncrease';
+            if ~all( lbs < ubs, 'all' )
+                errorStruct.message = 'Interval bounds must increase strictly monotonic!';
+                errorStruct.identifier = 'interval:NoStrictIncrease';
                 error( errorStruct );
             end
 
@@ -93,6 +93,52 @@ classdef interval
         end % function lengths = abs( intervals )
 
         %------------------------------------------------------------------
+        % move
+        %------------------------------------------------------------------
+        function intervals = move( intervals, centers )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.interval
+            if ~isa( intervals, 'math.interval' )
+                errorStruct.message = 'intervals must be math.interval!';
+                errorStruct.identifier = 'move:NoIntervals';
+                error( errorStruct );
+            end
+
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', intervals.lb, centers );
+
+            % single intervals / multiple centers
+            if isscalar( intervals ) && ~isscalar( centers )
+                intervals = repmat( intervals, size( centers ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( intervals, centers );
+
+            %--------------------------------------------------------------
+            % 2.) move intervals
+            %--------------------------------------------------------------
+            % compute deltas
+            deltas = centers - center( intervals );
+
+            % update lower and upper bounds
+            lbs = reshape( [ intervals.lb ], size( intervals ) ) + deltas;
+            ubs = reshape( [ intervals.ub ], size( intervals ) ) + deltas;
+
+            % iterate intervals
+            for index_interval = 1:numel( intervals )
+
+                intervals( index_interval ).lb = lbs( index_interval );
+                intervals( index_interval ).ub = ubs( index_interval );
+
+            end % for index_interval = 1:numel( intervals )
+
+        end % function intervals = move( intervals, centers )
+
+        %------------------------------------------------------------------
         % element
         %------------------------------------------------------------------
         function indicator = element( objects, values )
@@ -112,7 +158,7 @@ classdef interval
         end % function indicator = element( objects, values )
 
         %------------------------------------------------------------------
-        % quantization (overload quantize function)
+        % quantization
         %------------------------------------------------------------------
         function objects_out = quantize( intervals, deltas )
 
@@ -127,8 +173,7 @@ classdef interval
             end
 
             % ensure equal subclasses of physical_values.physical_quantity
-            lbs = reshape( [ intervals.lb ], size( intervals ) );
-            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', lbs, deltas );
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', intervals.lb, deltas );
 
             % multiple intervals / single deltas
             if ~isscalar( intervals ) && isscalar( deltas )
@@ -147,6 +192,7 @@ classdef interval
             % 2.) compute boundary indices
             %--------------------------------------------------------------
             % extract upper bounds
+            lbs = reshape( [ intervals.lb ], size( intervals ) );
             ubs = reshape( [ intervals.ub ], size( intervals ) );
 
             % compute lower and upper boundary indices
@@ -164,12 +210,16 @@ classdef interval
         % discretize
         %------------------------------------------------------------------
         function objects_out = discretize( intervals, deltas )
-            % TODO: enumeration class discretization method
+% TODO: enumeration class discretization method
 
             %--------------------------------------------------------------
             % 1.) quantize intervals
             %--------------------------------------------------------------
-            intervals = quantize( intervals, deltas );
+            % ensure quantized intervals
+% TODO: wrong! -> quantization with same deltas!!!
+            if ~isa( intervals, 'math.interval_quantized' )
+                intervals = quantize( intervals, deltas );
+            end
 
             %--------------------------------------------------------------
             % 2.) extract quantized lower and upper bounds

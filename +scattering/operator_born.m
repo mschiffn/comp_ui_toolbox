@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-05-30
+% modified: 2019-06-19
 %
 classdef operator_born < scattering.operator
 
@@ -37,6 +37,13 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure class scattering.operator_born (scalar)
+            if ~( isa( operator_born, 'scattering.operator_born' ) && isscalar( operator_born ) )
+                errorStruct.message = 'operator_born must be scattering.operator_born!';
+                errorStruct.identifier = 'forward_quick:NoOperatorBorn';
+                error( errorStruct );
+            end
+
             % ensure numeric matrix
             if ~( isnumeric( fluctuations ) && ismatrix( fluctuations ) )
                 errorStruct.message = 'fluctuations must be a numeric matrix!';
@@ -67,13 +74,13 @@ classdef operator_born < scattering.operator
             for index_measurement = 1:numel( operator_born.discretization.spectral )
 
                 %----------------------------------------------------------
-                % prefactors
+                % i.) frequency maps, prefactors, and frequency axes
                 %----------------------------------------------------------
-                % map frequencies of mixed voltage signals to unique frequencies
-                indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
+                % map unique frequencies of pulse-echo measurement to global unique frequencies
+                indices_f_measurement_to_global = operator_born.discretization.indices_f_to_unique{ index_measurement };
 
-                % map indices of the active elements to unique indices
-%                 indices_active_rx_to_unique = operator_born.discretization.spectral( index_measurement ).indices_active_rx_to_unique;
+                % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
+                indices_f_mix_to_measurement = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
 
                 % extract occupied grid points from incident pressure
                 p_incident_occupied = double( operator_born.incident_waves( index_measurement ).p_incident.samples( :, indices_occupied ) );
@@ -86,7 +93,7 @@ classdef operator_born < scattering.operator
                 N_samples_f = abs( axes_f );
 
                 %----------------------------------------------------------
-                % compute mixed voltage signals for the active array elements
+                % ii.) compute mixed voltage signals for the active array elements
                 %----------------------------------------------------------
                 % specify cell arrays for u_M{ index_measurement }
                 u_M{ index_measurement } = cell( size( operator_born.discretization.spectral( index_measurement ).rx ) );
@@ -95,18 +102,18 @@ classdef operator_born < scattering.operator
                 for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
 
                     %------------------------------------------------------
-                    % active array elements and pressure field (current frequencies)
+                    % a) active array elements and pressure field (current frequencies)
                     %------------------------------------------------------
                     % number of active array elements
                     N_elements_active = numel( operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active );
 
                     % extract incident acoustic pressure field for current frequencies
-                    p_incident_occupied_act = p_incident_occupied( indices_f_to_unique{ index_mix }, : );
+                    p_incident_occupied_act = p_incident_occupied( indices_f_mix_to_measurement{ index_mix }, : );
 
                     %------------------------------------------------------
-                    % compute voltage signals received by the active array elements
+                    % b) compute voltage signals received by the active array elements
                     %------------------------------------------------------
-                    % initialize voltages with zeros
+                    % initialize mixed voltage signals with zeros
                     u_M{ index_measurement }{ index_mix } = zeros( N_samples_f( index_mix ), N_objects );
 
                     % iterate active array elements
@@ -125,50 +132,55 @@ classdef operator_born < scattering.operator
                             indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( indices_occupied, index_element );
 
                             % extract current frequencies from unique frequencies
-                            h_rx = operator_born.discretization.h_ref.samples( indices_f_to_unique{ index_mix }, indices_occupied_act );
+                            if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.discretization.h_ref.axis )
+                                h_rx = double( operator_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                            else
+                                h_rx = double( operator_born.discretization.h_ref.samples( :, indices_occupied_act ) );
+                            end
 
                         else
 
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
-                            % spatial transfer function of the active array element
-% TODO: computes for unique frequencies?
-                            h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
+                            % compute spatial transfer function of the active array element
+                            h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, axes_f( index_mix ), index_element );
+                            h_rx = double( h_rx.samples );
 
                         end % if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
                         %--------------------------------------------------
                         % avoid spatial aliasing
                         %--------------------------------------------------
-                        if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
+%                         if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
+% TODO: precompute at appropriate location
 %                             indicator_aliasing = flag > real( axes_k_tilde( index_f ) );
 %                             indicator_aliasing = indicator_aliasing .* ( 1 - ( real( axes_k_tilde( index_f ) ) ./ flag).^2 );
-                        end
+%                         end
 
                         %--------------------------------------------------
                         % compute matrix-vector product and mix voltage signals
                         %--------------------------------------------------
-                        Phi_act = double( h_rx ) .* p_incident_occupied_act .* double( prefactors( index_mix ).samples( :, index_active ) );
+                        Phi_act = h_rx .* p_incident_occupied_act .* double( prefactors( index_mix ).samples( :, index_active ) );
                         u_M{ index_measurement }{ index_mix } = u_M{ index_measurement }{ index_mix } + Phi_act * fluctuations( indices_occupied, : );
 
                     end % for index_active = 1:N_elements_active
 
                 end % for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
 
-                % concatenate cell arrays into matrix
+                % concatenate cell array contents into matrix
                 u_M{ index_measurement } = cat( 1, u_M{ index_measurement }{ : } );
 
             end % for index_measurement = 1:numel( operator_born.discretization.spectral )
 
-            % concatenate cell arrays into matrix
+            % concatenate cell array contents into matrix
             u_M = cat( 1, u_M{ : } );
 
             % infer and print elapsed time
             time_elapsed = toc( time_start );
             fprintf( 'done! (%f s)\n', time_elapsed );
 
-        end % function u_M = forward_quick( operator_born, fluctuations )
+        end % function u_M = forward_quick( operator_born, fluctuations, varargin )
 
         %------------------------------------------------------------------
         % quick adjoint scattering
@@ -183,6 +195,13 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure class scattering.operator_born (scalar)
+            if ~( isa( operator_born, 'scattering.operator_born' ) && isscalar( operator_born ) )
+                errorStruct.message = 'operator_born must be scattering.operator_born!';
+                errorStruct.identifier = 'adjoint_quick:NoOperatorBorn';
+                error( errorStruct );
+            end
+
             % ensure numeric matrix
             if ~( isnumeric( u_M ) && ismatrix( u_M ) )
                 errorStruct.message = 'u_M must be a numeric matrix!';
@@ -203,13 +222,13 @@ classdef operator_born < scattering.operator
             for index_measurement = 1:numel( operator_born.discretization.spectral )
 
                 %----------------------------------------------------------
-                % compute prefactors
+                % a) frequency maps and prefactors
                 %----------------------------------------------------------
-                % map unique frequencies of pulse-echo measurements to unique frequencies
-                indices_f_to_unique_measurement = operator_born.discretization.indices_f_to_unique{ index_measurement };
+                % map unique frequencies of pulse-echo measurement to global unique frequencies
+                indices_f_measurement_to_global = operator_born.discretization.indices_f_to_unique{ index_measurement };
 
-                % map frequencies of mixed voltage signals to unique frequencies
-                indices_f_to_unique = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
+                % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
+                indices_f_mix_to_measurement = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
 
                 % extract prefactors for all mixes (current frequencies)
                 prefactors = operator_born.discretization.prefactors{ index_measurement };
@@ -225,8 +244,8 @@ classdef operator_born < scattering.operator
 
                     % extract incident acoustic pressure field for current frequencies
                     p_incident_act = double( operator_born.incident_waves( index_measurement ).p_incident.samples );
-                    if numel( indices_f_to_unique{ index_mix } ) < abs( operator_born.incident_waves( index_measurement ).p_incident.axis )
-                        p_incident_act = p_incident_act( indices_f_to_unique{ index_mix }, : );
+                    if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.incident_waves( index_measurement ).p_incident.axis )
+                        p_incident_act = p_incident_act( indices_f_mix_to_measurement{ index_mix }, : );
                     end
 
                     % iterate active array elements
@@ -245,8 +264,8 @@ classdef operator_born < scattering.operator
                             indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, index_element );
 
                             % extract current frequencies from unique frequencies
-                            if numel( indices_f_to_unique{ index_mix } ) < abs( operator_born.discretization.h_ref.axis )
-                                h_rx = double( operator_born.discretization.h_ref.samples( indices_f_to_unique_measurement( indices_f_to_unique{ index_mix } ), indices_occupied_act ) );
+                            if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.discretization.h_ref.axis )
+                                h_rx = double( operator_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                             else
                                 h_rx = double( operator_born.discretization.h_ref.samples( :, indices_occupied_act ) );
                             end
@@ -256,19 +275,20 @@ classdef operator_born < scattering.operator
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
-                            % spatial transfer function of the active array element
-                            h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
+                            % compute spatial transfer function of the active array element
+                            h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, axes_f( index_mix ), index_element );
+                            h_rx = double( h_rx.samples );
 
                         end % if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
                         %--------------------------------------------------
                         % avoid spatial aliasing
                         %--------------------------------------------------
-                        if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
+%                         if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
 % TODO: precompute at appropriate location
 %                             indicator_aliasing = flag > real( axes_k_tilde( index_f ) );
 %                             indicator_aliasing = indicator_aliasing .* ( 1 - ( real( axes_k_tilde( index_f ) ) ./ flag).^2 );
-                        end
+%                         end
 
                         %--------------------------------------------------
                         % compute matrix-vector product
@@ -330,7 +350,7 @@ classdef operator_born < scattering.operator
         % forward scattering (overload forward method)
         %------------------------------------------------------------------
         function u_M = forward( operators_born, fluctuations, varargin )
-
+% TODO: compute u_M_tilde
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -359,6 +379,11 @@ classdef operator_born < scattering.operator
                 linear_transforms = { linear_transforms };
             end
 
+            % multiple operators_born / single fluctuations
+            if ~isscalar( operators_born ) && isscalar( fluctuations )
+                fluctuations = repmat( fluctuations, size( operators_born ) );
+            end
+
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( operators_born, fluctuations, linear_transforms );
 
@@ -382,34 +407,59 @@ classdef operator_born < scattering.operator
                 end
 
                 % ensure class linear_transforms.linear_transform
-                if ~isa( linear_transforms{ index_object }, 'linear_transforms.linear_transform' )
-                    errorStruct.message = sprintf( 'linear_transforms{ %d } must be linear_transforms.linear_transform!', index_object );
-                    errorStruct.identifier = 'adjoint:NoLinearTransform';
-                    error( errorStruct );
-                end
+%                 if ~isa( linear_transforms{ index_object }, 'linear_transforms.linear_transform' )
+%                     errorStruct.message = sprintf( 'linear_transforms{ %d } must be linear_transforms.linear_transform!', index_object );
+%                     errorStruct.identifier = 'adjoint:NoLinearTransform';
+%                     error( errorStruct );
+%                 end
 
                 %----------------------------------------------------------
-                % c) quick adjoint scattering
+                % b) quick adjoint scattering
                 %----------------------------------------------------------
 %                 profile on
                 u_M{ index_object } = forward_quick( operators_born( index_object ), fluctuations{ index_object }( : ), linear_transforms{ index_object } );
+                u_M{ index_object } = physical_values.volt( u_M{ index_object } );
 %                 profile viewer
 
                 %----------------------------------------------------------
-                % d) create signal matrix or signals
+                % c) create signals or signal matrices
                 %----------------------------------------------------------
-                N_observations = cellfun( @( x ) sum( x(:) ), { operators_born( index_object ).discretization.spectral.N_observations } );
-                u_M{ index_object } = mat2cell( u_M{ index_object }, N_observations, 1 );
-
-% TODO: complete generation of suitable data structure
+                % partition matrix into cell arrays
+                u_M{ index_object } = mat2cell( u_M{ index_object }, cellfun( @( x ) sum( x( : ) ), { operators_born( index_object ).discretization.spectral.N_observations } ), size( u_M{ index_object }, 2 ) );
 
                 % iterate sequential pulse-echo measurements
-                for index_measurement = 1:numel( operator_born.discretization.spectral )
+                for index_measurement = 1:numel( operators_born( index_object ).discretization.spectral )
 
-                    u_M{ index_object } = reshape( u_M{ index_object }{ index_measurement }, [ operators_born( index_object ).discretization.spectral( index_measurement ).N_observations( 1 ), ] );
+                    % map unique frequencies of pulse-echo measurement to global unique frequencies
+                    indices_f_measurement_to_global = operators_born( index_object ).discretization.indices_f_to_unique{ index_measurement };
+
+                    % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
+                    indices_f_mix_to_measurement = operators_born( index_object ).discretization.spectral( index_measurement ).indices_f_to_unique;
+
+                    % partition matrix into cell arrays
+                    u_M{ index_object }{ index_measurement } = mat2cell( u_M{ index_object }{ index_measurement }, operators_born( index_object ).discretization.spectral( index_measurement ).N_observations, size( u_M{ index_object }{ index_measurement }, 2 ) );
+
+                    % subsample global unique frequencies to get unique frequencies of pulse-echo measurement
+                    axis_f_measurement_unique = subsample( operators_born( index_object ).discretization.axis_f_unique, indices_f_measurement_to_global );
+
+                    % subsample unique frequencies of pulse-echo measurement to get frequencies of mixed voltage signals
+                    axes_f_mix = reshape( subsample( axis_f_measurement_unique, indices_f_mix_to_measurement ), size( u_M{ index_object }{ index_measurement } ) );
+
+                    % create mixed voltage signals
+                    u_M{ index_object }{ index_measurement } = discretizations.signal( axes_f_mix, u_M{ index_object }{ index_measurement } );
+
+                    % try to merge mixed voltage signals
+                    try
+                        u_M{ index_object }{ index_measurement } = merge( u_M{ index_object }{ index_measurement } );
+                    catch
+                    end
+
+                end % for index_measurement = 1:numel( operators_born( index_object ).discretization.spectral )
+
+                % create array of signal matrices
+                if all( cellfun( @( x ) strcmp( class( x( : ) ), 'discretizations.signal_matrix' ), u_M{ index_object } ) )
+                    u_M{ index_object } = [ u_M{ index_object }{ : } ];
                 end
-
-                u_M{ index_object } = discretizations.signal_matrix( axes_f( 1 ), cat( 1, u_M{ index_measurement }{ : } ) );
 
             end % for index_object = 1:numel( operators_born )
 
@@ -602,7 +652,7 @@ classdef operator_born < scattering.operator
                 % b) create coefficient vectors
                 %----------------------------------------------------------
                 % indices of coefficients
-                indices_tpsf = ( 0:( N_tpsf - 1 ) ) * N_points + indices{ index_object };
+                indices_tpsf = ( 0:( N_tpsf - 1 ) ) * N_points + indices{ index_object }( : )';
 
                 % initialize coefficient vectors
                 theta = zeros( N_points, N_tpsf );

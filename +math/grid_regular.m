@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-06-03
+% modified: 2019-06-06
 %
 classdef grid_regular < math.grid
 
@@ -230,7 +230,7 @@ classdef grid_regular < math.grid
 
             % iterate regular grids
             for index_object = 1:numel( grids_regular )
-
+% TODO: ensure numeric matrix
                 temp = mat2cell( indices_axis{ index_object }, size( indices_axis{ index_object }, 1 ), ones( 1, grids_regular( index_object ).N_dimensions ) );
                 indices_linear{ index_object } = sub2ind( grids_regular( index_object ).N_points_axis, temp{ : } );
 

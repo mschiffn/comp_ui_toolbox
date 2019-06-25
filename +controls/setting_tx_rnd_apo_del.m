@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-05-21
+% modified: 2019-06-05
 %
 classdef setting_tx_rnd_apo_del < controls.setting_tx
 
@@ -34,8 +34,15 @@ classdef setting_tx_rnd_apo_del < controls.setting_tx
             %--------------------------------------------------------------
             % ensure class pulse_echo_measurements.setup
             if ~( isa( setup, 'pulse_echo_measurements.setup' ) && isscalar( setup ) )
-                errorStruct.message     = 'setup must be a single pulse_echo_measurements.setup!';
-                errorStruct.identifier	= 'setting_tx_rnd_apo_del:NoSetup';
+                errorStruct.message = 'setup must be a single pulse_echo_measurements.setup!';
+                errorStruct.identifier = 'setting_tx_rnd_apo_del:NoSetup';
+                error( errorStruct );
+            end
+
+            % ensure class transducers.array_planar_regular_orthogonal
+            if ~isa( setup.xdc_array, 'transducers.array_planar_regular_orthogonal' )
+                errorStruct.message = 'setup.xdc_array must be transducers.array_planar_regular_orthogonal!';
+                errorStruct.identifier = 'setting_tx_rnd_apo_del:NoRegularOrthogonalTransducerArray';
                 error( errorStruct );
             end
 
@@ -43,15 +50,15 @@ classdef setting_tx_rnd_apo_del < controls.setting_tx
 
             % ensure class math.unit_vector
             if ~isa( e_theta, 'math.unit_vector' )
-                errorStruct.message     = 'e_theta must be math.unit_vector!';
-                errorStruct.identifier	= 'setting_tx_rnd_apo_del:NoUnitVector';
+                errorStruct.message = 'e_theta must be math.unit_vector!';
+                errorStruct.identifier = 'setting_tx_rnd_apo_del:NoUnitVector';
                 error( errorStruct );
             end
 
             % ensure class auxiliary.setting_rng
             if ~( isa( settings_rng_apo, 'auxiliary.setting_rng' ) && isa( settings_rng_del, 'auxiliary.setting_rng' ) )
-                errorStruct.message     = 'settings_rng_apo and settings_rng_del must be auxiliary.setting_rng!';
-                errorStruct.identifier	= 'setting_tx_rnd_apo_del:NoSettingRng';
+                errorStruct.message = 'settings_rng_apo and settings_rng_del must be auxiliary.setting_rng!';
+                errorStruct.identifier = 'setting_tx_rnd_apo_del:NoSettingRng';
                 error( errorStruct );
             end
 
@@ -94,7 +101,7 @@ classdef setting_tx_rnd_apo_del < controls.setting_tx
 
                 % compute permissible maximum time shift
                 N_dimensions_lateral = setup.FOV.N_dimensions - 1;
-                t_shift_max = sum( ( setup.xdc_array.parameters.N_elements_axis( 1:N_dimensions_lateral ) - 1 ) .* setup.xdc_array.element_pitch_axis( 1:N_dimensions_lateral ) .* abs( e_theta( index_object ).components( 1:N_dimensions_lateral ) ), 2 ) / setup.homogeneous_fluid.c_avg;
+                t_shift_max = sum( ( setup.xdc_array.N_elements_axis( 1:N_dimensions_lateral ) - 1 ) .* setup.xdc_array.cell_ref.edge_lengths( 1:N_dimensions_lateral ) .* abs( e_theta( index_object ).components( 1:N_dimensions_lateral ) ), 2 ) / setup.homogeneous_fluid.c_avg;
                 % incorrect value for reproduction of old results: T_inc = t_shift_max / setup.xdc_array.N_elements;
                 T_inc = t_shift_max / ( setup.xdc_array.N_elements - 1 );
 

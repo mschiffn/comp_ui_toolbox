@@ -47,7 +47,7 @@ e_theta = math.unit_vector( [ cos( theta_incident(:) ), sin( theta_incident(:) )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% define field of view
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-FOV_size_lateral = xdc_array.parameters.N_elements_axis .* xdc_array.element_pitch_axis;
+FOV_size_lateral = xdc_array.N_elements_axis .* xdc_array.cell_ref.edge_lengths;
 FOV_size_axial = FOV_size_lateral( 1 );
 
 FOV_intervals_lateral = num2cell( math.interval( - FOV_size_lateral ./ 2, FOV_size_lateral ./ 2 ) );

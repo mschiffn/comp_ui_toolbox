@@ -141,6 +141,8 @@ classdef physical_quantity < physical_values.transparent_container
                 result = physical_values.second( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 0, 0, -1, 0, 0, 0, 0, 0 ] )
                 result = physical_values.hertz( physical_quantity.values );
+            elseif isequal( physical_quantity.exponents, [ 0, 0, 2, 0, 0, 0, 0, 0 ] )
+                result = physical_values.squaresecond( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 0, 0, 0, 1, 0, 0, 0, 0 ] )
                 result = physical_values.ampere( physical_quantity.values );
             elseif isequal( physical_quantity.exponents, [ 1, 0, -1, 0, 0, 0, 0, 0 ] )
@@ -522,7 +524,7 @@ classdef physical_quantity < physical_values.transparent_container
 
         end
 
-        % solve systems of linear equations
+        % solve systems of linear equations xA = B for x
         function arg_1 = mrdivide( arg_1, arg_2 )
 
             %--------------------------------------------------------------
@@ -537,6 +539,28 @@ classdef physical_quantity < physical_values.transparent_container
             elseif isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
                 arg_1.exponents = arg_1.exponents - arg_2.exponents;
                 arg_1.values = arg_1.values / arg_2.values;
+                arg_1 = determine_class( arg_1 );
+            end
+
+        end
+
+        % solve systems of linear equations Ax = B for x
+        function arg_1 = mldivide( arg_1, arg_2 )
+
+            % call mldivide method of superclass
+            temp = mldivide@physical_values.transparent_container( arg_1, arg_2 );
+
+            % update exponents
+            if isa( arg_1, 'physical_values.physical_quantity' ) && ~isa( arg_2, 'physical_values.physical_quantity' )
+                arg_1.exponents = - arg_1.exponents;
+                arg_1.values = temp.values;
+                arg_1 = determine_class( arg_1 );
+            elseif ~isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
+                arg_2.values = temp.values;
+                arg_1 = arg_2;
+            elseif isa( arg_1, 'physical_values.physical_quantity' ) && isa( arg_2, 'physical_values.physical_quantity' )
+                arg_1.exponents = arg_2.exponents - arg_1.exponents;
+                arg_1.values = temp.values;
                 arg_1 = determine_class( arg_1 );
             end
 

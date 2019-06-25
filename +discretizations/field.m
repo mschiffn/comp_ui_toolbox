@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-05-27
+% modified: 2019-06-15
 %
 classdef field < discretizations.signal_matrix
 
@@ -194,6 +194,64 @@ classdef field < discretizations.signal_matrix
             end % for index_object = 1:numel( fields )
 
         end % function fields = subsample( fields, indices_axes, indices_grids )
+
+        %------------------------------------------------------------------
+        % addition (overload plus method)
+        %------------------------------------------------------------------
+        function fields_1 = plus( fields_1, fields_2 )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.field
+            if ~( isa( fields_1, 'discretizations.field' ) && isa( fields_2, 'discretizations.field' ) )
+                errorStruct.message = 'fields_1 and fields_2 must be discretizations.field!';
+                errorStruct.identifier = 'plus:NoFields';
+                error( errorStruct );
+            end
+
+            % ensure equal grids
+            if ~isequal( fields_1.grid_FOV, fields_2.grid_FOV )
+                errorStruct.message = 'fields_1 and fields_2 must have equal properties grid_FOV!';
+                errorStruct.identifier = 'plus:DifferentGrids';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) call plus method in superclass
+            %--------------------------------------------------------------
+            fields_1 = plus@discretizations.signal_matrix( fields_1, fields_2 );
+
+        end % function fields_1 = plus( fields_1, fields_2 )
+
+        %------------------------------------------------------------------
+        % sum of array elements (overload sum method)
+        %------------------------------------------------------------------
+        function fields = sum( fields, varargin )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.field
+            if ~isa( fields, 'discretizations.field' )
+                errorStruct.message = 'fields must be discretizations.field!';
+                errorStruct.identifier = 'sum:NoFields';
+                error( errorStruct );
+            end
+
+            % ensure equal grids
+            if ~isequal( fields.grid_FOV )
+                errorStruct.message = 'fields must have equal properties grid_FOV!';
+                errorStruct.identifier = 'sum:DifferentGrids';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) call sum method in superclass
+            %--------------------------------------------------------------
+            fields = sum@discretizations.signal_matrix( fields, varargin );
+
+        end % function fields = sum( fields, varargin )
 
         %------------------------------------------------------------------
         % TODO: times

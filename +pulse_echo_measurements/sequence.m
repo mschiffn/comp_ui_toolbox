@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-06-02
+% modified: 2019-06-07
 %
 classdef sequence
 
@@ -76,7 +76,7 @@ classdef sequence
                     error( errorStruct );
                 end
 
-                % TODO: ensure that settings are compatible w/ setup
+% TODO: ensure that settings are compatible w/ setup
 
                 % set independent properties
                 objects( index_object ).setup = setups( index_object );
@@ -110,9 +110,7 @@ classdef sequence
             %--------------------------------------------------------------
             % 2.) spatial discretizations
             %--------------------------------------------------------------
-% TODO: conserve shape
-            setups = reshape( [ sequences.setup ], size( sequences ) );
-            spatials = discretize( setups, [ options.spatial ] );
+            spatials = discretize( [ sequences.setup ], [ options.spatial ] );
 
             %--------------------------------------------------------------
             % 3.) spectral discretizations
@@ -143,6 +141,13 @@ classdef sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure class pulse_echo_measurements.sequence
+            if ~isa( sequence, 'pulse_echo_measurements.sequence' )
+                errorStruct.message = 'sequence must be pulse_echo_measurements.sequence!';
+                errorStruct.identifier = 'apply_windows:NoSequence';
+                error( errorStruct );
+            end
+
             % split array of signal matrices into cell array
             if strcmp( class( u_M_tilde ), 'discretizations.signal_matrix' )
                 u_M_tilde = num2cell( u_M_tilde );
@@ -255,7 +260,6 @@ classdef sequence
 
             end % for index_measurement = 1:numel( sequence.settings )
 
-            
             indicator = cellfun( @( x ) ~isa( x, 'discretizations.signal' ), u_M_tilde );
             if all( indicator(:) )
                 u_M_tilde = cat( 1, u_M_tilde{ : } );
@@ -325,19 +329,31 @@ classdef sequence
                     error( errorStruct );
                 end
 
+% TODO: ensure time axes
+
                 % extract unique deltas from all transducer control settings
-                deltas_unique = unique_deltas( sequences( index_object ).settings );
+                deltas_unique = unique( [ unique_deltas( sequences( index_object ).settings ), u_SA_tilde{ index_object }( 1 ).axis.delta ] );
 
                 % largest delta_unique must be integer multiple of smaller deltas_unique
                 delta_unique_max = max( deltas_unique );
                 mustBeInteger( delta_unique_max ./ deltas_unique );
 
                 % quantize hull of all recording time intervals using delta_unique_max
-% TODO: determine recording time intervals!
-                interval_hull_t_quantized = quantize( sequences( index_object ).interval_hull_t, delta_unique_max );
+%                 interval_hull_t_quantized = quantize( sequences( index_object ).interval_hull_t, delta_unique_max );
+
+                % determine recording time intervals
+                N_samples_t_SA = cellfun( @abs, { u_SA_tilde{ index_object }.axis } );
+                N_samples_t_IR = cellfun( @( x ) abs( x.impulse_responses.axis ), { sequences( index_object ).settings.tx } );
+
+                % quantize hull of all recording time intervals using delta_unique_max
+                interval_t = math.interval_quantized( 0, max( N_samples_t_SA ) + max( N_samples_t_IR ), u_SA_tilde{ index_object }( 1 ).axis.delta );
+%                 interval_t = math.interval_quantized( 0, 3415, u_SA_tilde{ index_object }( 1 ).axis.delta );
+                interval_hull_t_quantized = quantize( interval_t, delta_unique_max );
 
                 % compute Fourier coefficients
-                u_SA = fourier_coefficients( u_SA_tilde{ index_object }, interval_hull_t_quantized, sequences( index_object ).interval_hull_f );
+                interval_f = math.interval( physical_values.hertz( 0 ), physical_values.hertz( 19e6 ) );
+%                 u_SA = fourier_coefficients( u_SA_tilde{ index_object }, interval_hull_t_quantized, sequences( index_object ).interval_hull_f );
+                u_SA = fourier_coefficients( u_SA_tilde{ index_object }, interval_hull_t_quantized, interval_f );
 
                 % specify cell array for samples
                 samples = cell( size( sequences( index_object ).settings ) );
@@ -356,7 +372,8 @@ classdef sequence
                     end
 
                     % compute fourier transforms
-                    impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, interval_hull_t_quantized, sequences( index_object ).interval_hull_f );
+%                     impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, interval_hull_t_quantized, sequences( index_object ).interval_hull_f );
+                    impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, interval_hull_t_quantized, interval_f );
 
                     % number of active array elements
                     N_elements_active_tx = numel( sequences( index_object ).settings( index_measurement ).tx.indices_active );

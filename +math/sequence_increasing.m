@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-05-27
+% modified: 2019-06-14
 %
 classdef sequence_increasing
 
@@ -53,6 +53,13 @@ classdef sequence_increasing
                 if ~isa( members{ index_object }, 'physical_values.physical_quantity' )
                     errorStruct.message = sprintf( 'members{ %d } must be physical_values.physical_quantity!', index_object );
                     errorStruct.identifier = 'sequence_increasing:NoPhysicalQuantity';
+                    error( errorStruct );
+                end
+
+                % ensure column vector
+                if ~iscolumn( members{ index_object } )
+                    errorStruct.message = sprintf( 'members{ %d } must be a column vector!', index_object );
+                    errorStruct.identifier = 'sequence_increasing:NoColumnVector';
                     error( errorStruct );
                 end
 
@@ -126,53 +133,96 @@ classdef sequence_increasing
         %------------------------------------------------------------------
         % subsample
         %------------------------------------------------------------------
-        function sequences_out = subsample( sequences_in, indices_axes )
+        function sequences_out = subsample( sequences, indices )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for indices_axes
-            if ~iscell( indices_axes )
-                indices_axes = { indices_axes };
+            % ensure class math.sequence_increasing
+            if ~isa( sequences, 'math.sequence_increasing' )
+                errorStruct.message = 'sequences must be math.sequence_increasing!';
+                errorStruct.identifier = 'subsample:NoIncreasingSequences';
+                error( errorStruct );
+            end
+
+            % ensure cell array for indices
+            if ~iscell( indices )
+                indices = { indices };
+            end
+
+            % multiple sequences / single indices
+            if ~isscalar( sequences ) && isscalar( indices )
+                indices = repmat( indices, size( sequences ) );
+            end
+
+            % single sequences / multiple indices
+            if isscalar( sequences ) && ~isscalar( indices )
+                sequences = repmat( sequences, size( indices ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences_in, indices_axes );
+            auxiliary.mustBeEqualSize( sequences, indices );
 
             %--------------------------------------------------------------
             % 2.) perform subsampling
             %--------------------------------------------------------------
             % extract cardinalities
-            N_members = abs( sequences_in );
+            N_members = abs( sequences );
 
-            % specify cell array for members_sub
-            members_sub = cell( size( sequences_in ) );
+            % specify cell array for sequences_out
+            sequences_out = cell( size( sequences ) );
 
             % iterate sequences
-            for index_object = 1:numel( sequences_in )
+            for index_object = 1:numel( sequences )
 
                 % ensure positive integers
-                mustBeInteger( indices_axes{ index_object } );
-                mustBePositive( indices_axes{ index_object } );
+                mustBeInteger( indices{ index_object } );
+                mustBePositive( indices{ index_object } );
 
-                % ensure that indices_axes{ index_object } do not exceed N_members
-                if any( indices_axes{ index_object } > N_members( index_object ) )
-                    errorStruct.message = sprintf( 'indices_axes{ %d } must not exceed %d!', index_object, N_members( index_object ) );
+                % ensure that indices{ index_object } do not exceed N_members
+                if any( indices{ index_object } > N_members( index_object ) )
+                    errorStruct.message = sprintf( 'indices{ %d } must not exceed %d!', index_object, N_members( index_object ) );
                     errorStruct.identifier = 'subsample:InvalidIndices';
                     error( errorStruct );
                 end
 
+                % ensure strictly monotonic increase
+                if ~issorted( indices{ index_object }, 'strictascend' )
+                    errorStruct.message = sprintf( 'indices{ %d } must be strictly monotonically increasing!', index_object );
+                    errorStruct.identifier = 'subsample:NoStrictIncrease';
+                    error( errorStruct );
+                end
+
                 % subsample members
-                members_sub{ index_object } = sequences_in( index_object ).members( indices_axes{ index_object } );
+                sequences( index_object ).members = sequences( index_object ).members( indices{ index_object } );
 
-            end % for index_object = 1:numel( sequences_in )
+                % compute deltas
+                deltas = diff( sequences( index_object ).members );
 
-            %--------------------------------------------------------------
-            % 3.) create sequences
-            %--------------------------------------------------------------
-            sequences_out = math.sequence_increasing( members_sub );
+                % check regularity
+                if all( abs( deltas( : ) - deltas( 1 ) ) < 1e-10 * deltas( 1 ) )
+                    % convert to strictly monotonically increasing sequence with regular spacing
+                    q_lb = round( sequences( index_object ).members( 1 ) / deltas( 1 ) );
+                    q_ub = round( sequences( index_object ).members( end ) / deltas( 1 ) );
+                    sequences_out{ index_object } = math.sequence_increasing_regular( q_lb, q_ub, deltas( 1 ) );
+                else
+                    % maintain current sequence
+                    sequences_out{ index_object } = sequences( index_object );
+                end
 
-        end % function sequences_out = subsample( sequences_in, indices_axes )
+            end % for index_object = 1:numel( sequences )
+
+            %
+            if all( cellfun( @( x ) strcmp( class( x( : ) ), 'math.sequence_increasing' ), sequences_out ) ) || all( cellfun( @( x ) strcmp( class( x( : ) ), 'math.sequence_increasing_regular' ), sequences_out ) )
+                sequences_out = reshape( [ sequences_out{ : } ], size( sequences ) );
+            end
+
+            % avoid cell array for single sequence
+            if isscalar( sequences ) && iscell( sequences_out )
+                sequences_out = sequences_out{ 1 };
+            end
+
+        end % function sequences_out = subsample( sequences, indices )
 
         %------------------------------------------------------------------
         % cut out subsequence
@@ -190,8 +240,22 @@ classdef sequence_increasing
             end
 
             % ensure equal subclasses of physical_values.physical_quantity
-            members_cell = { sequences.members };
-            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', members_cell{ : }, lbs, ubs );
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', sequences.members, lbs, ubs );
+
+            % multiple sequences / single lbs
+            if ~isscalar( sequences ) && isscalar( lbs )
+                lbs = repmat( lbs, size( sequences ) );
+            end
+
+            % multiple sequences / single ubs
+            if ~isscalar( sequences ) && isscalar( ubs )
+                ubs = repmat( ubs, size( sequences ) );
+            end
+
+            % single sequences / multiple lbs
+            if isscalar( sequences ) && ~isscalar( lbs )
+                sequences = repmat( sequences, size( lbs ) );
+            end
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( sequences, lbs, ubs );
@@ -206,10 +270,10 @@ classdef sequence_increasing
             for index_object = 1:numel( sequences )
 
                 % identify members to keep
-                indicators{ index_object } = ( members_cell{ index_object } >= lbs( index_object ) ) & ( members_cell{ index_object } <= ubs( index_object ) );
+                indicators{ index_object } = ( sequences( index_object ).members >= lbs( index_object ) ) & ( sequences( index_object ).members <= ubs( index_object ) );
 
                 % cut out members
-                sequences( index_object ).members = members_cell{ index_object }( indicators{ index_object } );
+                sequences( index_object ).members = sequences( index_object ).members( indicators{ index_object } );
 
             end % for index_object = 1:numel( sequences )
 

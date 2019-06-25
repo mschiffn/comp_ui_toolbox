@@ -16,6 +16,7 @@ classdef options
         discretization ( 1, 1 ) discretizations.options = discretizations.options                       % spatiospectral discretization
         spatial_aliasing ( 1, 1 ) scattering.options_aliasing = scattering.options_aliasing.include     % aliasing
         materials ( 1, 1 ) scattering.options_material = scattering.options_material.compressibility	% material parameters
+        gpu_index ( 1, 1 ) double { mustBeInteger, mustBeNonnegative, mustBeNonempty } = 0              % index of GPU
 
     end % properties
 

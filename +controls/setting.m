@@ -14,7 +14,7 @@ classdef setting
 
         % independent properties
         indices_active ( 1, : ) double { mustBeInteger, mustBeFinite }	% indices of active array elements (1)
-        impulse_responses ( 1, : ) discretizations.signal_matrix         % impulse responses of active channels
+        impulse_responses ( 1, : ) discretizations.signal_matrix        % impulse responses of active channels
 
     end % properties
 
@@ -185,25 +185,25 @@ classdef setting
             % iterate transducer control settings
             for index_setting = 1:numel( settings )
 
-                % ensure class math.sequence_increasing_regular for axes
-% TODO: isa vs class; extract axes might fail for different classes
-                indicator_irregular = cellfun( @( x ) ~isa( x, 'math.sequence_increasing_regular' ), { impulse_responses{ index_setting }.axis } );
-                if any( indicator_irregular )
-                    errorStruct.message = 'Axes must be math.sequence_increasing_regular!';
-                    errorStruct.identifier = 'unique_deltas:IrregularAxes';
-                    error( errorStruct );
-                end
+                % ensure equal subclasses of math.sequence_increasing_regular
+                auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', impulse_responses{ index_setting }.axis );
 
-                % extract axes
+                % extract regular axes
                 axes = reshape( [ impulse_responses{ index_setting }.axis ], size( impulse_responses{ index_setting } ) );
 
-                % extract deltas
+                % ensure equal subclasses of physical_values.physical_quantity
+                auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', axes.delta );
+
+                % extract deltas as row vector
                 deltas{ index_setting } = reshape( [ axes.delta ], size( impulse_responses{ index_setting } ) );
 
             end % for index_setting = 1:numel( settings )
 
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', deltas{ : } );
+
             % extract unique deltas
-            deltas = unique( cellfun( @unique, deltas ) );
+            deltas = unique( cat( 2, deltas{ : } ) );
 
         end % function deltas = unique_deltas( settings )
 

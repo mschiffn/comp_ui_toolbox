@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-25
-% modified: 2019-05-16
+% modified: 2019-06-25
 %
 classdef time_causal < absorption_models.absorption_model
 
@@ -49,9 +49,12 @@ classdef time_causal < absorption_models.absorption_model
 
             % TODO: constants in dB / cm
             % TODO: slopes in dB / (MHz^exponents * cm)
-            %
-            if nargin >= 6
+
+            % ensure nonempty flag_dispersion
+            if nargin >= 6 && ~isempty( varargin{ 1 } )
                 flag_dispersion = varargin{ 1 };
+            else
+                flag_dispersion = ones( size( constants ) );
             end
 
             % multiple constants / single flag_dispersion
@@ -66,9 +69,9 @@ classdef time_causal < absorption_models.absorption_model
             % 2.) constructor of superclass
             %--------------------------------------------------------------
             % create name string
-            str_name = sprintf( 'power_law_%.2f_%.2f_%.2f', constants, slopes, exponents );
+            strs_name = repmat( { 'power_law' }, size( constants ) );
 
-            objects@absorption_models.absorption_model( str_name );
+            objects@absorption_models.absorption_model( strs_name );
 
             %--------------------------------------------------------------
             % 3.) set properties

@@ -237,29 +237,28 @@ classdef setting_tx < controls.setting
             % specify cell array for deltas
             deltas = cell( size( settings_tx ) );
 
-            % iterate transducer control settings_tx
+            % iterate transducer control settings
             for index_setting = 1:numel( settings_tx )
 
-                % ensure class math.sequence_increasing_regular for axes
-% TODO: isa vs class; extract axes might fail for different classes
-                indicator_irregular = cellfun( @( x ) ~isa( x, 'math.sequence_increasing_regular' ), { excitation_voltages{ index_setting }.axis } );
-                if any( indicator_irregular )
-                    errorStruct.message = 'Axes must be math.sequence_increasing_regular!';
-                    errorStruct.identifier = 'unique_deltas:IrregularAxes';
-                    error( errorStruct );
-                end
+                % ensure equal subclasses of math.sequence_increasing_regular
+                auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', excitation_voltages{ index_setting }.axis );
 
-                % extract axes
+                % extract regular axes
                 axes = reshape( [ excitation_voltages{ index_setting }.axis ], size( excitation_voltages{ index_setting } ) );
 
-                % extract deltas
+                % ensure equal subclasses of physical_values.physical_quantity
+                auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', axes.delta );
+
+                % extract deltas as row vector
                 deltas{ index_setting } = reshape( [ axes.delta ], size( excitation_voltages{ index_setting } ) );
 
             end % for index_setting = 1:numel( settings_tx )
 
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', deltas_impulse, deltas{ : } );
+
             % extract unique deltas
-            deltas = unique( cellfun( @unique, deltas ) );
-            deltas = unique( [ deltas_impulse, deltas ] );
+            deltas = unique( [ deltas_impulse, cat( 2, deltas{ : } ) ] );
 
         end % function deltas = unique_deltas( settings_tx )
 
