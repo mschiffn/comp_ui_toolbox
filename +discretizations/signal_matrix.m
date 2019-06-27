@@ -41,8 +41,8 @@ classdef signal_matrix
 
             % ensure class math.sequence_increasing
             if ~isa( axes, 'math.sequence_increasing' )
-                errorStruct.message     = 'axes must be math.sequence_increasing!';
-                errorStruct.identifier	= 'signal_matrix:NoIncreasingSequence';
+                errorStruct.message = 'axes must be math.sequence_increasing!';
+                errorStruct.identifier = 'signal_matrix:NoIncreasingSequence';
                 error( errorStruct );
             end
 
@@ -97,11 +97,9 @@ classdef signal_matrix
         % orthonormal discrete Fourier transform (DFT)
         %------------------------------------------------------------------
         function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, varargin )
-% TODO: generalize for arbitrary physical units
 % TODO: generalize for complex-valued samples
-% TODO: absolute position of recording interval does not matter: provide
-% N_dft -> circshift not suitable for Fourier transform?!
-% TODO: use auxiliary.mustBeEqualSubclasses
+% TODO: absolute position of recording interval does not matter: provide T_rec
+% TODO: circshift not suitable for Fourier transform?!
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -120,22 +118,16 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % ensure regular axes
-            if any( cellfun( @( x ) ~strcmp( class( x ), 'math.sequence_increasing_regular' ), { signal_matrices.axis } ) )
-                errorStruct.message = 'signal_matrices.axis must be regular!';
-                errorStruct.identifier = 'DFT:IrregularAxes';
-                error( errorStruct );
-            end
+            % ensure equal subclasses of math.sequence_increasing_regular
+            auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', signal_matrices.axis );
 
             % extract regular axes
             axes_t = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
 
-            % ensure class physical_values.time
-            if any( cellfun( @( x ) ~isa( x, 'physical_values.time' ), { axes_t.delta } ) )
-                errorStruct.message = 'signal_matrices.axis must be a sequence of class physical_values.time!';
-                errorStruct.identifier = 'DFT:NoTemporalAxes';
-                error( errorStruct );
-            end
+            % ensure equal subclasses of physical_values.time
+% TODO: generalize for arbitrary physical units
+% ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.time', axes_t.delta );
 
             % extract integer bounds and temporal sampling periods
             lbs_q_signal = reshape( [ axes_t.q_lb ], size( signal_matrices ) );
@@ -143,39 +135,35 @@ classdef signal_matrix
             deltas = reshape( [ axes_t.delta ], size( signal_matrices ) );
 
             % ensure nonempty intervals_t
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
+            if nargin >= 2 && isa( varargin{ 1 }, 'math.interval' )
                 intervals_t = varargin{ 1 };
             else
                 intervals_t = math.interval_quantized( lbs_q_signal, ubs_q_signal + 1, deltas );
             end
 
-            % ensure class math.interval with physical units of time
-            if ~( isa( intervals_t, 'math.interval' ) && all( cellfun( @( x ) isa( x, 'physical_values.time' ), { intervals_t.lb } ) ) )
-                errorStruct.message = 'intervals_t must be math.interval whose bounds are physical_values.time!';
-                errorStruct.identifier = 'DFT:NoTimeIntervals';
-                error( errorStruct );
-            end
+            % ensure equal subclasses of physical_values.time
+% TODO: generalize for arbitrary physical units
+% ensure equal subclasses of class( deltas )
+            auxiliary.mustBeEqualSubclasses( 'physical_values.time', intervals_t.lb );
 
             % ensure nonempty intervals_f
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
+            if nargin >= 3 && isa( varargin{ 2 }, 'math.interval' )
                 intervals_f = varargin{ 2 };
             else
                 intervals_f = math.interval( physical_values.hertz( zeros( size( deltas ) ) ), 1 ./ ( 2 * deltas ) );
             end
 
-            % ensure class math.interval with physical units of frequency
-            if ~( isa( intervals_f, 'math.interval' ) && all( cellfun( @( x ) isa( x, 'physical_values.frequency' ), { intervals_f.lb } ) ) )
-                errorStruct.message = 'intervals_f must be math.interval whose bounds are physical_values.frequency!';
-                errorStruct.identifier = 'DFT:NoFrequencyIntervals';
-                error( errorStruct );
-            end
+            % ensure equal subclasses of physical_values.frequency
+% TODO: generalize for arbitrary physical units
+% ensure equal subclasses of reciprocal( class( deltas ) )
+            auxiliary.mustBeEqualSubclasses( 'physical_values.frequency', intervals_f.lb );
 
-            % multiple signal_matrices / single time interval
+            % multiple signal_matrices / single intervals_t
             if ~isscalar( signal_matrices ) && isscalar( intervals_t )
                 intervals_t = repmat( intervals_t, size( signal_matrices ) );
             end
 
-            % multiple signal_matrices / single frequency interval
+            % multiple signal_matrices / single intervals_f
             if ~isscalar( signal_matrices ) && isscalar( intervals_f )
                 intervals_f = repmat( intervals_f, size( signal_matrices ) );
             end
@@ -219,10 +207,6 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % determine shift
-            samples_shift = lbs_q_signal;
-%             samples_shift = lbs_q_signal - lbs_q;
-
             % specify cell array for samples_dft
             samples_dft = cell( size( signal_matrices ) );
 
@@ -234,7 +218,7 @@ classdef signal_matrix
 
                 % zero-pad and shift samples
                 samples_act = [ signal_matrices( index_object ).samples; zeros( N_zeros_pad( index_object ), signal_matrices( index_object ).N_signals ) ];
-                samples_act = circshift( samples_act, samples_shift( index_object ), 1 );
+                samples_act = circshift( samples_act, lbs_q_signal( index_object ), 1 );
 
                 % compute and truncate DFT
                 DFT_act = fft( samples_act, [], 1 ) / sqrt( N_dft( index_object ) );
@@ -295,7 +279,7 @@ classdef signal_matrix
         %------------------------------------------------------------------
         % time-domain signal
         %------------------------------------------------------------------
-        function signal_matrices = signal( signal_matrices, lbs_q, delta )
+        function signal_matrices = signal( signal_matrices, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -307,31 +291,36 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % ensure regular axes
-            if any( cellfun( @( x ) ~strcmp( class( x ), 'math.sequence_increasing_regular' ), { signal_matrices.axis } ) )
-                errorStruct.message = 'signal_matrices.axis must be regular!';
-                errorStruct.identifier = 'signal:IrregularAxes';
-                error( errorStruct );
-            end
+            % ensure equal subclasses of math.sequence_increasing_regular
+            auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', signal_matrices.axis );
 
             % extract regular axes
             axes_f = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
 
-            % ensure class physical_values.frequency
-            if any( cellfun( @( x ) ~isa( x, 'physical_values.frequency' ), { axes_f.delta } ) )
-                errorStruct.message = 'signal_matrices.axis must be a sequence of class physical_values.frequency!';
-                errorStruct.identifier = 'signal:NoFrequencyAxes';
-                error( errorStruct );
-            end
+            % ensure equal subclasses of physical_values.frequency
+            auxiliary.mustBeEqualSubclasses( 'physical_values.frequency', axes_f.delta );
 
-            % extract integer bounds and temporal sampling periods
+            % extract integer bounds and spectral sampling periods
             lbs_q_signal = reshape( [ axes_f.q_lb ], size( signal_matrices ) );
             ubs_q_signal = reshape( [ axes_f.q_ub ], size( signal_matrices ) );
             deltas = reshape( [ axes_f.delta ], size( signal_matrices ) );
 
-            % ensure nonempty integer bounds
-            mustBeNonempty( lbs_q );
+            % ensure nonempty lbs_q
+            if nargin >= 2 && ~isempty( varargin{ 1 } )
+                lbs_q = varargin{ 1 };
+            else
+                lbs_q = zeros( size( signal_matrices ) );
+            end
+
+            % ensure integer bounds
             mustBeInteger( lbs_q );
+
+            % ensure nonempty delta
+            if nargin >= 3 && ~isempty( varargin{ 2 } )
+                delta = varargin{ 2 };
+            else
+                delta = 1 ./ ( 2 * ubs_q_signal .* deltas );
+            end
 
             % ensure class physical_values.time
             if ~isa( delta, 'physical_values.time' )
@@ -392,7 +381,7 @@ classdef signal_matrix
                 samples_td{ index_object } = N_samples_t( index_object ) * ifft( samples_act, N_samples_t( index_object ), 1, 'symmetric' );
 
                 % shift samples
-                samples_td{ index_object } = circshift( samples_td{ index_object }, -axes_t( index_object ).q_lb, 1 );
+                samples_td{ index_object } = circshift( samples_td{ index_object }, - lbs_q( index_object ), 1 );
 
             end % for index_object = 1:numel( signal_matrices )
 
@@ -401,7 +390,7 @@ classdef signal_matrix
             %--------------------------------------------------------------
             signal_matrices = discretizations.signal_matrix( axes_t, samples_td );
 
-        end % function signal_matrices = signal( signal_matrices, lbs_q, delta )
+        end % function signal_matrices = signal( signal_matrices, varargin )
 
         %------------------------------------------------------------------
         % interpolate
@@ -540,7 +529,9 @@ classdef signal_matrix
             for index_object = 1:numel( args_1 )
 
                 % ensure identical axes
-                if ~isequal( args_1( index_object ).axis.members, args_2( index_object ).axis.members )
+% TODO: allow margin of error!
+                if any( abs( args_1( index_object ).axis.members - args_2( index_object ).axis.members ) >= 1e-10 * args_1( index_object ).axis.members )
+%                 if ~isequal( args_1( index_object ).axis.members, args_2( index_object ).axis.members )
                     errorStruct.message = sprintf( 'args_1( %d ) and args_2( %d ) must have identical members in their axes!', index_object, index_object );
                     errorStruct.identifier = 'times:DiverseAxes';
                     error( errorStruct );

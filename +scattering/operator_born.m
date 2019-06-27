@@ -153,7 +153,18 @@ classdef operator_born < scattering.operator
                         % avoid spatial aliasing
                         %--------------------------------------------------
 %                         if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
-% TODO: precompute at appropriate location
+% TODO: anti-aliasing
+% nutze h_ref und blende aus -> precompute
+%
+% indicator_1 = repmat( abs( differences_act{ index_object }( :, :, 1 ) ), [ 1, 1, N_samples_k_act ] ) < repmat( pi * D_act{ index_object }, [ 1, 1, N_samples_k_act ] ) ./ repmat( reshape( real( axes_k( index_object ).members ) * physical_values.meter( 304.8e-6 ), [ 1, 1, N_samples_k_act ] ), size( D_act{ index_object } ) );
+% indicator_2 = repmat( abs( differences_act{ index_object }( :, :, 2 ) ), [ 1, 1, N_samples_k_act ] ) < repmat( pi * D_act{ index_object }, [ 1, 1, N_samples_k_act ] ) ./ repmat( reshape( real( axes_k( index_object ).members ) * physical_values.meter( 304.8e-6 ), [ 1, 1, N_samples_k_act ] ), size( D_act{ index_object } ) );
+% indicator = indicator_1 & indicator_2;
+
+% dist_x = repmat( lattice_pos_x_elements_virtual_rx', [1, N_lattice] ) - repmat( lattice_pos( :, 1 )', [N_elements_virtual_rx, 1] );
+% dist_z = repmat( lattice_pos( :, 2 )', [N_elements_virtual_rx, 1] );
+% D = sqrt( dist_x.^2 + dist_z.^2 );
+% e_r_x_abs = abs( dist_x ) ./ D;
+% flag = pi ./ ( element_pitch * e_r_x_abs );
 %                             indicator_aliasing = flag > real( axes_k_tilde( index_f ) );
 %                             indicator_aliasing = indicator_aliasing .* ( 1 - ( real( axes_k_tilde( index_f ) ) ./ flag).^2 );
 %                         end
@@ -305,7 +316,7 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 3.) forward linear transform
             %--------------------------------------------------------------
-            if nargin >= 3 && isa( varargin{ 1 }, 'linear_transforms.linear_transform' )
+            if nargin >= 3 && isscalar( varargin{ 1 } ) && isa( varargin{ 1 }, 'linear_transforms.linear_transform' )
                 % apply forward linear transform
                 theta_hat = operator_transform( varargin{ 1 }, theta_hat, 1 );
             end
@@ -632,12 +643,12 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % a) check linear transform and indices
                 %----------------------------------------------------------
-                % ensure class linear_transforms.linear_transform
-                if ~isa( linear_transforms{ index_object }, 'linear_transforms.linear_transform' )
-                    errorStruct.message = sprintf( 'linear_transforms{ %d } must be linear_transforms.linear_transform!', index_object );
-                    errorStruct.identifier = 'tpsf:NoLinearTransform';
-                    error( errorStruct );
-                end
+                % methods forward_quick and adjoint_quick ensure class linear_transforms.linear_transform
+%                 if ~isa( linear_transforms{ index_object }, 'linear_transforms.linear_transform' )
+%                     errorStruct.message = sprintf( 'linear_transforms{ %d } must be linear_transforms.linear_transform!', index_object );
+%                     errorStruct.identifier = 'tpsf:NoLinearTransform';
+%                     error( errorStruct );
+%                 end
 
                 % numbers of TPSFs and grid points
                 N_tpsf = numel( indices{ index_object } );
@@ -671,6 +682,8 @@ classdef operator_born < scattering.operator
                 adjointness{ index_object } = E_M{ index_object } - theta_tpsf{ index_object }( indices_tpsf );
 
             end % for index_object = 1:numel( operators_born )
+
+% TODO: create image objects
 
             % avoid cell array for single operators_born
             if isscalar( operators_born )

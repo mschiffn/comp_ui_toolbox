@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-06-20
+% modified: 2019-06-27
 %
 classdef spatiospectral
 
@@ -17,9 +17,8 @@ classdef spatiospectral
         spectral ( :, 1 ) discretizations.spectral      % spectral discretization
 
         % dependent properties
-        axis_f_unique ( 1, 1 ) math.sequence_increasing         % axis of unique frequencies
-        indices_f_to_unique                                     % cell array mapping unique frequencies of each pulse-echo measurement to global unique frequencies
-        axis_k_tilde_unique ( 1, 1 ) math.sequence_increasing	% axis of complex-valued wavenumbers (unique frequencies)
+        axis_f_unique ( 1, 1 ) math.sequence_increasing	% axis of unique frequencies
+        indices_f_to_unique                             % cell array mapping unique frequencies of each pulse-echo measurement to global unique frequencies
         prefactors                                      % prefactors for scattering (local frequencies)
         size ( 1, : ) double                            % size of the discretization
 
@@ -79,7 +78,6 @@ classdef spatiospectral
                 % extract unique frequency axis
                 v_d_unique = reshape( [ objects( index_object ).spectral.v_d_unique ], size( objects( index_object ).spectral ) );
                 [ objects( index_object ).axis_f_unique, ~, objects( index_object ).indices_f_to_unique ] = unique( [ v_d_unique.axis ] );
-                objects( index_object ).axis_k_tilde_unique = compute_wavenumbers( objects( index_object ).spatial.homogeneous_fluid.absorption_model, objects( index_object ).axis_f_unique );
 
                 % compute prefactors for scattering (local frequencies)
 % TODO: What is the exact requirement?
@@ -114,28 +112,21 @@ classdef spatiospectral
         % compute prefactors (local frequencies)
         %------------------------------------------------------------------
         function prefactors = compute_prefactors( spatiospectrals )
-% TODO: partially move to spatial: -> samples unique
+
             % specify cell array for prefactors
             prefactors = cell( size( spatiospectrals ) );
 
             % iterate spatiospectral discretizations
             for index_object = 1:numel( spatiospectrals )
 
-                % ensure class math.grid_regular
-                if ~isa( spatiospectrals( index_object ).spatial.grid_FOV, 'math.grid_regular' )
-                    errorStruct.message = sprintf( 'spatiospectrals( %d ).spatial.grid_FOV must be math.grid_regular!', index_object );
-                    errorStruct.identifier = 'compute_prefactors:NoRegularGrid';
-                    error( errorStruct );
-                end
-
-                % geometric volume element
-                delta_V = spatiospectrals( index_object ).spatial.grid_FOV.cell_ref.volume;
+                % compute prefactors (global unique frequencies)
+                prefactors_unique = compute_prefactors( spatiospectrals( index_object ).spatial, spatiospectrals( index_object ).axis_f_unique );
 
                 % map unique frequencies of all pulse-echo measurements to global unique frequencies
                 indices_f_measurement_to_global = spatiospectrals( index_object ).indices_f_to_unique;
 
-                % compute samples of prefactors (unique frequencies)
-                samples_unique = - delta_V * spatiospectrals( index_object ).axis_k_tilde_unique.members.^2;
+                % subsample prefactors (unique frequencies of all pulse-echo measurements)
+                prefactors_measurement = subsample( prefactors_unique, indices_f_measurement_to_global );
 
                 % specify cell array for prefactors{ index_object }
                 prefactors{ index_object } = cell( size( spatiospectrals( index_object ).spectral ) );
@@ -146,24 +137,14 @@ classdef spatiospectral
                     % map frequencies of all mixed voltage signals to unique frequencies of current pulse-echo measurement
                     indices_f_mix_to_measurement = spatiospectrals( index_object ).spectral( index_measurement ).indices_f_to_unique;
 
+                    % subsample prefactors (frequencies of all mixed voltage signals)
+                    prefactors_mix = subsample( prefactors_measurement( index_measurement ), indices_f_mix_to_measurement );
+
                     % extract impulse responses of mixing channels
                     impulse_responses_rx = reshape( [ spatiospectrals( index_object ).spectral( index_measurement ).rx.impulse_responses ], size( spatiospectrals( index_object ).spectral( index_measurement ).rx ) );
 
-                    % frequency axes of all mixed voltage signals
-                    axes_f = reshape( [ impulse_responses_rx.axis ], size( spatiospectrals( index_object ).spectral( index_measurement ).rx ) );
-
-                    % specify cell array for samples
-                    samples = cell( size( spatiospectrals( index_object ).spectral( index_measurement ).rx ) );
-
-                    % iterate mixed voltage signals
-                    for index_mix = 1:numel( spatiospectrals( index_object ).spectral( index_measurement ).rx )
-
-                        samples{ index_mix } = samples_unique( indices_f_measurement_to_global{ index_measurement }( indices_f_mix_to_measurement{ index_mix } ) ) .* impulse_responses_rx( index_mix ).samples;
-
-                    end % for index_mix = 1:numel( spatiospectrals( index_object ).spectral( index_measurement ).rx )
-
-                    % create signal matrices
-                    prefactors{ index_object }{ index_measurement } = discretizations.signal_matrix( axes_f, samples );
+                    % compute prefactors (frequencies of all mixed voltage signals)
+                    prefactors{ index_object }{ index_measurement } = prefactors_mix .* impulse_responses_rx;
 
                 end % for index_measurement = 1:numel( spatiospectrals( index_object ).spectral )
 

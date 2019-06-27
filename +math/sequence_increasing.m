@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-06-14
+% modified: 2019-06-26
 %
 classdef sequence_increasing
 
@@ -83,28 +83,52 @@ classdef sequence_increasing
         function [ sequence_out, indices_unique_to_local, indices_local_to_unique ] = unique( sequences_in )
 
             %--------------------------------------------------------------
-            % 1.) numbers of members and cumulative sum
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.sequence_increasing
+            if ~isa( sequences_in, 'math.sequence_increasing' )
+                errorStruct.message = 'sequences_in must be math.sequence_increasing!';
+                errorStruct.identifier = 'unique:NoIncreasingSequences';
+                error( errorStruct );
+            end
+
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', sequences_in.members );
+
+            %--------------------------------------------------------------
+            % 2.) numbers of members and cumulative sum
             %--------------------------------------------------------------
             N_members = abs( sequences_in( : ) );
             N_members_cs = [ 0; cumsum( N_members ) ];
 
             %--------------------------------------------------------------
-            % 2.) create sequence of unique members
+            % 3.) create sequence of unique members
             %--------------------------------------------------------------
-            % extract unique members
-% TODO: potential problem becaus of column vector?
-            [ members_unique, ia, ic ] = unique( [ sequences_in.members ] );
+            % extract unique members in sorted order
+            members_cell = { sequences_in.members };
+            [ members_unique, ia, ic ] = unique( cat( 1, members_cell{ : } ) );
             N_members_unique = numel( members_unique );
 
-            % create sequence of unique members
-% TODO: create regular sequence if possible; use diff function?
-            sequence_out = math.sequence_increasing( members_unique );
+            % compute deltas
+% TODO: use auxiliary.isregular
+            deltas = diff( members_unique );
+
+            % check regularity
+            if all( abs( deltas - deltas( 1 ) ) < 1e-10 * deltas( 1 ) )
+                % create regular increasing sequence
+                q_lb = round( members_unique( 1 ) / deltas( 1 ) );
+                q_ub = round( members_unique( end ) / deltas( 1 ) );
+                sequence_out = math.sequence_increasing_regular( q_lb, q_ub, deltas( 1 ) );
+            else
+                % create increasing sequence
+                sequence_out = math.sequence_increasing( members_unique );
+            end
 
             %--------------------------------------------------------------
-            % 3.) map unique members to those in each sequence
+            % 4.) map unique members to those in each sequence
             %--------------------------------------------------------------
             % object and member indices for each unique member
-            indices_object = sum( ( repmat( ia, [ 1, numel( N_members_cs ) ] ) - repmat( N_members_cs(:)', [ N_members_unique, 1 ] ) ) > 0, 2 );
+            indices_object = sum( ( repmat( ia, [ 1, numel( N_members_cs ) ] ) - repmat( N_members_cs( : )', [ N_members_unique, 1 ] ) ) > 0, 2 );
             indices_f = ia - N_members_cs( indices_object );
 
             % create structures with object and member indices for each unique member
@@ -116,7 +140,7 @@ classdef sequence_increasing
             end
 
             %--------------------------------------------------------------
-            % 4.) map members in each sequence to the unique members
+            % 5.) map members in each sequence to the unique members
             %--------------------------------------------------------------
             indices_local_to_unique = cell( size( sequences_in ) );
 

@@ -150,36 +150,38 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
             if options{ index_object }( index_options ).q < 1
 
                 % determine problem size
-                info.size_A = op_A_norm([], [], 0);
-                N_samples = info.size_A(2);
+                size_A = op_A_bar( [], 0 );
+                N_samples = size_A( 1 );
 
                 % numer of iterations
-                N_iterations = size( epsilon_n, 2 );
+                N_iterations = numel( options{ index_object }( index_options ).epsilon_n );
 
                 % allocate memory for results
                 theta_n = zeros( N_samples, N_iterations + 1 );
-                theta_n(:, 1) = theta_0;  % set start vector (minimizer of P_{(1, eta)})
+                theta_n( :, 1 ) = theta_recon_normed{ index_object }{ index_options };	% specify start vector ( minimizer of P_{(1, eta)} )
 
                 info.info_inner = cell(1, N_iterations);
                 info.N_prod_A = 0;
                 info.N_prod_A_adj = 0;
                 info.N_iter = 0;
 
+                % iterate reweighted l1-minimization problems
                 for index_iter = 1:N_iterations
 
-                    % compute diagonal matrix with weights
-                    theta_normalization = ( abs( theta_n( :, index_iter ) ) + epsilon_n( index_iter ) ).^( 1 - options{ index_object }( index_options ).q );
+                    % specify diagonal weighting matrix
+                    weights_act = ( abs( theta_n( :, index_iter ) ) + options{ index_object }( index_options ).epsilon_n( index_iter ) ).^( 1 - options{ index_object }( index_options ).q );
+                    LT_weighting_act = linear_transforms.weighting( weights_act );
 
                     % solve weighted l1-minimization problem using reformulation
 
                         % define normalized sensing operator
-                        op_A_norm_n = @( x, mode ) op_A_norm( x, theta_normalization, mode );
+                        op_A_norm_n = @( x, mode ) op_A_norm( x, weights_act, mode );
 
-                        % solve normalized l1-minimization problem
-                        [temp, r, g, spgl1_info] = spgl1( op_A_norm_n, y_m, [], options{ index_object }( index_options ).rel_RMSE, [], spgl_opts );
+                        % solve reweighted l1-minimization problem
+                        [ temp, r, g, spgl1_info ] = spgl1( op_A_norm_n, u_M_normed, [], options{ index_object }( index_options ).rel_RMSE, [], spgl_opts );
 
                     % remove normalization
-                    theta_n(:, index_iter + 1) = temp .* theta_normalization;
+                    theta_n( :, index_iter + 1 ) = temp .* weights_act;
 
                     % statistics for computational costs
                     info.info_inner{ index_iter } = spgl1_info;
@@ -189,7 +191,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
 
                 end % for index_iter = 1:N_iterations
 
-                theta_recon_l_q = theta_n( :, end );
+                theta_recon_normed{ index_object }{ index_options } = theta_n( :, end );
 
             end % if options{ index_object }( index_options ).q < 1
 
@@ -197,6 +199,11 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
             % iv.) invert normalization and apply adjoint linear transform
             %--------------------------------------------------------------
             gamma_recon{ index_object }{ index_options } = operator_transform( linear_transforms{ index_object }, theta_recon_normed{ index_object }{ index_options }, 2 ) * u_M_norm;
+
+            % display result
+            figure( index_options );
+            imagesc( squeeze( reshape( illustration.dB( gamma_recon{ index_object }{ index_options }, 20 ), operators_born( index_object ).discretization.spatial.grid_FOV.N_points_axis ) ), [ -70, 0 ] );
+            colormap gray;
 
         end % for index_options = 1:numel( options{ index_object } )
 
@@ -228,14 +235,14 @@ end % function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( oper
 %                         for index_n = 1:options.l_q_N_iterations
 %                 
 %                             % modify sensing matrix
-%                             theta_normalization = ( abs( theta_recon ) + options.epsilon_n(index_n) ).^(1 - options.q); 
-%                             op_phi_current_transform_n = @(x, mode) op_phi_mlfma_normed_gpu_modified_n(x, theta_normalization, mode);
+%                             weights_act = ( abs( theta_recon ) + options.epsilon_n(index_n) ).^(1 - options.q); 
+%                             op_phi_current_transform_n = @(x, mode) op_phi_mlfma_normed_gpu_modified_n(x, weights_act, mode);
 %                 
 %                             % solve weighted l1-minimization problem using reformulation
 %                             [theta_recon, y_m_res, gradient, info] = spgl1( op_phi_current_transform_n, y_m / y_m_energy, [], options.rel_mse, [], spgl_opts );
 %                         
 %                             % remove normalization
-%                             theta_recon = theta_recon .* theta_normalization;
+%                             theta_recon = theta_recon .* weights_act;
 %                         end
 %                     
 %                         % correct scaling
@@ -248,31 +255,11 @@ end % function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( oper
 %                     if options.normalize_columns
 % 
 %                         % compute start vector as solution to l1-minimization problem
-%                         [theta_recon_normed, y_m_res, gradient, info] = spgl1( op_A_mlfma_normed_gpu, y_m_normed, [], options.rel_RMSE, [], spgl_opts );
+%                         theta_recon_normed = spgl1( op_A_mlfma_normed_gpu, y_m_normed, [], options.rel_RMSE, [], spgl_opts );
 % 
 %                         % minimize the lq-norm
 %                         [theta_recon_normed, info] = lq_minimization_v2( @op_A_mlfma_normed_gpu_modified_n, y_m_normed, options.q, options.epsilon_n, theta_recon_normed, options.rel_RMSE, spgl_opts );
 % 
 %                         % correct scaling
 %                         theta_recon_normed = theta_recon_normed * y_m_l2_norm;
-% 
-%                         y_m_res = [];
-%                         gradient = [];
-%                     else
-% 
-%                         % compute start vector as solution to l1-minimization problem
-%                         [theta_recon, y_m_res, gradient, info] = spgl1( op_A_mlfma_scaled_gpu, y_m_normed, [], options.rel_RMSE, [], spgl_opts );
-% 
-%                         % minimize the lq-norm
-%                         [theta_recon, info] = lq_minimization_v2( @op_A_mlfma_scaled_gpu_modified_n, y_m_normed, options.q, options.epsilon_n, theta_recon, options.rel_RMSE, spgl_opts );
-% 
-%                         % correct scaling
-%                         theta_recon = theta_recon * FOV_N_points;
-% 
-%                         y_m_res = [];
-%                         gradient = [];
 %                     end
-% 
-%                 % compute residue and energy of residue
-%                 y_m_res = y_m_res * y_m_l2_norm;                
-%                 y_m_res_l2_norm_rel = norm( y_m_res(:), 2 ) / y_m_l2_norm;
