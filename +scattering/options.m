@@ -7,21 +7,30 @@
 %
 classdef options
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% public properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	properties (SetAccess = public)
 
         % independent properties
-        discretization ( 1, 1 ) discretizations.options = discretizations.options                       % spatiospectral discretization
         spatial_aliasing ( 1, 1 ) scattering.options_aliasing = scattering.options_aliasing.include     % aliasing
-        materials ( 1, 1 ) scattering.options_material = scattering.options_material.compressibility	% material parameters
         gpu_index ( 1, 1 ) double { mustBeInteger, mustBeNonnegative, mustBeNonempty } = 0              % index of GPU
 
     end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% private properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	properties (SetAccess = private)
+
+        % independent properties
+        discretization ( 1, 1 ) discretizations.options = discretizations.options                       % spatiospectral discretization
+        materials ( 1, 1 ) scattering.options_material = scattering.options_material.compressibility	% material parameters
+
+    end % properties
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods
 
@@ -76,6 +85,26 @@ classdef options
             end % for index_arg = 1:nargin
 
         end % function object = options( varargin )
+% 
+%         %------------------------------------------------------------------
+%         % toggle spatial_aliasing
+%         %------------------------------------------------------------------
+%         function set_spatial_aliasing( options )
+% 
+%             %--------------------------------------------------------------
+%             % 1.) check arguments
+%             %--------------------------------------------------------------
+%             % ensure class scattering.options
+%             if ~isa()
+%             end
+% 
+%             %--------------------------------------------------------------
+%             % 2.)
+%             %--------------------------------------------------------------
+%             for index_object = 1:numel( options )
+%             end
+% 
+%         end % function set_spatial_aliasing( options )
 
 	end % methods
 

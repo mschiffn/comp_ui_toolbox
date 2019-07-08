@@ -207,11 +207,20 @@ end
 u_M_tilde = signal( [u_M{:}], lbs_q, T_s );
 
 % perform adjoint scattering
-% theta_hat = adjoint_quick( operator_born, u_rx );
-% theta_hat_weighting = adjoint_quick( operator_born, u_rx, LT_weighting );
+theta_hat = adjoint_quick( operators_born, double( return_vector( u_M ) ) );
+time_start = tic;
+for index_test = 1:1
+    theta_hat_test = scattering.adjoint_quick_gpu( operators_born, repmat( double( return_vector( u_M ) ), [1,2] ), 0 );
+end
+time_elapsed = toc( time_start ) / 1;
+
+
+theta_hat_aa = adjoint_quick( operators_born, double( return_vector( u_M ) ) );
+theta_hat_weighting = adjoint_quick( operator_born, u_rx, LT_weighting );
 
 % transform point spread functions
-% [ theta_hat_tpsf, E_rx, adjointness ] = tpsf( operator_born, [ 383*512+128 ], LT_weighting );
+[ theta_hat_tpsf, E_rx, adjointness ] = tpsf( operators_born, indices_tpsf, LT_weighting{1} );
+[ theta_hat_tpsf_aa, E_rx_aa, adjointness_aa ] = tpsf( operators_born, indices_tpsf, LT_weighting{1} );
 
 % u_rx_tilde = signal( u_rx, 0, T_s );
 
@@ -220,9 +229,9 @@ u_M_tilde = signal( [u_M{:}], lbs_q, T_s );
 %--------------------------------------------------------------------------
 figure( 1 );
 subplot( 1, 2, 1 );
-imagesc( double( u_M_tilde( 9 ).samples ) );
+imagesc( double( u_M_tilde( 1 ).samples ) );
 subplot( 1, 2, 2 );
-imagesc( illustration.dB( abs( hilbert( double( u_M_tilde( 9 ).samples ) ) ), 20 ), [ -20, 0 ] );
+imagesc( illustration.dB( abs( hilbert( double( u_M_tilde( 1 ).samples ) ) ), 20 ), [ -20, 0 ] );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% test calibration procedure

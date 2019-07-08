@@ -1,4 +1,4 @@
-function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
+function [ fields, fields_aa ] = spatial_transfer_function( spatial_grids, axes_f, varargin )
 %
 % compute spatial transfer function for the d-dimensional Euclidean space
 %
@@ -7,7 +7,7 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
 % modified: 2019-05-27
 %
 
-    N_points_max = 6;
+    N_points_max = 2;
 
     % print status
 	time_start = tic;
@@ -66,12 +66,16 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
 	homogeneous_fluids = [ spatial_grids.homogeneous_fluid ];
     axes_k_tilde = compute_wavenumbers( [ homogeneous_fluids.absorption_model ], axes_f );
 
-	% specify cell array for fields
+	% specify cell arrays
 	fields = cell( size( spatial_grids ) );
+    fields_aa = cell( size( spatial_grids ) );
 
 	% iterate spatiospectral discretizations
 	for index_object = 1:numel( spatial_grids )
 
+        %------------------------------------------------------------------
+        % a) validate indices of selected array elements
+        %------------------------------------------------------------------
         % ensure positive integers
         mustBeInteger( indices_element{ index_object } );
         mustBePositive( indices_element{ index_object } );
@@ -83,12 +87,19 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
             error( errorStruct );
         end
 
-        % specify cell array for h_tx
+        %------------------------------------------------------------------
+        % b) compute spatial transfer functions for selected array elements
+        %------------------------------------------------------------------
+        % specify cell arrays
         h_tx = cell( size( indices_element{ index_object } ) );
+        h_tx_aa = cell( size( indices_element{ index_object } ) );
 
         % iterate specified elements
         for index_selected = 1:numel( indices_element{ index_object } )
 
+            %--------------------------------------------------------------
+            % i.) compute apodization function
+            %--------------------------------------------------------------
             % index of the array element
             index_element = indices_element{ index_object }( index_selected );
 
@@ -105,6 +116,9 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
             % compute complex-valued apodization weights
             weights = reshape( grid_element_act.apodization .* exp( - 2j * pi * grid_element_act.time_delays * axes_f( index_object ).members' ), [ grid_element_act.grid.N_points, 1, N_samples_f( index_object ) ] );
 
+            %--------------------------------------------------------------
+            % ii.) compute spatial transfer functions
+            %--------------------------------------------------------------
             % initialize results with zeros
             h_tx{ index_selected } = physical_values.meter( zeros( N_samples_f( index_object ), spatial_grids( index_object ).grid_FOV.N_points ) );
 
@@ -133,16 +147,32 @@ function fields = spatial_transfer_function( spatial_grids, axes_f, varargin )
 
             end % for index_batch = 1:N_batches
 
+            %--------------------------------------------------------------
+            % iii.) anti-aliasing filter
+            %--------------------------------------------------------------
+% TODO: center of element?
+            e_1_minus_2 = mutual_unit_vectors( math.grid( sum( grid_element_act.grid.positions ) / grid_element_act.grid.N_points ), spatial_grids( index_object ).grid_FOV, 1 );
+            e_1_minus_2 = repmat( abs( e_1_minus_2( :, :, 1:(end - 1) ) ), [ N_samples_f( index_object ), 1 ] );
+% TODO: element pitch
+            element_pitch = physical_values.meter( 304.8e-6 );
+            flag = real( axes_k_tilde( index_object ).members ) .* e_1_minus_2 * element_pitch;
+            indicator_aliasing = all( flag < pi, 3 );
+            indicator_aliasing = indicator_aliasing .* ( 1 - ( vecnorm( flag, 2, 3 ) / ( pi * sqrt( grid_element_act.grid.N_dimensions ) ) ).^10 );
+
+            h_tx_aa{ index_selected } = h_tx{ index_selected } .* indicator_aliasing;
+
         end % for index_selected = numel( indices_element{ index_object } )
 
         % create fields
         fields{ index_object } = discretizations.field( repmat( axes_f( index_object ), size( h_tx ) ), repmat( spatial_grids( index_object ).grid_FOV, size( h_tx ) ), h_tx );
+        fields_aa{ index_object } = discretizations.field( repmat( axes_f( index_object ), size( h_tx_aa ) ), repmat( spatial_grids( index_object ).grid_FOV, size( h_tx_aa ) ), h_tx_aa );
 
     end % for index_object = 1:numel( spatial_grids )
 
 	% avoid cell array for single spatial_grids
 	if isscalar( spatial_grids )
         fields = fields{ 1 };
+        fields_aa = fields_aa{ 1 };
     end
 
     % infer and print elapsed time

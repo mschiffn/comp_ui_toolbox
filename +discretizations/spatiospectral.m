@@ -25,6 +25,7 @@ classdef spatiospectral
         % optional properties
         indices_grid_FOV_shift ( :, : )                 % indices of laterally shifted grid points
         h_ref ( 1, : ) discretizations.field            % reference spatial transfer function (unique frequencies)
+        h_ref_aa ( 1, : ) discretizations.field         % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
         h_ref_grad ( 1, : ) discretizations.field       % spatial gradient of the reference spatial transfer function (unique frequencies)
 
     end % properties
@@ -100,7 +101,7 @@ classdef spatiospectral
                     str_format = sprintf( 'data/%s/spatial_%%s/h_ref_axis_f_unique_%%s.mat', objects( index_object ).spatial.str_name );
 
                     % load or compute reference spatial transfer function (unique frequencies)
-                    objects( index_object ).h_ref = auxiliary.compute_or_load_hash( str_format, @discretizations.spatial_transfer_function, [], [], objects( index_object ).spatial, objects( index_object ).axis_f_unique );
+                    [ objects( index_object ).h_ref, objects( index_object ).h_ref_aa ] = auxiliary.compute_or_load_hash( str_format, @discretizations.spatial_transfer_function, [], [], objects( index_object ).spatial, objects( index_object ).axis_f_unique );
 
                 end % if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
 

@@ -106,7 +106,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
         u_M_normed = u_M{ index_object } / u_M_norm;
 
         % define anonymous function for sensing matrix
-        op_A_bar = @( x, mode ) combined( operators_born( index_object ), x, mode, linear_transforms{ index_object } );
+        op_A_bar = @( x, mode ) combined_quick( operators_born( index_object ), x, mode, linear_transforms{ index_object } );
 
         % specify cell arrays
         gamma_recon{ index_object } = cell( size( options{ index_object } ) );
@@ -202,7 +202,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
 
             % display result
             figure( index_options );
-            imagesc( squeeze( reshape( illustration.dB( gamma_recon{ index_object }{ index_options }, 20 ), operators_born( index_object ).discretization.spatial.grid_FOV.N_points_axis ) ), [ -70, 0 ] );
+            imagesc( squeeze( reshape( illustration.dB( gamma_recon{ index_object }{ index_options }, 20 ), operators_born( index_object ).discretization.spatial.grid_FOV.N_points_axis ) )', [ -70, 0 ] );
             colormap gray;
 
         end % for index_options = 1:numel( options{ index_object } )

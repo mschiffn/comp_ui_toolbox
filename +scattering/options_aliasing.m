@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-04-09
-% modified: 2019-04-09
+% modified: 2019-07-08
 %
 classdef options_aliasing
 

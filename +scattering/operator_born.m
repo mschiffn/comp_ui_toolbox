@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-06-19
+% modified: 2019-07-08
 %
 classdef operator_born < scattering.operator
 
@@ -29,18 +29,13 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         function u_M = forward_quick( operator_born, fluctuations, varargin )
 
-            % print status
-            time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\t %s: quick forward scattering (Born approximation, kappa)...', str_date_time );
-
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class scattering.operator_born (scalar)
             if ~( isa( operator_born, 'scattering.operator_born' ) && isscalar( operator_born ) )
-                errorStruct.message = 'operator_born must be scattering.operator_born!';
-                errorStruct.identifier = 'forward_quick:NoOperatorBorn';
+                errorStruct.message = 'operator_born must be a single scattering.operator_born!';
+                errorStruct.identifier = 'forward_quick:NoSingleOperatorBorn';
                 error( errorStruct );
             end
 
@@ -62,6 +57,41 @@ classdef operator_born < scattering.operator
 
             %--------------------------------------------------------------
             % 3.) compute mixed voltage signals
+            %--------------------------------------------------------------
+% TODO: if operator_born.options.gpu_index >= 0
+            u_M = forward_quick_cpu( operator_born, fluctuations );
+
+        end % function u_M = forward_quick( operator_born, fluctuations, varargin )
+
+        %------------------------------------------------------------------
+        % quick forward scattering (CPU)
+        %------------------------------------------------------------------
+        function u_M = forward_quick_cpu( operator_born, fluctuations )
+
+            % print status
+            time_start = tic;
+            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+            fprintf( '\t %s: quick forward scattering (CPU, Born approximation, kappa)...', str_date_time );
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.operator_born (scalar)
+            if ~( isa( operator_born, 'scattering.operator_born' ) && isscalar( operator_born ) )
+                errorStruct.message = 'operator_born must be a single scattering.operator_born!';
+                errorStruct.identifier = 'forward_quick_cpu:NoSingleOperatorBorn';
+                error( errorStruct );
+            end
+
+            % ensure numeric matrix
+            if ~( isnumeric( fluctuations ) && ismatrix( fluctuations ) )
+                errorStruct.message = 'fluctuations must be a numeric matrix!';
+                errorStruct.identifier = 'forward_quick_cpu:NoNumericMatrix';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) compute mixed voltage signals
             %--------------------------------------------------------------
             % detect occupied grid points
             N_objects = size( fluctuations, 2 );
@@ -133,9 +163,21 @@ classdef operator_born < scattering.operator
 
                             % extract current frequencies from unique frequencies
                             if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.discretization.h_ref.axis )
-                                h_rx = double( operator_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+
+                                if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
+                                    h_rx = double( operator_born.discretization.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                                else
+                                    h_rx = double( operator_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                                end
+
                             else
-                                h_rx = double( operator_born.discretization.h_ref.samples( :, indices_occupied_act ) );
+
+                                if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
+                                    h_rx = double( operator_born.discretization.h_ref_aa.samples( :, indices_occupied_act ) );
+                                else
+                                    h_rx = double( operator_born.discretization.h_ref.samples( :, indices_occupied_act ) );
+                                end
+
                             end
 
                         else
@@ -148,26 +190,6 @@ classdef operator_born < scattering.operator
                             h_rx = double( h_rx.samples );
 
                         end % if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
-
-                        %--------------------------------------------------
-                        % avoid spatial aliasing
-                        %--------------------------------------------------
-%                         if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
-% TODO: anti-aliasing
-% nutze h_ref und blende aus -> precompute
-%
-% indicator_1 = repmat( abs( differences_act{ index_object }( :, :, 1 ) ), [ 1, 1, N_samples_k_act ] ) < repmat( pi * D_act{ index_object }, [ 1, 1, N_samples_k_act ] ) ./ repmat( reshape( real( axes_k( index_object ).members ) * physical_values.meter( 304.8e-6 ), [ 1, 1, N_samples_k_act ] ), size( D_act{ index_object } ) );
-% indicator_2 = repmat( abs( differences_act{ index_object }( :, :, 2 ) ), [ 1, 1, N_samples_k_act ] ) < repmat( pi * D_act{ index_object }, [ 1, 1, N_samples_k_act ] ) ./ repmat( reshape( real( axes_k( index_object ).members ) * physical_values.meter( 304.8e-6 ), [ 1, 1, N_samples_k_act ] ), size( D_act{ index_object } ) );
-% indicator = indicator_1 & indicator_2;
-
-% dist_x = repmat( lattice_pos_x_elements_virtual_rx', [1, N_lattice] ) - repmat( lattice_pos( :, 1 )', [N_elements_virtual_rx, 1] );
-% dist_z = repmat( lattice_pos( :, 2 )', [N_elements_virtual_rx, 1] );
-% D = sqrt( dist_x.^2 + dist_z.^2 );
-% e_r_x_abs = abs( dist_x ) ./ D;
-% flag = pi ./ ( element_pitch * e_r_x_abs );
-%                             indicator_aliasing = flag > real( axes_k_tilde( index_f ) );
-%                             indicator_aliasing = indicator_aliasing .* ( 1 - ( real( axes_k_tilde( index_f ) ) ./ flag).^2 );
-%                         end
 
                         %--------------------------------------------------
                         % compute matrix-vector product and mix voltage signals
@@ -191,40 +213,93 @@ classdef operator_born < scattering.operator
             time_elapsed = toc( time_start );
             fprintf( 'done! (%f s)\n', time_elapsed );
 
-        end % function u_M = forward_quick( operator_born, fluctuations, varargin )
+        end % function u_M = forward_quick_cpu( operator_born, fluctuations )
+
+        %------------------------------------------------------------------
+        % quick forward scattering (GPU: C++ & CUDA API)
+        %------------------------------------------------------------------
+        % see forward_quick_gpu.cu
 
         %------------------------------------------------------------------
         % quick adjoint scattering
         %------------------------------------------------------------------
         function theta_hat = adjoint_quick( operator_born, u_M, varargin )
 
-            % print status
-            time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\t %s: quick adjoint scattering (Born approximation, kappa)...', str_date_time );
-
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class scattering.operator_born (scalar)
             if ~( isa( operator_born, 'scattering.operator_born' ) && isscalar( operator_born ) )
-                errorStruct.message = 'operator_born must be scattering.operator_born!';
-                errorStruct.identifier = 'adjoint_quick:NoOperatorBorn';
+                errorStruct.message = 'operator_born must be a single scattering.operator_born!';
+                errorStruct.identifier = 'adjoint_quick_gpu:NoSingleOperatorBorn';
                 error( errorStruct );
             end
 
             % ensure numeric matrix
             if ~( isnumeric( u_M ) && ismatrix( u_M ) )
                 errorStruct.message = 'u_M must be a numeric matrix!';
-                errorStruct.identifier = 'adjoint_quick:NoNumericMatrix';
+                errorStruct.identifier = 'adjoint_quick_gpu:NoNumericMatrix';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
             % 2.) compute adjoint fluctuations
             %--------------------------------------------------------------
-            % initialize theta_hat
-            theta_hat = zeros( operator_born.discretization.spatial.grid_FOV.N_points, size( u_M, 2 ) );
+            if operator_born.options.gpu_index >= 0
+                gamma_hat = scattering.adjoint_quick_gpu( operator_born, u_M, operator_born.options.gpu_index );
+            else
+                gamma_hat = adjoint_quick_cpu( operator_born, u_M );
+            end
+
+            %--------------------------------------------------------------
+            % 3.) forward linear transform
+            %--------------------------------------------------------------
+            if nargin >= 3 && isscalar( varargin{ 1 } ) && isa( varargin{ 1 }, 'linear_transforms.linear_transform' )
+                % apply forward linear transform
+                theta_hat = operator_transform( varargin{ 1 }, gamma_hat, 1 );
+            end
+
+            % illustrate
+            figure(999);
+            subplot( 1, 2, 1 );
+            imagesc( illustration.dB( squeeze( reshape( double( abs( gamma_hat( :, 1 ) ) ), operator_born.discretization.spatial.grid_FOV.N_points_axis ) ), 20 )', [ -60, 0 ] );
+            subplot( 1, 2, 2 );
+            imagesc( illustration.dB( squeeze( reshape( double( abs( theta_hat( :, 1 ) ) ), operator_born.discretization.spatial.grid_FOV.N_points_axis ) ), 20 )', [ -60, 0 ] );
+
+        end % function theta_hat = adjoint_quick( operator_born, u_M, varargin )
+
+        %------------------------------------------------------------------
+        % quick adjoint scattering (CPU)
+        %------------------------------------------------------------------
+        function gamma_hat = adjoint_quick_cpu( operator_born, u_M )
+
+            % print status
+            time_start = tic;
+            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+            fprintf( '\t %s: quick adjoint scattering (CPU, Born approximation, kappa)...', str_date_time );
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.operator_born (scalar)
+            if ~( isa( operator_born, 'scattering.operator_born' ) && isscalar( operator_born ) )
+                errorStruct.message = 'operator_born must be a single scattering.operator_born!';
+                errorStruct.identifier = 'adjoint_quick_cpu:NoSingleOperatorBorn';
+                error( errorStruct );
+            end
+
+            % ensure numeric matrix
+            if ~( isnumeric( u_M ) && ismatrix( u_M ) )
+                errorStruct.message = 'u_M must be a numeric matrix!';
+                errorStruct.identifier = 'adjoint_quick_cpu:NoNumericMatrix';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) compute adjoint fluctuations
+            %--------------------------------------------------------------
+            % initialize gamma_hat
+            gamma_hat = zeros( operator_born.discretization.spatial.grid_FOV.N_points, size( u_M, 2 ) );
 
             % partition matrix into cell arrays
             u_M = mat2cell( u_M, cellfun( @( x ) sum( x( : ) ), { operator_born.discretization.spectral.N_observations } ), size( u_M, 2 ) );
@@ -276,9 +351,21 @@ classdef operator_born < scattering.operator
 
                             % extract current frequencies from unique frequencies
                             if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.discretization.h_ref.axis )
-                                h_rx = double( operator_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+
+                                if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
+                                    h_rx = double( operator_born.discretization.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                                else
+                                    h_rx = double( operator_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                                end
+
                             else
-                                h_rx = double( operator_born.discretization.h_ref.samples( :, indices_occupied_act ) );
+
+                                if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
+                                    h_rx = double( operator_born.discretization.h_ref_aa.samples( :, indices_occupied_act ) );
+                                else
+                                    h_rx = double( operator_born.discretization.h_ref.samples( :, indices_occupied_act ) );
+                                end
+
                             end
 
                         else
@@ -293,19 +380,10 @@ classdef operator_born < scattering.operator
                         end % if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
                         %--------------------------------------------------
-                        % avoid spatial aliasing
-                        %--------------------------------------------------
-%                         if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
-% TODO: precompute at appropriate location
-%                             indicator_aliasing = flag > real( axes_k_tilde( index_f ) );
-%                             indicator_aliasing = indicator_aliasing .* ( 1 - ( real( axes_k_tilde( index_f ) ) ./ flag).^2 );
-%                         end
-
-                        %--------------------------------------------------
                         % compute matrix-vector product
                         %--------------------------------------------------
                         Phi_act = h_rx .* p_incident_act .* double( prefactors( index_mix ).samples( :, index_active ) );
-                        theta_hat = theta_hat + Phi_act' * u_M{ index_measurement }{ index_mix };
+                        gamma_hat = gamma_hat + Phi_act' * u_M{ index_measurement }{ index_mix };
 
                     end % for index_active = 1:N_elements_active
 
@@ -313,28 +391,21 @@ classdef operator_born < scattering.operator
 
             end % for index_measurement = 1:numel( operator_born.discretization.spectral )
 
-            %--------------------------------------------------------------
-            % 3.) forward linear transform
-            %--------------------------------------------------------------
-            if nargin >= 3 && isscalar( varargin{ 1 } ) && isa( varargin{ 1 }, 'linear_transforms.linear_transform' )
-                % apply forward linear transform
-                theta_hat = operator_transform( varargin{ 1 }, theta_hat, 1 );
-            end
-
-            % illustrate
-            figure(999);
-            imagesc( illustration.dB( squeeze( reshape( double( abs( theta_hat( :, 1 ) ) ), operator_born.discretization.spatial.grid_FOV.N_points_axis ) ), 20 ), [ -60, 0 ] );
-
             % infer and print elapsed time
             time_elapsed = toc( time_start );
             fprintf( 'done! (%f s)\n', time_elapsed );
 
-        end % function theta_hat = adjoint_quick( operator_born, u_M, varargin )
+        end % function gamma_hat = adjoint_quick_cpu( operator_born, u_M )
+
+        %------------------------------------------------------------------
+        % quick adjoint scattering (GPU: C++ & CUDA API)
+        %------------------------------------------------------------------
+        % see adjoint_quick_gpu.cu
 
         %------------------------------------------------------------------
         % quick combined scattering
         %------------------------------------------------------------------
-        function y = combined( operator_born, x, mode, varargin )
+        function y = combined_quick( operator_born, x, mode, varargin )
 
             switch mode
 
@@ -350,12 +421,12 @@ classdef operator_born < scattering.operator
                 otherwise
                     % unknown operation
                     errorStruct.message = 'Unknown mode of operation!';
-                    errorStruct.identifier = 'combined:InvalidMode';
+                    errorStruct.identifier = 'combined_quick:InvalidMode';
                     error( errorStruct );
 
             end % switch mode
 
-        end % function y = combined( operator_born, x, mode, varargin )
+        end % function y = combined_quick( operator_born, x, mode, varargin )
 
         %------------------------------------------------------------------
         % forward scattering (overload forward method)
@@ -563,9 +634,9 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % c) quick adjoint scattering
                 %----------------------------------------------------------
-%                 profile on
+                profile on
                 theta_hat{ index_object } = adjoint_quick( operators_born( index_object ), u_M_normed, linear_transforms{ index_object } );
-%                 profile viewer
+                profile viewer
 
                 % estimate samples
 %                 samples_est = op_A_bar( theta_hat_weighting, 1 );
@@ -770,19 +841,19 @@ classdef operator_born < scattering.operator
                             %----------------------------------------------
                             % b) arbitrary grid
                             %----------------------------------------------
-                            % spatial transfer function of the active array element
-% TODO: computes for unique frequencies?
-                            h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, operator_born.discretization.spectral( index_measurement ), index_element );
+                            % compute spatial transfer function of the active array element
+                            h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, axes_f( index_mix ), index_element );
+                            h_rx = double( h_rx.samples );
 
                         end % if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
                         %--------------------------------------------------
                         % avoid spatial aliasing
                         %--------------------------------------------------
-                        if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
+%                         if operator_born.options.spatial_aliasing == scattering.options_aliasing.exclude
 %                             indicator_aliasing = flag > real( axes_k_tilde( index_f ) );
 %                             indicator_aliasing = indicator_aliasing .* ( 1 - ( real( axes_k_tilde( index_f ) ) ./ flag).^2 );
-                        end
+%                         end
 
                         %--------------------------------------------------
                         % compute energies

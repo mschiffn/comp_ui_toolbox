@@ -8,13 +8,22 @@
 classdef operator
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
+    %% public properties
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	properties (SetAccess = public)
+
+        % independent properties
+        options ( 1, 1 ) scattering.options                         % scattering operator options
+
+    end % properties
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% private properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
         sequence %( 1, 1 ) pulse_echo_measurements.sequence         % pulse-echo measurement sequence
-        options ( 1, 1 ) scattering.options                         % scattering operator options
 
         % dependent properties
         discretization ( 1, 1 ) discretizations.spatiospectral      % results of the spatiospectral discretization

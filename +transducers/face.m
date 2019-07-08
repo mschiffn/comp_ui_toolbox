@@ -176,7 +176,7 @@ classdef face
             %--------------------------------------------------------------
             % discretize shapes
             grids_act = discretize( reshape( [ faces.shape ], size( faces ) ), parameters );
-
+% TODO: centers
             % specify cell arrays for apodization and time delays
             apodization_act = cell( size( grids_act ) );
             time_delays_act = cell( size( grids_act ) );
