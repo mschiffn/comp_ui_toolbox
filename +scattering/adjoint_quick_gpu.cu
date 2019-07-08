@@ -27,7 +27,7 @@
 // (there is probably a couple of casts you need to make to compile that, but you get the idea). But that effectively requires compilation of CUDA code within your project, and apparently you don't want that.
 
 // TODO: mwSize vs size_t in mxMalloc
-// TODO: make h_ref persistent make
+// TODO: make h_ref persistent -> persistent pointers to d_h_ref_float_complex, d_indices_grid_FOV_shift_int, d_prefactors_mix_float_complex
 
 // CUDA and cuBLAS
 #include <cuda_runtime.h>
@@ -74,10 +74,13 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	int** N_f_mix = NULL;								// number of frequencies in each mixed voltage signal
 	int** N_f_mix_cs = NULL;							// number of frequencies in each mixed voltage signal (cumulative sum)
 	int** N_elements_active_mix = NULL;					// number of active array elements in each mixed voltage signal
+	int*** indices_active_mix = NULL;					// indices of active array elements in each mixed voltage signal
+	double* indices_active_mix_double = NULL;
 	int N_observations = 0;								// number of observations
 	int* N_observations_measurement = NULL;				// number of observations in each pulse-echo measurement
 	int* N_observations_measurement_cs = NULL;			// number of observations in each pulse-echo measurement (cumulative sum)
 
+	int N_f_unique_measurement_max = 0;					// maximum number of unique frequencies in each pulse-echo measurement
 	int N_f_mix_max = 0;								// maximum number of frequencies in each mixed voltage signal
 
 	// frequency map
@@ -135,7 +138,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	mxArray* rx_measurement = NULL;
 	mxArray* prefactors_measurement = NULL;
 
-	double* indices_active_mix = NULL;
+	
 	int index_element = 0;
 	int index_act = 0, index_src = 0;
 
@@ -169,6 +172,8 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	t_float_complex_gpu* d_gamma_hat_float_complex = NULL;
 
 	dim3 threadsPerBlock( N_THREADS_X, N_THREADS_Y );
+
+	cublasHandle_t handle;
 
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	// 2.) check arguments
@@ -204,6 +209,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 		N_observations_measurement_cs = (int*) mxCalloc( N_measurements, sizeof( int ) );
 		indices_f_mix_to_measurement = (int***) mxMalloc( N_measurements * sizeof( int** ) );
 		indices_f_mix_to_sequence = (int***) mxMalloc( N_measurements * sizeof( int** ) );
+		indices_active_mix = (int***) mxMalloc( N_measurements * sizeof( int** ) );
 
 		// iterate sequential pulse-echo measurements
 		for( int index_measurement = 0; index_measurement < N_measurements; index_measurement++ )
@@ -219,6 +225,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 			N_elements_active_mix[ index_measurement ] = (int*) mxMalloc( N_mix_measurement[ index_measurement ] * sizeof( int ) );
 			indices_f_mix_to_measurement[ index_measurement ] = (int**) mxMalloc( N_mix_measurement[ index_measurement ] * sizeof( int* ) );
 			indices_f_mix_to_sequence[ index_measurement ] = (int**) mxMalloc( N_mix_measurement[ index_measurement ] * sizeof( int* ) );
+			indices_active_mix[ index_measurement ] = (int**) mxMalloc( N_mix_measurement[ index_measurement ] * sizeof( int* ) );
 
 			// map unique frequencies of pulse-echo measurement to global unique frequencies
 			indices_f_measurement_to_sequence_double = (double*) mxGetData( mxGetCell( mxGetProperty( discretization, 0, "indices_f_to_unique" ), (mwIndex) index_measurement ) );
@@ -245,8 +252,12 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 				if( DEBUG_MODE ) mexPrintf( "N_f_mix_cs[%d][%d] = %d\n", index_measurement, index_mix, N_f_mix_cs[ index_measurement ][ index_mix ] );
 
 				// number of active array elements in each mixed voltage signal
-				N_elements_active_mix[ index_measurement ][ index_mix ] = mxGetNumberOfElements( mxGetProperty( mxGetProperty( discretization_spectral, index_measurement, "rx" ), index_mix, "indices_active" ) );
+				rx_measurement = mxGetProperty( mxGetProperty( discretization_spectral, index_measurement, "rx" ), index_mix, "indices_active" );
+				N_elements_active_mix[ index_measurement ][ index_mix ] = mxGetNumberOfElements( rx_measurement );
 				if( DEBUG_MODE ) mexPrintf( "N_elements_active_mix[%d][%d] = %d\n", index_measurement, index_mix, N_elements_active_mix[ index_measurement ][ index_mix ] );
+
+				// indices of active array elements for each mixed voltage signal
+				indices_active_mix_double = (double *) mxGetData( rx_measurement );
 
 				// map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
 				indices_f_mix_to_measurement_double = (double*) mxGetData( mxGetCell( mxGetProperty( discretization_spectral, index_measurement, "indices_f_to_unique" ), (mwIndex) index_mix ) );
@@ -254,6 +265,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 				// allocate memory
 				indices_f_mix_to_measurement[ index_measurement ][ index_mix ] = (int*) mxMalloc( N_f_mix[ index_measurement ][ index_mix ] * sizeof( int ) );
 				indices_f_mix_to_sequence[ index_measurement ][ index_mix ] = (int*) mxMalloc( N_f_mix[ index_measurement ][ index_mix ] * sizeof( int ) );
+				indices_active_mix[ index_measurement ][ index_mix ] = (int*) mxMalloc( N_elements_active_mix[ index_measurement ][ index_mix ] * sizeof( int ) );
 
 				// iterate frequencies
 				for( int index_f = 0; index_f < N_f_mix[ index_measurement ][ index_mix ]; index_f++ )
@@ -268,6 +280,16 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 					if( DEBUG_MODE ) mexPrintf( "indices_f_mix_to_sequence[%d][%d][%d] = %d\n", index_measurement, index_mix, index_f, indices_f_mix_to_sequence[ index_measurement ][ index_mix ][ index_f ] );
 
 				} // for( int index_f = 0; index_f < N_f_mix[ index_measurement ][ index_mix ]; index_f++ )
+
+				// iterate active elements
+				for( int index_active = 0; index_active < N_elements_active_mix[ index_measurement ][ index_mix ]; index_active++ )
+				{
+
+					// indices of active array elements for each mixed voltage signal
+					indices_active_mix[ index_measurement ][ index_mix ][ index_active ] = (int) indices_active_mix_double[ index_active ] - 1;
+					if( DEBUG_MODE ) mexPrintf( "indices_active_mix[%d][%d][%d] = %d\n", index_measurement, index_mix, index_active, indices_active_mix[ index_measurement ][ index_mix ][ index_active ] );
+
+				} // for( int index_active = 0; index_active < N_elements_active_mix[ index_measurement ][ index_mix ]; index_active++ )
 
 				// number of observations in each pulse-echo measurement
 				N_observations_measurement[ index_measurement ] += N_f_mix[ index_measurement ][ index_mix ];
@@ -351,7 +373,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	// get driver version
 	cudaDriverGetVersion( &driverVersion );
 	if(DEBUG_MODE) mexPrintf("\ndriver version: %d\n", driverVersion);
-    
+
 	// get runtime version
 	cudaRuntimeGetVersion( &runtimeVersion );
 	if(DEBUG_MODE) mexPrintf("runtime version: %d\n", runtimeVersion);
@@ -640,7 +662,6 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	// 6.) compute adjoint fluctuations
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	// cuBLAS settings
-	cublasHandle_t handle;
 	const t_float_complex_gpu gemm_alpha = make_cuFloatComplex( 1.0f, 0.0f );
 	const t_float_complex_gpu gemm_beta = make_cuFloatComplex( 1.0f, 0.0f );
 
@@ -699,9 +720,6 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 		//-----------------------------------------------------------------
 		// d)
 		//-----------------------------------------------------------------
-		// extract rx settings
-		rx_measurement = mxGetProperty( discretization_spectral, index_measurement, "rx" );
-
 		// extract prefactors for all mixes
 		prefactors_measurement = mxGetCell( mxGetProperty( discretization, 0, "prefactors" ), (mwIndex) index_measurement );
 
@@ -713,21 +731,14 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 		{
 
 			//-------------------------------------------------------------
-			// i.) extract indices of active array elements
-			//-------------------------------------------------------------
-			// extract indices_active_mix
-			temp = mxGetProperty( rx_measurement, index_mix, "indices_active" );
-			indices_active_mix = (double *) mxGetData( temp );
-
-			//-------------------------------------------------------------
-			// ii.) extract prefactors for current mix
+			// i.) extract prefactors for current mix
 			//-------------------------------------------------------------
 			// extract prefactors_mix
 			prefactors_mix = mxGetProperty( mxGetProperty( prefactors_measurement, index_mix, "samples" ), 0, "values" );
 			prefactors_mix_complex = mxGetComplexDoubles( prefactors_mix );
 
 			//-------------------------------------------------------------
-			// iii.) convert prefactors_mix to float
+			// ii.) convert prefactors_mix to float
 			//-------------------------------------------------------------
 			// compute size
 			size_bytes_prefactors_mix = N_f_mix[ index_measurement ][ index_mix ] * N_elements_active_mix[ index_measurement ][ index_mix ] * sizeof( t_float_complex_gpu );
@@ -738,9 +749,9 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 
 			// iterate elements
 			if( DEBUG_MODE ) mexPrintf( "converting prefactors_mix to float..." );
-			for ( int index_active = 0; index_active < N_elements_active_mix[ index_measurement ][ index_mix ]; index_active++ )
+			for( int index_active = 0; index_active < N_elements_active_mix[ index_measurement ][ index_mix ]; index_active++ )
 			{
-				for ( int index_f = 0; index_f < N_f_mix[ index_measurement ][ index_mix ]; index_f++ )
+				for( int index_f = 0; index_f < N_f_mix[ index_measurement ][ index_mix ]; index_f++ )
 				{
 					index_act = index_active * N_f_mix[ index_measurement ][ index_mix ] + index_f;
 					prefactors_mix_float_complex[ index_act ].x = (t_float_gpu) prefactors_mix_complex[ index_act ].real;
@@ -750,7 +761,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 			if( DEBUG_MODE ) mexPrintf( "done!\n" );
 
 			//-------------------------------------------------------------
-			// iv.) copy prefactors_mix_float_complex to the device
+			// iii.) copy prefactors_mix_float_complex to the device
 			//-------------------------------------------------------------
 			// allocate memory
 			checkCudaErrors( cudaMallocPitch( (void **) &d_prefactors_mix_float_complex, &pitch_prefactors_mix, N_f_mix[ index_measurement ][ index_mix ] * sizeof( t_float_complex_gpu ), N_elements_active_mix[ index_measurement ][ index_mix ] ) );
@@ -765,7 +776,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 			if( DEBUG_MODE ) printMemInfo();
 
 			//-------------------------------------------------------------
-			// v.)
+			// iv.) parallelization settings
 			//-------------------------------------------------------------
 			// number of blocks to process in parallel
 			N_blocks_x = ceil( ( (double) N_points ) / N_THREADS_X );
@@ -773,18 +784,14 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 			dim3 numBlocks( N_blocks_x, N_blocks_y );
 
 			// iterate active array elements
-			for ( int index_active = 0; index_active < N_elements_active_mix[ index_measurement ][ index_mix ]; index_active++ )
+			for( int index_active = 0; index_active < N_elements_active_mix[ index_measurement ][ index_mix ]; index_active++ )
 			{
-
-				// index of active array element
-				index_element = ( int ) indices_active_mix[ index_active ] - 1;
-				if( DEBUG_MODE ) mexPrintf( "index_element = %d\n", index_element );
 
 				// compute entries of the observation matrix (N_f_mix[ index_measurement ][ index_mix ] x N_points)
 				compute_matrix_kernel<<<numBlocks, threadsPerBlock>>>(
 					d_Phi_float_complex, N_f_mix[ index_measurement ][ index_mix ], N_points,
 					d_h_ref_float_complex, pitch_h_ref,
-					d_indices_grid_FOV_shift_int, pitch_indices_grid_FOV_shift, index_element,
+					d_indices_grid_FOV_shift_int, pitch_indices_grid_FOV_shift, indices_active_mix[ index_measurement ][ index_mix ][ index_active ],
 					d_indices_f_mix_to_sequence[ index_measurement ][ index_mix ],
 					d_p_incident_measurement_float_complex, pitch_p_incident_measurement,
 					d_indices_f_mix_to_measurement[ index_measurement ][ index_mix ],
@@ -797,7 +804,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 				// checkCudaErrors( cudaDeviceSynchronize() );
 
 				// compute matrix-matrix product (cuBLAS)
-				// CUBLAS_OP_N: non-transpose operation / CUBLAS_OP_T: transpose operation / CUBLAS_OP_C: conjugate transpose operation
+				// CUBLAS_OP_N: non-transpose operation / CUBLAS_OP_C: conjugate transpose operation
 				checkCudaErrors(
 					cublasCgemm( handle,
 						CUBLAS_OP_C, CUBLAS_OP_N,
@@ -807,12 +814,12 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 					)
 				);
 
-			} // for ( index_active = 0; index_active < N_elements_active_mix[ index_measurement ][ index_mix ]; index_active++ )
+			} // for( int index_active = 0; index_active < N_elements_active_mix[ index_measurement ][ index_mix ]; index_active++ )
 
 			// clean-up device memory
 			checkCudaErrors( cudaFree( d_prefactors_mix_float_complex ) );
 
-		} // for ( index_mix = 0; index_mix < N_mix_measurement[ index_measurement ]; index_mix++ )
+		} // for( int index_mix = 0; index_mix < N_mix_measurement[ index_measurement ]; index_mix++ )
 
 		// clean-up device memory
 		checkCudaErrors( cudaFree( d_p_incident_measurement_float_complex ) );
@@ -887,6 +894,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 			checkCudaErrors( cudaFree( d_indices_f_mix_to_sequence[ index_measurement ][ index_mix ] ) );
 			checkCudaErrors( cudaFree( d_indices_f_mix_to_measurement[ index_measurement ][ index_mix ] ) );
 
+			mxFree( indices_active_mix[ index_measurement ][ index_mix ] );
 			mxFree( indices_f_mix_to_sequence[ index_measurement ][ index_mix ] );
 			mxFree( indices_f_mix_to_measurement[ index_measurement ][ index_mix ] );
 
@@ -897,6 +905,8 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 
 		mxFree( d_indices_f_mix_to_sequence[ index_measurement ] );
 		mxFree( d_indices_f_mix_to_measurement[ index_measurement ] );
+
+		mxFree( indices_active_mix[ index_measurement ] );
 		mxFree( indices_f_mix_to_sequence[ index_measurement ] );
 		mxFree( indices_f_mix_to_measurement[ index_measurement ] );
 
@@ -911,6 +921,8 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 
 	mxFree( d_indices_f_mix_to_sequence );
 	mxFree( d_indices_f_mix_to_measurement );
+
+	mxFree( indices_active_mix );
 	mxFree( indices_f_mix_to_sequence );
 	mxFree( indices_f_mix_to_measurement );
 
@@ -927,9 +939,9 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 
 } // void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 
-//-------------------------------------------------------------------------
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // compute entries of the observation matrix (N_f_mix x N_points)
-//-------------------------------------------------------------------------
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 __global__ void compute_matrix_kernel( t_float_complex_gpu* d_Phi_float_complex, int N_f_mix, int N_points, t_float_complex_gpu* d_h_ref_float_complex, size_t pitch_h_ref, int* d_indices_grid_FOV_shift_int, size_t pitch_indices_grid_FOV_shift, int index_element, int* d_indices_f_mix_to_sequence, t_float_complex_gpu* d_p_incident_measurement_float_complex, size_t pitch_p_incident_measurement, int* d_indices_f_mix_to_measurement, t_float_complex_gpu* d_prefactors_mix_float_complex, size_t pitch_prefactors_mix, int index_active )
 {
 
@@ -953,9 +965,9 @@ __global__ void compute_matrix_kernel( t_float_complex_gpu* d_Phi_float_complex,
 
 } // __global__ void compute_matrix_kernel( t_float_complex_gpu* d_Phi_float_complex, int N_f_mix, int N_points, t_float_complex_gpu* d_h_ref_float_complex, size_t pitch_h_ref, int* d_indices_grid_FOV_shift_int, size_t pitch_indices_grid_FOV_shift, int index_element, int* d_indices_f_mix_to_sequence, t_float_complex_gpu* d_p_incident_measurement_float_complex, size_t pitch_p_incident_measurement, int* d_indices_f_mix_to_measurement, t_float_complex_gpu* d_prefactors_mix_float_complex, size_t pitch_prefactors_mix, int index_active )
 
-//-------------------------------------------------------------------------
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // print device status information
-//-------------------------------------------------------------------------
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 void print_device_info( int index_device, int deviceCount, cudaDeviceProp deviceProp )
 {
 	mexPrintf( " %s\n", "--------------------------------------------------------------------------------" );
@@ -975,9 +987,9 @@ void print_device_info( int index_device, int deviceCount, cudaDeviceProp device
     mexPrintf( " %-22s: %-8d\n", "warp size", deviceProp.warpSize );
 }
 
-//-------------------------------------------------------------------------
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // print memory information
-//-------------------------------------------------------------------------
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 void printMemInfo()
 {
 	// internal variables
