@@ -158,6 +158,11 @@ classdef spatiospectral
 
         end % function prefactors = compute_prefactors( spatiospectrals )
 
+        %------------------------------------------------------------------
+        % apply spatial anti-aliasing filter
+        %------------------------------------------------------------------
+        
+        
 	end % methods
 
 end % classdef spatiospectral

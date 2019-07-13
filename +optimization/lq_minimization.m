@@ -43,6 +43,11 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
         linear_transforms = { linear_transforms };
     end
 
+	% overwrite properties of momentary scattering operator options
+	if nargin >= 5
+        operators_born = set_properties_momentary( operators_born, varargin{ 2:end } );
+	end
+
 	% multiple operators_born / single u_M
 	if ~isscalar( operators_born ) && isscalar( u_M )
         u_M = repmat( u_M, size( operators_born ) );

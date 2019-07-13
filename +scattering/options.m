@@ -3,108 +3,97 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-15
-% modified: 2019-04-13
+% modified: 2019-07-11
 %
 classdef options
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% public properties
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = public)
-
-        % independent properties
-        spatial_aliasing ( 1, 1 ) scattering.options_aliasing = scattering.options_aliasing.include     % aliasing
-        gpu_index ( 1, 1 ) double { mustBeInteger, mustBeNonnegative, mustBeNonempty } = 0              % index of GPU
-
-    end % properties
-
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% private properties
+	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
-        discretization ( 1, 1 ) discretizations.options = discretizations.options                       % spatiospectral discretization
-        materials ( 1, 1 ) scattering.options_material = scattering.options_material.compressibility	% material parameters
+        static ( 1, 1 ) scattering.options_static = scattering.options_static           % static options
+        momentary ( 1, 1 ) scattering.options_momentary = scattering.options_momentary	% momentary options
 
     end % properties
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = options( varargin )
+        function objects = options( static, momentary )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % check number of arguments
+            % return if no input argument
             if nargin == 0
                 return;
             end
 
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( static, momentary );
+
             %--------------------------------------------------------------
-            % 2.) parse arguments
+            % 2.) create scattering operator options
             %--------------------------------------------------------------
-            for index_arg = 1:nargin
+            % repeat default scattering operator options
+            objects = repmat( objects, size( static ) );
 
-                switch class( varargin{ index_arg } )
+            % iterate scattering operator options
+            for index_object = 1:numel( static )
 
-                    %------------------------------------------------------
-                    % spatiospectral discretization
-                    %------------------------------------------------------
-                    case 'discretizations.options'
-                        object.discretization = varargin{ index_arg };
+                % set independent properties
+                objects( index_object ).static = static( index_object );
+                objects( index_object ).momentary = momentary( index_object );
 
-                    %------------------------------------------------------
-                    % anti-aliasing options
-                    %------------------------------------------------------
-                    case 'scattering.options_aliasing'
-                        object.spatial_aliasing = varargin{ index_arg };
+            end % for index_object = 1:numel( static )
 
-                    %------------------------------------------------------
-                    % material parameters
-                    %------------------------------------------------------
-                    case 'scattering.options_material'
-                        object.materials = varargin{ index_arg };
+        end % function objects = options( static, momentary )
 
-                    %------------------------------------------------------
-                    % unknown
-                    %------------------------------------------------------
-                    otherwise
-                        errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
-                        errorStruct.identifier = 'options:UnknownClass';
-                        error( errorStruct );
+        %------------------------------------------------------------------
+        % set properties of momentary scattering operator options
+        %------------------------------------------------------------------
+        function options = set_properties_momentary( options, varargin )
 
-                end % switch class( varargin{ index_arg } )
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.options
+            if ~isa( options, 'scattering.options' )
+                errorStruct.message = 'options must be scattering.options!';
+                errorStruct.identifier = 'set_properties_momentary:NoOptions';
+                error( errorStruct );
+            end
 
-            end % for index_arg = 1:nargin
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( options, varargin{ : } );
 
-        end % function object = options( varargin )
-% 
-%         %------------------------------------------------------------------
-%         % toggle spatial_aliasing
-%         %------------------------------------------------------------------
-%         function set_spatial_aliasing( options )
-% 
-%             %--------------------------------------------------------------
-%             % 1.) check arguments
-%             %--------------------------------------------------------------
-%             % ensure class scattering.options
-%             if ~isa()
-%             end
-% 
-%             %--------------------------------------------------------------
-%             % 2.)
-%             %--------------------------------------------------------------
-%             for index_object = 1:numel( options )
-%             end
-% 
-%         end % function set_spatial_aliasing( options )
+            %--------------------------------------------------------------
+            % 2.) set momentary scattering operator options
+            %--------------------------------------------------------------
+            % specify cell array for arguments
+            args = cell( size( varargin ) );
+
+            % iterate scattering operators
+            for index_object = 1:numel( options )
+
+                % process arguments
+                for index_arg = 1:numel( varargin )
+                    args{ index_arg } = varargin{ index_arg }( index_object );
+                end
+
+                % set properties of momentary scattering operator options
+                options( index_object ).momentary = set_properties( options( index_object ).momentary, args{ : } );
+
+            end % for index_object = 1:numel( options )
+
+        end % function options = set_properties_momentary( options, varargin )
 
 	end % methods
 

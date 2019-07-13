@@ -3,32 +3,24 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-05-27
+% modified: 2019-07-11
 %
 classdef operator
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% public properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = public)
-
-        % independent properties
-        options ( 1, 1 ) scattering.options                         % scattering operator options
-
-    end % properties
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% private properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
         sequence %( 1, 1 ) pulse_echo_measurements.sequence         % pulse-echo measurement sequence
+        options ( 1, 1 ) scattering.options                         % scattering operator options
 
         % dependent properties
         discretization ( 1, 1 ) discretizations.spatiospectral      % results of the spatiospectral discretization
         incident_waves ( :, : ) syntheses.incident_wave             % incident waves
         E_M ( :, 1 ) physical_values.squarevolt                     % received energy
+        E_M_aa ( :, 1 ) physical_values.squarevolt                  % received energy w/ anti-aliasing filter
 
     end % properties
 
@@ -90,7 +82,7 @@ classdef operator
                 %----------------------------------------------------------
                 % b) spatiospectral discretization of the sequence
                 %----------------------------------------------------------
-                objects( index_object ).discretization = discretize( objects( index_object ).sequence, objects( index_object ).options.discretization );
+                objects( index_object ).discretization = discretize( objects( index_object ).sequence, objects( index_object ).options.static.discretization );
 
                 %----------------------------------------------------------
                 % c) incident acoustic fields (unique frequencies)
@@ -104,11 +96,49 @@ classdef operator
                 str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s.mat', objects( index_object ).discretization.spatial.str_name );
 
                 % load or compute received energy
-                objects( index_object ).E_M = auxiliary.compute_or_load_hash( str_format, @energy_rx, [ 2, 3 ], 1, objects( index_object ), objects( index_object ).discretization.spatial, objects( index_object ).discretization.spectral );
+                [ objects( index_object ).E_M, objects( index_object ).E_M_aa ] = auxiliary.compute_or_load_hash( str_format, @energy_rx, [ 2, 3 ], 1, objects( index_object ), objects( index_object ).discretization.spatial, objects( index_object ).discretization.spectral );
 
             end % for index_object = 1:numel( objects )
 
         end % function objects = operator( sequences, options )
+
+        %------------------------------------------------------------------
+        % set properties of momentary scattering operator options
+        %------------------------------------------------------------------
+        function operators = set_properties_momentary( operators, varargin )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.operator
+            if ~isa( operators, 'scattering.operator' )
+                errorStruct.message = 'operators must be scattering.operator!';
+                errorStruct.identifier = 'set_properties_momentary:NoOperators';
+                error( errorStruct );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( operators, varargin{ : } );
+
+            %--------------------------------------------------------------
+            % 2.) set momentary scattering operator options
+            %--------------------------------------------------------------
+            % specify cell array for arguments
+            args = cell( size( varargin ) );
+
+            % iterate scattering operators
+            for index_object = 1:numel( operators )
+
+                % process arguments
+                for index_arg = 1:numel( varargin )
+                    args{ index_arg } = varargin{ index_arg }( index_object );
+                end
+
+                % set current momentary scattering options
+                operators( index_object ).options = set_properties_momentary( operators( index_object ).options, args{ : } );
+            end
+
+        end % function operators = set_properties_momentary( operators, options_momentary )
 
         %------------------------------------------------------------------
         % transform point spread function (TPSF)
