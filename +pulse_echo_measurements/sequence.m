@@ -97,10 +97,17 @@ classdef sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure class pulse_echo_measurements.sequence
+            if ~isa( sequences, 'pulse_echo_measurements.sequence' )
+                errorStruct.message = 'sequences must be pulse_echo_measurements.sequence!';
+                errorStruct.identifier = 'discretize:NoSequences';
+                error( errorStruct );
+            end
+
             % ensure class discretizations.options
             if ~isa( options, 'discretizations.options' )
                 errorStruct.message = 'options must be discretizations.options!';
-                errorStruct.identifier = 'discretize:NoOptions';
+                errorStruct.identifier = 'discretize:NoDiscretizationOptions';
                 error( errorStruct );
             end
 

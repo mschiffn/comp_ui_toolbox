@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-06-07
+% modified: 2019-07-18
 %
 classdef setting
 
@@ -72,10 +72,17 @@ classdef setting
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.options_spectral
+            % ensure class pulse_echo_measurements.setting
+            if ~isa( settings, 'pulse_echo_measurements.setting' )
+                errorStruct.message = 'settings must be pulse_echo_measurements.setting!';
+                errorStruct.identifier = 'discretize:NoSetting';
+                error( errorStruct );
+            end
+
+            % ensure class discretizations.options_spectral (scalar)
             if ~( isa( options_spectral, 'discretizations.options_spectral' ) && isscalar( options_spectral ) )
                 errorStruct.message = 'options_spectral must be a single discretizations.options_spectral!';
-                errorStruct.identifier = 'discretize:NoOptionsSpectral';
+                errorStruct.identifier = 'discretize:NoSingleOptionsSpectral';
                 error( errorStruct );
             end
 
@@ -87,17 +94,16 @@ classdef setting
             settings_tx = cell( size( settings ) );
 
             % check spectral discretization options
-            switch options_spectral
+            switch options_spectral.method
 
-                case discretizations.options_spectral.signal
+                case discretizations.options_spectral_method.signal
 
                     %------------------------------------------------------
                     % a) individual frequency axis for each recorded signal
                     %------------------------------------------------------
                     % iterate pulse-echo measurement settings
                     for index_object = 1:numel( settings )
-% TODO: quantize intervals_t
-% TODO: check method to determine Fourier coefficients
+% TODO: quantize intervals_t?
 
                         % time and frequency intervals of each recorded signal
                         intervals_t = reshape( [ settings( index_object ).rx.interval_t ], size( settings( index_object ).rx ) );
@@ -109,7 +115,7 @@ classdef setting
 
                     end % for index_object = 1:numel( settings )
 
-                case discretizations.options_spectral.setting
+                case discretizations.options_spectral_method.setting
 
                     %------------------------------------------------------
                     % b) common frequency axis for all recorded signals per setting
@@ -133,7 +139,7 @@ classdef setting
 
                     end % for index_object = 1:numel( settings )
 
-                case discretizations.options_spectral.sequence
+                case { discretizations.options_spectral_method.sequence, discretizations.options_spectral_method.sequence_custom }
 
                     %------------------------------------------------------
                     % c) common frequency axis for all recorded signals
@@ -146,8 +152,22 @@ classdef setting
                     mustBeInteger( delta_unique_max ./ deltas_unique );
 
                     % determine hulls of all time and frequency intervals
-% TODO: inject custom recording time interval
                     [ interval_hull_t, interval_hull_f ] = hulls( settings );
+
+                    % check specification of custom recording time interval
+                    if isequal( options_spectral.method, discretizations.options_spectral_method.sequence_custom )
+
+                        % ensure valid recording time interval
+                        if ~isequal( hull( [ options_spectral.interval_hull_t, interval_hull_t ] ), options_spectral.interval_hull_t )
+                            errorStruct.message = 'options_spectral.interval_hull_t must contain interval_hull_t!';
+                            errorStruct.identifier = 'discretize:InvalidCustomRecordingTimeInterval';
+                            error( errorStruct );
+                        end
+
+                        % use custom recording time interval
+                        interval_hull_t = options_spectral.interval_hull_t;
+
+                    end % if isequal( options_spectral.method, discretizations.options_spectral_method.sequence_custom )
 
                     % quantize hull of all recording time intervals using delta_unique_max
                     interval_hull_t_quantized = quantize( interval_hull_t, delta_unique_max );
@@ -161,7 +181,7 @@ classdef setting
 
                     end % for index_object = 1:numel( settings )
 
-            end % switch options_spectral
+            end % switch options_spectral.method
 
             %--------------------------------------------------------------
             % 3.) create spectral discretizations

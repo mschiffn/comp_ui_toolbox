@@ -164,13 +164,13 @@ classdef operator_born < scattering.operator
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
                             % shift reference spatial transfer function to infer that of the active array element
-                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( indices_occupied, index_element );
+                            indices_occupied_act = operator_born.discretization.spatial.indices_grid_FOV_shift( indices_occupied, index_element );
 
                             % extract current frequencies from unique frequencies
                             if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.discretization.h_ref.axis )
 
                                 if operator_born.options.momentary.anti_aliasing.status == scattering.options_anti_aliasing_status.on
-                                    h_rx = double( operator_born.discretization.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                                    h_rx = double( operator_born.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                                 else
                                     h_rx = double( operator_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                                 end
@@ -178,7 +178,7 @@ classdef operator_born < scattering.operator
                             else
 
                                 if operator_born.options.momentary.anti_aliasing.status == scattering.options_anti_aliasing_status.on
-                                    h_rx = double( operator_born.discretization.h_ref_aa.samples( :, indices_occupied_act ) );
+                                    h_rx = double( operator_born.h_ref_aa.samples( :, indices_occupied_act ) );
                                 else
                                     h_rx = double( operator_born.discretization.h_ref.samples( :, indices_occupied_act ) );
                                 end
@@ -194,6 +194,8 @@ classdef operator_born < scattering.operator
                             h_rx = discretizations.spatial_transfer_function( operator_born.discretization.spatial, axes_f( index_mix ), index_element );
                             h_rx = double( h_rx.samples );
 
+                            % apply spatial anti-aliasing filter
+                            
                         end % if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
                         %--------------------------------------------------
@@ -223,7 +225,7 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % quick forward scattering (GPU: C++ & CUDA API)
         %------------------------------------------------------------------
-        % see forward_quick_gpu.cu
+        % see combined_quick_gpu.cu
 
         %------------------------------------------------------------------
         % quick adjoint scattering (wrapper)
@@ -353,13 +355,13 @@ classdef operator_born < scattering.operator
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
                             % shift reference spatial transfer function to infer that of the active array element
-                            indices_occupied_act = operator_born.discretization.indices_grid_FOV_shift( :, index_element );
+                            indices_occupied_act = operator_born.discretization.spatial.indices_grid_FOV_shift( :, index_element );
 
                             % extract current frequencies from unique frequencies
                             if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.discretization.h_ref.axis )
 
                                 if operator_born.options.momentary.anti_aliasing.status == scattering.options_anti_aliasing_status.on
-                                    h_rx = double( operator_born.discretization.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                                    h_rx = double( operator_born.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                                 else
                                     h_rx = double( operator_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                                 end
@@ -367,7 +369,7 @@ classdef operator_born < scattering.operator
                             else
 
                                 if operator_born.options.momentary.anti_aliasing.status == scattering.options_anti_aliasing_status.on
-                                    h_rx = double( operator_born.discretization.h_ref_aa.samples( :, indices_occupied_act ) );
+                                    h_rx = double( operator_born.h_ref_aa.samples( :, indices_occupied_act ) );
                                 else
                                     h_rx = double( operator_born.discretization.h_ref.samples( :, indices_occupied_act ) );
                                 end
@@ -406,7 +408,7 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % quick adjoint scattering (GPU: C++ & CUDA API)
         %------------------------------------------------------------------
-        % see adjoint_quick_gpu.cu
+        % see combined_quick_gpu.cu
 
         %------------------------------------------------------------------
         % quick combined scattering
@@ -640,9 +642,9 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % c) quick adjoint scattering
                 %----------------------------------------------------------
-                profile on
+%                 profile on
                 theta_hat{ index_object } = adjoint_quick( operators_born( index_object ), u_M_normed, linear_transforms{ index_object } );
-                profile viewer
+%                 profile viewer
 
                 % estimate samples
 %                 samples_est = op_A_bar( theta_hat_weighting, 1 );
@@ -859,18 +861,18 @@ classdef operator_born < scattering.operator
                             % a) symmetric spatial discretization based on orthogonal regular grids
                             %----------------------------------------------
                             % shift reference spatial transfer function to infer that of the active array element
-                            indices_occupied_act = operators_born.discretization.indices_grid_FOV_shift( :, index_element );
+                            indices_occupied_act = operators_born.discretization.spatial.indices_grid_FOV_shift( :, index_element );
 
                             % extract current frequencies from unique frequencies
                             if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operators_born.discretization.h_ref.axis )
 
                                 h_rx = double( operators_born.discretization.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
-                                h_rx_aa = double( operators_born.discretization.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                                h_rx_aa = double( operators_born.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
 
                             else
 
                                 h_rx = double( operators_born.discretization.h_ref.samples( :, indices_occupied_act ) );
-                                h_rx_aa = double( operators_born.discretization.h_ref_aa.samples( :, indices_occupied_act ) );
+                                h_rx_aa = double( operators_born.h_ref_aa.samples( :, indices_occupied_act ) );
                             end
 
                         else

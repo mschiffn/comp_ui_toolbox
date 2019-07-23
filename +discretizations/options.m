@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-23
+% modified: 2019-07-18
 %
 classdef options
 
@@ -14,7 +14,7 @@ classdef options
 
         % independent properties
         spatial ( 1, 1 ) discretizations.options_spatial = discretizations.options_spatial_grid         % spatial discretization
-        spectral ( 1, 1 ) discretizations.options_spectral = discretizations.options_spectral.signal	% spectral discretization
+        spectral ( 1, 1 ) discretizations.options_spectral	% spectral discretization
 
     end % properties
 

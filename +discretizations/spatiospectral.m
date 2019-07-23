@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-06-27
+% modified: 2019-07-15
 %
 classdef spatiospectral
 
@@ -23,9 +23,7 @@ classdef spatiospectral
         size ( 1, : ) double                            % size of the discretization
 
         % optional properties
-        indices_grid_FOV_shift ( :, : )                 % indices of laterally shifted grid points
         h_ref ( 1, : ) discretizations.field            % reference spatial transfer function (unique frequencies)
-        h_ref_aa ( 1, : ) discretizations.field         % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
         h_ref_grad ( 1, : ) discretizations.field       % spatial gradient of the reference spatial transfer function (unique frequencies)
 
     end % properties
@@ -94,14 +92,11 @@ classdef spatiospectral
                 %----------------------------------------------------------
                 if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
 
-                    % lateral shifts of grid points for each array element
-                    objects( index_object ).indices_grid_FOV_shift = shift_lateral( objects( index_object ).spatial, ( 1:numel( objects( index_object ).spatial.grids_elements ) ) );
-
                     % create format string for filename
                     str_format = sprintf( 'data/%s/spatial_%%s/h_ref_axis_f_unique_%%s.mat', objects( index_object ).spatial.str_name );
 
                     % load or compute reference spatial transfer function (unique frequencies)
-                    [ objects( index_object ).h_ref, objects( index_object ).h_ref_aa ] = auxiliary.compute_or_load_hash( str_format, @discretizations.spatial_transfer_function, [], [], objects( index_object ).spatial, objects( index_object ).axis_f_unique );
+                    objects( index_object ).h_ref = auxiliary.compute_or_load_hash( str_format, @transfer_function, [], [], objects( index_object ).spatial, objects( index_object ).axis_f_unique );
 
                 end % if isa( objects( index_object ).spatial, 'discretizations.spatial_grid_symmetric' )
 
@@ -158,11 +153,6 @@ classdef spatiospectral
 
         end % function prefactors = compute_prefactors( spatiospectrals )
 
-        %------------------------------------------------------------------
-        % apply spatial anti-aliasing filter
-        %------------------------------------------------------------------
-        
-        
 	end % methods
 
 end % classdef spatiospectral

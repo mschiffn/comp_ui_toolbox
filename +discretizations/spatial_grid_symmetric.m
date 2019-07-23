@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-17
-% modified: 2019-06-02
+% modified: 2019-07-15
 %
 classdef spatial_grid_symmetric < discretizations.spatial_grid
 
@@ -14,6 +14,9 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
 
         % independent properties
         N_points_per_pitch_axis ( 1, : ) double { mustBeInteger, mustBePositive } = 1
+
+        % dependent properties
+        indices_grid_FOV_shift ( :, : )	% indices of laterally shifted grid points
 
 	end % properties
 
@@ -39,6 +42,7 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
 
             % ensure class math.grid_regular_orthogonal for grids_elements
             for index_object = 1:numel( grids_elements )
+% TODO: mustBeEqualSubclasses
                 if ~isa( [ grids_elements{ index_object }.grid ], 'math.grid_regular_orthogonal' )
                     errorStruct.message = sprintf( 'grids_elements{ %d } must be math.grid_regular_orthogonal!', index_object );
                     errorStruct.identifier = 'spatial_grid_symmetric:NoRegularOrthogonalGrid';
@@ -59,13 +63,12 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
             end
 
             %--------------------------------------------------------------
-            % 2.) constructor of superclass
+            % 2.) create symmetric spatial discretizations based on orthogonal regular grids
             %--------------------------------------------------------------
+            % constructor of superclass
             objects@discretizations.spatial_grid( homogeneous_fluids, strs_name, grids_elements, grids_FOV );
 
-            %--------------------------------------------------------------
-            % 3.) confirm symmetry
-            %--------------------------------------------------------------
+            % iterate symmetric spatial discretizations based on orthogonal regular grids
             for index_object = 1:numel( objects )
 % TODO: symmetry of apodization weights?
                 %----------------------------------------------------------
@@ -77,6 +80,7 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
                     errorStruct.identifier	= 'spatial_grid_symmetric:NoSymmetry';
                     error( errorStruct );
                 end
+
 %TODO: check minimal # of lateral grid points
 % minimum number of grid points on x-axis [ FOV_pos_x(1) <= XDC_pos_ctr_x(1) ]
 % 1.) x-coordinates of grid points coincide with centroids of vibrating faces:
@@ -109,19 +113,6 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
                 mustBeInteger( N_points_per_pitch_axis{ index_object } );
                 mustBePositive( N_points_per_pitch_axis{ index_object } );
 
-%                 % compute mutual distances of grid points
-%                 D = mutual_distances( grids_elements{ index_object }( 1:(end - 1) ), grids_elements{ index_object }( 2:end ) );
-% 
-%                 % ensure cell array for D
-%                 if ~iscell( D )
-%                     D = { D };
-%                 end
-% 
-%                 % check diagonals
-%                 for index_D = 1:numel( D )
-%                     mean( diag( D{ index_D } ) )
-%                 end
-% 
 %                 N_points_per_pitch = ( grids_elements{ index_object }( 2 ).positions( 1 ) - grids_elements{ index_object }( 1 ).positions( 1 ) ) ./ grids_FOV( index_object ).cell_ref.edge_lengths( 1:(end - 1) );
 %                 % TODO: why is the error so large?
 %                 if ~all( abs( N_points_per_pitch - floor( N_points_per_pitch ) ) < floor( N_points_per_pitch ) / 10^12 )
@@ -133,9 +124,12 @@ classdef spatial_grid_symmetric < discretizations.spatial_grid
                 % set independent properties
                 objects( index_object ).N_points_per_pitch_axis = N_points_per_pitch_axis{ index_object };
 
+                % lateral shifts of grid points for each array element
+                objects( index_object ).indices_grid_FOV_shift = shift_lateral( objects( index_object ), ( 1:numel( objects( index_object ).grids_elements ) ) );
+
             end % for index_object = 1:numel( objects )
 
-        end % function objects = spatial_grid_symmetric( grids_elements, grids_FOV, N_points_per_pitch_axis )
+        end % function objects = spatial_grid_symmetric( homogeneous_fluids, strs_name, grids_elements, grids_FOV, N_points_per_pitch_axis )
 
         %------------------------------------------------------------------
         % lateral shift (TODO: check for correctness)

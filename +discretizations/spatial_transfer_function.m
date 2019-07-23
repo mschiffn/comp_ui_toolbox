@@ -7,6 +7,8 @@ function [ h_transfer, h_transfer_aa ] = spatial_transfer_function( spatial_grid
 % modified: 2019-07-10
 %
 
+% TODO: make method of spatial_grid
+
 	N_points_max = 2;
 
 	% print status
@@ -162,7 +164,7 @@ function [ h_transfer, h_transfer_aa ] = spatial_transfer_function( spatial_grid
             flag = real( axis_k_tilde.members ) .* e_1_minus_2 * element_pitch;
 
             indicator_no_aliasing = all( flag < pi, 3 );
-            r = 0.25;
+            r = 1;
             indicator_taper = flag >= pi * ( 1 - r );
 
             flag( ~indicator_taper ) = 1;

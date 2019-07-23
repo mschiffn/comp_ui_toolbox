@@ -18,8 +18,11 @@ classdef operator
 
         % dependent properties
         discretization ( 1, 1 ) discretizations.spatiospectral      % results of the spatiospectral discretization
-        incident_waves ( :, : ) syntheses.incident_wave             % incident waves
+        incident_waves ( :, 1 ) syntheses.incident_wave             % incident waves
         E_M ( :, 1 ) physical_values.squarevolt                     % received energy
+
+        % optional properties
+        h_ref_aa ( 1, : ) discretizations.field                     % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
         E_M_aa ( :, 1 ) physical_values.squarevolt                  % received energy w/ anti-aliasing filter
 
     end % properties
@@ -90,7 +93,14 @@ classdef operator
                 objects( index_object ).incident_waves = syntheses.incident_wave( objects( index_object ).discretization );
 
                 %----------------------------------------------------------
-                % d) load or compute received energy
+                % d) apply spatial anti-aliasing filter
+                %----------------------------------------------------------
+                if isa( objects( index_object ).discretization.spatial, 'discretizations.spatial_grid_symmetric' )
+                    objects( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( objects( index_object ).sequence.setup.xdc_array, objects( index_object ).sequence.setup.homogeneous_fluid, objects( index_object ).discretization.h_ref, objects( index_object ).options.momentary.anti_aliasing );
+                end
+
+                %----------------------------------------------------------
+                % e) load or compute received energy
                 %----------------------------------------------------------
                 % create format string for filename
                 str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s.mat', objects( index_object ).discretization.spatial.str_name );
@@ -101,6 +111,49 @@ classdef operator
             end % for index_object = 1:numel( objects )
 
         end % function objects = operator( sequences, options )
+
+        %------------------------------------------------------------------
+        % apply spatial anti-aliasing filters
+        %------------------------------------------------------------------
+        function spatiospectrals = anti_aliasing_filter( spatiospectrals, options_anti_aliasing )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.spatiospectral
+            if ~isa( spatiospectrals, 'discretizations.spatiospectral' )
+                errorStruct.message = 'spatiospectrals must be discretizations.spatiospectral!';
+                errorStruct.identifier = 'anti_aliasing_filter:NoSpatiospectralDiscretizations';
+                error( errorStruct );
+            end
+
+% TODO: symmetric spatial grids
+            auxiliary.mustBeEqualSubclasses( 'discretizations.spatial_grid_symmetric', spatiospectrals.spatial )
+
+            % ensure class scattering.options_anti_aliasing
+            if ~isa( options_anti_aliasing, 'scattering.options_anti_aliasing' )
+                errorStruct.message = 'options_anti_aliasing must be scattering.options_anti_aliasing!';
+                errorStruct.identifier = 'discretize:NoAntiAliasingOptions';
+                error( errorStruct );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( spatiospectrals, options_anti_aliasing );
+
+            %--------------------------------------------------------------
+            % 2.) apply spatial anti-aliasing filters
+            %--------------------------------------------------------------
+            % iterate spatiospectral discretizations
+            for index_object = 1:numel( spatiospectrals )
+
+                % apply spatial anti-aliasing filter via external function
+                if options_anti_aliasing( index_object ).status == scattering.options_anti_aliasing_status.on
+                    spatiospectrals( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( spatiospectrals( index_object ).spatial, spatiospectrals( index_object ).h_ref, options_anti_aliasing( index_object ).parameter );
+                end
+
+            end % for index_object = 1:numel( spatiospectrals )
+
+        end % function spatiospectrals = anti_aliasing_filter( spatiospectrals, options_anti_aliasing )
 
         %------------------------------------------------------------------
         % set properties of momentary scattering operator options
@@ -115,6 +168,13 @@ classdef operator
                 errorStruct.message = 'operators must be scattering.operator!';
                 errorStruct.identifier = 'set_properties_momentary:NoOperators';
                 error( errorStruct );
+            end
+
+            % multiple operators / single varargin{ : }
+            for index_arg = 1:numel( varargin )
+                if ~isscalar( operators ) && isscalar( varargin{ index_arg } )
+                    varargin{ index_arg } = repmat( varargin{ index_arg }, size( operators ) );
+                end
             end
 
             % ensure equal number of dimensions and sizes
@@ -136,6 +196,9 @@ classdef operator
 
                 % set current momentary scattering options
                 operators( index_object ).options = set_properties_momentary( operators( index_object ).options, args{ : } );
+
+                % update data structures
+                
             end
 
         end % function operators = set_properties_momentary( operators, options_momentary )

@@ -4,7 +4,7 @@ function fields = compute_p_in( spatiospectral, varargin )
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-06-07
+% modified: 2019-07-15
 %
 
 	% print status
@@ -87,7 +87,7 @@ function fields = compute_p_in( spatiospectral, varargin )
                 % a) symmetric spatial discretization based on orthogonal regular grids
                 %----------------------------------------------------------
                 % shift reference spatial transfer function to infer that of the active array element
-                indices_occupied_act = spatiospectral.indices_grid_FOV_shift( :, index_element );
+                indices_occupied_act = spatiospectral.spatial.indices_grid_FOV_shift( :, index_element );
 
                 % extract current frequencies from unique frequencies
                 h_tx_unique = double( spatiospectral.h_ref.samples( indices_f_to_unique_act, indices_occupied_act ) );
@@ -98,6 +98,7 @@ function fields = compute_p_in( spatiospectral, varargin )
                 % b) arbitrary grid
                 %----------------------------------------------------------
                 % compute spatial transfer function of the active array element
+% TODO: fix function call
                 h_tx_unique = discretizations.spatial_transfer_function( spatiospectral.spatial, spatiospectral.spectral( index_incident ), index_element );
 
             end % if isa( spatiospectral.spatial, 'discretizations.spatial_grid_symmetric' )
