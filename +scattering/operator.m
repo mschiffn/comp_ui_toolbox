@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-07-11
+% modified: 2019-07-29
 %
 classdef operator
 
@@ -17,18 +17,17 @@ classdef operator
         options ( 1, 1 ) scattering.options                         % scattering operator options
 
         % dependent properties
-        discretization ( 1, 1 ) discretizations.spatiospectral      % results of the spatiospectral discretization
+        discretization ( 1, 1 ) discretizations.spatiospectral      % spatiospectral discretization
         incident_waves ( :, 1 ) syntheses.incident_wave             % incident waves
-        E_M ( :, 1 ) physical_values.squarevolt                     % received energy
+        indices_measurement_sel ( :, 1 ) double { mustBePositive, mustBeInteger } % indices of selected sequential pulse-echo measurements
 
         % optional properties
         h_ref_aa ( 1, : ) discretizations.field                     % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
-        E_M_aa ( :, 1 ) physical_values.squarevolt                  % received energy w/ anti-aliasing filter
 
-    end % properties
+	end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
@@ -98,15 +97,13 @@ classdef operator
                 if isa( objects( index_object ).discretization.spatial, 'discretizations.spatial_grid_symmetric' )
                     objects( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( objects( index_object ).sequence.setup.xdc_array, objects( index_object ).sequence.setup.homogeneous_fluid, objects( index_object ).discretization.h_ref, objects( index_object ).options.momentary.anti_aliasing );
                 end
-
-                %----------------------------------------------------------
-                % e) load or compute received energy
-                %----------------------------------------------------------
-                % create format string for filename
-                str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s.mat', objects( index_object ).discretization.spatial.str_name );
-
-                % load or compute received energy
-                [ objects( index_object ).E_M, objects( index_object ).E_M_aa ] = auxiliary.compute_or_load_hash( str_format, @energy_rx, [ 2, 3 ], 1, objects( index_object ), objects( index_object ).discretization.spatial, objects( index_object ).discretization.spectral );
+% TODO: use update function
+                % update indices of selected sequential pulse-echo measurements
+                if isa( objects( index_object ).options.momentary.sequence, 'scattering.options_sequence_full' )
+                    objects( index_object ).indices_measurement_sel = 1:numel( objects( index_object ).discretization.spectral );
+                else
+                    objects( index_object ).indices_measurement_sel = objects( index_object ).options.momentary.sequence.indices;
+                end
 
             end % for index_object = 1:numel( objects )
 
@@ -115,43 +112,43 @@ classdef operator
         %------------------------------------------------------------------
         % apply spatial anti-aliasing filters
         %------------------------------------------------------------------
-        function spatiospectrals = anti_aliasing_filter( spatiospectrals, options_anti_aliasing )
+        function spatiospectrals = anti_aliasing_filter( operators )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.spatiospectral
-            if ~isa( spatiospectrals, 'discretizations.spatiospectral' )
-                errorStruct.message = 'spatiospectrals must be discretizations.spatiospectral!';
-                errorStruct.identifier = 'anti_aliasing_filter:NoSpatiospectralDiscretizations';
+            % ensure class scattering.operator
+            if ~isa( operators, 'scattering.operator' )
+                errorStruct.message = 'operators must be scattering.operator!';
+                errorStruct.identifier = 'anti_aliasing_filter:NoOperators';
                 error( errorStruct );
             end
 
-% TODO: symmetric spatial grids
-            auxiliary.mustBeEqualSubclasses( 'discretizations.spatial_grid_symmetric', spatiospectrals.spatial )
+% TODO: ensure symmetric spatial grids
+%             auxiliary.mustBeEqualSubclasses( 'discretizations.spatial_grid_symmetric', operators.discretization )
 
             % ensure class scattering.options_anti_aliasing
-            if ~isa( options_anti_aliasing, 'scattering.options_anti_aliasing' )
-                errorStruct.message = 'options_anti_aliasing must be scattering.options_anti_aliasing!';
-                errorStruct.identifier = 'discretize:NoAntiAliasingOptions';
-                error( errorStruct );
-            end
+%             if ~isa( options_anti_aliasing, 'scattering.options_anti_aliasing' )
+%                 errorStruct.message = 'options_anti_aliasing must be scattering.options_anti_aliasing!';
+%                 errorStruct.identifier = 'discretize:NoAntiAliasingOptions';
+%                 error( errorStruct );
+%             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( spatiospectrals, options_anti_aliasing );
+%             auxiliary.mustBeEqualSize( spatiospectrals, options_anti_aliasing );
 
             %--------------------------------------------------------------
             % 2.) apply spatial anti-aliasing filters
             %--------------------------------------------------------------
-            % iterate spatiospectral discretizations
-            for index_object = 1:numel( spatiospectrals )
+            % iterate scattering operators
+            for index_object = 1:numel( operators )
 
                 % apply spatial anti-aliasing filter via external function
-                if options_anti_aliasing( index_object ).status == scattering.options_anti_aliasing_status.on
+                if ~isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_off' )
                     spatiospectrals( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( spatiospectrals( index_object ).spatial, spatiospectrals( index_object ).h_ref, options_anti_aliasing( index_object ).parameter );
                 end
 
-            end % for index_object = 1:numel( spatiospectrals )
+            end % for index_object = 1:numel( operators )
 
         end % function spatiospectrals = anti_aliasing_filter( spatiospectrals, options_anti_aliasing )
 
@@ -194,14 +191,42 @@ classdef operator
                     args{ index_arg } = varargin{ index_arg }( index_object );
                 end
 
-                % set current momentary scattering options
+                %----------------------------------------------------------
+                % a) set current momentary scattering options
+                %----------------------------------------------------------
                 operators( index_object ).options = set_properties_momentary( operators( index_object ).options, args{ : } );
 
-                % update data structures
-                
-            end
+                %----------------------------------------------------------
+                % b) update data structures
+                %----------------------------------------------------------
+                % update indices of selected sequential pulse-echo measurements
+                if isa( operators( index_object ).options.momentary.sequence, 'scattering.options_sequence_full' )
 
-        end % function operators = set_properties_momentary( operators, options_momentary )
+                    % select all sequential pulse-echo measurements
+                    operators( index_object ).indices_measurement_sel = 1:numel( operators( index_object ).discretization.spectral );
+
+                else
+
+                    % ensure valid indices
+                    if any( operators( index_object ).options.momentary.sequence.indices > numel( operators( index_object ).discretization.spectral ) )
+                        errorStruct.message = sprintf( 'operators( %d ).options.momentary.sequence.indices must not exceed %d!', index_object, numel( operators( index_object ).discretization.spectral ) );
+                        errorStruct.identifier = 'set_properties_momentary:InvalidSequenceIndices';
+                        error( errorStruct );
+                    end
+
+                    % set indices of selected sequential pulse-echo measurements
+                    operators( index_object ).indices_measurement_sel = operators( index_object ).options.momentary.sequence.indices;
+
+                end
+
+                % update reference spatial transfer function w/ anti-aliasing filter
+                if isa( operators( index_object ).discretization.spatial, 'discretizations.spatial_grid_symmetric' )
+                    operators( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( operators( index_object ).sequence.setup.xdc_array, operators( index_object ).sequence.setup.homogeneous_fluid, operators( index_object ).discretization.h_ref, operators( index_object ).options.momentary.anti_aliasing );
+                end
+
+            end % for index_object = 1:numel( operators )
+
+        end % function operators = set_properties_momentary( operators, varargin )
 
         %------------------------------------------------------------------
         % transform point spread function (TPSF)
@@ -290,37 +315,6 @@ classdef operator
             end
 
         end % function [ theta_hat, E_M, adjointness ] = tpsf( operators, indices, varargin )
-
-        %------------------------------------------------------------------
-        % received energy
-        %------------------------------------------------------------------
-        function E_M = energy_rx( operators )
-
-            % extract number of grid points
-            N_points = operators.discretization.spatial.grid_FOV.N_points;
-
-            % initialize relative spatial fluctuations with zeros
-            gamma_kappa = zeros( N_points, 1 );
-            E_M = zeros( N_points, 1 );
-
-            % iterate grid points
-            for index_point = 1:N_points
-
-                % specify fluctuation
-                gamma_kappa( index_point ) = 1;
-
-                % compute forward scattering
-                u_M = forward( operators, gamma_kappa );
-
-                % compute received energy
-                E_M( index_point ) = energy( u_M );
-
-                % reset fluctuation
-                gamma_kappa( index_point ) = 0;
-% TODO: save results regularly
-            end % for index_point = 1:N_points
-
-        end % function E_M = energy_rx( operators )
 
     end % methods
 

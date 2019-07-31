@@ -207,7 +207,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
 
             % display result
             figure( index_options );
-            imagesc( squeeze( reshape( illustration.dB( gamma_recon{ index_object }{ index_options }, 20 ), operators_born( index_object ).discretization.spatial.grid_FOV.N_points_axis ) )', [ -70, 0 ] );
+            imagesc( squeeze( reshape( illustration.dB( gamma_recon{ index_object }{ index_options }, 20 ), operators_born( index_object ).discretization.spatial.grid_FOV.N_points_axis ) )', [ -60, 0 ] );
             colormap gray;
 
         end % for index_options = 1:numel( options{ index_object } )

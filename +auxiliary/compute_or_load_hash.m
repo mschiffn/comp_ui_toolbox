@@ -108,9 +108,9 @@ function varargout = compute_or_load_hash( str_format, hdl_function, indices_arg
 
 	end % if indicator_exists_file
 
-    %----------------------------------------------------------------------
-    % 4.) load or compute reference spatial transfer function (unique frequencies)
-    %----------------------------------------------------------------------
+	%----------------------------------------------------------------------
+	% 4.) load or compute function values
+	%----------------------------------------------------------------------
 	if all( indicator_exists_out(:) )
 
         %------------------------------------------------------------------

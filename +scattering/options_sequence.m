@@ -1,11 +1,11 @@
 %
-% abstract superclass for all spatial anti-aliasing filter options
+% abstract superclass for all sequence options
 %
 % author: Martin F. Schiffner
-% date: 2019-07-11
-% modified: 2019-07-29
+% date: 2019-07-30
+% modified: 2019-07-30
 %
-classdef (Abstract) options_anti_aliasing
+classdef (Abstract) options_sequence
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef (Abstract) options_anti_aliasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_anti_aliasing( size )
+        function objects = options_sequence( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -23,7 +23,7 @@ classdef (Abstract) options_anti_aliasing
             % ensure row vector for size
             if ~isrow( size )
                 errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'options_anti_aliasing:NoRowVector';
+                errorStruct.identifier = 'options_sequence:NoRowVector';
                 error( errorStruct );
             end
 
@@ -38,8 +38,8 @@ classdef (Abstract) options_anti_aliasing
             % repeat spatial anti-aliasing filter options
             objects = repmat( objects, size );
 
-        end % function objects = options_anti_aliasing( size )
+        end % function objects = options_sequence( size )
 
 	end % methods
 
-end % classdef (Abstract) options_anti_aliasing
+end % classdef (Abstract) options_sequence

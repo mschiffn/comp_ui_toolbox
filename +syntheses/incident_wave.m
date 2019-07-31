@@ -59,7 +59,7 @@ classdef incident_wave
                     % create format string for filename
                     str_format = sprintf( 'data/%s/spatial_%%s/p_in_indices_active_%%s_v_d_unique_%%s.mat', spatiospectral.spatial.str_name );
 
-                    % compute / load and save incident acoustic pressure field (unique frequencies)
+                    % load or compute incident acoustic pressure field (unique frequencies)
                     objects( index_object ).p_incident = auxiliary.compute_or_load_hash( str_format, @syntheses.compute_p_in, [ 3, 4, 5 ], [ 1, 2 ], spatiospectral, index_object, spatiospectral.spatial, spatiospectral.spectral( index_object ).tx_unique.indices_active, spatiospectral.spectral( index_object ).v_d_unique );
 
                 else

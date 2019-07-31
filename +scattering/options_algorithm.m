@@ -1,11 +1,10 @@
-%
-% abstract superclass for all spatial anti-aliasing filter options
+% abstract superclass for all algorithm options
 %
 % author: Martin F. Schiffner
-% date: 2019-07-11
-% modified: 2019-07-29
+% date: 2019-07-30
+% modified: 2019-07-30
 %
-classdef (Abstract) options_anti_aliasing
+classdef (Abstract) options_algorithm
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +14,7 @@ classdef (Abstract) options_anti_aliasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_anti_aliasing( size )
+        function objects = options_algorithm( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -23,7 +22,7 @@ classdef (Abstract) options_anti_aliasing
             % ensure row vector for size
             if ~isrow( size )
                 errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'options_anti_aliasing:NoRowVector';
+                errorStruct.identifier = 'options_gpu:NoRowVector';
                 error( errorStruct );
             end
 
@@ -33,13 +32,13 @@ classdef (Abstract) options_anti_aliasing
             mustBeNonempty( size );
 
             %--------------------------------------------------------------
-            % 2.) create spatial anti-aliasing filter options
+            % 2.) create algorithm options
             %--------------------------------------------------------------
-            % repeat spatial anti-aliasing filter options
+            % repeat algorithm options
             objects = repmat( objects, size );
 
-        end % function objects = options_anti_aliasing( size )
+        end % function objects = options_algorithm( size )
 
 	end % methods
 
-end % classdef (Abstract) options_anti_aliasing
+end % classdef (Abstract) options_algorithm

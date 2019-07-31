@@ -1,7 +1,9 @@
 %
 % composition of linear transforms (chain operation)
-% author: Martin Schiffner
+%
+% author: Martin F. Schiffner
 % date: 2016-08-13
+% modified: 2019-07-31
 %
 classdef composition < linear_transforms.linear_transform
 
@@ -9,115 +11,218 @@ classdef composition < linear_transforms.linear_transform
     % properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
-        N_transforms
-        size_transforms
+
+        % independent properties
         transforms
-        str_names_single
+
+        % dependent properties
+        N_transforms
+
     end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function LT_composite = composition( varargin )
+        function objects = composition( varargin )
 
-            % number of concatenated linear transforms
-            N_transforms_temp = nargin;
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( varargin{ : } );
 
             % check individual transforms for validity and size
-            size = zeros( 2, N_transforms_temp );
-            for index_transform = 1:N_transforms_temp
+            N_coefficients = cell( size( varargin ) );
+            N_points = cell( size( varargin ) );
 
-                % check class of input argument
-                if ~isa( varargin{ index_transform }, 'linear_transforms.linear_transform' )
-                    errorStruct.message     = sprintf( 'Input %d is not an instance of linear_transforms.linear_transform!', index_transform );
-                    errorStruct.identifier	= 'LT_concatenate_diagonal:TypeMismatch';
+            % iterate arguments
+            for index_arg = 1:nargin
+
+                % ensure class linear_transforms.linear_transform
+                if ~isa( varargin{ index_arg }, 'linear_transforms.linear_transform' )
+                    errorStruct.message = sprintf( 'varargin{ %d } must be linear_transforms.linear_transform!', index_arg );
+                    errorStruct.identifier = 'composition:NoLinearTransforms';
                     error( errorStruct );
                 end
-                % assertion: varargin{ index_transform } is an instance of a linear transform
 
-                % get size of selected transform
-                size( :, index_transform ) = varargin{ index_transform }.size_transform;
+                % get sizes of linear transforms
+                N_coefficients{ index_arg } = reshape( [ varargin{ index_arg }.N_coefficients ], size( varargin{ index_arg } ) );
+                N_points{ index_arg } = reshape( [ varargin{ index_arg }.N_points ], size( varargin{ index_arg } ) );
 
-                % create name string
-                if index_transform == 1
-                    str_name = sprintf( '%s', varargin{ index_transform }.str_name );
-                else
-                    % check correct size of linear transform for stacking
-                    if size( 1, index_transform ) ~= size( 2, index_transform - 1 )
-                        fprintf('incorrect size of linear transform\n');
-                        return
-                    end
-                    str_name = sprintf( '%s_%s', str_name, varargin{ index_transform }.str_name );
-                end
-            end % for index_transform = 1:N_transforms_temp
+                % check compatible sizes of linear transforms for composition
+                if index_arg ~= 1
 
-            % size of diagonally stacked forward transform
-            N_coefficients	= size(1, 1);
-            N_lattice       = size(2, end);
+                    % iterate linear transforms
+                    for index_transform = 1:numel( varargin{ index_arg } )
 
+                        if N_points{ index_arg - 1 }( index_transform ) ~= N_coefficients{ index_arg }( index_transform )
+                            errorStruct.message = sprintf( 'N_points{ %d }( %d ) must equal N_coefficients{ %d }( %d )!', index_arg - 1, index_transform, index_arg, index_transform );
+                            errorStruct.identifier = 'composition:IncompatibleSize';
+                            error( errorStruct );
+                        end
+
+                    end % for index_transform = 1:numel( varargin{ index_arg } )
+
+                end % if index_arg ~= 1
+
+            end % for index_arg = 1:nargin
+
+            %--------------------------------------------------------------
+            % 2.) create compositions of linear transforms
+            %--------------------------------------------------------------
             % constructor of superclass
-            LT_composite@linear_transforms.linear_transform( N_coefficients, N_lattice, str_name );
-            
-            % internal properties
-            LT_composite.N_transforms       = N_transforms_temp;
-            LT_composite.transforms         = varargin;
-            LT_composite.size_transforms	= size;
+            objects@linear_transforms.linear_transform( N_coefficients{ 1 }, N_points{ end } );
 
-            LT_composite.str_names_single = cell( 1, N_transforms_temp );
-            for index_transform = 1:N_transforms_temp
-                LT_composite.str_names_single{ index_transform } = varargin{ index_transform }.str_name;
-            end
-        end
+            % iterate compositions of linear transforms
+            for index_object = 1:numel( varargin{ 1 } )
 
-        %------------------------------------------------------------------
-        % overload method: forward transform
-        %------------------------------------------------------------------
-        function y = forward_transform( LT_composite, x )
-
-            % initialize internal variables
-            y_temp = cell( 1, LT_composite.N_transforms );
-            
-            % compute chain of forward transforms
-            for index_transform = LT_composite.N_transforms:-1:1
-
-                if index_transform == LT_composite.N_transforms
-                    y_temp{ index_transform } = LT_composite.transforms{index_transform}.forward_transform( x );
-                else
-                    y_temp{ index_transform } = LT_composite.transforms{index_transform}.forward_transform( y_temp{ index_transform + 1 } );
+                % set independent properties
+                objects( index_object ).transforms = cell( nargin, 1 );
+                for index_transform = 1:nargin
+                    objects( index_object ).transforms{ index_transform } = varargin{ index_transform }( index_object );
                 end
-            end
 
-            % final result as column vector
-            y = y_temp{ 1 }(:);
-        end
+                % set dependent properties
+                objects( index_object ).N_transforms = nargin;
+%                 objects( index_object ).size_transforms = size;
+
+            end % for index_object = 1:numel( varargin{ 1 } )
+
+        end % function objects = composition( varargin )
 
         %------------------------------------------------------------------
-        % overload method: adjoint transform
+        % forward transform (overload forward_transform method)
         %------------------------------------------------------------------
-        function y = adjoint_transform( LT_composite, x )
+        function y = forward_transform( LTs, x )
 
-            % initialize internal variables
-            y_temp = cell( 1, LT_composite.N_transforms );
-            
-            % compute chain of adjoint transforms
-            for index_transform = 1:LT_composite.N_transforms
-
-                if index_transform == 1
-                    y_temp{ index_transform } = LT_composite.transforms{index_transform}.adjoint_transform( x );
-                else
-                    y_temp{ index_transform } = LT_composite.transforms{index_transform}.adjoint_transform( y_temp{ index_transform - 1 } );
-                end
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.composition
+            if ~isa( LTs, 'linear_transforms.composition' )
+                errorStruct.message = 'LTs must be linear_transforms.composition!';
+                errorStruct.identifier = 'forward_transform:NoCompositions';
+                error( errorStruct );
             end
 
-            % final result as column vector
-            y = y_temp{ end }(:);
-        end
+            % ensure cell array for x
+            if ~iscell( x )
+                x = { x };
+            end
+
+            % multiple LTs / single x
+            if ~isscalar( LTs ) && isscalar( x )
+                x = repmat( x, size( LTs ) );
+            end
+
+            % single LTs / multiple x
+            if isscalar( LTs ) && ~isscalar( x )
+                LTs = repmat( LTs, size( x ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( LTs, x );
+
+            %--------------------------------------------------------------
+            % 2.) compute forward transforms
+            %--------------------------------------------------------------
+            % specify cell array for y
+            y = cell( size( LTs ) );
+
+            % iterate compositions of linear transforms
+            for index_object = 1:numel( LTs )
+
+                % compute first forward transform
+                y_temp = LTs( index_object ).transforms{ LTs( index_object ).N_transforms }.forward_transform( x );
+
+                % compose remaining forward transforms
+                for index_transform = ( LTs( index_object ).N_transforms - 1 ):-1:2
+
+                    y_temp = LTs( index_object ).transforms{ index_transform }.forward_transform( y_temp );
+
+                end % for index_transform = ( LTs( index_object ).N_transforms - 1 ):-1:2
+
+                % compute last forward transform
+                y{ index_object } = LTs( index_object ).transforms{ 1 }.forward_transform( y_temp );
+
+            end % for index_object = 1:numel( LTs )
+
+            % avoid cell array for single composition of linear transforms
+            if isscalar( LTs )
+                y = y{ 1 };
+            end
+
+        end % function y = forward_transform( LTs, x )
+
+        %------------------------------------------------------------------
+        % adjoint transform (overload adjoint_transform method)
+        %------------------------------------------------------------------
+        function y = adjoint_transform( LTs, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.composition
+            if ~isa( LTs, 'linear_transforms.composition' )
+                errorStruct.message = 'LTs must be linear_transforms.composition!';
+                errorStruct.identifier = 'adjoint_transform:NoCompositions';
+                error( errorStruct );
+            end
+
+            % ensure cell array for x
+            if ~iscell( x )
+                x = { x };
+            end
+
+            % multiple LTs / single x
+            if ~isscalar( LTs ) && isscalar( x )
+                x = repmat( x, size( LTs ) );
+            end
+
+            % single LTs / multiple x
+            if isscalar( LTs ) && ~isscalar( x )
+                LTs = repmat( LTs, size( x ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( LTs, x );
+
+            %--------------------------------------------------------------
+            % 2.) compute adjoint transforms
+            %--------------------------------------------------------------
+            % specify cell array for y
+            y = cell( size( LTs ) );
+
+            % iterate compositions of linear transforms
+            for index_object = 1:numel( LTs )
+
+                % compute first adjoint transform
+                y_temp = LTs( index_object ).transforms{ 1 }.adjoint_transform( x );
+
+                % compose remaining adjoint transforms
+                for index_transform = 2:( LTs( index_object ).N_transforms - 1 )
+
+                    y_temp = LTs( index_object ).transforms{ index_transform }.adjoint_transform( y_temp );
+
+                end % for index_transform = 2:( LTs( index_object ).N_transforms - 1 )
+
+                % compute last adjoint transform
+                y{ index_object } = LTs( index_object ).transforms{ LTs( index_object ).N_transforms }.adjoint_transform( y_temp );
+
+            end % for index_object = 1:numel( LTs )
+
+            % avoid cell array for single composition of linear transforms
+            if isscalar( LTs )
+                y = y{ 1 };
+            end
+
+        end % function y = adjoint_transform( LTs, x )
 
     end % methods
-    
+
 end % classdef composition < linear_transforms.linear_transform

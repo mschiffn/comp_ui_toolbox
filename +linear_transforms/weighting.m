@@ -67,7 +67,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
                 % set independent properties
                 objects( index_object ).weights = weights{ index_object }( : );
 
-                % set independent properties
+                % set dependent properties
                 objects( index_object ).weights_conj = conj( objects( index_object ).weights );
 
             end % for index_object = 1:numel( weights )
@@ -279,6 +279,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
 
                 % apply threshold
                 LTs( index_object ).weights( indicator ) = one_over_lb;
+                LTs( index_object ).weights_conj = conj( LTs( index_object ).weights );
 
             end % for index_object = 1:numel( LTs )
 

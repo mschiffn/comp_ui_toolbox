@@ -1,9 +1,9 @@
 %
-% superclass for all wavelet types
+% enumeration of all supported wavelet types
 %
 % author: Martin F. Schiffner
 % date: 2019-02-20
-% modified: 2019-05-29
+% modified: 2019-07-23
 %
 classdef wavelet_type
 

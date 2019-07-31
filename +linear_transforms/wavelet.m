@@ -1,29 +1,32 @@
 %
-% compute two-dimensional discrete wavelet transform for various options
+% one- or two-dimensional
+% discrete wavelet transforms for
+% various options
+% (requires WaveLab: http://www-stat.stanford.edu/~wavelab)
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-05-29
+% modified: 2019-07-24
 %
 classdef wavelet < linear_transforms.orthonormal_linear_transform
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
         type ( 1, 1 ) linear_transforms.wavelet_type = linear_transforms.wavelet_type.Daubechies	% type of wavelet
-        parameter ( 1, 1 ) { mustBeInteger } = 20       % type-dependent parameter related to the support and vanishing moments of the wavelets
-        N_dimensions ( 1, 1 ) { mustBePositive, mustBeInteger } = 2         % number of points ( dyadic )
+        parameter ( 1, 1 ) { mustBeInteger } = 20                           % type-dependent parameter related to the support and vanishing moments of the wavelets
+        N_dimensions ( 1, 1 ) { mustBePositive, mustBeInteger } = 2         % number of dimensions
         scale_finest ( 1, 1 ) { mustBeNonnegative, mustBeInteger } = 9      % finest scale ( fine level )
         scale_coarsest ( 1, 1 ) { mustBeNonnegative, mustBeInteger } = 0	% coarsest scale ( coarse level )
 
         % dependent properties
-        N_points_axis ( 1, : ) { mustBePositive, mustBeInteger }	% number of points along each axis
+        N_points_axis ( 1, : ) { mustBePositive, mustBeInteger }	% number of points along each axis ( dyadic )
         qmf ( 1, : ) double                                         % quadrature mirror filter
-        handle_fwd                                                  % function handle to forward transform
-        handle_inv                                                  % function handle to inverse transform
+        handle_fwd ( 1, 1 ) function_handle = @( x ) x              % function handle to forward transform
+        handle_inv ( 1, 1 ) function_handle = @( x ) x              % function handle to inverse transform
 
     end % properties
 
@@ -45,8 +48,24 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                 strs_type = { strs_type };
             end
 
-% TODO: check number of dimensions
-% TODO: check enumeration methods
+            % ensure positive integers
+            mustBeInteger( N_dimensions );
+            mustBePositive( N_dimensions );
+
+            % ensure positive integers
+            mustBeInteger( scales_finest );
+            mustBePositive( scales_finest );
+
+            % ensure nonnegative integers
+            mustBeInteger( scales_coarsest );
+            mustBeNonnegative( scales_coarsest );
+
+            % ensure valid scales
+            if any( scales_coarsest( : ) >= scales_finest( : ) )
+                errorStruct.message = 'scales_coarsest must be less than scales_finest!';
+                errorStruct.identifier = 'wavelet:InvalidCoarsestScales';
+                error( errorStruct );
+            end
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( strs_type, parameters, N_dimensions, scales_finest, scales_coarsest );
@@ -54,7 +73,7 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
             %--------------------------------------------------------------
             % 2.) create discrete wavelet transforms
             %--------------------------------------------------------------
-            % total number of lattice points
+            % total number of grid points
             N_points = ( 2.^scales_finest ).^N_dimensions;
 
             % constructor of superclass
@@ -103,6 +122,15 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                         objects( index_object ).handle_fwd = @( x ) FWT2_PO( x, objects( index_object ).scale_coarsest, objects( index_object ).qmf );
                         objects( index_object ).handle_inv = @( x ) IWT2_PO( x, objects( index_object ).scale_coarsest, objects( index_object ).qmf );
 
+                    otherwise
+
+                        %--------------------------------------------------
+                        % invalid number of dimensions
+                        %--------------------------------------------------
+                        errorStruct.message = sprintf( 'objects( %d ).N_dimensions must equal 1 or 2!', index_object );
+                        errorStruct.identifier = 'wavelet:InvalidNumberDimensions';
+                        error( errorStruct );
+
                 end % switch objects( index_object ).N_dimensions
 
             end % for index_object = 1:numel( objects )
@@ -136,7 +164,7 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
             auxiliary.mustBeEqualSize( LTs, x );
 
             %--------------------------------------------------------------
-            % 2.) compute forward wavelet transform
+            % 2.) compute forward wavelet transforms
             %--------------------------------------------------------------
             % specify cell array for y
             y = cell( size( LTs ) );
@@ -208,7 +236,7 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
             auxiliary.mustBeEqualSize( LTs, x );
 
             %--------------------------------------------------------------
-            % 2.) compute forward wavelet transform
+            % 2.) compute adjoint wavelet transforms
             %--------------------------------------------------------------
             % specify cell array for y
             y = cell( size( LTs ) );
