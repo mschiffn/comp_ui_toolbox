@@ -5,7 +5,7 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
 %
 % author: Martin F. Schiffner
 % date: 2019-07-10
-% modified: 2019-07-29
+% modified: 2019-08-01
 %
 
 	%----------------------------------------------------------------------
@@ -41,7 +41,7 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
 	auxiliary.mustBeEqualSize( xdc_arrays, h_transfer, options_anti_aliasing, indices_element );
 
 	%----------------------------------------------------------------------
-	% 2.) compute anti-aliasing filter
+	% 2.) apply anti-aliasing filter
 	%----------------------------------------------------------------------
 	% number of discrete frequencies
 	N_samples_f = abs( [ h_transfer.axis ] );
@@ -58,12 +58,13 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
             %--------------------------------------------------------------
             % a) inactive spatial anti-aliasing filter
             %--------------------------------------------------------------
+            % copy spatial transfer function
             h_samples_aa{ index_object } = h_transfer( index_object ).samples;
 
-        elseif isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_cosine' )
+        else
 
             %--------------------------------------------------------------
-            % b) active spatial anti-aliasing filter w/ cosine roll-off
+            % b) active spatial anti-aliasing filter
             %--------------------------------------------------------------
             % compute lateral components of mutual unit vectors
             N_dimensions_lateral = xdc_arrays( index_object ).N_dimensions;
@@ -74,33 +75,66 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
             axis_k_tilde = compute_wavenumbers( homogeneous_fluids.absorption_model, h_transfer( index_object ).axis );
             flag = real( axis_k_tilde.members ) .* e_1_minus_2 .* reshape( xdc_arrays( index_object ).cell_ref.edge_lengths, [ 1, 1, N_dimensions_lateral ] );
 
-            indicator_no_aliasing = all( flag < pi, 3 );
-% TODO: only for cosine
-            indicator_taper = flag >= pi * ( 1 - options_anti_aliasing( index_object ).parameter );
+            % check type of spatial anti-aliasing filter
+            if isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_boxcar' )
 
-            % compute anti-aliasing filter
-            flag( ~indicator_taper ) = 1;
-% TODO: small value of options_anti_aliasing( index_object ).parameter causes NaN
-            flag( indicator_taper ) = cos( ( flag( indicator_taper ) - pi * ( 1 - options_anti_aliasing( index_object ).parameter ) ) / ( 2 * options_anti_aliasing( index_object ).parameter ) );
-            flag = indicator_no_aliasing .* prod( flag, 3 );
+                %----------------------------------------------------------
+                % i.) boxcar spatial anti-aliasing filter
+                %----------------------------------------------------------
+                % detect valid grid points
+                filter = all( flag < pi, 3 );
+
+            elseif isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_raised_cosine' )
+
+                %----------------------------------------------------------
+                % ii.) raised-cosine spatial anti-aliasing filter
+                %----------------------------------------------------------
+% TODO: small value of options_anti_aliasing( index_object ).roll_off_factor causes NaN
+                % compute lower and upper bounds
+                flag_lb = pi * ( 1 - options_anti_aliasing( index_object ).roll_off_factor );
+                flag_ub = pi; %pi * ( 1 + options_anti_aliasing( index_object ).roll_off_factor );
+                flag_delta = flag_ub - flag_lb;
+
+                % detect tapered grid points
+                indicator_on = flag <= flag_lb;
+                indicator_taper = ( flag > flag_lb ) & ( flag < flag_ub );
+                indicator_off = flag >= flag_ub;
+
+                % compute raised-cosine function
+                flag( indicator_on ) = 1;
+                flag( indicator_taper ) = 0.5 * ( 1 + cos( pi * ( flag( indicator_taper ) - flag_lb ) / flag_delta ) );
+                flag( indicator_off ) = 0;
+                filter = prod( flag, 3 );
+
+            elseif isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_logistic' )
+
+                %----------------------------------------------------------
+                % iii.) logistic spatial anti-aliasing filter
+                %----------------------------------------------------------
+                % compute logistic function
+                filter = prod( 1 ./ ( 1 + exp( options_anti_aliasing( index_object ).growth_rate * ( flag - pi ) ) ), 3 );
+
+            else
+
+                %--------------------------------------------------------------
+                % iv.) unknown spatial anti-aliasing filter
+                %--------------------------------------------------------------
+                errorStruct.message = sprintf( 'Class of options_anti_aliasing( %d ) is unknown!', index_object );
+                errorStruct.identifier = 'anti_aliasing_filter:UnknownOptionsClass';
+                error( errorStruct );
+
+            end % if isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_boxcar' )
 
             % apply anti-aliasing filter
-            h_samples_aa{ index_object } = h_transfer( index_object ).samples .* flag;
-
-        else
-
-            %--------------------------------------------------------------
-            % c) unknown options class
-            %--------------------------------------------------------------
-            errorStruct.message = sprintf( 'Class of options_anti_aliasing( %d ) is unknown!', index_object );
-            errorStruct.identifier = 'anti_aliasing_filter:UnknownOptionsClass';
-            error( errorStruct );
+            h_samples_aa{ index_object } = h_transfer( index_object ).samples .* filter;
 
         end % if isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_off' )
 
     end % for index_object = 1:numel( xdc_arrays )
 
-    % create fields
+	%----------------------------------------------------------------------
+	% 3.) create fields
+	%----------------------------------------------------------------------
     h_transfer_aa = discretizations.field( [ h_transfer.axis ], [ h_transfer.grid_FOV ], h_samples_aa );
 
-end % function h_transfer_aa = anti_aliasing_filter( xdc_arrays, h_transfer, options_anti_aliasing, varargin )
+end % function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h_transfer, options_anti_aliasing, varargin )

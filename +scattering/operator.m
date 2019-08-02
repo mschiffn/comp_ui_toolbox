@@ -167,6 +167,13 @@ classdef operator
                 error( errorStruct );
             end
 
+            % single operators / multiple varargin{ : }
+            for index_arg = 1:numel( varargin )
+                if isscalar( operators ) && ~isscalar( varargin{ index_arg } )
+                    operators = repmat( operators, size( varargin{ index_arg } ) );
+                end
+            end
+
             % multiple operators / single varargin{ : }
             for index_arg = 1:numel( varargin )
                 if ~isscalar( operators ) && isscalar( varargin{ index_arg } )
@@ -180,6 +187,9 @@ classdef operator
             %--------------------------------------------------------------
             % 2.) set momentary scattering operator options
             %--------------------------------------------------------------
+            % save momentary scattering options
+            options_old = reshape( [ operators.options ], size( operators ) );
+
             % specify cell array for arguments
             args = cell( size( varargin ) );
 
@@ -199,30 +209,46 @@ classdef operator
                 %----------------------------------------------------------
                 % b) update data structures
                 %----------------------------------------------------------
-                % update indices of selected sequential pulse-echo measurements
-                if isa( operators( index_object ).options.momentary.sequence, 'scattering.options_sequence_full' )
+                % indices_measurement_sel
+                if ~isequal( operators( index_object ).options.momentary.sequence, options_old( index_object ).momentary.sequence )
 
-                    % select all sequential pulse-echo measurements
-                    operators( index_object ).indices_measurement_sel = 1:numel( operators( index_object ).discretization.spectral );
+                    %------------------------------------------------------
+                    % i.) change in sequence options
+                    %------------------------------------------------------
+                    % update indices of selected sequential pulse-echo measurements
+                    if isa( operators( index_object ).options.momentary.sequence, 'scattering.options_sequence_full' )
 
-                else
+                        % select all sequential pulse-echo measurements
+                        operators( index_object ).indices_measurement_sel = 1:numel( operators( index_object ).discretization.spectral );
 
-                    % ensure valid indices
-                    if any( operators( index_object ).options.momentary.sequence.indices > numel( operators( index_object ).discretization.spectral ) )
-                        errorStruct.message = sprintf( 'operators( %d ).options.momentary.sequence.indices must not exceed %d!', index_object, numel( operators( index_object ).discretization.spectral ) );
-                        errorStruct.identifier = 'set_properties_momentary:InvalidSequenceIndices';
-                        error( errorStruct );
+                    else
+
+                        % ensure valid indices
+                        if any( operators( index_object ).options.momentary.sequence.indices > numel( operators( index_object ).discretization.spectral ) )
+                            errorStruct.message = sprintf( 'operators( %d ).options.momentary.sequence.indices must not exceed %d!', index_object, numel( operators( index_object ).discretization.spectral ) );
+                            errorStruct.identifier = 'set_properties_momentary:InvalidSequenceIndices';
+                            error( errorStruct );
+                        end
+
+                        % set indices of selected sequential pulse-echo measurements
+                        operators( index_object ).indices_measurement_sel = operators( index_object ).options.momentary.sequence.indices;
+
                     end
 
-                    % set indices of selected sequential pulse-echo measurements
-                    operators( index_object ).indices_measurement_sel = operators( index_object ).options.momentary.sequence.indices;
+                end % if ~isequal( operators( index_object ).options.momentary.sequence, options_old( index_object ).momentary.sequence )
 
-                end
+                % h_ref_aa
+                if ~isequal( operators( index_object ).options.momentary.anti_aliasing, options_old( index_object ).momentary.anti_aliasing )
 
-                % update reference spatial transfer function w/ anti-aliasing filter
-                if isa( operators( index_object ).discretization.spatial, 'discretizations.spatial_grid_symmetric' )
-                    operators( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( operators( index_object ).sequence.setup.xdc_array, operators( index_object ).sequence.setup.homogeneous_fluid, operators( index_object ).discretization.h_ref, operators( index_object ).options.momentary.anti_aliasing );
-                end
+                    %------------------------------------------------------
+                    % ii.) change in spatial anti-aliasing filter options
+                    %------------------------------------------------------
+                    % update reference spatial transfer function w/ anti-aliasing filter
+                    if isa( operators( index_object ).discretization.spatial, 'discretizations.spatial_grid_symmetric' )
+                        operators( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( operators( index_object ).sequence.setup.xdc_array, operators( index_object ).sequence.setup.homogeneous_fluid, operators( index_object ).discretization.h_ref, operators( index_object ).options.momentary.anti_aliasing );
+                    end
+
+                end % if ~isequal( operators( index_object ).options.momentary.anti_aliasing, options_old( index_object ).momentary.anti_aliasing )
 
             end % for index_object = 1:numel( operators )
 

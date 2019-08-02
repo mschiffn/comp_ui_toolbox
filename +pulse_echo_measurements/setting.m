@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-07-18
+% modified: 2019-08-01
 %
 classdef setting
 
@@ -94,94 +94,101 @@ classdef setting
             settings_tx = cell( size( settings ) );
 
             % check spectral discretization options
-            switch options_spectral.method
+            if isa( options_spectral, 'discretizations.options_spectral_signal' )
 
-                case discretizations.options_spectral_method.signal
-
-                    %------------------------------------------------------
-                    % a) individual frequency axis for each recorded signal
-                    %------------------------------------------------------
-                    % iterate pulse-echo measurement settings
-                    for index_object = 1:numel( settings )
+                %----------------------------------------------------------
+                % a) individual frequency axis for each recorded signal
+                %----------------------------------------------------------
+                % iterate pulse-echo measurement settings
+                for index_object = 1:numel( settings )
 % TODO: quantize intervals_t?
 
-                        % time and frequency intervals of each recorded signal
-                        intervals_t = reshape( [ settings( index_object ).rx.interval_t ], size( settings( index_object ).rx ) );
-                        intervals_f = reshape( [ settings( index_object ).rx.interval_f ], size( settings( index_object ).rx ) );
+                    % time and frequency intervals of each recorded signal
+                    intervals_t = reshape( [ settings( index_object ).rx.interval_t ], size( settings( index_object ).rx ) );
+                    intervals_f = reshape( [ settings( index_object ).rx.interval_f ], size( settings( index_object ).rx ) );
 
-                        % discretize rx and tx settings
-                        settings_rx{ index_object } = discretize( settings( index_object ).rx );
-                        settings_tx{ index_object } = discretize( settings( index_object ).tx, intervals_t, intervals_f );
+                    % discretize rx and tx settings
+                    settings_rx{ index_object } = discretize( settings( index_object ).rx );
+                    settings_tx{ index_object } = discretize( settings( index_object ).tx, intervals_t, intervals_f );
 
-                    end % for index_object = 1:numel( settings )
+                end % for index_object = 1:numel( settings )
 
-                case discretizations.options_spectral_method.setting
+            elseif isa( options_spectral, 'discretizations.options_spectral_setting' )
 
-                    %------------------------------------------------------
-                    % b) common frequency axis for all recorded signals per setting
-                    %------------------------------------------------------
-                    % iterate pulse-echo measurement settings
-                    for index_object = 1:numel( settings )
+                %----------------------------------------------------------
+                % b) common frequency axis for all recorded signals per setting
+                %----------------------------------------------------------
+                % iterate pulse-echo measurement settings
+                for index_object = 1:numel( settings )
 
-                        % extract unique deltas from current transducer control settings
-                        deltas_unique = unique_deltas( settings( index_object ) );
-
-                        % largest delta_unique must be integer multiple of smaller deltas_unique
-                        delta_unique_max = max( deltas_unique );
-                        mustBeInteger( delta_unique_max ./ deltas_unique );
-
-                        % quantize hull of all recording time intervals using largest delta
-                        interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_unique_max );
-
-                        % discretize rx and tx settings
-                        settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
-                        settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
-
-                    end % for index_object = 1:numel( settings )
-
-                case { discretizations.options_spectral_method.sequence, discretizations.options_spectral_method.sequence_custom }
-
-                    %------------------------------------------------------
-                    % c) common frequency axis for all recorded signals
-                    %------------------------------------------------------
-                    % extract unique deltas from all transducer control settings
-                    deltas_unique = unique_deltas( settings );
+                    % extract unique deltas from current transducer control settings
+                    deltas_unique = unique_deltas( settings( index_object ) );
 
                     % largest delta_unique must be integer multiple of smaller deltas_unique
                     delta_unique_max = max( deltas_unique );
                     mustBeInteger( delta_unique_max ./ deltas_unique );
 
-                    % determine hulls of all time and frequency intervals
-                    [ interval_hull_t, interval_hull_f ] = hulls( settings );
+                    % quantize hull of all recording time intervals using largest delta
+                    interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_unique_max );
 
-                    % check specification of custom recording time interval
-                    if isequal( options_spectral.method, discretizations.options_spectral_method.sequence_custom )
+                    % discretize rx and tx settings
+                    settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
+                    settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
 
-                        % ensure valid recording time interval
-                        if ~isequal( hull( [ options_spectral.interval_hull_t, interval_hull_t ] ), options_spectral.interval_hull_t )
-                            errorStruct.message = 'options_spectral.interval_hull_t must contain interval_hull_t!';
-                            errorStruct.identifier = 'discretize:InvalidCustomRecordingTimeInterval';
-                            error( errorStruct );
-                        end
+                end % for index_object = 1:numel( settings )
 
-                        % use custom recording time interval
-                        interval_hull_t = options_spectral.interval_hull_t;
+            elseif isa( options_spectral, 'discretizations.options_spectral_sequence' )
 
-                    end % if isequal( options_spectral.method, discretizations.options_spectral_method.sequence_custom )
+                %----------------------------------------------------------
+                % c) common frequency axis for all recorded signals
+                %----------------------------------------------------------
+                % extract unique deltas from all transducer control settings
+                deltas_unique = unique_deltas( settings );
 
-                    % quantize hull of all recording time intervals using delta_unique_max
-                    interval_hull_t_quantized = quantize( interval_hull_t, delta_unique_max );
+                % largest delta_unique must be integer multiple of smaller deltas_unique
+                delta_unique_max = max( deltas_unique );
+                mustBeInteger( delta_unique_max ./ deltas_unique );
 
-                    % iterate pulse-echo measurement settings
-                    for index_object = 1:numel( settings )
+                % determine hulls of all time and frequency intervals
+                [ interval_hull_t, interval_hull_f ] = hulls( settings );
 
-                        % discretize rx and tx settings
-                        settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, interval_hull_f );
-                        settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_hull_t_quantized, interval_hull_f );
+                % check specification of custom recording time interval
+                if isa( options_spectral, 'discretizations.options_spectral_sequence_custom' )
 
-                    end % for index_object = 1:numel( settings )
+                    % ensure valid recording time interval
+                    if ~isequal( hull( [ options_spectral.interval_hull_t, interval_hull_t ] ), options_spectral.interval_hull_t )
+                        errorStruct.message = 'options_spectral.interval_hull_t must contain interval_hull_t!';
+                        errorStruct.identifier = 'discretize:InvalidCustomRecordingTimeInterval';
+                        error( errorStruct );
+                    end
 
-            end % switch options_spectral.method
+                    % use custom recording time interval
+                    interval_hull_t = options_spectral.interval_hull_t;
+
+                end % if isa( options_spectral, 'discretizations.options_spectral_sequence_custom' )
+
+                % quantize hull of all recording time intervals using delta_unique_max
+                interval_hull_t_quantized = quantize( interval_hull_t, delta_unique_max );
+
+                % iterate pulse-echo measurement settings
+                for index_object = 1:numel( settings )
+
+                    % discretize rx and tx settings
+                    settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, interval_hull_f );
+                    settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_hull_t_quantized, interval_hull_f );
+
+                end % for index_object = 1:numel( settings )
+
+            else
+
+                %----------------------------------------------------------
+                % d) unknown spectral discretization options
+                %----------------------------------------------------------
+                errorStruct.message = 'Class of options_spectral is unknown!';
+                errorStruct.identifier = 'discretize:UnknownOptionsClass';
+                error( errorStruct );
+
+            end % if isa( options_spectral, 'discretizations.options_spectral_signal' )
 
             %--------------------------------------------------------------
             % 3.) create spectral discretizations

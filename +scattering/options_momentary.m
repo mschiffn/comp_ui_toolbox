@@ -14,7 +14,7 @@ classdef options_momentary
 
         % independent properties
         sequence ( 1, 1 ) scattering.options_sequence { mustBeNonempty } = scattering.options_sequence_full                         % sequence options
-        anti_aliasing ( 1, 1 ) scattering.options_anti_aliasing { mustBeNonempty } = scattering.options_anti_aliasing_cosine( 0.1 )	% spatial anti-aliasing filter options
+        anti_aliasing ( 1, 1 ) scattering.options_anti_aliasing { mustBeNonempty } = scattering.options_anti_aliasing_raised_cosine( 0.5 )	% spatial anti-aliasing filter options
         gpu ( 1, 1 ) scattering.options_gpu { mustBeNonempty } = scattering.options_gpu_active( 0 )                                 % GPU options
         algorithm ( 1, 1 ) scattering.options_algorithm { mustBeNonempty } = scattering.options_algorithm_direct                    % algorithm options
 

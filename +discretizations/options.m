@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-07-18
+% modified: 2019-08-01
 %
 classdef options
 
@@ -13,8 +13,8 @@ classdef options
 	properties (SetAccess = private)
 
         % independent properties
-        spatial ( 1, 1 ) discretizations.options_spatial = discretizations.options_spatial_grid         % spatial discretization
-        spectral ( 1, 1 ) discretizations.options_spectral	% spectral discretization
+        spatial ( 1, 1 ) discretizations.options_spatial { mustBeNonempty } = discretizations.options_spatial_grid          % spatial discretization
+        spectral ( 1, 1 ) discretizations.options_spectral { mustBeNonempty } = discretizations.options_spectral_sequence	% spectral discretization
 
     end % properties
 

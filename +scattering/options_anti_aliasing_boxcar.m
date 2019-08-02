@@ -1,21 +1,11 @@
 %
-% superclass for all active spatial anti-aliasing filter options
+% superclass for all boxcar spatial anti-aliasing filter options
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2019-07-30
+% modified: 2019-07-31
 %
 classdef options_anti_aliasing_boxcar < scattering.options_anti_aliasing
-
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% properties
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-
-        % independent properties
-        parameter ( 1, 1 ) double { mustBePositive, mustBeLessThanOrEqual( parameter, 1 ), mustBeNonempty } = 1	% parameter
-
-	end % properties
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -25,28 +15,28 @@ classdef options_anti_aliasing_boxcar < scattering.options_anti_aliasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_anti_aliasing_boxcar( parameters )
+        function objects = options_anti_aliasing_boxcar( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % property validation functions ensure valid parameters
+            % ensure nonempty size
+            if nargin >= 1 && ~isempty( varargin{ 1 } )
+                size = varargin{ 1 };
+            else
+                size = 1;
+            end
+
+            % superclass ensures row vectors for size
+            % superclass ensures positive integers for size
 
             %--------------------------------------------------------------
-            % 2.) create active spatial anti-aliasing filter options
+            % 2.) create boxcar spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options_anti_aliasing( size( parameters ) );
+            objects@scattering.options_anti_aliasing( size );
 
-            % iterate active spatial anti-aliasing filter options
-            for index_object = 1:numel( objects )
-
-                % set independent properties
-                objects( index_object ).parameter = parameters( index_object );
-
-            end % for index_object = 1:numel( objects )
-
-        end % function objects = options_anti_aliasing_boxcar( parameters )
+        end % function objects = options_anti_aliasing_boxcar( varargin )
 
 	end % methods
 

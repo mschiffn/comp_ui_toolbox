@@ -4,9 +4,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2019-07-31
+% modified: 2019-08-01
 %
-classdef options_anti_aliasing_cosine < scattering.options_anti_aliasing
+classdef options_anti_aliasing_raised_cosine < scattering.options_anti_aliasing
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -14,8 +14,7 @@ classdef options_anti_aliasing_cosine < scattering.options_anti_aliasing
 	properties (SetAccess = private)
 
         % independent properties
-        roll-off factor beta %  The roll-off factor, β {\displaystyle \beta } \beta , is a measure of the excess bandwidth of the filter)
-        parameter ( 1, 1 ) double { mustBePositive, mustBeLessThanOrEqual( parameter, 1 ), mustBeNonempty } = 1	% parameter
+        roll_off_factor ( 1, 1 ) double { mustBePositive, mustBeLessThanOrEqual( roll_off_factor, 1 ), mustBeNonempty } = 1 % roll-off factor
 
 	end % properties
 
@@ -27,29 +26,29 @@ classdef options_anti_aliasing_cosine < scattering.options_anti_aliasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_anti_aliasing_cosine( parameters )
+        function objects = options_anti_aliasing_raised_cosine( roll_off_factors )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % property validation functions ensure valid parameters
+            % property validation functions ensure valid roll_off_factors
 
             %--------------------------------------------------------------
             % 2.) create cosine spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options_anti_aliasing( size( parameters ) );
+            objects@scattering.options_anti_aliasing( size( roll_off_factors ) );
 
             % iterate cosine spatial anti-aliasing filter options
             for index_object = 1:numel( objects )
 
                 % set independent properties
-                objects( index_object ).parameter = parameters( index_object );
+                objects( index_object ).roll_off_factor = roll_off_factors( index_object );
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = options_anti_aliasing_cosine( parameters )
+        end % function objects = options_anti_aliasing_raised_cosine( roll_off_factors )
 
 	end % methods
 
-end % classdef options_anti_aliasing_cosine < scattering.options_anti_aliasing
+end % classdef options_anti_aliasing_raised_cosine < scattering.options_anti_aliasing

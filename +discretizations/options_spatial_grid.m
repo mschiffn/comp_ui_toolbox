@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-19
-% modified: 2019-05-23
+% modified: 2019-08-01
 %
 classdef options_spatial_grid < discretizations.options_spatial
 
@@ -46,15 +46,15 @@ classdef options_spatial_grid < discretizations.options_spatial
             auxiliary.mustBeEqualSize( options_elements, options_FOV );
 
             %--------------------------------------------------------------
-            % 2.) constructor of superclass
+            % 2.) create grid options
             %--------------------------------------------------------------
-            objects@discretizations.options_spatial( options_elements );
+            % constructor of superclass
+            objects@discretizations.options_spatial( size( options_elements ) );
 
-            %--------------------------------------------------------------
-            % 3.) set independent properties
-            %--------------------------------------------------------------
+            % iterate grid options
             for index_object = 1:numel( objects )
 
+                % set independent properties
                 objects( index_object ).options_elements = options_elements{ index_object };
                 objects( index_object ).options_FOV = options_FOV( index_object );
 
