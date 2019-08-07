@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2019-07-29
+% modified: 2019-08-03
 %
-classdef options_gpu_active < scattering.options_gpu
+classdef gpu_active < scattering.options.gpu
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -25,7 +25,7 @@ classdef options_gpu_active < scattering.options_gpu
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_gpu_active( indices )
+        function objects = gpu_active( indices )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -36,7 +36,7 @@ classdef options_gpu_active < scattering.options_gpu
             % 2.) create active GPU options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options_gpu( size( indices ) );
+            objects@scattering.options.gpu( size( indices ) );
 
             % iterate active GPU options
             for index_object = 1:numel( objects )
@@ -46,8 +46,8 @@ classdef options_gpu_active < scattering.options_gpu
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = options_gpu_active( indices )
+        end % function objects = gpu_active( indices )
 
 	end % methods
 
-end % classdef options_gpu_active < scattering.options_gpu
+end % classdef gpu_active < scattering.options.gpu

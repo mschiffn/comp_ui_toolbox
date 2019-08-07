@@ -6,7 +6,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-07-24
+% modified: 2019-08-06
 %
 classdef wavelet < linear_transforms.orthonormal_linear_transform
 
@@ -111,16 +111,16 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                         %--------------------------------------------------
                         % one-dimensional transform
                         %--------------------------------------------------
-                        objects( index_object ).handle_fwd = @( x ) FWT_PO( x, objects( index_object ).scale_coarsest, objects( index_object ).qmf );
-                        objects( index_object ).handle_inv = @( x ) IWT_PO( x, objects( index_object ).scale_coarsest, objects( index_object ).qmf );
+                        objects( index_object ).handle_fwd = @FWT_PO;
+                        objects( index_object ).handle_inv = @IWT_PO;
 
                     case 2
 
                         %--------------------------------------------------
                         % two-dimensional transforms
                         %--------------------------------------------------
-                        objects( index_object ).handle_fwd = @( x ) FWT2_PO( x, objects( index_object ).scale_coarsest, objects( index_object ).qmf );
-                        objects( index_object ).handle_inv = @( x ) IWT2_PO( x, objects( index_object ).scale_coarsest, objects( index_object ).qmf );
+                        objects( index_object ).handle_fwd = @FWT2_PO;
+                        objects( index_object ).handle_inv = @IWT2_PO;
 
                     otherwise
 
@@ -192,8 +192,8 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                     x_act = reshape( x{ index_object }( :, index_signal ), LTs( index_object ).N_points_axis );
 
                     % apply forward transform
-                    y_act = LTs( index_object ).handle_fwd( real( x_act ) );
-                    y_act = y_act + 1j * LTs( index_object ).handle_fwd( imag( x_act ) );
+                    y_act = LTs( index_object ).handle_fwd( real( x_act ), LTs( index_object ).scale_coarsest, LTs( index_object ).qmf );
+                    y_act = y_act + 1j * LTs( index_object ).handle_fwd( imag( x_act ), LTs( index_object ).scale_coarsest, LTs( index_object ).qmf );
 
                     % save result as column vector
                     y{ index_object }( :, index_signal ) = y_act( : );
@@ -264,8 +264,8 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                     x_act = reshape( x{ index_object }( :, index_signal ), LTs( index_object ).N_points_axis );
 
                     % apply inverse transform
-                    y_act = LTs( index_object ).handle_inv( real( x_act ) );
-                    y_act = y_act + 1j * LTs( index_object ).handle_inv( imag( x_act ) );
+                    y_act = LTs( index_object ).handle_inv( real( x_act ), LTs( index_object ).scale_coarsest, LTs( index_object ).qmf );
+                    y_act = y_act + 1j * LTs( index_object ).handle_inv( imag( x_act ), LTs( index_object ).scale_coarsest, LTs( index_object ).qmf );
 
                     % save result as column vector
                     y{ index_object }( :, index_signal ) = y_act( : );

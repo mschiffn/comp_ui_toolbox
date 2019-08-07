@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-07-29
+% modified: 2019-08-03
 %
 classdef operator
 
@@ -99,7 +99,7 @@ classdef operator
                 end
 % TODO: use update function
                 % update indices of selected sequential pulse-echo measurements
-                if isa( objects( index_object ).options.momentary.sequence, 'scattering.options_sequence_full' )
+                if isa( objects( index_object ).options.momentary.sequence, 'scattering.options.sequence_full' )
                     objects( index_object ).indices_measurement_sel = 1:numel( objects( index_object ).discretization.spectral );
                 else
                     objects( index_object ).indices_measurement_sel = objects( index_object ).options.momentary.sequence.indices;
@@ -127,9 +127,9 @@ classdef operator
 % TODO: ensure symmetric spatial grids
 %             auxiliary.mustBeEqualSubclasses( 'discretizations.spatial_grid_symmetric', operators.discretization )
 
-            % ensure class scattering.options_anti_aliasing
-%             if ~isa( options_anti_aliasing, 'scattering.options_anti_aliasing' )
-%                 errorStruct.message = 'options_anti_aliasing must be scattering.options_anti_aliasing!';
+            % ensure class scattering.options.anti_aliasing
+%             if ~isa( options_anti_aliasing, 'scattering.options.anti_aliasing' )
+%                 errorStruct.message = 'options_anti_aliasing must be scattering.options.anti_aliasing!';
 %                 errorStruct.identifier = 'discretize:NoAntiAliasingOptions';
 %                 error( errorStruct );
 %             end
@@ -144,7 +144,7 @@ classdef operator
             for index_object = 1:numel( operators )
 
                 % apply spatial anti-aliasing filter via external function
-                if ~isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_off' )
+                if ~isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_off' )
                     spatiospectrals( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( spatiospectrals( index_object ).spatial, spatiospectrals( index_object ).h_ref, options_anti_aliasing( index_object ).parameter );
                 end
 
@@ -216,7 +216,7 @@ classdef operator
                     % i.) change in sequence options
                     %------------------------------------------------------
                     % update indices of selected sequential pulse-echo measurements
-                    if isa( operators( index_object ).options.momentary.sequence, 'scattering.options_sequence_full' )
+                    if isa( operators( index_object ).options.momentary.sequence, 'scattering.options.sequence_full' )
 
                         % select all sequential pulse-echo measurements
                         operators( index_object ).indices_measurement_sel = 1:numel( operators( index_object ).discretization.spectral );

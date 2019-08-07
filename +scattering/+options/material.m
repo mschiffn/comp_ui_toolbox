@@ -1,11 +1,11 @@
 %
-% superclass for all material options
+% enumerations for all material options
 %
 % author: Martin F. Schiffner
 % date: 2019-04-09
-% modified: 2019-04-13
+% modified: 2019-08-03
 %
-classdef options_material
+classdef material
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% enumeration
@@ -18,4 +18,4 @@ classdef options_material
 
     end % enumeration
 
-end % classdef options_material
+end % classdef material

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-07-31
+% modified: 2019-08-06
 %
 classdef composition < linear_transforms.linear_transform
 
@@ -33,6 +33,13 @@ classdef composition < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % multiple varargin{ 1 } / single varargin{ index_arg }
+            for index_arg = 2:nargin
+                if ~isscalar( varargin{ 1 } ) && isscalar( varargin{ index_arg } )
+                    varargin{ index_arg } = repmat( varargin{ index_arg }, size( varargin{ 1 } ) );
+                end
+            end
+
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( varargin{ : } );
 

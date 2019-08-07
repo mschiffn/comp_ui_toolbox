@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-05-20
+% modified: 2019-08-06
 %
 classdef weighting < linear_transforms.invertible_linear_transform
 
@@ -29,13 +29,13 @@ classdef weighting < linear_transforms.invertible_linear_transform
         % constructor
         %------------------------------------------------------------------
         function objects = weighting( weights )
-% TODO: threshold!
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure cell array for weights
             if ~iscell( weights )
-                weights = { weights };
+                weights = mat2cell( weights, size( weights, 1 ), ones( 1, size( weights, 2 ) ) );
             end
 
             %--------------------------------------------------------------
@@ -244,6 +244,13 @@ classdef weighting < linear_transforms.invertible_linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure class linear_transforms.weighting
+            if ~isa( LTs, 'linear_transforms.weighting' )
+                errorStruct.message = 'LTs must be linear_transforms.weighting!';
+                errorStruct.identifier = 'threshold:NoWeighting';
+                error( errorStruct );
+            end
+
             % ensure valid xis ( 0; 1 ]
             mustBePositive( xis );
             mustBeLessThanOrEqual( xis, 1 );

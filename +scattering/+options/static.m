@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-09
-% modified: 2019-07-09
+% modified: 2019-08-03
 %
-classdef options_static
+classdef static
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -14,7 +14,7 @@ classdef options_static
 
         % independent properties
         discretization ( 1, 1 ) discretizations.options = discretizations.options                       % spatiospectral discretization
-        materials ( 1, 1 ) scattering.options_material = scattering.options_material.compressibility	% material parameters
+        materials ( 1, 1 ) scattering.options.material = scattering.options.material.compressibility	% material parameters
 
     end % properties
 
@@ -26,7 +26,7 @@ classdef options_static
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = options_static( varargin )
+        function object = static( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -52,7 +52,7 @@ classdef options_static
                     %------------------------------------------------------
                     % material parameters
                     %------------------------------------------------------
-                    case 'scattering.options_material'
+                    case 'scattering.options.material'
                         object.materials = varargin{ index_arg };
 
                     %------------------------------------------------------
@@ -67,8 +67,8 @@ classdef options_static
 
             end % for index_arg = 1:nargin
 
-        end % function object = options_static( varargin )
+        end % function object = static( varargin )
 
 	end % methods
 
-end % classdef options_static
+end % classdef static

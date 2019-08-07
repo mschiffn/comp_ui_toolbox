@@ -1,10 +1,11 @@
-% abstract superclass for all algorithm options
+%
+% abstract superclass for all sequence options
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2019-07-30
+% modified: 2019-08-03
 %
-classdef (Abstract) options_algorithm
+classdef (Abstract) sequence
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -14,7 +15,7 @@ classdef (Abstract) options_algorithm
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_algorithm( size )
+        function objects = sequence( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -22,7 +23,7 @@ classdef (Abstract) options_algorithm
             % ensure row vector for size
             if ~isrow( size )
                 errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'options_gpu:NoRowVector';
+                errorStruct.identifier = 'sequence:NoRowVector';
                 error( errorStruct );
             end
 
@@ -32,13 +33,13 @@ classdef (Abstract) options_algorithm
             mustBeNonempty( size );
 
             %--------------------------------------------------------------
-            % 2.) create algorithm options
+            % 2.) create spatial anti-aliasing filter options
             %--------------------------------------------------------------
-            % repeat algorithm options
+            % repeat spatial anti-aliasing filter options
             objects = repmat( objects, size );
 
-        end % function objects = options_algorithm( size )
+        end % function objects = sequence( size )
 
 	end % methods
 
-end % classdef (Abstract) options_algorithm
+end % classdef (Abstract) sequence

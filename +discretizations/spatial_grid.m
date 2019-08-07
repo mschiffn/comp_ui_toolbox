@@ -139,7 +139,7 @@ classdef spatial_grid < discretizations.spatial
         function h_transfer = transfer_function( spatial_grids, axes_f, varargin )
 
             % internal constant
-            N_points_max = 2;
+            N_points_max = 1;
 
             % print status
             time_start = tic;

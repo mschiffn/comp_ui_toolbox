@@ -4,9 +4,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-31
-% modified: 2019-08-01
+% modified: 2019-08-03
 %
-classdef options_anti_aliasing_logistic < scattering.options_anti_aliasing
+classdef anti_aliasing_logistic < scattering.options.anti_aliasing
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -26,7 +26,7 @@ classdef options_anti_aliasing_logistic < scattering.options_anti_aliasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_anti_aliasing_logistic( growth_rates )
+        function objects = anti_aliasing_logistic( growth_rates )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -37,7 +37,7 @@ classdef options_anti_aliasing_logistic < scattering.options_anti_aliasing
             % 2.) create logistic spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options_anti_aliasing( size( growth_rates ) );
+            objects@scattering.options.anti_aliasing( size( growth_rates ) );
 
             % iterate logistic spatial anti-aliasing filter options
             for index_object = 1:numel( objects )
@@ -47,8 +47,8 @@ classdef options_anti_aliasing_logistic < scattering.options_anti_aliasing
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = options_anti_aliasing_logistic( growth_rates )
+        end % function objects = anti_aliasing_logistic( growth_rates )
 
 	end % methods
 
-end % classdef options_anti_aliasing_logistic < scattering.options_anti_aliasing
+end % classdef anti_aliasing_logistic < scattering.options.anti_aliasing

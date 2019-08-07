@@ -1,11 +1,10 @@
-%
-% abstract superclass for all GPU options
+% abstract superclass for all algorithm options
 %
 % author: Martin F. Schiffner
-% date: 2019-07-09
-% modified: 2019-07-29
+% date: 2019-07-30
+% modified: 2019-08-03
 %
-classdef (Abstract) options_gpu
+classdef (Abstract) algorithm
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +14,7 @@ classdef (Abstract) options_gpu
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_gpu( size )
+        function objects = algorithm( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -23,7 +22,7 @@ classdef (Abstract) options_gpu
             % ensure row vector for size
             if ~isrow( size )
                 errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'options_gpu:NoRowVector';
+                errorStruct.identifier = 'algorithm:NoRowVector';
                 error( errorStruct );
             end
 
@@ -33,13 +32,13 @@ classdef (Abstract) options_gpu
             mustBeNonempty( size );
 
             %--------------------------------------------------------------
-            % 2.) create GPU options
+            % 2.) create algorithm options
             %--------------------------------------------------------------
-            % repeat GPU options
+            % repeat algorithm options
             objects = repmat( objects, size );
 
-        end % function objects = options_gpu( size )
+        end % function objects = algorithm( size )
 
 	end % methods
 
-end % classdef (Abstract) options_gpu
+end % classdef (Abstract) algorithm

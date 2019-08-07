@@ -143,25 +143,20 @@ classdef sequence
         %------------------------------------------------------------------
         % apply windows to mixed voltage signals
         %------------------------------------------------------------------
-        function u_M_tilde = apply_windows( sequence, u_M_tilde, varargin )
+        function u_M_tilde_window = apply_windows( sequences, u_M_tilde, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class pulse_echo_measurements.sequence
-            if ~isa( sequence, 'pulse_echo_measurements.sequence' )
-                errorStruct.message = 'sequence must be pulse_echo_measurements.sequence!';
-                errorStruct.identifier = 'apply_windows:NoSequence';
+            if ~isa( sequences, 'pulse_echo_measurements.sequence' )
+                errorStruct.message = 'sequences must be pulse_echo_measurements.sequence!';
+                errorStruct.identifier = 'apply_windows:NoSequences';
                 error( errorStruct );
             end
 
-            % split array of signal matrices into cell array
-            if strcmp( class( u_M_tilde ), 'discretizations.signal_matrix' )
-                u_M_tilde = num2cell( u_M_tilde );
-            end
-
             % ensure cell array for u_M_tilde
-            if ~iscell( u_M_tilde )
+            if ~iscell( u_M_tilde ) || all( cellfun( @( x ) isa( x, 'discretizations.signal_matrix' ), u_M_tilde ) )
                 u_M_tilde = { u_M_tilde };
             end
 
@@ -169,115 +164,193 @@ classdef sequence
             if nargin >= 3 && isa( varargin{ 1 }, 'auxiliary.setting_window' )
                 setting_window = varargin{ 1 };
             else
-                setting_window = auxiliary.setting_window;
+                setting_window = repmat( auxiliary.setting_window, size( sequences ) );
             end
+
+            % ensure nonempty indices_measurement
+            if nargin >= 4 && ~isempty( varargin{ 2 } )
+                indices_measurement = varargin{ 2 };
+            else
+                indices_measurement = cell( size( sequences ) );
+                for index_sequence = 1:numel( sequences )
+                    indices_measurement{ index_sequence } = { ( 1:numel( sequences( index_sequence ).settings ) ) };
+                end
+            end
+
+            % ensure cell array for indices_measurement
+            if ~iscell( indices_measurement ) || all( cellfun( @( x ) isnumeric( x ), indices_measurement ) )
+                indices_measurement = { indices_measurement };
+            end
+
+% TODO: multiple sequences / single u_M_tilde
+
+            % multiple sequences / single setting_window
+            if ~isscalar( sequences ) && isscalar( setting_window )
+                setting_window = repmat( setting_window, size( sequences ) );
+            end
+
+            % multiple sequences / single indices_measurement
+            if ~isscalar( sequences ) && isscalar( indices_measurement )
+                indices_measurement = repmat( indices_measurement, size( sequences ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, u_M_tilde, setting_window, indices_measurement );
 
             %--------------------------------------------------------------
             % 2.) apply window functions
             %--------------------------------------------------------------
+            % specify cell array for u_M_tilde_window
+            u_M_tilde_window = cell( size( sequences ) );
+
             % iterate sequential pulse-echo measurements
-            for index_measurement = 1:numel( sequence.settings )
+            for index_sequence = 1:numel( sequences )
 
-                % extract recording time intervals for all mixed voltage signals
-                intervals_t = reshape( [ sequence.settings( index_measurement ).rx.interval_t ], size( sequence.settings( index_measurement ).rx ) );
+                % convert array of signal matrices into cell array
+                if isa( u_M_tilde{ index_sequence }, 'discretizations.signal_matrix' )
+                    u_M_tilde{ index_sequence } = num2cell( u_M_tilde{ index_sequence } );
+                end
 
-                % extract lower and upper bounds on the recording time intervals
-                lbs = reshape( [ intervals_t.lb ], size( intervals_t ) );
-                ubs = reshape( [ intervals_t.ub ], size( intervals_t ) );
+                % ensure cell array for indices_measurement{ index_sequence }
+                if ~iscell( indices_measurement{ index_sequence } )
+                    indices_measurement{ index_sequence } = { indices_measurement{ index_sequence } };
+                end
 
-                % check data structure
-                if isa( u_M_tilde{ index_measurement }, 'discretizations.signal' )
+                % specify cell array for u_M_tilde_window{ index_sequence }
+                u_M_tilde_window{ index_sequence } = cell( size( indices_measurement{ index_sequence } ) );
 
-                    %------------------------------------------------------
-                    % a) single signals
-                    %------------------------------------------------------
-                    % extract axes of all mixed voltage signals
-                    axes = reshape( [ u_M_tilde{ index_measurement }.axis ], size( u_M_tilde{ index_measurement } ) );
-                    samples_win = cell( size( u_M_tilde{ index_measurement } ) );
+                % iterate configurations
+                for index_config = 1:numel( indices_measurement{ index_sequence } )
 
-                    % iterate mixed voltage signals
-                    for index_mix = 1:numel( sequence.settings( index_measurement ).rx )
+                    % specify cell array for u_M_tilde_window{ index_sequence }{ index_config }
+                    u_M_tilde_window{ index_sequence }{ index_config } = cell( size( indices_measurement{ index_sequence }{ index_config } ) );
 
-                        % determine lower and upper bounds on the windows
-                        lbs_max = max( lbs( index_mix ), u_M_tilde{ index_measurement }( index_mix ).axis.members( 1 ) );
-                        ubs_min = min( ubs( index_mix ), u_M_tilde{ index_measurement }( index_mix ).axis.members( end ) );
+                    % iterate selected pulse-echo measurement settings
+                    for index_measurement_sel = 1:numel( indices_measurement{ index_sequence }{ index_config } )
 
-                        % number of samples in the windows
-                        indicator_lb = u_M_tilde{ index_measurement }( index_mix ).axis.members >= lbs_max;
-                        indicator_ub = u_M_tilde{ index_measurement }( index_mix ).axis.members <= ubs_min;
-                        indicator = indicator_lb & indicator_ub;
-                        N_samples_window = sum( indicator, 2 );
+                        % index of pulse-echo measurement setting
+                        index_measurement = indices_measurement{ index_sequence }{ index_config }( index_measurement_sel );
 
-                        % generate and apply window functions
-                        test = window( setting_window.handle, N_samples_window, setting_window.parameters{ : } )';
-                        samples_win = u_M_tilde{ index_measurement }( index_mix ).samples;
-                        samples_win( ~indicator ) = 0;
-                        samples_win( indicator ) = samples_win( indicator ) .* test;
+                        % extract recording time intervals for all mixed voltage signals
+                        intervals_t = reshape( [ sequences( index_sequence ).settings( index_measurement ).rx.interval_t ], size( sequences( index_sequence ).settings( index_measurement ).rx ) );
 
-                    end % for index_mix = 1:numel( sequence.settings( index_measurement ).rx )
+                        % extract lower and upper bounds on the recording time intervals
+                        lbs = reshape( [ intervals_t.lb ], size( intervals_t ) );
+                        ubs = reshape( [ intervals_t.ub ], size( intervals_t ) );
 
-                    % create signals
-                    u_M_tilde{ index_measurement } = discretizations.signal( axes, samples_win );
+                        % check data structure
+                        if isa( u_M_tilde{ index_sequence }{ index_measurement }, 'discretizations.signal' )
 
-                else
+                            %----------------------------------------------
+                            % a) single signals
+                            %----------------------------------------------
+                            % extract axes of all mixed voltage signals
+                            axes = reshape( [ u_M_tilde{ index_measurement }.axis ], size( u_M_tilde{ index_measurement } ) );
+                            samples_win = cell( size( u_M_tilde{ index_measurement } ) );
 
-                    %------------------------------------------------------
-                    % b) signal matrix
-                    %------------------------------------------------------
-                    % determine lower and upper bounds on all windows
-                    lbs_max = max( lbs, u_M_tilde{ index_measurement }.axis.members( 1 ) );
-                    ubs_min = min( ubs, u_M_tilde{ index_measurement }.axis.members( end ) );
+                            % iterate mixed voltage signals
+                            for index_mix = 1:numel( sequences( index_sequence ).settings( index_measurement ).rx )
 
-                    % determine lower and upper bounds on axis
-                    lbs_max_min = min( lbs_max, [], 'all' );
-                    ubs_min_max = max( ubs_min, [], 'all' );
+                                % determine lower and upper bounds on the windows
+                                lbs_max = max( lbs( index_mix ), u_M_tilde{ index_measurement }( index_mix ).axis.members( 1 ) );
+                                ubs_min = min( ubs( index_mix ), u_M_tilde{ index_measurement }( index_mix ).axis.members( end ) );
 
-                    % cut out from signal matrix
-                    u_M_tilde{ index_measurement } = cut_out( u_M_tilde{ index_measurement }, lbs_max_min, ubs_min_max );
+                                % number of samples in the windows
+                                indicator_lb = u_M_tilde{ index_measurement }( index_mix ).axis.members >= lbs_max;
+                                indicator_ub = u_M_tilde{ index_measurement }( index_mix ).axis.members <= ubs_min;
+                                indicator = indicator_lb & indicator_ub;
+                                N_samples_window = sum( indicator, 2 );
 
-                    % numbers of samples in all windows
-                    indicator_lb = repmat( u_M_tilde{ index_measurement }.axis.members, [ 1, numel( intervals_t ) ] ) >= lbs_max(:).';
-                    indicator_ub = repmat( u_M_tilde{ index_measurement }.axis.members, [ 1, numel( intervals_t ) ] ) <= ubs_min(:).';
-                    indicator = indicator_lb & indicator_ub;
-                    N_samples_window = sum( indicator, 1 );
+                                % generate and apply window functions
+                                test = window( setting_window( index_sequence ).handle, N_samples_window, setting_window( index_sequence ).parameters{ : } )';
+                                samples_win = u_M_tilde{ index_measurement }( index_mix ).samples;
+                                samples_win( ~indicator ) = 0;
+                                samples_win( indicator ) = samples_win( indicator ) .* test;
 
-                    % generate and apply window functions
-                    samples = u_M_tilde{ index_measurement }.samples;
-                    samples( ~indicator ) = 0;
+                            end % for index_mix = 1:numel( sequences( index_sequence ).settings( index_measurement ).rx )
 
-                    % iterate mixed voltage signals
-                    for index_mix = 1:numel( sequence.settings( index_measurement ).rx )
+                            % create signals
+                            u_M_tilde{ index_measurement } = discretizations.signal( axes, samples_win );
 
-                        % window function gateway
-                        samples_window = window( setting_window.handle, N_samples_window( index_mix ), setting_window.parameters{ : } );
+                        elseif isa( u_M_tilde{ index_sequence }{ index_measurement }, 'discretizations.signal_matrix' )
 
-                        % apply window function
-                        samples( indicator( :, index_mix ), index_mix ) = samples( indicator( :, index_mix ), index_mix ) .* samples_window;
+                            %----------------------------------------------
+                            % b) signal matrix
+                            %----------------------------------------------
+                            % determine lower and upper bounds on all windows
+                            lbs_max = max( lbs, u_M_tilde{ index_sequence }{ index_measurement }.axis.members( 1 ) );
+                            ubs_min = min( ubs, u_M_tilde{ index_sequence }{ index_measurement }.axis.members( end ) );
 
-                    end % for index_mix = 1:numel( sequence.settings( index_measurement ).rx )
+                            % determine lower and upper bounds on axis
+                            lbs_max_min = min( lbs_max, [], 'all' );
+                            ubs_min_max = max( ubs_min, [], 'all' );
 
-                    % periodicity renders last sample redundant
-                    axis = remove_last( u_M_tilde{ index_measurement }.axis );
-                    samples = samples( 1:( end - 1 ), : );
+                            % cut out from signal matrix
+                            u_M_tilde_window{ index_sequence }{ index_config }{ index_measurement_sel } = cut_out( u_M_tilde{ index_sequence }{ index_measurement }, lbs_max_min, ubs_min_max );
 
-                    % create signal matrix
-                    u_M_tilde{ index_measurement } = discretizations.signal_matrix( axis, samples );
+                            % numbers of samples in all windows
+                            indicator_lb = repmat( u_M_tilde_window{ index_sequence }{ index_config }{ index_measurement_sel }.axis.members, [ 1, numel( intervals_t ) ] ) >= lbs_max(:).';
+                            indicator_ub = repmat( u_M_tilde_window{ index_sequence }{ index_config }{ index_measurement_sel }.axis.members, [ 1, numel( intervals_t ) ] ) <= ubs_min(:).';
+                            indicator = indicator_lb & indicator_ub;
+                            N_samples_window = sum( indicator, 1 );
 
-                end % if isa( u_M_tilde{ index_measurement }, 'discretizations.signal' )
+                            % generate and apply window functions
+                            samples = u_M_tilde_window{ index_sequence }{ index_config }{ index_measurement_sel }.samples;
+                            samples( ~indicator ) = 0;
 
-            end % for index_measurement = 1:numel( sequence.settings )
+                            % iterate mixed voltage signals
+                            for index_mix = 1:numel( sequences( index_sequence ).settings( index_measurement ).rx )
 
-            indicator = cellfun( @( x ) ~isa( x, 'discretizations.signal' ), u_M_tilde );
-            if all( indicator(:) )
-                u_M_tilde = cat( 1, u_M_tilde{ : } );
+                                % window function gateway
+                                samples_window = window( setting_window( index_sequence ).handle, N_samples_window( index_mix ), setting_window( index_sequence ).parameters{ : } );
+
+                                % apply window function
+                                samples( indicator( :, index_mix ), index_mix ) = samples( indicator( :, index_mix ), index_mix ) .* samples_window;
+
+                            end % for index_mix = 1:numel( sequences( index_sequence ).settings( index_measurement ).rx )
+
+                            % periodicity renders last sample redundant
+% TODO: not always!
+                            axis = remove_last( u_M_tilde_window{ index_sequence }{ index_config }{ index_measurement_sel }.axis );
+                            samples = samples( 1:( end - 1 ), : );
+
+                            % create signal matrix
+                            u_M_tilde_window{ index_sequence }{ index_config }{ index_measurement_sel } = discretizations.signal_matrix( axis, samples );
+
+                        else
+
+                            %----------------------------------------------
+                            % c) unknown data structure
+                            %----------------------------------------------
+                            errorStruct.message = sprintf( 'Class of u_M_tilde{ %d }{ %d } is unknown!', index_sequence, index_measurement );
+                            errorStruct.identifier = 'apply_windows:UnknownSignalClass';
+                            error( errorStruct );
+
+                        end % if isa( u_M_tilde{ index_sequence }{ index_measurement }, 'discretizations.signal' )
+
+                    end % for index_measurement_sel = 1:numel( indices_measurement{ index_sequence }{ index_config } )
+
+                    % convert cell array into array of discretizations.signal_matrix
+                    indicator = cellfun( @( x ) ~isa( x, 'discretizations.signal' ), u_M_tilde_window{ index_sequence }{ index_config } );
+                    if all( indicator(:) )
+                        u_M_tilde_window{ index_sequence }{ index_config } = cat( 1, u_M_tilde_window{ index_sequence }{ index_config }{ : } );
+                    end
+
+                end % for index_config = 1:numel( indices_measurement{ index_sequence } )
+
+                % avoid cell array for single indices_measurement{ index_sequence }
+                if isscalar( indices_measurement{ index_sequence } )
+                    u_M_tilde_window{ index_sequence } = u_M_tilde_window{ index_sequence }{ 1 };
+                end
+
+            end % for index_sequence = 1:numel( sequences )
+
+            % avoid cell array for single sequences
+            if isscalar( sequences )
+                u_M_tilde_window = u_M_tilde_window{ 1 };
             end
 
-            % avoid cell array for single pulse-echo measurement
-%             if isscalar( u_M_tilde )
-%                 u_M_tilde = u_M_tilde{ 1 };
-%             end
-
-        end % function u_M_tilde = apply_windows( sequence, u_M_tilde, varargin )
+        end % function u_M_tilde_window = apply_windows( sequences, u_M_tilde, varargin )
 
         %------------------------------------------------------------------
         % synthesize mixed voltage signals

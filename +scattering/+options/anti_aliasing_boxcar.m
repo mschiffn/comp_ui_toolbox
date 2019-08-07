@@ -1,13 +1,13 @@
 %
-% superclass for all inactive GPU options
+% superclass for all boxcar spatial anti-aliasing filter options
 %
 % author: Martin F. Schiffner
-% date: 2019-07-29
-% modified: 2019-07-29
+% date: 2019-07-30
+% modified: 2019-08-03
 %
-classdef options_gpu_off < scattering.options_gpu
+classdef anti_aliasing_boxcar < scattering.options.anti_aliasing
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
@@ -15,7 +15,7 @@ classdef options_gpu_off < scattering.options_gpu
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_gpu_off( varargin )
+        function objects = anti_aliasing_boxcar( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -31,13 +31,13 @@ classdef options_gpu_off < scattering.options_gpu
             % superclass ensures positive integers for size
 
             %--------------------------------------------------------------
-            % 2.) create inactive GPU options
+            % 2.) create boxcar spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options_gpu( size );
+            objects@scattering.options.anti_aliasing( size );
 
-        end % function objects = options_gpu_off( varargin )
+        end % function objects = anti_aliasing_boxcar( varargin )
 
 	end % methods
 
-end % classdef options_gpu_off < scattering.options_gpu
+end % classdef anti_aliasing_boxcar < scattering.options.anti_aliasing

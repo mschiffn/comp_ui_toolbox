@@ -1,13 +1,13 @@
 %
-% superclass for all inactive spatial anti-aliasing filter options
+% superclass for all direct algorithm options
 %
 % author: Martin F. Schiffner
-% date: 2019-07-29
-% modified: 2019-07-29
+% date: 2019-07-30
+% modified: 2019-08-03
 %
-classdef options_anti_aliasing_off < scattering.options_anti_aliasing
+classdef algorithm_direct < scattering.options.algorithm
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
@@ -15,7 +15,7 @@ classdef options_anti_aliasing_off < scattering.options_anti_aliasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_anti_aliasing_off( varargin )
+        function objects = algorithm_direct( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -31,13 +31,13 @@ classdef options_anti_aliasing_off < scattering.options_anti_aliasing
             % superclass ensures positive integers for size
 
             %--------------------------------------------------------------
-            % 2.) create inactive spatial anti-aliasing filter options
+            % 2.) create direct algorithm options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options_anti_aliasing( size );
+            objects@scattering.options.algorithm( size );
 
-        end % function objects = options_anti_aliasing_off( varargin )
+        end % function objects = algorithm_direct( varargin )
 
 	end % methods
 
-end % classdef options_anti_aliasing_off < scattering.options_anti_aliasing
+end % classdef algorithm_direct < scattering.options.algorithm

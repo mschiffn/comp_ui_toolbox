@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-07-31
+% modified: 2019-08-04
 %
 classdef operator_born < scattering.operator
 
@@ -49,16 +49,26 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 2.) adjoint linear transform
             %--------------------------------------------------------------
+            if nargin >= 3 && ~isempty( varargin{ 1 } )
+
+                % ensure class linear_transforms.linear_transform (scalar)
+                if ~( isa( varargin{ 1 }, 'linear_transforms.linear_transform' ) && isscalar( varargin{ 1 } ) )
+                    errorStruct.message = 'Nonempty varargin{ 1 } must be a single linear_transforms.linear_transform!';
+                    errorStruct.identifier = 'forward_quick:NoLinearTransform';
+                    error( errorStruct );
+                end
+
 % TODO: check compatibility  && isequal( operator_born.discretization.spatial.grid_FOV.N_points_axis, varargin{ 1 }.N_lattice )
-            if nargin >= 3 && isscalar( varargin{ 1 } ) && isa( varargin{ 1 }, 'linear_transforms.linear_transform' )
+
                 % apply adjoint linear transform
                 fluctuations = operator_transform( varargin{ 1 }, fluctuations, 2 );
-            end
+
+            end % if nargin >= 3 && ~isempty( varargin{ 1 } )
 
             %--------------------------------------------------------------
             % 3.) compute mixed voltage signals
             %--------------------------------------------------------------
-            if isa( operator_born.options.momentary.gpu, 'scattering.options_gpu_off' )
+            if isa( operator_born.options.momentary.gpu, 'scattering.options.gpu_off' )
                 u_M = forward_quick_cpu( operator_born, fluctuations );
             else
 % TODO: remove complex
@@ -93,7 +103,7 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 2.) compute adjoint fluctuations
             %--------------------------------------------------------------
-            if isa( operator_born.options.momentary.gpu, 'scattering.options_gpu_off' )
+            if isa( operator_born.options.momentary.gpu, 'scattering.options.gpu_off' )
                 gamma_hat = adjoint_quick_cpu( operator_born, u_M );
             else
                 gamma_hat = scattering.combined_quick_gpu( operator_born, 2, u_M );
@@ -125,6 +135,7 @@ classdef operator_born < scattering.operator
             switch mode
 
                 case 0
+% TODO: wrong size if scattering.options.sequence_selected is used!
                     % return size of forward transform
                     y = operator_born.discretization.size;
                 case 1
@@ -211,7 +222,7 @@ classdef operator_born < scattering.operator
                 % method forward_quick ensures class linear_transforms.linear_transform
 
                 %----------------------------------------------------------
-                % b) quick adjoint scattering
+                % b) quick forward scattering
                 %----------------------------------------------------------
 %                 profile on
                 u_M{ index_object } = forward_quick( operators_born( index_object ), fluctuations{ index_object }( : ), linear_transforms{ index_object } );
@@ -258,8 +269,8 @@ classdef operator_born < scattering.operator
                 end % for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
 
                 % create array of signal matrices
-                if all( cellfun( @( x ) strcmp( class( x( : ) ), 'discretizations.signal_matrix' ), u_M{ index_object } ) )
-                    u_M{ index_object } = [ u_M{ index_object }{ : } ];
+                if all( cellfun( @( x ) strcmp( class( x ), 'discretizations.signal_matrix' ), u_M{ index_object } ) )
+                    u_M{ index_object } = cat( 1, u_M{ index_object }{ : } );
                 end
 
             end % for index_object = 1:numel( operators_born )
@@ -287,26 +298,23 @@ classdef operator_born < scattering.operator
             end
 
             % ensure cell array for u_M
-            if ~iscell( u_M )
+            if ~iscell( u_M ) || all( cellfun( @( x ) ~iscell( x ), u_M ) )
                 u_M = { u_M };
             end
 
             % ensure nonempty linear_transforms
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
+            if nargin >= 2 && ~isempty( varargin{ 1 } )
                 linear_transforms = varargin{ 1 };
             else
-                % empty linear_transform is identity
                 linear_transforms = cell( size( operators_born ) );
+                for index_operator = 1:numel( operators_born )
+                    linear_transforms{ index_operator } = { [] };
+                end
             end
 
             % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms )
+            if ~iscell( linear_transforms ) || all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
                 linear_transforms = { linear_transforms };
-            end
-
-            % overwrite properties of momentary scattering operator options
-            if nargin >= 4
-                operators_born = set_properties_momentary( operators_born, varargin{ 2:end } );
             end
 
             % multiple operators_born / single u_M
@@ -323,48 +331,84 @@ classdef operator_born < scattering.operator
             auxiliary.mustBeEqualSize( operators_born, u_M, linear_transforms );
 
             %--------------------------------------------------------------
-            % 2.) compute adjoint fluctuations
+            % 2.) process scattering operators
             %--------------------------------------------------------------
             % specify cell array for theta_hat
             theta_hat = cell( size( operators_born ) );
 
             % iterate scattering operators
-            for index_object = 1:numel( operators_born )
+            for index_operator = 1:numel( operators_born )
 
                 %----------------------------------------------------------
-                % a) check mixed voltage signals and linear transform
+                % a) check arguments
                 %----------------------------------------------------------
-                % ensure class discretizations.signal_matrix
-                if ~isa( u_M{ index_object }, 'discretizations.signal_matrix' )
-                    errorStruct.message = sprintf( 'u_M{ %d } must be discretizations.signal_matrix!', index_object );
-                    errorStruct.identifier = 'adjoint:NoSignalMatrix';
-                    error( errorStruct );
+                % ensure cell array for linear_transforms{ index_operator }
+% TODO: wrong
+                if ~iscell( linear_transforms{ index_operator } )
+                    linear_transforms{ index_operator } = num2cell( linear_transforms{ index_operator } );
                 end
 
-                % method adjoint_quick ensures class linear_transforms.linear_transform
-
                 %----------------------------------------------------------
-                % b) normalize mixed voltage signals
+                % b) process linear transforms
                 %----------------------------------------------------------
-                u_M{ index_object } = return_vector( u_M{ index_object } );
-                u_M_norm = norm( u_M{ index_object } );
-                u_M_normed = u_M{ index_object } / u_M_norm;
+                % specify cell array for theta_hat{ index_operator }
+                theta_hat{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
 
-                %----------------------------------------------------------
-                % c) quick adjoint scattering
-                %----------------------------------------------------------
-%                 profile on
-                theta_hat{ index_object } = adjoint_quick( operators_born( index_object ), u_M_normed, linear_transforms{ index_object } );
-%                 profile viewer
+                % iterate linear transforms
+                for index_transform = 1:numel( linear_transforms{ index_operator } )
 
-                % estimate samples
-%                 samples_est = op_A_bar( theta_hat_weighting, 1 );
+                    % set momentary scattering operator options
+                    operators_born_config = set_properties_momentary( operators_born( index_operator ), varargin{ 2:end } );
 
-                % compute resulting error in the measurement vector
-%                 y_m_res = samples( : ) - samples_est;
-%                 y_m_res_l2_norm_rel = norm( y_m_res(:), 2 ) / norm( samples( : ) );
+                    % initialize adjoint fluctuations w/ zeros
+                    theta_hat{ index_operator }{ index_transform } = zeros( operators_born( index_operator ).discretization.spatial.grid_FOV.N_points, numel( operators_born_config ) );
 
-            end % for index_object = 1:numel( operators_born )
+                    % iterate configurations
+                    for index_config = 1:numel( operators_born_config )
+
+                        %--------------------------------------------------
+                        % a) check mixed voltage signals and linear transform
+                        %--------------------------------------------------
+                        % ensure class discretizations.signal_matrix
+                        if ~isa( u_M{ index_operator }{ index_config }, 'discretizations.signal_matrix' )
+                            errorStruct.message = sprintf( 'u_M{ %d }{ %d } must be discretizations.signal_matrix!', index_operator, index_config );
+                            errorStruct.identifier = 'adjoint:NoSignalMatrix';
+                            error( errorStruct );
+                        end
+
+                        % method adjoint_quick ensures class linear_transforms.linear_transform
+
+                        %--------------------------------------------------
+                        % b) normalize mixed voltage signals
+                        %--------------------------------------------------
+                        u_M_vect = return_vector( u_M{ index_operator }{ index_config } );
+                        u_M_vect_norm = norm( u_M_vect );
+                        u_M_vect_normed = u_M_vect / u_M_vect_norm;
+
+                        %--------------------------------------------------
+                        % c) quick adjoint scattering
+                        %--------------------------------------------------
+%                       profile on
+                        theta_hat{ index_operator }{ index_transform }( :, index_config ) = adjoint_quick( operators_born_config( index_config ), u_M_vect_normed, linear_transforms{ index_operator }{ index_transform }( index_config ) );
+%                       profile viewer
+
+                        % estimate samples
+%                       samples_est = op_A_bar( theta_hat_weighting, 1 );
+
+                        % compute resulting error in the measurement vector
+%                       y_m_res = samples( : ) - samples_est;
+%                       y_m_res_l2_norm_rel = norm( y_m_res(:), 2 ) / norm( samples( : ) );
+
+                    end % for index_config = 1:numel( operators_born_config )
+
+                end % for index_transform = 1:numel( linear_transforms{ index_operator } )
+
+                % avoid cell array for single linear_transforms{ index_operator }
+                if isscalar( linear_transforms{ index_operator } )
+                    theta_hat{ index_operator } = theta_hat{ index_operator }{ 1 };
+                end
+
+            end % for index_operator = 1:numel( operators_born )
 
             % avoid cell array for single operators_born
             if isscalar( operators_born )
@@ -389,7 +433,7 @@ classdef operator_born < scattering.operator
             end
 
             % ensure cell array for indices
-            if ~iscell( indices )
+            if ~iscell( indices ) || all( cellfun( @( x ) ~iscell( x ), indices ) )
                 indices = { indices };
             end
 
@@ -397,18 +441,16 @@ classdef operator_born < scattering.operator
             if nargin >= 3 && ~isempty( varargin{ 1 } )
                 linear_transforms = varargin{ 1 };
             else
-                % empty linear_transform is identity
                 linear_transforms = cell( size( operators_born ) );
+                for index_operator = 1:numel( operators_born )
+                    linear_transforms{ index_operator } = { [] };
+                end
             end
 
             % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms )
+% TODO: transforms in individual cells?
+            if ~iscell( linear_transforms ) || all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
                 linear_transforms = { linear_transforms };
-            end
-
-            % overwrite properties of momentary scattering operator options
-            if nargin >= 4
-                operators_born = set_properties_momentary( operators_born, varargin{ 2:end } );
             end
 
             % multiple operators_born / single indices
@@ -425,58 +467,136 @@ classdef operator_born < scattering.operator
             auxiliary.mustBeEqualSize( operators_born, indices, linear_transforms );
 
             %--------------------------------------------------------------
-            % 2.) compute TPSFs
+            % 2.) process scattering operators
             %--------------------------------------------------------------
-            % specify cell array for tpsf
+            % specify cell arrays
             theta_tpsf = cell( size( operators_born ) );
             E_M = cell( size( operators_born ) );
             adjointness = cell( size( operators_born ) );
 
             % iterate scattering operators
-            for index_object = 1:numel( operators_born )
+            for index_operator = 1:numel( operators_born )
 
                 %----------------------------------------------------------
-                % a) check linear transform and indices
+                % a) check arguments
                 %----------------------------------------------------------
-                % methods forward_quick and adjoint_quick ensure class linear_transforms.linear_transform
-%                 if ~isa( linear_transforms{ index_object }, 'linear_transforms.linear_transform' )
-%                     errorStruct.message = sprintf( 'linear_transforms{ %d } must be linear_transforms.linear_transform!', index_object );
-%                     errorStruct.identifier = 'tpsf:NoLinearTransform';
-%                     error( errorStruct );
-%                 end
+                % ensure cell array for linear_transforms{ index_operator }
+                if ~iscell( linear_transforms{ index_operator } )
+                    linear_transforms{ index_operator } = { linear_transforms{ index_operator } };
+                end
 
-                % numbers of TPSFs and grid points
-                N_tpsf = numel( indices{ index_object } );
-                N_points = operators_born( index_object ).discretization.spatial.grid_FOV.N_points;
+                % ensure cell array for indices{ index_operator }
+                if ~iscell( indices{ index_operator } )
+                    indices{ index_operator } = { indices{ index_operator } };
+                end
 
-                % ensure valid indices{ index_object }
-                mustBeInteger( indices{ index_object } );
-                mustBePositive( indices{ index_object } );
-                mustBeLessThanOrEqual( indices{ index_object }, N_points );
+                % multiple linear_transforms{ index_operator } / single indices{ index_operator }
+                if ~isscalar( linear_transforms{ index_operator } ) && isscalar( indices{ index_operator } )
+                    indices{ index_operator } = repmat( indices{ index_operator }, size( linear_transforms{ index_operator } ) );
+                end
 
-                %----------------------------------------------------------
-                % b) create coefficient vectors
-                %----------------------------------------------------------
-                % indices of coefficients
-                indices_tpsf = ( 0:( N_tpsf - 1 ) ) * N_points + indices{ index_object }( : )';
-
-                % initialize coefficient vectors
-                theta = zeros( N_points, N_tpsf );
-                theta( indices_tpsf ) = 1;
+                % ensure equal number of dimensions and sizes
+                auxiliary.mustBeEqualSize( linear_transforms{ index_operator }, indices{ index_operator } );
 
                 %----------------------------------------------------------
-                % c) quick forward scattering and received energies
+                % b) process linear transforms
                 %----------------------------------------------------------
-                u_M = forward_quick( operators_born( index_object ), theta, linear_transforms{ index_object } );
-                E_M{ index_object } = vecnorm( u_M, 2, 1 ).^2;
+                % specify cell arrays
+                theta_tpsf{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
+                E_M{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
+                adjointness{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
 
-                %----------------------------------------------------------
-                % d) quick adjoint scattering and test for adjointness
-                %----------------------------------------------------------
-                theta_tpsf{ index_object } = adjoint_quick( operators_born( index_object ), u_M, linear_transforms{ index_object } );
-                adjointness{ index_object } = E_M{ index_object } - theta_tpsf{ index_object }( indices_tpsf );
+                % iterate linear transforms
+                for index_transform = 1:numel( linear_transforms{ index_operator } )
 
-            end % for index_object = 1:numel( operators_born )
+                    %------------------------------------------------------
+                    % i.) check arguments
+                    %------------------------------------------------------
+                    % ensure numeric matrix
+                    if ~( isnumeric( indices{ index_operator }{ index_transform } ) && ismatrix( indices{ index_operator }{ index_transform } ) )
+                        errorStruct.message = sprintf( 'indices{ %d }{ %d } must be a numeric matrix!', index_operator, index_transform );
+                        errorStruct.identifier = 'tpsf:NoNumericMatrix';
+                        error( errorStruct );
+                    end
+
+                    % ensure valid indices{ index_operator }{ index_transform }
+                    mustBeInteger( indices{ index_operator }{ index_transform } );
+                    mustBePositive( indices{ index_operator }{ index_transform } );
+
+                    % numbers of TPSFs and coefficients
+                    N_tpsf = numel( indices{ index_operator }{ index_transform } );
+
+                    % ensure cell array for linear_transforms{ index_operator }{ index_transform }
+                    if ~iscell( linear_transforms{ index_operator }{ index_transform } )
+                        linear_transforms{ index_operator }{ index_transform } = num2cell( linear_transforms{ index_operator }{ index_transform } );
+                    end
+
+                    % set momentary scattering operator options
+                    operators_born_config = set_properties_momentary( operators_born( index_operator ), varargin{ 2:end } );
+
+                    % ensure equal number of dimensions and sizes
+%                     auxiliary.mustBeEqualSize( linear_transforms{ index_operator }{ index_transform }, operators_born_config );
+
+                    %------------------------------------------------------
+                    % ii.) process configurations
+                    %------------------------------------------------------
+                    % initialize adjoint fluctuations w/ zeros
+                    theta_tpsf{ index_operator }{ index_transform } = cell( size( operators_born_config ) );
+                    E_M{ index_operator }{ index_transform } = zeros( numel( operators_born_config ), N_tpsf );
+                    adjointness{ index_operator }{ index_transform } = zeros( numel( operators_born_config ), N_tpsf );
+
+                    % iterate configurations
+                    for index_config = 1:numel( operators_born_config )
+
+                        % methods forward_quick and adjoint_quick ensure class linear_transforms.linear_transform (scalar)
+                        if ~( isa( linear_transforms{ index_operator }{ index_transform }{ index_config }, 'linear_transforms.linear_transform' ) && isscalar( linear_transforms{ index_operator }{ index_transform }{ index_config } ) )
+                            errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform, index_config );
+                            errorStruct.identifier = 'tpsf:NoLinearTransform';
+                            error( errorStruct );
+                        end
+
+                        N_coefficients = linear_transforms{ index_operator }{ index_transform }{ index_config }.N_coefficients;
+                        mustBeLessThanOrEqual( indices{ index_operator }{ index_transform }, N_coefficients );
+
+                        %--------------------------------------------------
+                        % A) create coefficient vectors
+                        %--------------------------------------------------
+                        % indices of coefficients
+                        indices_tpsf = ( 0:( N_tpsf - 1 ) ) * N_coefficients + indices{ index_operator }{ index_transform }( : )';
+
+                        % initialize coefficient vectors
+                        theta = zeros( N_coefficients, N_tpsf );
+                        theta( indices_tpsf ) = 1;
+
+                        %--------------------------------------------------
+                        % B) quick forward scattering and received energies
+                        %--------------------------------------------------
+                        u_M = forward_quick( operators_born_config( index_config ), theta, linear_transforms{ index_operator }{ index_transform }{ index_config } );
+                        E_M{ index_operator }{ index_transform }( index_config, : ) = vecnorm( u_M, 2, 1 ).^2;
+
+                        %--------------------------------------------------
+                        % C) quick adjoint scattering and test for adjointness
+                        %--------------------------------------------------
+                        theta_tpsf{ index_operator }{ index_transform }{ index_config } = adjoint_quick( operators_born_config( index_config ), u_M, linear_transforms{ index_operator }{ index_transform }{ index_config } );
+                        adjointness{ index_operator }{ index_transform }( index_config, : ) = E_M{ index_operator }{ index_transform }( index_config, : ) - theta_tpsf{ index_operator }{ index_transform }{ index_config }( indices_tpsf );
+
+                    end % for index_config = 1:numel( operators_born_config )
+
+                    % avoid cell array for single operators_born_config
+                    if isscalar( operators_born_config )
+                        theta_tpsf{ index_operator }{ index_transform } = theta_tpsf{ index_operator }{ index_transform }{ 1 };
+                    end
+
+                end % for index_transform = 1:numel( linear_transforms{ index_operator } )
+
+                % avoid cell array for single linear_transforms{ index_operator }
+                if isscalar( linear_transforms{ index_operator } )
+                    theta_tpsf{ index_operator } = theta_tpsf{ index_operator }{ 1 };
+                    E_M{ index_operator } = E_M{ index_operator }{ 1 };
+                    adjointness{ index_operator } = adjointness{ index_operator }{ 1 };
+                end
+
+            end % for index_operator = 1:numel( operators_born )
 
 %             discretizations.signal_matrix()
 % TODO: create field objects
@@ -509,18 +629,30 @@ classdef operator_born < scattering.operator
             if nargin >= 2 && ~isempty( varargin{ 1 } )
                 linear_transforms = varargin{ 1 };
             else
-                % empty linear_transform is identity
                 linear_transforms = cell( size( operators_born ) );
+                for index_operator = 1:numel( operators_born )
+                    linear_transforms{ index_operator } = { [] };
+                end
             end
 
             % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms )
+            if ~iscell( linear_transforms ) || all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
                 linear_transforms = { linear_transforms };
             end
 
-            % overwrite properties of momentary scattering operator options
-            if nargin >= 3
-                operators_born = set_properties_momentary( operators_born, varargin{ 2:end } );
+            % ensure nonempty indices_measurement_sel
+            if nargin >= 3 && ~isempty( varargin{ 2 } )
+                indices_measurement_sel = varargin{ 2 };
+            else
+                indices_measurement_sel = cell( size( operators_born ) );
+                for index_operator = 1:numel( operators_born )
+                    indices_measurement_sel{ index_operator } = { ( 1:numel( operators_born( index_operator ).incident_waves ) ) };
+                end
+            end
+
+            % ensure cell array for indices_measurement_sel
+            if ~iscell( indices_measurement_sel ) || all( cellfun( @( x ) ~iscell( x ), indices_measurement_sel ) )
+                indices_measurement_sel = { indices_measurement_sel };
             end
 
             % multiple operators_born / single linear_transforms
@@ -528,8 +660,13 @@ classdef operator_born < scattering.operator
                 linear_transforms = repmat( linear_transforms, size( operators_born ) );
             end
 
+            % multiple operators_born / single indices_measurement_sel
+            if ~isscalar( operators_born ) && isscalar( indices_measurement_sel )
+                indices_measurement_sel = repmat( indices_measurement_sel, size( operators_born ) );
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, linear_transforms );
+            auxiliary.mustBeEqualSize( operators_born, linear_transforms, indices_measurement_sel );
 
             %--------------------------------------------------------------
             % 2.) compute received energies
@@ -538,68 +675,128 @@ classdef operator_born < scattering.operator
             E_M = cell( size( operators_born ) );
 
             % iterate scattering operators
-            for index_object = 1:numel( operators_born )
+            for index_operator = 1:numel( operators_born )
 
-                % extract indices of selected sequential pulse-echo measurements
-                indices_measurement_sel = operators_born( index_object ).indices_measurement_sel;
+                %----------------------------------------------------------
+                % a) check arguments
+                %----------------------------------------------------------
+                % ensure cell array for linear_transforms{ index_operator }
+                if ~iscell( linear_transforms{ index_operator } )
+                    linear_transforms{ index_operator } = num2cell( linear_transforms{ index_operator } );
+                end
 
-                % check linear transform
-                if ~isempty( linear_transforms{ index_object } )
+                % ensure cell array for indices_measurement_sel{ index_operator }
+                if ~iscell( indices_measurement_sel{ index_operator } ) || all( cellfun( @( x ) ~iscell( x ), indices_measurement_sel{ index_operator } ) )
+                    indices_measurement_sel{ index_operator } = { indices_measurement_sel{ index_operator } };
+                end
+
+                % multiple linear_transforms{ index_operator } / single indices_measurement_sel{ index_operator }
+                if ~isscalar( linear_transforms{ index_operator } ) && isscalar( indices_measurement_sel{ index_operator } )
+                    indices_measurement_sel{ index_operator } = repmat( indices_measurement_sel{ index_operator }, size( linear_transforms{ index_operator } ) );
+                end
+
+                % ensure equal number of dimensions and sizes
+                auxiliary.mustBeEqualSize( linear_transforms{ index_operator }, indices_measurement_sel{ index_operator } );
+
+                %----------------------------------------------------------
+                % b) compute received energies
+                %----------------------------------------------------------
+                % specify cell array for E_M{ index_operator }
+                E_M{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
+
+                % iterate linear transforms
+                for index_transform = 1:numel( linear_transforms{ index_operator } )
 
                     %------------------------------------------------------
-                    % a) arbitrary linear transform
+                    % i.) check arguments
                     %------------------------------------------------------
-                    % initialize results w/ zeros
-                    E_M{ index_object } = physical_values.squarevolt( zeros( linear_transforms{ index_object }.N_coefficients, numel( operators_born( index_object ).indices_measurement_sel ) ) );
+                    % ensure cell array for indices_measurement_sel{ index_operator }{ index_transform }
+                    if ~iscell( indices_measurement_sel{ index_operator }{ index_transform } )
+                        indices_measurement_sel{ index_operator }{ index_transform } = { indices_measurement_sel{ index_operator }{ index_transform } };
+                    end
 
-                    % iterate selected sequential pulse-echo measurements
-                    for index_measurement_sel = 1:numel( indices_measurement_sel )
+                    %------------------------------------------------------
+                    % ii.) compute unique received energies
+                    %------------------------------------------------------
+                    % unique indices of selected sequential pulse-echo measurements
+                    [ indices_measurement_sel_unique, ~, indices_config ] = unique( cat( 1, indices_measurement_sel{ index_operator }{ index_transform }{ : } ) );
+                    indices_config = mat2cell( indices_config, cellfun( @numel, indices_measurement_sel{ index_operator }{ index_transform } ) );
 
-                        % index of sequential pulse-echo measurement
-                        index_measurement = indices_measurement_sel( index_measurement_sel );
+                    % check linear transform
+                    if ~isempty( linear_transforms{ index_operator }{ index_transform } )
 
-                        % set momentary scattering operator options
-                        operators_born( index_object ) = set_properties_momentary( operators_born( index_object ), scattering.options_sequence_selected( index_measurement ) );
+                        %--------------------------------------------------
+                        % i.) arbitrary linear transform
+                        %--------------------------------------------------
+                        % initialize unique received energies w/ zeros
+                        E_M_unique = physical_values.squarevolt( zeros( linear_transforms{ index_operator }{ index_transform }.N_coefficients, numel( indices_measurement_sel_unique ) ) );
 
                         % create format string for filename
-                        str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s_transform_%%s_options_aliasing_%%s.mat', operators_born( index_object ).discretization.spatial.str_name );
+                        str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s_transform_%%s_options_aliasing_%%s.mat', operators_born( index_operator ).discretization.spatial.str_name );
 
-                        % load or compute received energies (arbitrary linear transform)
-                        E_M{ index_object }( :, index_measurement_sel ) = auxiliary.compute_or_load_hash( str_format, @energy_rx_arbitrary, [ 2, 3, 4, 5 ], [ 1, 4 ], operators_born( index_object ), operators_born( index_object ).discretization.spatial, operators_born( index_object ).discretization.spectral( index_measurement ), linear_transforms{ index_object }, operators_born( index_object ).options.momentary.anti_aliasing );
+                        % iterate unique selected sequential pulse-echo measurements
+                        for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
 
-                    end % for index_measurement_sel = 1:numel( indices_measurement_sel )
+                            % index of sequential pulse-echo measurement
+                            index_measurement = indices_measurement_sel_unique( index_measurement_sel );
 
-                else
+                            % set momentary scattering operator options
+                            operators_born( index_operator ) = set_properties_momentary( operators_born( index_operator ), varargin{ 3:end }, scattering.options.sequence_selected( index_measurement ) );
 
-                    %------------------------------------------------------
-                    % b) canonical basis
-                    %------------------------------------------------------
-                    % initialize results w/ zeros
-                    E_M{ index_object } = physical_values.squarevolt( zeros( operators_born( index_object ).discretization.spatial.grid_FOV.N_points, numel( operators_born( index_object ).indices_measurement_sel ) ) );
+                            % load or compute received energies (arbitrary linear transform)
+                            E_M_unique( :, index_measurement_sel ) = auxiliary.compute_or_load_hash( str_format, @energy_rx_arbitrary, [ 2, 3, 4, 5 ], [ 1, 4 ], operators_born( index_operator ), operators_born( index_operator ).discretization.spatial, operators_born( index_operator ).discretization.spectral( index_measurement ), linear_transforms{ index_operator }{ index_transform }, operators_born( index_operator ).options.momentary.anti_aliasing );
 
-                    % iterate selected sequential pulse-echo measurements
-                    for index_measurement_sel = 1:numel( indices_measurement_sel )
+                        end % for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
 
-                        % index of sequential pulse-echo measurement
-                        index_measurement = indices_measurement_sel( index_measurement_sel );
+                    else
 
-                        % set momentary scattering operator options
-                        operators_born( index_object ) = set_properties_momentary( operators_born( index_object ), scattering.options_sequence_selected( index_measurement ) );
+                        %--------------------------------------------------
+                        % ii.) canonical basis
+                        %--------------------------------------------------
+                        % initialize unique received energies w/ zeros
+                        E_M_unique = physical_values.squarevolt( zeros( operators_born( index_operator ).discretization.spatial.grid_FOV.N_points, numel( indices_measurement_sel_unique ) ) );
 
                         % create format string for filename
-                        str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s_options_aliasing_%%s.mat', operators_born( index_object ).discretization.spatial.str_name );
+                        str_format = sprintf( 'data/%s/spatial_%%s/E_M_spectral_%%s_options_aliasing_%%s.mat', operators_born( index_operator ).discretization.spatial.str_name );
 
-                        % load or compute received energies (canonical basis)
-                        E_M{ index_object }( :, index_measurement_sel ) = auxiliary.compute_or_load_hash( str_format, @energy_rx_canonical, [ 2, 3, 4 ], 1, operators_born( index_object ), operators_born( index_object ).discretization.spatial, operators_born( index_object ).discretization.spectral( index_measurement ), operators_born( index_object ).options.momentary.anti_aliasing );
+                        % iterate unique selected sequential pulse-echo measurements
+                        for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
 
-                    end % for index_measurement_sel = 1:numel( indices_measurement_sel )
+                            % index of sequential pulse-echo measurement
+                            index_measurement = indices_measurement_sel_unique( index_measurement_sel );
 
-                end % if ~isempty( linear_transforms{ index_object } )
+                            % set momentary scattering operator options
+                            operators_born( index_operator ) = set_properties_momentary( operators_born( index_operator ), varargin{ 3:end }, scattering.options.sequence_selected( index_measurement ) );
 
-                % sum received energies
-                E_M{ index_object } = sum( E_M{ index_object }, 2 );
+                            % load or compute received energies (canonical basis)
+                            E_M_unique( :, index_measurement_sel ) = auxiliary.compute_or_load_hash( str_format, @energy_rx_canonical, [ 3, 4, 5 ], [ 1, 2 ], operators_born( index_operator ), index_measurement, operators_born( index_operator ).discretization.spatial, operators_born( index_operator ).discretization.spectral( index_measurement ), operators_born( index_operator ).options.momentary.anti_aliasing );
 
-            end % for index_object = 1:numel( operators_born )
+                        end % for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
+
+                    end % if ~isempty( linear_transforms{ index_operator }{ index_transform } )
+
+                    %------------------------------------------------------
+                    % iii.) sum unique received energies according to config
+                    %------------------------------------------------------
+                    % initialize received energies w/ zeros
+                    E_M{ index_operator }{ index_transform } = physical_values.squarevolt( zeros( operators_born( index_operator ).discretization.spatial.grid_FOV.N_points, numel( indices_config ) ) );
+
+                    % sum received energies according to indices_config
+                    for index_config = 1:numel( indices_config )
+
+                        % sum received energies
+                        E_M{ index_operator }{ index_transform }( :, index_config ) = sum( E_M_unique( :, indices_config{ index_config } ), 2 );
+
+                    end % for index_config = 1:numel( indices_config )
+                
+                end % for index_transform = 1:numel( linear_transforms{ index_operator } )
+
+                % avoid cell array for single linear_transforms{ index_operator }
+                if isscalar( linear_transforms{ index_operator } )
+                    E_M{ index_operator } = E_M{ index_operator }{ 1 };
+                end
+
+            end % for index_operator = 1:numel( operators_born )
 
             % avoid cell array for single operators_born
             if isscalar( operators_born )
@@ -908,11 +1105,11 @@ classdef operator_born < scattering.operator
         % see combined_quick_gpu.cu
 
         %------------------------------------------------------------------
-        % received energy (arbitrary linear transform)
+        % single received energy (arbitrary linear transform)
         %------------------------------------------------------------------
         function E_M = energy_rx_arbitrary( operator_born, linear_transform )
 
-            % internal constant
+            % internal constant (adjust to capabilities of GPU)
             N_objects = 164;
 
             % print status
@@ -938,7 +1135,7 @@ classdef operator_born < scattering.operator
             end
 
             %--------------------------------------------------------------
-            % 2.) compute received energies
+            % 2.) compute received energies (arbitrary linear transform)
             %--------------------------------------------------------------
             % compute number of batches and objects in last batch
             N_batches = ceil( linear_transform.N_coefficients / N_objects );
@@ -1002,11 +1199,6 @@ classdef operator_born < scattering.operator
 
             end % for index_batch = 1:N_batches
 
-            %--------------------------------------------------------------
-            % 3.) restore physical units
-            %--------------------------------------------------------------
-            E_M = physical_values.squarevolt( E_M );
-
             % infer and print elapsed time
             time_elapsed = toc( time_start );
             fprintf( 'done! (%f s)\n', time_elapsed );
@@ -1014,9 +1206,9 @@ classdef operator_born < scattering.operator
         end % function E_M = energy_rx_arbitrary( operator_born, linear_transform )
 
         %------------------------------------------------------------------
-        % received energy (canonical basis)
+        % single received energy (canonical basis)
         %------------------------------------------------------------------
-        function E_M = energy_rx_canonical( operator_born )
+        function E_M = energy_rx_canonical( operator_born, index_measurement )
 
             % print status
             time_start = tic;
@@ -1029,119 +1221,111 @@ classdef operator_born < scattering.operator
             % ensure class scattering.operator_born (scalar)
             if ~( isa( operator_born, 'scattering.operator_born' ) && isscalar( operator_born ) )
                 errorStruct.message = 'operator_born must be a single scattering.operator_born!';
-                errorStruct.identifier = 'energy_rx_canonical:NoSingleOperatorsBorn';
+                errorStruct.identifier = 'energy_rx_canonical:NoSingleOperatorBorn';
                 error( errorStruct );
             end
 
+            % ensure positive integer less than or equal to the number of sequential pulse-echo measurements
+            mustBePositive( index_measurement );
+            mustBeInteger( index_measurement );
+            mustBeLessThanOrEqual( index_measurement, numel( operator_born.incident_waves ) );
+
             %--------------------------------------------------------------
-            % 2.) compute received energies
+            % 2.) compute energies of mixed voltage signals
             %--------------------------------------------------------------
+            % map unique frequencies of pulse-echo measurement to global unique frequencies
+            indices_f_measurement_to_global = operator_born.discretization.indices_f_to_unique{ index_measurement };
+
+            % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
+            indices_f_mix_to_measurement = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
+
+            % extract prefactors for all mixes (current frequencies)
+            prefactors = operator_born.discretization.prefactors{ index_measurement };
+
+            % numbers of frequencies in mixed voltage signals
+            axes_f = reshape( [ prefactors.axis ], size( prefactors ) );
+            N_samples_f = abs( axes_f );
+
             % initialize received energies with zeros
             E_M = zeros( 1, operator_born.discretization.spatial.grid_FOV.N_points );
 
-            % iterate selected sequential pulse-echo measurements
-            for index_measurement = operator_born.indices_measurement_sel
+            % iterate mixed voltage signals
+            for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
 
                 %----------------------------------------------------------
-                % a) prefactors
+                % a) active array elements and pressure field (current frequencies)
                 %----------------------------------------------------------
-                % map unique frequencies of pulse-echo measurement to global unique frequencies
-                indices_f_measurement_to_global = operator_born.discretization.indices_f_to_unique{ index_measurement };
+                % number of active array elements
+                N_elements_active = numel( operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active );
 
-                % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
-                indices_f_mix_to_measurement = operator_born.discretization.spectral( index_measurement ).indices_f_to_unique;
-
-                % extract prefactors for all mixes (current frequencies)
-                prefactors = operator_born.discretization.prefactors{ index_measurement };
-
-                % numbers of frequencies in mixed voltage signals
-                axes_f = reshape( [ prefactors.axis ], size( prefactors ) );
-                N_samples_f = abs( axes_f );
+                % extract incident acoustic pressure field for current frequencies
+                p_incident_act = double( operator_born.incident_waves( index_measurement ).p_incident.samples( indices_f_mix_to_measurement{ index_mix }, : ) );
 
                 %----------------------------------------------------------
                 % b) compute mixed voltage signals for the active array elements
                 %----------------------------------------------------------
-                % iterate mixed voltage signals
-                for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
+                % initialize mixed voltage signals with zeros
+                Phi_M = zeros( N_samples_f( index_mix ), operator_born.discretization.spatial.grid_FOV.N_points );
 
-                    %------------------------------------------------------
-                    % active array elements and pressure field (current frequencies)
-                    %------------------------------------------------------
-                    % number of active array elements
-                    N_elements_active = numel( operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active );
+                % iterate active array elements
+                for index_active = 1:N_elements_active
 
-                    % extract incident acoustic pressure field for current frequencies
-                    p_incident_act = double( operator_born.incident_waves( index_measurement ).p_incident.samples( indices_f_mix_to_measurement{ index_mix }, : ) );
+                    % index of active array element
+                    index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
 
-                    %------------------------------------------------------
-                    % compute voltage signals received by the active array elements
-                    %------------------------------------------------------
-                    % initialize voltages with zeros
-                    Phi_M = zeros( N_samples_f( index_mix ), operator_born.discretization.spatial.grid_FOV.N_points );
+                    % spatial transfer function of the active array element
+                    if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
-                    % iterate active array elements
-                    for index_active = 1:N_elements_active
+                        %--------------------------------------------------
+                        % i.) symmetric spatial discretization based on orthogonal regular grids
+                        %--------------------------------------------------
+                        % shift reference spatial transfer function to infer that of the active array element
+                        indices_occupied_act = operator_born.discretization.spatial.indices_grid_FOV_shift( :, index_element );
 
-                        % index of active array element
-                        index_element = operator_born.discretization.spectral( index_measurement ).rx( index_mix ).indices_active( index_active );
-
-                        % spatial transfer function of the active array element
-                        if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
-
-                            %----------------------------------------------
-                            % a) symmetric spatial discretization based on orthogonal regular grids
-                            %----------------------------------------------
-                            % shift reference spatial transfer function to infer that of the active array element
-                            indices_occupied_act = operator_born.discretization.spatial.indices_grid_FOV_shift( :, index_element );
-
-                            % extract current frequencies from unique frequencies
-                            if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.h_ref_aa.axis )
-                                h_rx = double( operator_born.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
-                            else
-                                h_rx = double( operator_born.h_ref_aa.samples( :, indices_occupied_act ) );
-                            end
-
+                        % extract current frequencies from unique frequencies
+                        if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.h_ref_aa.axis )
+                            h_rx = double( operator_born.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                         else
+                            h_rx = double( operator_born.h_ref_aa.samples( :, indices_occupied_act ) );
+                        end
 
-                            %----------------------------------------------
-                            % b) arbitrary grid
-                            %----------------------------------------------
-                            % compute spatial transfer function of the active array element
-                            h_rx = transfer_function( operator_born.discretization.spatial, axes_f( index_mix ), index_element );
-
-                            % apply spatial anti-aliasing filter
-                            h_rx = discretizations.anti_aliasing_filter( operator_born.sequence.setup.xdc_array, operator_born.sequence.setup.homogeneous_fluid, h_rx, operator_born.options.momentary.anti_aliasing );
-                            h_rx = double( h_rx.samples );
-
-                        end % if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
+                    else
 
                         %--------------------------------------------------
-                        % compute mixed voltage signals
+                        % ii.) arbitrary grid
                         %--------------------------------------------------
-                        Phi_act = h_rx .* p_incident_act .* double( prefactors( index_mix ).samples( :, index_active ) );
-                        Phi_M = Phi_M + Phi_act;
+                        % compute spatial transfer function of the active array element
+                        h_rx = transfer_function( operator_born.discretization.spatial, axes_f( index_mix ), index_element );
 
-                    end % for index_active = 1:N_elements_active
+                        % apply spatial anti-aliasing filter
+                        h_rx = discretizations.anti_aliasing_filter( operator_born.sequence.setup.xdc_array, operator_born.sequence.setup.homogeneous_fluid, h_rx, operator_born.options.momentary.anti_aliasing );
+                        h_rx = double( h_rx.samples );
+
+                    end % if isa( operator_born.discretization.spatial, 'discretizations.spatial_grid_symmetric' )
 
                     %------------------------------------------------------
-                    % compute energies of mixed voltage signals
+                    % iii.) compute mixed voltage signals
                     %------------------------------------------------------
-                    E_M = E_M + vecnorm( Phi_M, 2, 1 ).^2;
+                    Phi_act = h_rx .* p_incident_act .* double( prefactors( index_mix ).samples( :, index_active ) );
+                    Phi_M = Phi_M + Phi_act;
 
-                end % for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
+                end % for index_active = 1:N_elements_active
 
-            end % for index_measurement = operator_born.indices_measurement_sel
+                %----------------------------------------------------------
+                % c) sum energies of mixed voltage signals
+                %----------------------------------------------------------
+                E_M = E_M + vecnorm( Phi_M, 2, 1 ).^2;
 
-            %--------------------------------------------------------------
-            % 3.) restore physical units
-            %--------------------------------------------------------------
-            E_M = physical_values.squarevolt( E_M.' );
+            end % for index_mix = 1:numel( operator_born.discretization.spectral( index_measurement ).rx )
+
+            % transpose result
+            E_M = E_M.';
 
             % infer and print elapsed time
             time_elapsed = toc( time_start );
             fprintf( 'done! (%f s)\n', time_elapsed );
 
-        end % function E_M = energy_rx_canonical( operator_born )
+        end % function E_M = energy_rx_canonical( operator_born, index_measurement )
 
     end % methods (Access = private, Hidden)
 

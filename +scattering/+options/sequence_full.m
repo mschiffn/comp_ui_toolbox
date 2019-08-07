@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2019-07-30
+% modified: 2019-08-03
 %
-classdef options_sequence_full < scattering.options_sequence
+classdef sequence_full < scattering.options.sequence
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef options_sequence_full < scattering.options_sequence
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options_sequence_full( varargin )
+        function objects = sequence_full( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -34,10 +34,10 @@ classdef options_sequence_full < scattering.options_sequence
             % 2.) create full sequence options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options_sequence( size );
+            objects@scattering.options.sequence( size );
 
-        end % function objects = options_sequence_full( varargin )
+        end % function objects = sequence_full( varargin )
 
 	end % methods
 
-end % classdef options_sequence_full < scattering.options_sequence
+end % classdef sequence_full < scattering.options.sequence

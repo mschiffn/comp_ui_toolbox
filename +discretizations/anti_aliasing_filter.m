@@ -5,7 +5,7 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
 %
 % author: Martin F. Schiffner
 % date: 2019-07-10
-% modified: 2019-08-01
+% modified: 2019-08-03
 %
 
 	%----------------------------------------------------------------------
@@ -53,7 +53,7 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
 	for index_object = 1:numel( xdc_arrays )
 
         % check spatial anti-aliasing filter status
-        if isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_off' )
+        if isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_off' )
 
             %--------------------------------------------------------------
             % a) inactive spatial anti-aliasing filter
@@ -76,7 +76,7 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
             flag = real( axis_k_tilde.members ) .* e_1_minus_2 .* reshape( xdc_arrays( index_object ).cell_ref.edge_lengths, [ 1, 1, N_dimensions_lateral ] );
 
             % check type of spatial anti-aliasing filter
-            if isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_boxcar' )
+            if isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_boxcar' )
 
                 %----------------------------------------------------------
                 % i.) boxcar spatial anti-aliasing filter
@@ -84,7 +84,7 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
                 % detect valid grid points
                 filter = all( flag < pi, 3 );
 
-            elseif isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_raised_cosine' )
+            elseif isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_raised_cosine' )
 
                 %----------------------------------------------------------
                 % ii.) raised-cosine spatial anti-aliasing filter
@@ -106,7 +106,7 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
                 flag( indicator_off ) = 0;
                 filter = prod( flag, 3 );
 
-            elseif isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_logistic' )
+            elseif isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_logistic' )
 
                 %----------------------------------------------------------
                 % iii.) logistic spatial anti-aliasing filter
@@ -123,12 +123,12 @@ function h_transfer_aa = anti_aliasing_filter( xdc_arrays, homogeneous_fluids, h
                 errorStruct.identifier = 'anti_aliasing_filter:UnknownOptionsClass';
                 error( errorStruct );
 
-            end % if isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_boxcar' )
+            end % if isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_boxcar' )
 
             % apply anti-aliasing filter
             h_samples_aa{ index_object } = h_transfer( index_object ).samples .* filter;
 
-        end % if isa( options_anti_aliasing( index_object ), 'scattering.options_anti_aliasing_off' )
+        end % if isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_off' )
 
     end % for index_object = 1:numel( xdc_arrays )
 

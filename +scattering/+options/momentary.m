@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-09
-% modified: 2019-07-30
+% modified: 2019-08-03
 %
-classdef options_momentary
+classdef momentary
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -13,10 +13,10 @@ classdef options_momentary
 	properties (SetAccess = private)
 
         % independent properties
-        sequence ( 1, 1 ) scattering.options_sequence { mustBeNonempty } = scattering.options_sequence_full                         % sequence options
-        anti_aliasing ( 1, 1 ) scattering.options_anti_aliasing { mustBeNonempty } = scattering.options_anti_aliasing_raised_cosine( 0.5 )	% spatial anti-aliasing filter options
-        gpu ( 1, 1 ) scattering.options_gpu { mustBeNonempty } = scattering.options_gpu_active( 0 )                                 % GPU options
-        algorithm ( 1, 1 ) scattering.options_algorithm { mustBeNonempty } = scattering.options_algorithm_direct                    % algorithm options
+        sequence ( 1, 1 ) scattering.options.sequence { mustBeNonempty } = scattering.options.sequence_full                         % sequence options
+        anti_aliasing ( 1, 1 ) scattering.options.anti_aliasing { mustBeNonempty } = scattering.options.anti_aliasing_raised_cosine( 0.5 )	% spatial anti-aliasing filter options
+        gpu ( 1, 1 ) scattering.options.gpu { mustBeNonempty } = scattering.options.gpu_active( 0 )                                 % GPU options
+        algorithm ( 1, 1 ) scattering.options.algorithm { mustBeNonempty } = scattering.options.algorithm_direct                    % algorithm options
 
     end % properties
 
@@ -28,7 +28,7 @@ classdef options_momentary
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = options_momentary( varargin )
+        function object = momentary( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -43,19 +43,19 @@ classdef options_momentary
             %--------------------------------------------------------------
             object = set_properties( object, varargin{ : } );
 
-        end % function object = options_momentary( varargin )
+        end % function object = momentary( varargin )
 
         %------------------------------------------------------------------
         % set properties
         %------------------------------------------------------------------
-        function options_momentary = set_properties( options_momentary, varargin )
+        function momentary = set_properties( momentary, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options_momentary (scalar)
-            if ~( isa( options_momentary, 'scattering.options_momentary' ) && isscalar( options_momentary ) )
-                errorStruct.message = 'options_momentary must be scattering.options_momentary!';
+            % ensure class scattering.options.momentary (scalar)
+            if ~( isa( momentary, 'scattering.options.momentary' ) && isscalar( momentary ) )
+                errorStruct.message = 'momentary must be scattering.options.momentary!';
                 errorStruct.identifier = 'set_properties:NoOptionsMomentary';
                 error( errorStruct );
             end
@@ -66,33 +66,33 @@ classdef options_momentary
             % iterate arguments
             for index_arg = 1:numel( varargin )
 
-                if isa( varargin{ index_arg }, 'scattering.options_sequence' )
+                if isa( varargin{ index_arg }, 'scattering.options.sequence' )
 
                     %------------------------------------------------------
                     % a) sequence options
                     %------------------------------------------------------
-                    options_momentary.sequence = varargin{ index_arg };
+                    momentary.sequence = varargin{ index_arg };
 
-                elseif isa( varargin{ index_arg }, 'scattering.options_anti_aliasing' )
+                elseif isa( varargin{ index_arg }, 'scattering.options.anti_aliasing' )
 
                     %------------------------------------------------------
                     % b) spatial anti-aliasing filter options
                     %------------------------------------------------------
-                    options_momentary.anti_aliasing = varargin{ index_arg };
+                    momentary.anti_aliasing = varargin{ index_arg };
 
-                elseif isa( varargin{ index_arg }, 'scattering.options_gpu' )
+                elseif isa( varargin{ index_arg }, 'scattering.options.gpu' )
 
                     %------------------------------------------------------
                     % c) GPU options
                     %------------------------------------------------------
-                    options_momentary.gpu = varargin{ index_arg };
+                    momentary.gpu = varargin{ index_arg };
 
-                elseif isa( varargin{ index_arg }, 'scattering.options_algorithm' )
+                elseif isa( varargin{ index_arg }, 'scattering.options.algorithm' )
 
                     %------------------------------------------------------
                     % d) algorithm options
                     %------------------------------------------------------
-                    options_momentary.algorithm = varargin{ index_arg };
+                    momentary.algorithm = varargin{ index_arg };
 
                 else
 
@@ -107,8 +107,8 @@ classdef options_momentary
 
             end % for index_arg = 1:numel( varargin )
 
-        end % function options_momentary = set_properties( options_momentary, varargin )
+        end % function momentary = set_properties( momentary, varargin )
 
 	end % methods
 
-end % classdef options_momentary
+end % classdef momentary

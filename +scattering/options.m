@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-15
-% modified: 2019-07-11
+% modified: 2019-08-03
 %
 classdef options
 
@@ -13,8 +13,8 @@ classdef options
 	properties (SetAccess = private)
 
         % independent properties
-        static ( 1, 1 ) scattering.options_static = scattering.options_static           % static options
-        momentary ( 1, 1 ) scattering.options_momentary = scattering.options_momentary	% momentary options
+        static ( 1, 1 ) scattering.options.static = scattering.options.static           % static options
+        momentary ( 1, 1 ) scattering.options.momentary = scattering.options.momentary	% momentary options
 
     end % properties
 
@@ -26,14 +26,38 @@ classdef options
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options( static, momentary )
+        function objects = options( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % return if no input argument
+            % return default object for missing arguments
             if nargin == 0
                 return;
+            end
+
+            % ensure nonempty static
+            if ~isempty( varargin{ 1 } )
+                static = varargin{ 1 };
+            else
+                static = scattering.options.static;
+            end
+
+            % ensure nonempty momentary
+            if nargin >= 2 && ~isempty( varargin{ 2 } )
+                momentary = varargin{ 2 };
+            else
+                momentary = scattering.options.momentary;
+            end
+
+            % multiple static / single momentary
+            if ~isscalar( static ) && isscalar( momentary )
+                momentary = repmat( momentary, size( static ) );
+            end
+
+            % single static / multiple momentary
+            if isscalar( static ) && ~isscalar( momentary )
+                static = repmat( static, size( momentary ) );
             end
 
             % ensure equal number of dimensions and sizes
@@ -54,7 +78,7 @@ classdef options
 
             end % for index_object = 1:numel( static )
 
-        end % function objects = options( static, momentary )
+        end % function objects = options( varargin )
 
         %------------------------------------------------------------------
         % set properties of momentary scattering operator options

@@ -147,7 +147,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
             % ii.) l2- or l1-minimization (convex)
             %--------------------------------------------------------------
             % call SPGL1 with sensing matrix
-            [ theta_recon_normed{ index_object }{ index_options }, u_M_res, gradient, info{ index_object }{ index_options } ] = spgl1( op_A_bar, u_M_normed, tau, options{ index_object }( index_options ).rel_RMSE, x_0, spgl_opts );
+            [ theta_recon_normed{ index_object }{ index_options }, u_M_res, ~, info{ index_object }{ index_options } ] = spgl1( op_A_bar, u_M_normed, tau, options{ index_object }( index_options ).rel_RMSE, x_0, spgl_opts );
 
             %--------------------------------------------------------------
             % iii.) optional lq-minimization ( 0 <= q < 1, nonconvex, Foucart's algorithm )
