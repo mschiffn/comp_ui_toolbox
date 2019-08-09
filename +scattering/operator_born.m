@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-08-04
+% modified: 2019-08-08
 %
 classdef operator_born < scattering.operator
 
@@ -54,7 +54,7 @@ classdef operator_born < scattering.operator
                 % ensure class linear_transforms.linear_transform (scalar)
                 if ~( isa( varargin{ 1 }, 'linear_transforms.linear_transform' ) && isscalar( varargin{ 1 } ) )
                     errorStruct.message = 'Nonempty varargin{ 1 } must be a single linear_transforms.linear_transform!';
-                    errorStruct.identifier = 'forward_quick:NoLinearTransform';
+                    errorStruct.identifier = 'forward_quick:NoSingleLinearTransform';
                     error( errorStruct );
                 end
 
@@ -113,10 +113,24 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 3.) forward linear transform
             %--------------------------------------------------------------
-            if nargin >= 3 && isscalar( varargin{ 1 } ) && isa( varargin{ 1 }, 'linear_transforms.linear_transform' )
+            if nargin >= 3 && ~isempty( varargin{ 1 } )
+
+                % ensure class linear_transforms.linear_transform (scalar)
+                if ~( isa( varargin{ 1 }, 'linear_transforms.linear_transform' ) && isscalar( varargin{ 1 } ) )
+                    errorStruct.message = 'Nonempty varargin{ 1 } must be a single linear_transforms.linear_transform!';
+                    errorStruct.identifier = 'adjoint_quick:NoSingleLinearTransform';
+                    error( errorStruct );
+                end
+
                 % apply forward linear transform
                 theta_hat = operator_transform( varargin{ 1 }, gamma_hat, 1 );
-            end
+
+            else
+
+                % use canonical basis
+                theta_hat = gamma_hat;
+
+            end % if nargin >= 3 && ~isempty( varargin{ 1 } )
 
             % illustrate
             figure(999);
@@ -285,7 +299,7 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % adjoint scattering (overload adjoint method)
         %------------------------------------------------------------------
-        function theta_hat = adjoint( operators_born, u_M, varargin )
+        function [ theta_hat, rel_RMSE ] = adjoint( operators_born, u_M, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -303,20 +317,23 @@ classdef operator_born < scattering.operator
             end
 
             % ensure nonempty linear_transforms
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
+            if nargin >= 3 && ~isempty( varargin{ 1 } )
                 linear_transforms = varargin{ 1 };
             else
                 linear_transforms = cell( size( operators_born ) );
                 for index_operator = 1:numel( operators_born )
-                    linear_transforms{ index_operator } = { [] };
+                    linear_transforms{ index_operator } = { { [] } };
                 end
             end
 
+            % ensure cell arrays of scalar transforms
+            linear_transforms = auxiliary.deepNum2Cell( linear_transforms );
+
             % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms ) || all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
+            if all( cellfun( @( x ) ~iscell( x ), linear_transforms ) ) || all( cellfun( @( x ) cellfun( @( x ) ~iscell( x ), x ), linear_transforms ) )
                 linear_transforms = { linear_transforms };
             end
-
+ 
             % multiple operators_born / single u_M
             if ~isscalar( operators_born ) && isscalar( u_M )
                 u_M = repmat( u_M, size( operators_born ) );
@@ -335,6 +352,7 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % specify cell array for theta_hat
             theta_hat = cell( size( operators_born ) );
+            rel_RMSE = cell( size( operators_born ) );
 
             % iterate scattering operators
             for index_operator = 1:numel( operators_born )
@@ -343,9 +361,8 @@ classdef operator_born < scattering.operator
                 % a) check arguments
                 %----------------------------------------------------------
                 % ensure cell array for linear_transforms{ index_operator }
-% TODO: wrong
-                if ~iscell( linear_transforms{ index_operator } )
-                    linear_transforms{ index_operator } = num2cell( linear_transforms{ index_operator } );
+                if all( cellfun( @( x ) ~iscell( x ), linear_transforms{ index_operator } ) )
+                    linear_transforms{ index_operator } = linear_transforms( index_operator );
                 end
 
                 %----------------------------------------------------------
@@ -353,21 +370,32 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % specify cell array for theta_hat{ index_operator }
                 theta_hat{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
+                rel_RMSE{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
 
                 % iterate linear transforms
                 for index_transform = 1:numel( linear_transforms{ index_operator } )
 
+                    %------------------------------------------------------
+                    % i.) check arguments
+                    %------------------------------------------------------
                     % set momentary scattering operator options
                     operators_born_config = set_properties_momentary( operators_born( index_operator ), varargin{ 2:end } );
 
+                    % ensure equal number of dimensions and sizes
+                    auxiliary.mustBeEqualSize( linear_transforms{ index_operator }{ index_transform }, operators_born_config );
+
+                    %------------------------------------------------------
+                    % ii.) process configurations
+                    %------------------------------------------------------
                     % initialize adjoint fluctuations w/ zeros
                     theta_hat{ index_operator }{ index_transform } = zeros( operators_born( index_operator ).discretization.spatial.grid_FOV.N_points, numel( operators_born_config ) );
+                    rel_RMSE{ index_operator }{ index_transform } = zeros( 1, numel( operators_born_config ) );
 
                     % iterate configurations
                     for index_config = 1:numel( operators_born_config )
 
                         %--------------------------------------------------
-                        % a) check mixed voltage signals and linear transform
+                        % A) check mixed voltage signals and linear transform
                         %--------------------------------------------------
                         % ensure class discretizations.signal_matrix
                         if ~isa( u_M{ index_operator }{ index_config }, 'discretizations.signal_matrix' )
@@ -376,10 +404,10 @@ classdef operator_born < scattering.operator
                             error( errorStruct );
                         end
 
-                        % method adjoint_quick ensures class linear_transforms.linear_transform
+                        % method adjoint_quick tests linear_transforms{ index_operator }{ index_transform }{ index_config }
 
                         %--------------------------------------------------
-                        % b) normalize mixed voltage signals
+                        % B) normalize mixed voltage signals
                         %--------------------------------------------------
                         u_M_vect = return_vector( u_M{ index_operator }{ index_config } );
                         u_M_vect_norm = norm( u_M_vect );
@@ -389,33 +417,35 @@ classdef operator_born < scattering.operator
                         % c) quick adjoint scattering
                         %--------------------------------------------------
 %                       profile on
-                        theta_hat{ index_operator }{ index_transform }( :, index_config ) = adjoint_quick( operators_born_config( index_config ), u_M_vect_normed, linear_transforms{ index_operator }{ index_transform }( index_config ) );
+                        theta_hat{ index_operator }{ index_transform }( :, index_config ) = adjoint_quick( operators_born_config( index_config ), u_M_vect_normed, linear_transforms{ index_operator }{ index_transform }{ index_config } );
 %                       profile viewer
 
-                        % estimate samples
-%                       samples_est = op_A_bar( theta_hat_weighting, 1 );
+                        % estimate normalized mixed voltage signals
+                        u_M_vect_normed_est = forward_quick( operators_born_config( index_config ), theta_hat{ index_operator }{ index_transform }( :, index_config ), linear_transforms{ index_operator }{ index_transform }{ index_config } );
 
-                        % compute resulting error in the measurement vector
-%                       y_m_res = samples( : ) - samples_est;
-%                       y_m_res_l2_norm_rel = norm( y_m_res(:), 2 ) / norm( samples( : ) );
+                        % compute relative RMSE
+                        u_M_res = u_M_vect_normed - u_M_vect_normed_est;
+                        rel_RMSE{ index_operator }{ index_transform }( index_config ) = norm( u_M_res( : ), 2 );
 
                     end % for index_config = 1:numel( operators_born_config )
 
                 end % for index_transform = 1:numel( linear_transforms{ index_operator } )
 
-                % avoid cell array for single linear_transforms{ index_operator }
+                % avoid cell arrays for single linear_transforms{ index_operator }
                 if isscalar( linear_transforms{ index_operator } )
                     theta_hat{ index_operator } = theta_hat{ index_operator }{ 1 };
+                    rel_RMSE{ index_operator } = rel_RMSE{ index_operator }{ 1 };
                 end
 
             end % for index_operator = 1:numel( operators_born )
 
-            % avoid cell array for single operators_born
+            % avoid cell arrays for single operators_born
             if isscalar( operators_born )
                 theta_hat = theta_hat{ 1 };
+                rel_RMSE = rel_RMSE{ 1 };
             end
 
-        end % function theta_hat = adjoint( operators_born, u_M, varargin )
+        end % function [ theta_hat, rel_RMSE ] = adjoint( operators_born, u_M, varargin )
 
         %------------------------------------------------------------------
         % transform point spread function (overload tpsf method)
@@ -721,7 +751,7 @@ classdef operator_born < scattering.operator
                     % unique indices of selected sequential pulse-echo measurements
                     [ indices_measurement_sel_unique, ~, indices_config ] = unique( cat( 1, indices_measurement_sel{ index_operator }{ index_transform }{ : } ) );
                     indices_config = mat2cell( indices_config, cellfun( @numel, indices_measurement_sel{ index_operator }{ index_transform } ) );
-
+% TODO: check unique transforms if they are stacked!
                     % check linear transform
                     if ~isempty( linear_transforms{ index_operator }{ index_transform } )
 
