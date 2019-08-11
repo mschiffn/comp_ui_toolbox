@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2019-06-25
+% modified: 2019-08-10
 %
 classdef options
 
@@ -13,8 +13,9 @@ classdef options
 	properties (SetAccess = private)
 
         % independent properties
-        rel_RMSE ( 1, 1 ) double { mustBeNonnegative, mustBeLessThanOrEqual( rel_RMSE, 1 ) } = 0.2	% relative root-mean squared error
+        rel_RMSE ( 1, 1 ) double { mustBeNonnegative, mustBeLessThanOrEqual( rel_RMSE, 1 ) } = 0.3	% relative root-mean squared error
         N_iterations_max ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 1e3	% maximum number of iterations
+        normalization ( 1, 1 ) optimization.options_normalization { mustBeNonempty } = optimization.options_normalization_off % normalization options
 
     end % properties
 
@@ -39,25 +40,21 @@ classdef options
             % property validation functions ensure valid rel_RMSE
             % property validation functions ensure valid N_iterations_max
 
-            % ensure defined x_0
-%             if nargin >= 3 && ~isempty( varargin{ 1 } )
-%                 x_0 = varargin{ 1 };
-%             else
-%                 x_0 = cell( size( rel_RMSE ) );
-%             end
-
-            % ensure cell array for x_0
-%             if ~iscell( x_0 )
-%                 x_0 = { x_0 };
-%             end
-
             % multiple rel_RMSE / single N_iterations_max
             if ~isscalar( rel_RMSE ) && isscalar( N_iterations_max )
                 N_iterations_max = repmat( N_iterations_max, size( rel_RMSE ) );
             end
 
+            % iterate arguments
+            for index_arg = 1:numel( varargin )
+                % multiple rel_RMSE / single varargin{ index_arg }
+                if ~isscalar( rel_RMSE ) && isscalar( varargin{ index_arg } )
+                    varargin{ index_arg } = repmat( varargin{ index_arg }, size( rel_RMSE ) );
+                end
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( rel_RMSE, N_iterations_max );
+            auxiliary.mustBeEqualSize( rel_RMSE, N_iterations_max, varargin{ : } );
 
             %--------------------------------------------------------------
             % 2.) create optimization options
@@ -71,7 +68,29 @@ classdef options
                 % set independent properties
                 objects( index_object ).rel_RMSE = rel_RMSE( index_object );
                 objects( index_object ).N_iterations_max = N_iterations_max( index_object );
-%                 objects( index_object ).x_0 = x_0{ index_object };
+
+                % iterate arguments
+                for index_arg = 1:numel( varargin )
+
+                    if isa( varargin{ index_arg }, 'optimization.options_normalization' )
+
+                        %--------------------------------------------------
+                        % a) normalization options
+                        %--------------------------------------------------
+                        objects( index_object ).normalization = varargin{ index_arg }( index_object );
+
+                    else
+
+                        %--------------------------------------------------
+                        % b) unknown class
+                        %--------------------------------------------------
+                        errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
+                        errorStruct.identifier = 'options:UnknownClass';
+                        error( errorStruct );
+
+                    end % if isa( varargin{ index_arg }, 'optimization.options_normalization' )
+
+                end % for index_arg = 1:numel( varargin )
 
             end % for index_object = 1:numel( objects )
 

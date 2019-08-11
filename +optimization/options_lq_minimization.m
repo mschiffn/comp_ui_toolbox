@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2019-06-25
+% modified: 2019-08-10
 %
 classdef options_lq_minimization < optimization.options
 
@@ -32,13 +32,6 @@ classdef options_lq_minimization < optimization.options
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-%             % return if no input argument
-%             if nargin == 0
-%                 rel_RMSE
-%                 N_iterations_max
-%                 q = 
-%             end
-
             % superclass ensures valid rel_RMSE
             % superclass ensures valid N_iterations_max
 
@@ -49,12 +42,7 @@ classdef options_lq_minimization < optimization.options
                 error( errorStruct );
             end
 
-            % ensure tau
-%             if nargin >= 5 && ~isempty( varargin{ 2 } )
-%                 tau = varargin{ 2 };
-%             else
-%                 tau = repmat( [], size( rel_RMSE ) );
-%             end
+            % superclass ensures valid varargin
 
             % multiple rel_RMSE / single q
             if ~isscalar( rel_RMSE ) && isscalar( q )
@@ -75,7 +63,6 @@ classdef options_lq_minimization < optimization.options
 
                 % set independent properties
                 objects( index_object ).q = q( index_object );
-%                 objects( index_object ).tau = tau( index_object );
 
             end % for index_object = 1:numel( objects )
 

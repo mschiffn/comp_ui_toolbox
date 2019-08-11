@@ -326,13 +326,48 @@ classdef operator_born < scattering.operator
                 end
             end
 
-            % ensure cell arrays of scalar transforms
-            linear_transforms = auxiliary.deepNum2Cell( linear_transforms );
-
             % ensure cell array for linear_transforms
-            if all( cellfun( @( x ) ~iscell( x ), linear_transforms ) ) || all( cellfun( @( x ) cellfun( @( x ) ~iscell( x ), x ), linear_transforms ) )
-                linear_transforms = { linear_transforms };
+            if ~iscell( linear_transforms )
+                % case 1.a)
+                linear_transforms = num2cell( linear_transforms );
             end
+
+            % 
+            if all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
+                % cases 1.b) or 2.a)
+                if ~isscalar( linear_transforms{ 1 } ) || ( numel( linear_transforms ) > 1 && N_config == 1 )
+                    % case 2.a)
+                    for index_transform = 1:numel( linear_transforms )
+                        linear_transforms{ index_transform } = num2cell( linear_transforms{ index_transform } );
+                    end
+                else
+                    % case 1.b)
+                    linear_transforms = { linear_transforms };
+                end
+            end
+
+            if all( cellfun( @( x ) all( cellfun( @( y ) ~iscell( y ), x ) ), linear_transforms ) )
+                % cases 2.b) or 3.a)
+                if ~isscalar( linear_transforms{ 1 }{ 1 } ) || ( numel( linear_transforms{1} ) > 1 && N_config == 1 )
+                    % case 3.a)
+                    for index_operator = 1:numel( linear_transforms )
+                        for index_transform = 1:numel( linear_transforms{ index_operator } )
+                            linear_transforms{ index_operator }{ index_transform } = num2cell( linear_transforms{ index_operator }{ index_transform } );
+                        end
+                    end
+                else
+                    % case 2.b)
+                    linear_transforms = { linear_transforms };
+                end
+            end
+
+            % ensure nested cell arrays of depth <= 3
+            % auxiliary.mustBeOfMaxDepth( linear_transforms, 3 );
+            % auxiliary.mustBeUniformNested( linear_transforms, 3 );
+
+            % ensure cell arrays of scalar transforms
+% TODO: geht so nicht!
+%             [ linear_transforms, depth ] = auxiliary.deepNum2Cell( linear_transforms );
  
             % multiple operators_born / single u_M
             if ~isscalar( operators_born ) && isscalar( u_M )
@@ -381,14 +416,19 @@ classdef operator_born < scattering.operator
                     % set momentary scattering operator options
                     operators_born_config = set_properties_momentary( operators_born( index_operator ), varargin{ 2:end } );
 
+                    % multiple operators_born_config / single linear_transforms{ index_operator }{ index_transform }
+                    if ~isscalar( operators_born_config ) && isscalar( linear_transforms{ index_operator }{ index_transform } )
+                        linear_transforms{ index_operator }{ index_transform } = repmat( linear_transforms{ index_operator }{ index_transform }, size( operators_born_config ) );
+                    end
+
                     % ensure equal number of dimensions and sizes
-                    auxiliary.mustBeEqualSize( linear_transforms{ index_operator }{ index_transform }, operators_born_config );
+                    auxiliary.mustBeEqualSize( operators_born_config, linear_transforms{ index_operator }{ index_transform } );
 
                     %------------------------------------------------------
                     % ii.) process configurations
                     %------------------------------------------------------
-                    % initialize adjoint fluctuations w/ zeros
-                    theta_hat{ index_operator }{ index_transform } = zeros( operators_born( index_operator ).discretization.spatial.grid_FOV.N_points, numel( operators_born_config ) );
+                    % initialize adjoint coefficients w/ zeros
+                    theta_hat{ index_operator }{ index_transform } = zeros( linear_transforms{ index_operator }{ index_transform }{ 1 }.N_coefficients, numel( operators_born_config ) );
                     rel_RMSE{ index_operator }{ index_transform } = zeros( 1, numel( operators_born_config ) );
 
                     % iterate configurations
@@ -517,7 +557,7 @@ classdef operator_born < scattering.operator
 
                 % ensure cell array for indices{ index_operator }
                 if ~iscell( indices{ index_operator } )
-                    indices{ index_operator } = { indices{ index_operator } };
+                    indices{ index_operator } = indices( index_operator );
                 end
 
                 % multiple linear_transforms{ index_operator } / single indices{ index_operator }

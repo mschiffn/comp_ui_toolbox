@@ -92,7 +92,7 @@ classdef setting_tx_QSW < controls.setting_tx
                 indicator_active( ~indicator_distance ) = true;
                 indicator_active( indicator_distance ) = all( asin( abs( vectors_src_ctr( indicator_distance, 1:N_dimensions_lateral ) ./ distances_src_ctr( indicator_distance ) ) ) <= angles( index_object, : ) / 2, 2 );
                 indices_active{ index_object } = find( indicator_active );
-
+% catch error if no element is active!
                 %----------------------------------------------------------
                 % b) impulse responses are delays
                 %----------------------------------------------------------

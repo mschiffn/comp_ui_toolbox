@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-08-06
+% modified: 2019-08-10
 %
 classdef composition < linear_transforms.linear_transform
 
@@ -229,6 +229,62 @@ classdef composition < linear_transforms.linear_transform
             end
 
         end % function y = adjoint_transform( LTs, x )
+
+        %------------------------------------------------------------------
+        % threshold
+        %------------------------------------------------------------------
+        function [ LTs, N_threshold ] = threshold( LTs, xis )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.weighting
+            if ~isa( LTs, 'linear_transforms.weighting' )
+                errorStruct.message = 'LTs must be linear_transforms.weighting!';
+                errorStruct.identifier = 'threshold:NoWeighting';
+                error( errorStruct );
+            end
+
+            % ensure valid xis ( 0; 1 ]
+            mustBePositive( xis );
+            mustBeLessThanOrEqual( xis, 1 );
+
+            % multiple LTs / single xis
+            if ~isscalar( LTs ) && isscalar( xis )
+                xis = repmat( xis, size( LTs ) );
+            end
+
+            % single LTs / multiple xis
+            if isscalar( LTs ) && ~isscalar( xis )
+                LTs = repmat( LTs, size( xis ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( LTs, xis );
+
+            %--------------------------------------------------------------
+            % 2.) apply thresholds to diagonal weighting matrices
+            %--------------------------------------------------------------
+            % initialize N_threshold with zeros
+            N_threshold = zeros( size( LTs ) );
+
+            % iterate diagonal weighting matrices
+            for index_object = 1:numel( LTs )
+
+                % compute threshold
+                one_over_lb = min( LTs( index_object ).weights ) / xis( index_object );
+
+                % detect invalid weights
+                indicator = LTs( index_object ).weights > one_over_lb;
+                N_threshold( index_object ) = sum( indicator );
+
+                % apply threshold
+                LTs( index_object ).weights( indicator ) = one_over_lb;
+                LTs( index_object ).weights_conj = conj( LTs( index_object ).weights );
+
+            end % for index_object = 1:numel( LTs )
+
+        end % function LTs = threshold( LTs, xis )
 
     end % methods
 
