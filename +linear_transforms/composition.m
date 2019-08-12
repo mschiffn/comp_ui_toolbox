@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-08-10
+% modified: 2019-08-12
 %
 classdef composition < linear_transforms.linear_transform
 
@@ -238,16 +238,14 @@ classdef composition < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class linear_transforms.weighting
-            if ~isa( LTs, 'linear_transforms.weighting' )
-                errorStruct.message = 'LTs must be linear_transforms.weighting!';
-                errorStruct.identifier = 'threshold:NoWeighting';
+            % ensure class linear_transforms.composition
+            if ~isa( LTs, 'linear_transforms.composition' )
+                errorStruct.message = 'LTs must be linear_transforms.composition!';
+                errorStruct.identifier = 'threshold:NoCompositions';
                 error( errorStruct );
             end
 
-            % ensure valid xis ( 0; 1 ]
-            mustBePositive( xis );
-            mustBeLessThanOrEqual( xis, 1 );
+            % method threshold in weighting ensures valid xis ( 0; 1 ]
 
             % multiple LTs / single xis
             if ~isscalar( LTs ) && isscalar( xis )
@@ -268,23 +266,22 @@ classdef composition < linear_transforms.linear_transform
             % initialize N_threshold with zeros
             N_threshold = zeros( size( LTs ) );
 
-            % iterate diagonal weighting matrices
+            % iterate composition of linear transforms (chain operation)
             for index_object = 1:numel( LTs )
 
-                % compute threshold
-                one_over_lb = min( LTs( index_object ).weights ) / xis( index_object );
+                % ensure class linear_transforms.weighting
+                if ~isa( LTs( index_object ).transforms{ 1 }, 'linear_transforms.weighting' )
+                    errorStruct.message = sprintf( 'LTs( %d ).transforms{ 1 } must be linear_transforms.weighting!', index_object );
+                    errorStruct.identifier = 'threshold:NoWeighting';
+                    error( errorStruct );
+                end
 
-                % detect invalid weights
-                indicator = LTs( index_object ).weights > one_over_lb;
-                N_threshold( index_object ) = sum( indicator );
-
-                % apply threshold
-                LTs( index_object ).weights( indicator ) = one_over_lb;
-                LTs( index_object ).weights_conj = conj( LTs( index_object ).weights );
+                % apply thresholds to diagonal weighting matrix
+                [ LTs( index_object ).transforms{ 1 }, N_threshold( index_object ) ] = threshold( LTs( index_object ).transforms{ 1 }, xis( index_object ) );
 
             end % for index_object = 1:numel( LTs )
 
-        end % function LTs = threshold( LTs, xis )
+        end % function [ LTs, N_threshold ] = threshold( LTs, xis )
 
     end % methods
 

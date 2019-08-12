@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-08-06
+% modified: 2019-08-12
 %
 classdef weighting < linear_transforms.invertible_linear_transform
 
@@ -290,7 +290,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
 
             end % for index_object = 1:numel( LTs )
 
-        end % function LTs = threshold( LTs, xis )
+        end % function [ LTs, N_threshold ] = threshold( LTs, xis )
 
     end % methods
 
