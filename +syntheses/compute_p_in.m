@@ -98,8 +98,11 @@ function fields = compute_p_in( spatiospectral, varargin )
                 % b) arbitrary grid
                 %----------------------------------------------------------
                 % compute spatial transfer function of the active array element
-% TODO: fix function call
-                h_tx_unique = discretizations.spatial_transfer_function( spatiospectral.spatial, spatiospectral.spectral( index_incident ), index_element );
+                h_tx_unique = transfer_function( spatiospectral.spatial, axes_f_unique( index_incident ), index_element );
+
+% apply spatial anti-aliasing filter?
+%                 h_tx_unique = discretizations.anti_aliasing_filter( operator_born.sequence.setup.xdc_array, operator_born.sequence.setup.homogeneous_fluid, h_tx_unique, operator_born.options.momentary.anti_aliasing );
+                h_tx_unique = double( h_tx_unique.samples );
 
             end % if isa( spatiospectral.spatial, 'discretizations.spatial_grid_symmetric' )
 
