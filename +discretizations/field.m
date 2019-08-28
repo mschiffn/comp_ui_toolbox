@@ -353,6 +353,60 @@ classdef field < discretizations.signal_matrix
 
         end % function hdl = show( fields )
 
+        %------------------------------------------------------------------
+        % show movie
+        %------------------------------------------------------------------
+        function hdl = show_movie( fields )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.field
+            if ~isa( fields, 'discretizations.field' )
+                errorStruct.message = 'fields must be discretizations.field!';
+                errorStruct.identifier = 'show_movie:NoFields';
+                error( errorStruct );
+            end
+
+            % ensure identical axes
+            if ~isequal( fields.axis )
+                errorStruct.message = 'Array processing of fields requires identical axes!';
+                errorStruct.identifier = 'show_movie:DifferentAxes';
+                error( errorStruct );
+            end
+
+            % ensure class math.grid_regular
+            indicator = cellfun( @( x ) ~isa( x, 'math.grid_regular' ), { fields.grid_FOV } );
+            if any( indicator( : ) )
+                errorStruct.message = 'fields.grid_FOV must be math.grid_regular!';
+                errorStruct.identifier = 'show_movie:IrregularGrids';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display fields
+            %--------------------------------------------------------------
+            % compute maximum absolute value
+            samples_abs_max = max( cellfun( @( x ) max( abs( x( : ) ) ), { fields.samples } ) );
+            hdl = figure( 999 );
+
+            % iterate samples
+            for index_sample = 1:abs( fields( 1 ).axis )
+
+                % iterate fields
+                for index_field = 1:numel( fields )
+
+                    subplot( size( fields, 1 ), size( fields, 2 ) );
+                    imagesc( reshape( fields( index_field ).samples( index_sample, : ) / samples_abs_max, fields( index_field ).grid_FOV.N_points_axis ), [ -1, 1 ] );
+
+                end % for index_field = 1:numel( fields )
+
+                pause( 0.05 );
+
+            end % for index_sample = 1:abs( fields( 1 ).axis )
+
+        end % function hdl = show( fields )
+
 	end % methods
 
 end % classdef field < discretizations.signal_matrix

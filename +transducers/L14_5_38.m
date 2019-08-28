@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2017-05-03
-% modified: 2019-03-25
+% modified: 2019-08-21
 %
 classdef L14_5_38 < transducers.array_planar_regular_orthogonal
 
@@ -45,7 +45,7 @@ classdef L14_5_38 < transducers.array_planar_regular_orthogonal
 %             parameters = project( transducers.parameters_L14_5_38, N_dimensions );
 
             % create reference face
-            lens = transducers.lens( parameters.axial_focus_axis, parameters.element_width_axis, parameters.absorption_model );
+            lens = transducers.lens( parameters.axial_focus_axis, parameters.absorption_model );
             intervals = num2cell( math.interval( physical_values.meter( zeros( 1, N_dimensions ) ), parameters.element_width_axis ) );
             face_ref = transducers.face_planar_orthotope( parameters.apodization, lens, intervals{ : } );
 

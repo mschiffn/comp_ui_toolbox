@@ -1,10 +1,10 @@
-function fields = compute_p_in( spatiospectral, varargin )
+function fields = compute_p_in( sequence, varargin )
 %
 % compute incident acoustic pressure field
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-07-15
+% modified: 2019-08-28
 %
 
 	% print status
@@ -15,9 +15,9 @@ function fields = compute_p_in( spatiospectral, varargin )
 	%----------------------------------------------------------------------
 	% 1.) check arguments
 	%----------------------------------------------------------------------
-	% ensure class discretizations.spatiospectral (scalar)
-	if ~( isa( spatiospectral, 'discretizations.spatiospectral' ) && isscalar( spatiospectral ) )
-        errorStruct.message = 'spatiospectral must be a single discretizations.spatiospectral!';
+	% ensure class pulse_echo_measurements.sequence (scalar)
+	if ~( isa( sequence, 'pulse_echo_measurements.sequence' ) && isscalar( sequence ) )
+        errorStruct.message = 'sequence must be a single pulse_echo_measurements.sequence!';
         errorStruct.identifier = 'compute_p_in:NoSpatiospectral';
         error( errorStruct );
     end
@@ -26,7 +26,7 @@ function fields = compute_p_in( spatiospectral, varargin )
 	if nargin >= 2 && ~isempty( varargin{ 1 } )
         indices_incident = varargin{ 1 };
     else
-        indices_incident = ( 1:numel( spatiospectral.spectral ) );
+        indices_incident = ( 1:numel( sequence.settings ) );
     end
 
 	% ensure positive integers
@@ -34,7 +34,7 @@ function fields = compute_p_in( spatiospectral, varargin )
 	mustBePositive( indices_incident );
 
 	% ensure that indices_incident do not exceed the number of sequential pulse-echo measurements
-	if any( indices_incident > numel( spatiospectral.spectral ) )
+	if any( indices_incident > numel( sequence.settings ) )
         errorStruct.message = 'indices_incident must not exceed the number of sequential pulse-echo measurements!';
         errorStruct.identifier = 'compute_p_in:InvalidMeasurement';
         error( errorStruct );
@@ -44,13 +44,13 @@ function fields = compute_p_in( spatiospectral, varargin )
 	% 2.) compute incident acoustic pressure fields
 	%----------------------------------------------------------------------
 	% map unique frequencies of pulse-echo measurements to unique frequencies
-	indices_f_to_unique_measurement = spatiospectral.indices_f_to_unique( indices_incident );
+	indices_f_to_unique_measurement = sequence.indices_f_to_unique( indices_incident );
 
 	% extract transducer control settings in synthesis mode (unique frequencies)
-	settings_tx_unique = reshape( [ spatiospectral.spectral( indices_incident ).tx_unique ], size( indices_incident ) );
+	settings_tx_unique = reshape( [ sequence.settings( indices_incident ).tx_unique ], size( indices_incident ) );
 
 	% extract normal velocities (unique frequencies)
-	v_d_unique = reshape( [ spatiospectral.spectral( indices_incident ).v_d_unique ], size( indices_incident ) );
+	v_d_unique = reshape( [ sequence.settings( indices_incident ).v_d_unique ], size( indices_incident ) );
 
 	% extract frequency axes (unique frequencies)
 	axes_f_unique = reshape( [ v_d_unique.axis ], size( indices_incident ) );
@@ -72,7 +72,7 @@ function fields = compute_p_in( spatiospectral, varargin )
         % b) superimpose quasi-(d-1)-spherical waves
         %------------------------------------------------------------------
         % initialize pressure fields with zeros
-        p_incident{ index_incident_sel } = physical_values.pascal( zeros( N_samples_f( index_incident_sel ), spatiospectral.spatial.grid_FOV.N_points ) );
+        p_incident{ index_incident_sel } = physical_values.pascal( zeros( N_samples_f( index_incident_sel ), sequence.setup.FOV.shape.grid.N_points ) );
 
         % iterate active array elements
         for index_active = 1:numel( settings_tx_unique( index_incident_sel ).indices_active )
@@ -81,16 +81,17 @@ function fields = compute_p_in( spatiospectral, varargin )
             index_element = settings_tx_unique( index_incident_sel ).indices_active( index_active );
 
             % spatial transfer function of the active array element
-            if isa( spatiospectral.spatial, 'discretizations.spatial_grid_symmetric' )
+            if isa( sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
 
                 %----------------------------------------------------------
                 % a) symmetric spatial discretization based on orthogonal regular grids
                 %----------------------------------------------------------
                 % shift reference spatial transfer function to infer that of the active array element
-                indices_occupied_act = spatiospectral.spatial.indices_grid_FOV_shift( :, index_element );
+                indices_occupied_act = sequence.setup.indices_grid_FOV_shift( :, index_element );
 
                 % extract current frequencies from unique frequencies
-                h_tx_unique = double( spatiospectral.h_ref.samples( indices_f_to_unique_act, indices_occupied_act ) );
+%                 h_tx_unique = double( sequence.h_ref.samples( indices_f_to_unique_act, indices_occupied_act ) );
+                h_tx_unique = double( sequence.h_ref_aa.samples( indices_f_to_unique_act, indices_occupied_act ) );
 
             else
 
@@ -98,13 +99,14 @@ function fields = compute_p_in( spatiospectral, varargin )
                 % b) arbitrary grid
                 %----------------------------------------------------------
                 % compute spatial transfer function of the active array element
-                h_tx_unique = transfer_function( spatiospectral.spatial, axes_f_unique( index_incident ), index_element );
+                h_tx_unique = transfer_function( sequence.setup, axes_f_unique( index_incident ), index_element );
 
-% apply spatial anti-aliasing filter?
-%                 h_tx_unique = discretizations.anti_aliasing_filter( operator_born.sequence.setup.xdc_array, operator_born.sequence.setup.homogeneous_fluid, h_tx_unique, operator_born.options.momentary.anti_aliasing );
+                % apply spatial anti-aliasing filter
+% TODO: anti-aliasing options!
+                h_tx_unique = anti_aliasing_filter( sequence.setup, h_tx_unique, operator_born.options.momentary.anti_aliasing );
                 h_tx_unique = double( h_tx_unique.samples );
 
-            end % if isa( spatiospectral.spatial, 'discretizations.spatial_grid_symmetric' )
+            end % if isa( sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
 
             % compute summand for the incident pressure field
             p_incident_summand = h_tx_unique .* double( v_d_unique( index_incident_sel ).samples( :, index_active ) );
@@ -115,8 +117,13 @@ function fields = compute_p_in( spatiospectral, varargin )
             p_incident{ index_incident_sel } = p_incident{ index_incident_sel } + physical_values.pascal( p_incident_summand );
 
             % display result
-            figure(index_incident_sel);
-            imagesc( abs( double( squeeze( reshape( p_incident{ index_incident_sel }( 1, : ), spatiospectral.spatial.grid_FOV.N_points_axis ) ) ) ) );
+            figure( index_incident_sel );
+            test = squeeze( reshape( p_incident{ index_incident_sel }( 1, : ), sequence.setup.FOV.shape.grid.N_points_axis ) );
+            if ndims( test ) == 2
+                imagesc( abs( double( test ) ) );
+            else
+                imagesc( abs( double( squeeze( test( :, 1, : ) ) ) ) );
+            end
 
         end % for index_active = 1:numel( settings_tx_unique( index_incident_sel ).indices_active )
 
@@ -125,10 +132,10 @@ function fields = compute_p_in( spatiospectral, varargin )
 	%----------------------------------------------------------------------
 	% 3.) create field objects
 	%----------------------------------------------------------------------
-	fields = discretizations.field( axes_f_unique, repmat( spatiospectral.spatial.grid_FOV, size( indices_incident ) ), p_incident );
+	fields = discretizations.field( axes_f_unique, repmat( sequence.setup.FOV.shape.grid, size( indices_incident ) ), p_incident );
 
 	% infer and print elapsed time
 	time_elapsed = toc( time_start );
 	fprintf( 'done! (%f s)\n', time_elapsed );
 
-end % function fields = compute_p_in( spatiospectral, varargin )
+end % function fields = compute_p_in( sequence, varargin )

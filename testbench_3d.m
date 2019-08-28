@@ -125,9 +125,9 @@ end
 % 1.) specify options
 %--------------------------------------------------------------------------
 % spatial discretization options
-parameters_elements = discretizations.parameters_number( [ 4, 53 ] );
-parameters_FOV = discretizations.parameters_distance( physical_values.meter( [ 76.2e-6, 4e-3, 76.2e-6 ] ) );
-options_disc_spatial = discretizations.options_spatial_grid( parameters_elements, parameters_FOV );
+method_faces = discretizations.options_spatial_method_grid_numbers( [ 4, 53 ] );
+method_FOV = discretizations.options_spatial_method_grid_distances( physical_values.meter( [ 76.2e-6, 4e-3, 76.2e-6 ] ) );
+options_disc_spatial = discretizations.options_spatial( method_faces, method_FOV );
 
 % spectral discretization options
 % options_disc_spectral = discretizations.options_spectral.signal;

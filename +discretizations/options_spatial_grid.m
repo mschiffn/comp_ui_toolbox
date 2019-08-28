@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-19
-% modified: 2019-08-01
+% modified: 2019-08-21
 %
-classdef options_spatial_grid < discretizations.options_spatial
+classdef options_spatial
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -64,4 +64,4 @@ classdef options_spatial_grid < discretizations.options_spatial
 
 	end % methods
 
-end % classdef options_spatial_grid < discretizations.options_spatial
+end % classdef options_spatial

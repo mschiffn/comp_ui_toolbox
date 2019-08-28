@@ -1,20 +1,11 @@
 %
-% superclass for all planar vibrating faces
+% superclass for all continuous planar vibrating faces
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-06-03
+% modified: 2019-08-20
 %
 classdef face_planar < transducers.face
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-
-        % independent properties
-    
-    end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -39,4 +30,4 @@ classdef face_planar < transducers.face
 
     end % methods
 
-end % classdef face_planar < transducers.face
+end % classdef face_planar < transducers.continuous.face & transducers.face_planar

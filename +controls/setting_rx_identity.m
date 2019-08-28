@@ -41,7 +41,7 @@ classdef setting_rx_identity < controls.setting_rx
             indices_active = num2cell( ( 1:setup.xdc_array.N_elements ) );
 
             % impulse responses are identities
-            weight = physical_values.volt_per_newton * physical_values.meter^( 3 - setup.FOV.N_dimensions );
+            weight = physical_values.volt_per_newton * physical_values.meter^( 3 - setup.FOV.shape.N_dimensions );
             impulse_responses = repmat( { discretizations.delta_matrix( 0, setup.T_clk, weight ) }, [ 1, setup.xdc_array.N_elements ] );
 
             %--------------------------------------------------------------

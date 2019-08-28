@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-06-02
+% modified: 2019-08-27
 %
 classdef setting_tx_QPW < controls.setting_tx
 
@@ -25,7 +25,7 @@ classdef setting_tx_QPW < controls.setting_tx
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_tx_QPW( setup, excitation_voltages_common, e_theta )
+        function objects = setting_tx_QPW( setup, u_tx_tilde, e_theta )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -44,7 +44,7 @@ classdef setting_tx_QPW < controls.setting_tx
                 error( errorStruct );
             end
 
-            % excitation_voltages_common will be checked in superclass
+            % superclass checks u_tx_tilde
 
             % ensure class math.unit_vector
             if ~isa( e_theta, 'math.unit_vector' )
@@ -54,18 +54,18 @@ classdef setting_tx_QPW < controls.setting_tx
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( excitation_voltages_common, e_theta );
+            auxiliary.mustBeEqualSize( u_tx_tilde, e_theta );
 
             %--------------------------------------------------------------
             % 2.) compute synthesis settings for QPWs
             %--------------------------------------------------------------
             % number of sequential syntheses
-            N_objects = numel( excitation_voltages_common );
+            N_objects = numel( u_tx_tilde );
 
             % allocate cell arrays to store synthesis settings
-            indices_active = cell( size( excitation_voltages_common ) );
-            impulse_responses = cell( size( excitation_voltages_common ) );
-            excitation_voltages = cell( size( excitation_voltages_common ) );
+            indices_active = cell( size( u_tx_tilde ) );
+            impulse_responses = cell( size( u_tx_tilde ) );
+            excitation_voltages = cell( size( u_tx_tilde ) );
 
             % iterate synthesis settings
             for index_object = 1:N_objects
@@ -89,7 +89,7 @@ classdef setting_tx_QPW < controls.setting_tx
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements
                 %----------------------------------------------------------
-                excitation_voltages{ index_object } = excitation_voltages_common( index_object );
+                excitation_voltages{ index_object } = u_tx_tilde( index_object );
 
             end % for index_object = 1:N_objects
 
@@ -108,7 +108,7 @@ classdef setting_tx_QPW < controls.setting_tx
 
             end
 
-        end % function objects = setting_tx_QPW( setup, excitation_voltages_common, e_theta )
+        end % function objects = setting_tx_QPW( setup, u_tx_tilde, e_theta )
 
 	end % methods
 

@@ -19,7 +19,7 @@ CUDA_LIB_PATH = sprintf( '%s/lib64', CUDA_ROOT );
 
 % specify architecture
 % (embed PTX code for several architectures if necessary; PTX code will be compiled just-in-time)
-CUDA_ARCH = 'sm_30';
+CUDA_ARCH = 'sm_61';
 % -use_fast_math
 
 %--------------------------------------------------------------------------

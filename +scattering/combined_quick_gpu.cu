@@ -28,6 +28,7 @@
 // would iterate over each pair of inputs from the device pointers x and y and calculate z[i] = x[i] * y[i]
 // (there is probably a couple of casts you need to make to compile that, but you get the idea). But that effectively requires compilation of CUDA code within your project, and apparently you don't want that.
 
+// TODO: also use pinned buffer memory for real values and integers!
 // TODO: mwSize vs size_t in mxMalloc
 // TODO: make h_ref persistent -> persistent pointers to d_indices_grid_FOV_shift, d_prefactors_mix_float_complex
 // TODO: cudaProfilerInitialize, cudaProfilerStart, cudaProfilerStop
@@ -148,9 +149,10 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	mxComplexDouble* output_complex = NULL;
 
 	// misc variables
+	size_t size_bytes_1 = 0, size_bytes_2 = 0;
 	mxDouble* size = NULL;
-	mxArray* discretization = NULL;
-	mxArray* discretization_spectral = NULL;
+	mxArray* sequence = NULL;
+	mxArray* sequence_settings = NULL;
 	mxArray* rx_measurement = NULL;
 	mxArray* prefactors_measurement = NULL;
 	mxArray* temp = NULL;
@@ -204,10 +206,10 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	if( mxIsClass( prhs[ 0 ], "scattering.operator_born" ) && mxIsScalar( prhs[ 0 ] ) )
 	{
 
-		discretization = mxGetProperty( prhs[ 0 ], 0, "discretization" );
-		size = mxGetDoubles( mxGetProperty( discretization, 0, "size" ) );
+		sequence = mxGetProperty( prhs[ 0 ], 0, "sequence" );
+		size = mxGetDoubles( mxGetProperty( sequence, 0, "size" ) );
 
-		discretization_spectral = mxGetProperty( discretization, 0, "spectral" );
+		sequence_settings = mxGetProperty( sequence, 0, "settings" );
 
 		// number of observations
 		// N_observations_sel = mxGetM( prhs[ 2 ] );
@@ -215,15 +217,15 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 		if( DEBUG_MODE ) mexPrintf( "N_observations_sel = %d\n", N_observations_sel );
 
 		// number of grid points
-		// N_points = (int) mxGetScalar( mxGetProperty( mxGetProperty( mxGetProperty( discretization, 0, "spatial" ), 0, "grid_FOV" ), 0, "N_points" ) );
+		// N_points = (int) mxGetScalar( mxGetProperty( mxGetProperty( mxGetProperty( sequence, 0, "setup" ), 0, "grid_FOV" ), 0, "N_points" ) );
 		N_points = (int) size[ 1 ];
 		if( DEBUG_MODE ) mexPrintf( "N_points = %d\n", N_points );
 
-        // ensure class discretizations.spatial_grid_symmetric
-        if( !mxIsClass( mxGetProperty( discretization, 0, "spatial" ), "discretizations.spatial_grid_symmetric" ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoSymmetricSpatialGrids", "discretization.spatial must be discretizations.spatial_grid_symmetric!" );
+		// ensure class pulse_echo_measurements.setup_grid_symmetric
+		if( !mxIsClass( mxGetProperty( sequence, 0, "setup" ), "pulse_echo_measurements.setup_grid_symmetric" ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoSymmetricGridsSetup", "sequence.setup must be pulse_echo_measurements.setup_grid_symmetric!" );
 
-        // extract indices of shifted grid points
-        indices_grid_FOV_shift_double = mxGetDoubles( mxGetProperty( mxGetProperty( discretization, 0, "spatial" ), 0, "indices_grid_FOV_shift" ) );
+		// extract indices of shifted grid points
+		indices_grid_FOV_shift_double = mxGetDoubles( mxGetProperty( mxGetProperty( sequence, 0, "setup" ), 0, "indices_grid_FOV_shift" ) );
 
 		// number of array elements
 		N_elements = (int) mxGetScalar( mxGetProperty( mxGetProperty( mxGetProperty( mxGetProperty( prhs[ 0 ], 0, "sequence" ), 0, "setup" ), 0, "xdc_array" ), 0, "N_elements" ) );
@@ -257,7 +259,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 			index_measurement = (int) indices_measurement_sel_double[ index_measurement_sel ] - 1;
 
 			// numbers of mixed voltage signals per measurement
-			N_mix_measurement[ index_measurement_sel ] = mxGetNumberOfElements( mxGetProperty( discretization_spectral, index_measurement, "rx" ) );
+			N_mix_measurement[ index_measurement_sel ] = mxGetNumberOfElements( mxGetProperty( sequence_settings, index_measurement, "rx" ) );
 			if( DEBUG_MODE ) mexPrintf( "N_mix_measurement[%d] = %d\n", index_measurement_sel, N_mix_measurement[ index_measurement_sel ] );
 
 			// allocate memory
@@ -270,10 +272,10 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 			prefactors_mix_complex[ index_measurement_sel ] = (mxComplexDouble**) mxMalloc( N_mix_measurement[ index_measurement_sel ] * sizeof( mxComplexDouble* ) );
 
 			// map unique frequencies of pulse-echo measurement to global unique frequencies
-			indices_f_measurement_to_sequence_double = mxGetDoubles( mxGetCell( mxGetProperty( discretization, 0, "indices_f_to_unique" ), (mwIndex) index_measurement ) );
+			indices_f_measurement_to_sequence_double = mxGetDoubles( mxGetCell( mxGetProperty( sequence, 0, "indices_f_to_unique" ), (mwIndex) index_measurement ) );
 
 			// number of unique frequencies in current measurement
-			N_f_unique_measurement[ index_measurement_sel ] = mxGetM( mxGetCell( mxGetProperty( discretization, 0, "indices_f_to_unique" ), (mwIndex) index_measurement ) );
+			N_f_unique_measurement[ index_measurement_sel ] = mxGetM( mxGetCell( mxGetProperty( sequence, 0, "indices_f_to_unique" ), (mwIndex) index_measurement ) );
 			if( DEBUG_MODE ) mexPrintf( "N_f_unique_measurement[%d] = %d\n", index_measurement_sel, N_f_unique_measurement[ index_measurement_sel ] );
 
 			// maximum number of unique frequencies in all pulse-echo measurements
@@ -283,14 +285,14 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 			N_observations_measurement[ index_measurement_sel ] = 0;
 
 			// extract prefactors for all mixes
-			prefactors_measurement = mxGetCell( mxGetProperty( discretization, 0, "prefactors" ), (mwIndex) index_measurement );
+			prefactors_measurement = mxGetCell( mxGetProperty( sequence, 0, "prefactors" ), (mwIndex) index_measurement );
 
 			// iterate mixed voltage signals
 			for( int index_mix = 0; index_mix < N_mix_measurement[ index_measurement_sel ]; index_mix++ )
 			{
 
 				// number of frequencies in current mix
-				N_f_mix[ index_measurement_sel ][ index_mix ] = mxGetM( mxGetProperty( mxGetProperty( mxGetCell( mxGetProperty( discretization, 0, "prefactors" ), (mwIndex) index_measurement ), index_mix, "samples" ), 0, "values" ) );
+				N_f_mix[ index_measurement_sel ][ index_mix ] = mxGetM( mxGetProperty( mxGetProperty( mxGetCell( mxGetProperty( sequence, 0, "prefactors" ), (mwIndex) index_measurement ), index_mix, "samples" ), 0, "values" ) );
 				if( DEBUG_MODE ) mexPrintf( "N_f_mix[%d][%d] = %d\n", index_measurement_sel, index_mix, N_f_mix[ index_measurement_sel ][ index_mix ] );
 
 				// maximum number of frequencies in all mixed voltage signals
@@ -301,7 +303,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 				if( DEBUG_MODE ) mexPrintf( "N_f_mix_cs[%d][%d] = %d\n", index_measurement_sel, index_mix, N_f_mix_cs[ index_measurement_sel ][ index_mix ] );
 
 				// number of active array elements in each mixed voltage signal
-				rx_measurement = mxGetProperty( mxGetProperty( discretization_spectral, index_measurement, "rx" ), index_mix, "indices_active" );
+				rx_measurement = mxGetProperty( mxGetProperty( sequence_settings, index_measurement, "rx" ), index_mix, "indices_active" );
 				N_elements_active_mix[ index_measurement_sel ][ index_mix ] = mxGetNumberOfElements( rx_measurement );
 				if( DEBUG_MODE ) mexPrintf( "N_elements_active_mix[%d][%d] = %d\n", index_measurement_sel, index_mix, N_elements_active_mix[ index_measurement_sel ][ index_mix ] );
 
@@ -309,7 +311,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 				indices_active_mix_double = mxGetDoubles( rx_measurement );
 
 				// map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
-				indices_f_mix_to_measurement_double = mxGetDoubles( mxGetCell( mxGetProperty( discretization_spectral, index_measurement, "indices_f_to_unique" ), (mwIndex) index_mix ) );
+				indices_f_mix_to_measurement_double = mxGetDoubles( mxGetCell( mxGetProperty( sequence_settings, index_measurement, "indices_f_to_unique" ), (mwIndex) index_mix ) );
 
 				// allocate memory
 				indices_f_mix_to_measurement[ index_measurement_sel ][ index_mix ] = (int*) mxMalloc( N_f_mix[ index_measurement_sel ][ index_mix ] * sizeof( int ) );
@@ -362,6 +364,12 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 
 		// number of selected observations
 		N_observations_sel = N_observations_measurement_cs[ N_measurements_sel - 1 ] + N_observations_measurement[ N_measurements_sel - 1 ];
+
+		// ensure class scattering.options.gpu_active
+		if( !mxIsClass( mxGetProperty( mxGetProperty( mxGetProperty( prhs[ 0 ], 0, "options" ), 0, "momentary" ), 0, "gpu" ), "scattering.options.gpu_active" ) )
+		{
+			mexErrMsgIdAndTxt( "combined_quick_gpu:NoScatteringOptionsGPUActive", "options.momentary.gpu must be scattering.options.gpu_active!" );
+		}
 
 		// index of CUDA device
 		index_device = (int) mxGetScalar( mxGetProperty( mxGetProperty( mxGetProperty( mxGetProperty( prhs[ 0 ], 0, "options" ), 0, "momentary" ), 0, "gpu" ), 0, "index" ) );
@@ -503,16 +511,29 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	// 5.)  allocate and initialize device memory / convert data to float and copy to the device
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// TODO: also use buffer for real values and integers!
+	// size of conversion buffer: use maximum of
+		// a) d_h_ref_float_complex:
+		//	  N_f_unique * N_points * sizeof( t_float_complex_gpu ) [ reference spatial transfer function ] (checked!)
+		// b) d_prefactors_mix_float_complex[ index_measurement_sel ][ index_mix ][ index_active ]:
+		//    N_f_mix_max * sizeof( t_float_complex_gpu ) [ prefactors ]
+		// c) d_gamma_kappa_float_complex:
+		//    N_points_occupied * N_objects * sizeof( t_float_complex_gpu ) [ relative spatial fluctuations in compressibility ]
+		// d) d_u_M_float_complex[ index_measurement_sel ][ index_mix ]:
+		//	  N_f_mix_max * N_objects * sizeof( t_float_complex_gpu )
+		// e) d_p_incident_measurement_float_complex:
+		//	  N_f_unique_measurement_max * N_points_occupied * sizeof( t_float_complex_gpu )
+		//
+		// => a) > b), e)
+		// => a), d) vs. c)
+		// N_f_unique * max( N_points, N_objects ) vs. N_points_occupied * N_objects
 
-// TODO: compute size of conversion buffer
-	// use maximum of
-		// a) d_h_ref_float_complex: N_f_unique * N_points * sizeof( t_float_complex_gpu ) [ reference spatial transfer function ]
 		// b) d_indices_grid_FOV_shift[ index_element ]: N_points_occupied * sizeof( int ) [ indices of shifted grid points for each array element ]
-		// c) d_prefactors_mix_float_complex[ index_measurement_sel ][ index_mix ][ index_active ]: N_f_mix_max * sizeof( t_float_complex_gpu ) [ p]
-		// d) d_gamma_kappa_float_complex: N_points_occupied * N_objects * sizeof( t_float_complex_gpu ) [ relative spatial fluctuations in compressibility ]
-		// e) d_u_M_float_complex: N_f_mix_max * N_objects * sizeof( t_float_complex_gpu )
 
-	size_bytes_buffer = N_f_unique * N_points * sizeof( t_float_complex_gpu );
+	//size_bytes_buffer = N_f_unique * N_points * sizeof( t_float_complex_gpu );	
+	size_bytes_1 = N_f_unique * ( ( N_points > N_objects ) ? N_points : N_objects );
+	size_bytes_2 = N_points_occupied * N_objects;
+	size_bytes_buffer = ( ( size_bytes_1 > size_bytes_2 ) ? size_bytes_1 : size_bytes_2 ) * sizeof( t_float_complex_gpu );
 	if( DEBUG_MODE ) mexPrintf( "size_bytes_buffer = %.2f MiB (%zu B)\n", ( ( double ) size_bytes_buffer ) / BYTES_PER_MEBIBYTE, size_bytes_buffer );
 
 	// allocate page-locked memory

@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-28
-% modified: 2019-06-01
+% modified: 2019-08-27
 %
 classdef sequence_rnd_del < pulse_echo_measurements.sequence
 

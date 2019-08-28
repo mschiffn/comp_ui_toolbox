@@ -3,19 +3,19 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-06-04
+% modified: 2019-08-23
 %
 classdef face
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties ( SetAccess = private )
+	properties (SetAccess = private)
 
         % independent properties
-        shape % ( 1, 1 ) math.shape
-        apodization ( 1, 1 ) function_handle = @( pos_rel_norm ) ones( size( pos_rel_norm, 1 ), 1 );	% apodization along each coordinate axis (pos_rel_norm = normalized relative positions of the grid points)
-        lens ( 1, 1 ) transducers.lens
+        shape ( 1, 1 ) geometry.shape { mustBeNonempty } = geometry.orthotope	% shape of the vibrating face
+        apodization ( :, 1 ) = @transducers.apodization.uniform                 % apodization along each coordinate axis
+        lens ( 1, 1 ) transducers.lens                                          % acoustic lens
 
 	end % properties
 
@@ -37,13 +37,19 @@ classdef face
                 return;
             end
 
-            % property validation function ensures class math.shape for shapes
+            % ensure class geometry.shape
+            if ~isa( shapes, 'geometry.shape' )
+                errorStruct.message = 'shapes must be geometry.shape!';
+                errorStruct.identifier = 'face:NoShapes';
+                error( errorStruct );
+            end
 
             % ensure cell array for apodizations
             if ~iscell( apodizations )
                 apodizations = { apodizations };
             end
 
+% TODO: lens
             % property validation function ensures class transducers.lens for lenses
 
             % ensure equal number of dimensions and sizes
@@ -89,10 +95,23 @@ classdef face
         %------------------------------------------------------------------
         function positions_ctr = center( faces )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class transducers.face
+            if ~isa( faces, 'transducers.face' )
+                errorStruct.message = 'faces must be transducers.face!';
+                errorStruct.identifier = 'center:NoFaces';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) compute centers of vibrating faces
+            %--------------------------------------------------------------
             % specify cell array for positions_ctr
             positions_ctr = cell( numel( faces ), 1 );
 
-            % iterate planar vibrating faces
+            % iterate vibrating faces
             for index_object = 1:numel( faces )
                 positions_ctr{ index_object } = center( faces( index_object ).shape );
             end
@@ -106,16 +125,16 @@ classdef face
         end % function positions_ctr = center( faces )
 
         %------------------------------------------------------------------
-        % replicate faces
+        % replicate reference faces
         %------------------------------------------------------------------
-        function out = replicate( faces, grids )
+        function apertures = replicate( faces_ref, grids )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class transducers.face
-            if ~isa( faces, 'transducers.face' )
-                errorStruct.message = 'faces must be transducers.face!';
+            if ~isa( faces_ref, 'transducers.face' )
+                errorStruct.message = 'faces_ref must be transducers.face!';
                 errorStruct.identifier = 'replicate:NoFaces';
                 error( errorStruct );
             end
@@ -128,36 +147,41 @@ classdef face
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( faces, grids );
+            auxiliary.mustBeEqualSize( faces_ref, grids );
 
             %--------------------------------------------------------------
-            % 2.) check arguments
+            % 2.) replicate reference faces
             %--------------------------------------------------------------
-            % specify cell array for out
-            out = cell( size( faces ) );
+            % specify cell array for apertures
+            apertures = cell( size( faces_ref ) );
 
-            % iterate faces
-            for index_object = 1:numel( faces )
+            % iterate vibrating reference faces
+            for index_object = 1:numel( faces_ref )
 
-                % repeat current face
-                out{ index_object } = repmat( faces( index_object ), [ grids( index_object ).N_points, 1 ] );
+                % repeat current reference face
+                apertures{ index_object } = repmat( faces_ref( index_object ), [ grids( index_object ).N_points, 1 ] );
 
                 % move shapes into specified positions
-                shapes = move( [ out{ index_object }.shape ]', mat2cell( grids.positions, ones( grids( index_object ).N_points, 1 ), grids( index_object ).N_dimensions ) );
+                shapes = move( [ apertures{ index_object }.shape ]', mat2cell( grids.positions, ones( grids( index_object ).N_points, 1 ), grids( index_object ).N_dimensions ) );
 
-                % assign shapes
+                % assign moved shapes
                 for index = 1:grids( index_object ).N_points
-                    out{ index_object }( index ).shape = shapes( index );
+                    apertures{ index_object }( index ).shape = shapes( index );
                 end
 
-            end % for index_object = 1:numel( faces )
+            end % for index_object = 1:numel( faces_ref )
 
-        end % function out = replicate( faces, grids )
+            % avoid cell array for single faces_ref
+            if isscalar( faces_ref )
+                apertures = apertures{ 1 };
+            end
+
+        end % function apertures = replicate( faces_ref, grids )
 
         %------------------------------------------------------------------
         % discretize
         %------------------------------------------------------------------
-        function structs_out = discretize( faces, parameters )
+        function faces = discretize( faces, methods )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -169,38 +193,40 @@ classdef face
                 error( errorStruct );
             end
 
-            % method discretize in shape ensures class discretizations.parameters for options_elements
+            % method discretize in shape ensures shape and class discretizations.options_spatial_method for methods
 
             %--------------------------------------------------------------
             % 2.) discretize vibrating faces
             %--------------------------------------------------------------
             % discretize shapes
-            grids_act = discretize( reshape( [ faces.shape ], size( faces ) ), parameters );
-% TODO: centers
-            % specify cell arrays for apodization and time delays
-            apodization_act = cell( size( grids_act ) );
-            time_delays_act = cell( size( grids_act ) );
+%             cellfun( @( x ) discretize( x, methods ), { faces.shape } )
+            shapes_discrete = discretize( reshape( [ faces.shape ], size( faces ) ), methods );
+
+            % compute centers of vibrating faces
+            positions_ctr = center( faces );
 
             % iterate vibrating faces
-            for index_element = 1:numel( grids_act )
+            for index_face = 1:numel( shapes_discrete )
+
+                % assign discrete shape
+                faces( index_face ).shape = shapes_discrete( index_face );
 
                 % compute normalized relative positions of the grid points
-                positions_rel = grids_act( index_element ).positions - center( faces( index_element ).shape );
-                positions_rel_norm = 2 * positions_rel ./ abs( faces( index_element ).shape.intervals );
+% TODO: only valid for grids!
+% TODO: only valid for orthotope!
+% TODO: move to method in discretized shape?
+                positions_rel = faces( index_face ).shape.grid.positions - positions_ctr( index_face, : );
+                positions_rel_norm = 2 * positions_rel ./ abs( faces( index_face ).shape.intervals );
 
-                % compute apodization weights
-                apodization_act{ index_element } = faces( index_element ).apodization( positions_rel_norm );
+                % evaluate apodization weights
+                faces( index_face ).apodization = faces( index_face ).apodization( positions_rel_norm );
 
-                % compute time delays for each coordinate axis
-% TODO: compute in spatial transfer function
-                time_delays_act{ index_element } = faces( index_element ).lens.thickness( positions_rel_norm ) / faces( index_element ).lens.absorption_model.c_0;
+                % discretize acoustic lens
+                faces( index_face ).lens = discretize( faces( index_face ).lens, abs( faces( index_face ).shape.intervals ), positions_rel_norm );
 
-            end % for index_element = 1:numel( grids_act )
+            end % for index_face = 1:numel( shapes_discrete )
 
-            % create structures
-            structs_out = struct( 'grid', num2cell( grids_act ), 'apodization', apodization_act, 'time_delays', time_delays_act );
-
-        end % function structs_out = discretize( faces, parameters )
+        end % function faces = discretize( faces, methods )
 
     end % methods
 

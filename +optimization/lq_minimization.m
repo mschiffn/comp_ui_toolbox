@@ -1,10 +1,10 @@
-function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_born, u_M, options, varargin )
+function [ gamma_recon, theta_recon_normed, u_M_vect_normed_res, info ] = lq_minimization( operators_born, u_M, options, varargin )
 %
 % minimize the lq-norm using SPGL1 to recover a sparse coefficient vector
 %
 % author: Martin F. Schiffner
 % date: 2015-06-01
-% modified: 2019-08-10
+% modified: 2019-08-26
 %
 
 	% print status
@@ -40,40 +40,10 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
         linear_transforms = cell( size( operators_born ) );
     end
 
-            % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms )
-                % case 1.a)
-                linear_transforms = num2cell( linear_transforms );
-            end
-
-            % 
-            if all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
-                % cases 1.b) or 2.a)
-                if ~isscalar( linear_transforms{ 1 } ) || ( numel( linear_transforms ) > 1 && N_config == 1 )
-                    % case 2.a)
-                    for index_transform = 1:numel( linear_transforms )
-                        linear_transforms{ index_transform } = num2cell( linear_transforms{ index_transform } );
-                    end
-                else
-                    % case 1.b)
-                    linear_transforms = { linear_transforms };
-                end
-            end
-
-            if all( cellfun( @( x ) all( cellfun( @( y ) ~iscell( y ), x ) ), linear_transforms ) )
-                % cases 2.b) or 3.a)
-                if ~isscalar( linear_transforms{ 1 }{ 1 } ) || ( numel( linear_transforms{1} ) > 1 && N_config == 1 )
-                    % case 3.a)
-                    for index_operator = 1:numel( linear_transforms )
-                        for index_transform = 1:numel( linear_transforms{ index_operator } )
-                            linear_transforms{ index_operator }{ index_transform } = num2cell( linear_transforms{ index_operator }{ index_transform } );
-                        end
-                    end
-                else
-                    % case 2.b)
-                    linear_transforms = { linear_transforms };
-                end
-            end
+	% ensure cell array for linear_transforms
+	if ~iscell( linear_transforms ) || all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
+        linear_transforms = { linear_transforms };
+    end
 
 	% multiple operators_born / single u_M
 	if ~isscalar( operators_born ) && isscalar( u_M )
@@ -99,6 +69,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
 	% specify cell arrays
 	gamma_recon = cell( size( operators_born ) );
 	theta_recon_normed = cell( size( operators_born ) );
+    u_M_vect_normed_res = cell( size( operators_born ) );
 	info = cell( size( operators_born ) );
 
 	% iterate scattering operators
@@ -108,7 +79,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
         % a) check arguments
         %------------------------------------------------------------------
         % ensure cell array for linear_transforms{ index_operator }
-        if all( cellfun( @( x ) ~iscell( x ), linear_transforms{ index_operator } ) )
+        if ~iscell( linear_transforms{ index_operator } )
             linear_transforms{ index_operator } = linear_transforms( index_operator );
         end
 
@@ -118,6 +89,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
         % specify cell arrays
         gamma_recon{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
         theta_recon_normed{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
+        u_M_vect_normed_res{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
         info{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
 
         % iterate linear transforms
@@ -128,6 +100,13 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
             %--------------------------------------------------------------
             % set momentary scattering operator options
             operators_born_config = set_properties_momentary( operators_born( index_operator ), varargin{ 2:end } );
+
+            % ensure class linear_transforms.linear_transform
+            if ~isa( linear_transforms{ index_operator }{ index_transform }, 'linear_transforms.linear_transform' )
+                errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
+                errorStruct.identifier = 'lq_minimization:NoLinearTransforms';
+                error( errorStruct );
+            end
 
             % multiple operators_born_config / single linear_transforms{ index_operator }{ index_transform }
             if ~isscalar( operators_born_config ) && isscalar( linear_transforms{ index_operator }{ index_transform } )
@@ -140,9 +119,20 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
             %--------------------------------------------------------------
             % ii.) process configurations
             %--------------------------------------------------------------
+            % numbers of transform coefficients
+            N_coefficients = reshape( [ linear_transforms{ index_operator }{ index_transform }.N_coefficients ], size( linear_transforms{ index_operator }{ index_transform } ) );
+
+            % ensure identical numbers of transform coefficients
+            if any( N_coefficients( : ) ~= N_coefficients( 1 ) )
+                errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d } must have identical numbers of transform coefficients!', index_operator, index_transform );
+                errorStruct.identifier = 'adjoint:InvalidNumbersOfCoefficients';
+                error( errorStruct );
+            end
+
             % specify cell arrays
             gamma_recon{ index_operator }{ index_transform } = cell( size( operators_born_config ) );
             theta_recon_normed{ index_operator }{ index_transform } = cell( size( operators_born_config ) );
+            u_M_vect_normed_res{ index_operator }{ index_transform } = cell( size( operators_born_config ) );
             info{ index_operator }{ index_transform } = cell( size( operators_born_config ) );
 
             % iterate configurations
@@ -166,13 +156,6 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
                     error( errorStruct );
                 end
 
-                % ensure class linear_transforms.linear_transform (scalar)
-%                 if ~( isa( linear_transforms{ index_operator }, 'linear_transforms.linear_transform' ) && isscalar( linear_transforms{ index_operator } ) )
-%                     errorStruct.message = sprintf( 'linear_transforms{ %d } must be a single linear_transforms.linear_transform!', index_operator );
-%                     errorStruct.identifier = 'lq_minimization:NoSingleLinearTransform';
-%                     error( errorStruct );
-%                 end
-
                 %----------------------------------------------------------
                 % B) normalize mixed voltage signals
                 %----------------------------------------------------------
@@ -186,9 +169,10 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
                 % specify cell arrays
                 gamma_recon{ index_operator }{ index_transform }{ index_config } = cell( size( options{ index_operator }{ index_transform }{ index_config } ) );
                 theta_recon_normed{ index_operator }{ index_transform }{ index_config } = cell( size( options{ index_operator }{ index_transform }{ index_config } ) );
+                u_M_vect_normed_res{ index_operator }{ index_transform }{ index_config } = cell( size( options{ index_operator }{ index_transform }{ index_config } ) );
                 info{ index_operator }{ index_transform }{ index_config } = cell( size( options{ index_operator }{ index_transform }{ index_config } ) );
 
-                % iterate options
+                % iterate optimization options
                 for index_options = 1:numel( options{ index_operator }{ index_transform }{ index_config } )
 
                     %------------------------------------------------------
@@ -211,7 +195,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
                         % a) inactive spatial anti-aliasing filter
                         %--------------------------------------------------
                         % copy linear transform
-                        LT_act = linear_transforms{ index_operator }{ index_transform }{ index_config };
+                        LT_act = linear_transforms{ index_operator }{ index_transform }( index_config );
 
                     elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options_normalization_threshold' )
 
@@ -219,8 +203,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
                         % b) apply threshold to inverse weighting matrix
                         %--------------------------------------------------
                         try
-% TODO: implement threshold for composition
-                            LT_act = threshold( linear_transforms{ index_operator }{ index_transform }{ index_config }, options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization.threshold );
+                            LT_act = threshold( linear_transforms{ index_operator }{ index_transform }( index_config ), options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization.threshold );
                         catch
                             errorStruct.message = sprintf( 'Could not apply threshold to linear_transforms{ %d }{ %d }{ %d }!', index_operator, index_transform, index_config );
                             errorStruct.identifier = 'lq_minimization:UnknownOptionsClass';
@@ -230,7 +213,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
                     else
 
                         %--------------------------------------------------
-                        % c) unknown spatial anti-aliasing filter
+                        % c) unknown normalization status
                         %--------------------------------------------------
                         errorStruct.message = sprintf( 'Class of options{ %d }{ %d }{ %d }( %d ).normalization is unknown!', index_operator, index_transform, index_config, index_options );
                         errorStruct.identifier = 'lq_minimization:UnknownOptionsClass';
@@ -255,8 +238,10 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
                     % ii.) l2- or l1-minimization (convex)
                     %------------------------------------------------------
                     % call SPGL1 with sensing matrix
-                    [ theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, u_M_res, ~, info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
-                        = spgl1( op_A_bar, u_M_vect_normed, tau, options{ index_operator }{ index_transform }{ index_config }( index_options ).rel_RMSE, x_0, spgl_opts );
+                    [ theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options },...
+                      u_M_vect_normed_res{ index_operator }{ index_transform }{ index_config }{ index_options }, ~,...
+                      info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
+                    = spgl1( op_A_bar, u_M_vect_normed, tau, options{ index_operator }{ index_transform }{ index_config }( index_options ).rel_RMSE, x_0, spgl_opts );
 
                     %------------------------------------------------------
                     % iii.) optional lq-minimization ( 0 <= q < 1, nonconvex, Foucart's algorithm )
@@ -313,11 +298,23 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
                     % iv.) invert normalization and apply adjoint linear transform
                     %------------------------------------------------------
                     gamma_recon{ index_operator }{ index_transform }{ index_config }{ index_options } ...
-                        = operator_transform( LT_act, theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, 2 ) * u_M_vect_norm;
+                    = operator_transform( LT_act, theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, 2 ) * u_M_vect_norm;
 
                     % display result
                     figure( index_options );
-                    imagesc( squeeze( reshape( illustration.dB( gamma_recon{ index_operator }{ index_transform }{ index_config }{ index_options }, 20 ), operators_born( index_operator ).discretization.spatial.grid_FOV.N_points_axis ) )', [ -60, 0 ] );
+                    temp_1 = squeeze( reshape( theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, operators_born( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
+                    temp_2 = squeeze( reshape( gamma_recon{ index_operator }{ index_transform }{ index_config }{ index_options }, operators_born( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
+                    if ismatrix( temp_1 )
+                        subplot( 1, 2, 1 );
+                        imagesc( illustration.dB( temp_1, 20 )', [ -60, 0 ] );
+                        subplot( 1, 2, 2 );
+                        imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
+                    else
+                        subplot( 1, 2, 1 );
+                        imagesc( illustration.dB( squeeze( temp_1( :, 5, : ) ), 20 )', [ -60, 0 ] );
+                        subplot( 1, 2, 2 );
+                        imagesc( illustration.dB( squeeze( temp_2( :, 5, : ) ), 20 )', [ -60, 0 ] );
+                    end
                     colormap gray;
 
                 end % for index_options = 1:numel( options{ index_operator }{ index_transform }{ index_config } )
@@ -326,6 +323,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
                 if isscalar( options{ index_operator }{ index_transform }{ index_config } )
                     gamma_recon{ index_operator }{ index_transform }{ index_config } = gamma_recon{ index_operator }{ index_transform }{ index_config }{ 1 };
                     theta_recon_normed{ index_operator }{ index_transform }{ index_config } = theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ 1 };
+                    u_M_vect_normed_res{ index_operator }{ index_transform }{ index_config } = u_M_vect_normed_res{ index_operator }{ index_transform }{ index_config }{ 1 };
                     info{ index_operator }{ index_transform }{ index_config } = info{ index_operator }{ index_transform }{ index_config }{ 1 };
                 end
 
@@ -335,6 +333,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
             if isscalar( operators_born_config )
                 gamma_recon{ index_operator }{ index_transform } = gamma_recon{ index_operator }{ index_transform }{ 1 };
                 theta_recon_normed{ index_operator }{ index_transform } = theta_recon_normed{ index_operator }{ index_transform }{ 1 };
+                u_M_vect_normed_res{ index_operator }{ index_transform } = u_M_vect_normed_res{ index_operator }{ index_transform }{ 1 };
                 info{ index_operator }{ index_transform } = info{ index_operator }{ index_transform }{ 1 };
             end
 
@@ -344,6 +343,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
         if isscalar( linear_transforms{ index_operator } )
             gamma_recon{ index_operator } = gamma_recon{ index_operator }{ 1 };
             theta_recon_normed{ index_operator } = theta_recon_normed{ index_operator }{ 1 };
+            u_M_vect_normed_res{ index_operator } = u_M_vect_normed_res{ index_operator }{ 1 };
             info{ index_operator } = info{ index_operator }{ 1 };
         end
 
@@ -353,6 +353,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
 	if isscalar( operators_born )
         gamma_recon = gamma_recon{ 1 };
         theta_recon_normed = theta_recon_normed{ 1 };
+        u_M_vect_normed_res = u_M_vect_normed_res{ 1 };
         info = info{ 1 };
     end
 
@@ -360,7 +361,7 @@ function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_
 	time_elapsed = toc( time_start );
 	fprintf( 'done! (%f s)\n', time_elapsed );
 
-end % function [ gamma_recon, theta_recon_normed, info ] = lq_minimization( operators_born, u_M, options, varargin )
+end % function [ gamma_recon, theta_recon_normed, u_M_vect_normed_res, info ] = lq_minimization( operators_born, u_M, options, varargin )
 
 %                         
 %                         % dimensions of sensing matrix

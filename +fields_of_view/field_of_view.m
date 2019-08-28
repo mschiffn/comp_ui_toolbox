@@ -2,48 +2,105 @@
 % superclass for all fields of view
 %
 % author: Martin F. Schiffner
-% date: 2018-01-23
-% modified: 2019-02-03
+% date: 2019-08-16
+% modified: 2019-08-21
 %
 classdef field_of_view
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
-%         N_dimensions ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 2	% number of dimensions (1)
-        str_name = { 'default' }                                                            % name of the field of view
+        shape ( 1, 1 ) geometry.shape { mustBeNonempty } = geometry.orthotope	% shape of the field of view
 
-	end
+    end
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = field_of_view( N_dimensions )
-            
-            % return if no argument
+        function objects = field_of_view( shapes )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % return
             if nargin == 0
                 return;
             end
 
-            % construct objects
-            N_objects = numel( N_dimensions );
-            objects = repmat( objects, size( N_dimensions ) );
+            % ensure class geometry.shape
+            if ~isa( shapes, 'geometry.shape' )
+                errorStruct.message = 'shapes must be geometry.shape!';
+                errorStruct.identifier = 'field_of_view:NoShapes';
+                error( errorStruct );
+            end
 
-            % set independent properties
-%             for index_object = 1:N_objects
-%                 objects( index_object ).N_dimensions = N_dimensions( index_object );
-%             end
+            %--------------------------------------------------------------
+            % 2.) create fields of view
+            %--------------------------------------------------------------
+            % repeat default field of view
+            objects = repmat( objects, size( shapes ) );
 
-        end % function objects = field_of_view( N_dimensions )
+            % iterate fields of view
+            for index_object = 1:numel( objects )
 
-    end
+                % set independent properties
+                objects( index_object ).shape = shapes( index_object );
+
+            end % for index_object = 1:numel( objects )
+
+        end % function objects = field_of_view( shapes )
+
+        %------------------------------------------------------------------
+        % discretize
+        %------------------------------------------------------------------
+        function FOVs = discretize( FOVs, methods )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class fields_of_view.field_of_view
+            if ~isa( FOVs, 'fields_of_view.field_of_view' )
+                errorStruct.message = 'FOVs must be fields_of_view.field_of_view!';
+                errorStruct.identifier = 'discretize:NoFieldsOfView';
+                error( errorStruct );
+            end
+
+            % method discretize in shape ensures class discretizations.options_spatial_method for methods
+
+            % multiple FOVs / single methods
+            if ~isscalar( FOVs ) && isscalar( methods )
+                methods = repmat( methods, size( FOVs ) );
+            end
+
+            % single FOVs / multiple methods
+            if isscalar( FOVs ) && ~isscalar( methods )
+                FOVs = repmat( FOVs, size( methods ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( FOVs, methods );
+
+            %--------------------------------------------------------------
+            % 2.) discretize fields of view
+            %--------------------------------------------------------------
+            % iterate fields of view
+            for index_object = 1:numel( FOVs )
+
+                % discretize shape
+                FOVs( index_object ).shape = discretize( FOVs( index_object ).shape, methods( index_object ) );
+
+            end % for index_object = 1:numel( FOVs )
+
+        end % function FOVs = discretize( FOVs, methods )
+
+    end % methods
 
 end % classdef field_of_view

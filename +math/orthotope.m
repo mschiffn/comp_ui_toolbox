@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-11
-% modified: 2019-04-02
+% modified: 2019-08-20
 %
 classdef orthotope
 
@@ -35,38 +35,39 @@ classdef orthotope
             %--------------------------------------------------------------
             % return if no argument
             if nargin == 0
-                return;
+                varargin = { math.interval };
             end
 
             % ensure equal subclasses of math.interval
             auxiliary.mustBeEqualSubclasses( 'math.interval', varargin{ : } );
-
+% TODO: ensure identical units!
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( varargin{ : } );
 
             %--------------------------------------------------------------
             % 2.) create orthotopes
             %--------------------------------------------------------------
+            % repeat default orthotopes
             objects = repmat( objects, size( varargin{ 1 } ) );
 
-            % set independent and dependent properties
+            % iterate orthotopes
             for index_object = 1:numel( varargin{ 1 } )
 
                 %----------------------------------------------------------
                 % a) set independent properties
-                %----------------------------------------------------------                
+                %----------------------------------------------------------
                 % initialize intervals
-                objects( index_object ).intervals = repmat( varargin{ 1 }( index_object ), [ 1, nargin ] );
+                objects( index_object ).intervals = repmat( varargin{ 1 }( index_object ), [ numel( varargin ), 1 ] );
 
                 % set intervals
-                for index_argument = 2:nargin
-                    objects( index_object ).intervals( index_argument ) = varargin{ index_argument }( index_object );
+                for index_arg = 2:nargin
+                    objects( index_object ).intervals( index_arg ) = varargin{ index_arg }( index_object );
                 end
 
                 %----------------------------------------------------------
                 % b) set dependent properties
                 %----------------------------------------------------------
-                objects( index_object ).N_dimensions = nargin;
+                objects( index_object ).N_dimensions = numel( objects( index_object ).intervals );
 
             end % for index_object = 1:numel( varargin{ 1 } )
 
@@ -121,7 +122,20 @@ classdef orthotope
         %------------------------------------------------------------------
         function objects_out = center( orthotopes )
 
-            % initialize results
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.orthotope
+            if ~isa( orthotopes, 'math.orthotope' )
+                errorStruct.message = 'orthotopes must be math.orthotope!';
+                errorStruct.identifier = 'center:NoOrthotopes';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) compute centers
+            %--------------------------------------------------------------
+            % specify cell array for objects_out
             objects_out = cell( size( orthotopes ) );
 
             % iterate orthotopes
@@ -130,7 +144,7 @@ classdef orthotope
                 % compute interval centers
                 objects_out{ index_object } = center( orthotopes( index_object ).intervals );
 
-            end % for index_object = 1:numel( objects )
+            end % for index_object = 1:numel( orthotopes )
 
             % avoid cell array for single orthotope
             if isscalar( orthotopes )
@@ -177,86 +191,6 @@ classdef orthotope
             end % for index_object = 1:numel( orthotopes )
 
         end % function orthotopes = move( orthotopes, centers )
-
-        %------------------------------------------------------------------
-        % discretize
-        %------------------------------------------------------------------
-        function objects_out = discretize( orthotopes, parameters )
-% TODO: various types of discretization (subtype of regular grid) / parameter objects
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class discretizations.parameters
-            if ~isa( parameters, 'discretizations.parameters' )
-                errorStruct.message     = 'parameters must be discretizations.parameters!';
-                errorStruct.identifier	= 'discretize:NoParameters';
-                error( errorStruct );
-            end
-
-            % multiple orthotopes / single parameters
-            if ~isscalar( orthotopes ) && isscalar( parameters )
-                parameters = repmat( parameters, size( orthotopes ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( orthotopes, parameters );
-
-            %--------------------------------------------------------------
-            % 2.) compute parameters for regular grids
-            %--------------------------------------------------------------
-            % initialize parameter cell arrays
-            offset_axis = cell( size( orthotopes ) );
-            delta_axis = cell( size( orthotopes ) );
-            N_points_axis = cell( size( orthotopes ) );
-
-            % iterate orthotopes
-            for index_object = 1:numel( orthotopes )
-
-                switch class( parameters( index_object ) )
-
-                    case 'discretizations.parameters_number'
-
-                        % number of grid points along each axis
-                        N_points_axis{ index_object } = parameters( index_object ).values;
-
-                        % ensure equal number of dimensions and sizes
-                        auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, N_points_axis{ index_object } );
-
-                        % distances between adjacent grid points along each axis
-                        delta_axis{ index_object } = abs( orthotopes( index_object ).intervals ) ./ N_points_axis{ index_object };
-
-                    case 'discretizations.parameters_distance'
-
-                        % distances between adjacent grid points along each axis
-                        delta_axis{ index_object } = parameters( index_object ).values;
-
-                        % ensure equal number of dimensions and sizes
-                        auxiliary.mustBeEqualSize( orthotopes( index_object ).intervals, delta_axis{ index_object } );
-
-                        % number of grid points along each axis
-                        N_points_axis{ index_object } = floor( abs( orthotopes( index_object ).intervals ) ./ delta_axis{ index_object } );
-
-                    otherwise
-
-                        errorStruct.message     = sprintf( 'Unknown class of parameters( %d )!', index_object );
-                        errorStruct.identifier	= 'discretize:UnknownParameters';
-                        error( errorStruct );
-
-                end % switch class( parameters( index_object ) )
-
-                % offset along each axis
-                M_points_axis = ( N_points_axis{ index_object } - 1 ) / 2;
-                offset_axis{ index_object } = center( orthotopes( index_object ) ) - M_points_axis .* delta_axis{ index_object };
-
-            end % for index_object = 1:numel( orthotopes )
-
-            %--------------------------------------------------------------
-            % 3.) create orthogonal regular grids
-            %--------------------------------------------------------------
-            objects_out = math.grid_regular_orthogonal( offset_axis, delta_axis, N_points_axis );
-
-        end % function objects_out = discretize( orthotopes, parameters )
 
     end % methods
 

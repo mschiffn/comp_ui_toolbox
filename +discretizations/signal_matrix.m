@@ -280,6 +280,7 @@ classdef signal_matrix
         % time-domain signal
         %------------------------------------------------------------------
         function signal_matrices = signal( signal_matrices, varargin )
+% TODO: transform in place!
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -757,7 +758,7 @@ classdef signal_matrix
             % subsample axes
 % TODO: problematic for different types of axes!
 % TODO: maintain regular axis, if possible!
-            axes_sub = subsample( [ signal_matrices.axis ], indices_axes );
+            axes_sub = subsample( reshape( [ signal_matrices.axis ], size( signal_matrices ) ), indices_axes );
 
             % iterate signal matrices
             for index_object = 1:numel( signal_matrices )

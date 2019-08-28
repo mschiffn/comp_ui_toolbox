@@ -30,7 +30,7 @@ classdef parameters_L14_5_38
             %--------------------------------------------------------------
             % 3.) acoustic lens specifications
             %--------------------------------------------------------------
-            apodization = @( pos_rel_norm ) ones( size( pos_rel_norm, 1 ), 1 );     % apodization along each coordinate axis (pos_rel_norm = normalized relative positions of the grid points)
+            apodization = @transducers.apodization.uniform;                         % apodization along each coordinate axis
             axial_focus_axis = physical_values.meter( [ Inf, 16e-3 ] );             % axial distances of the lateral foci
             absorption_model = absorption_models.none( physical_values.meter_per_second( 1540 ) );	% absorption model for the acoustic lens
 

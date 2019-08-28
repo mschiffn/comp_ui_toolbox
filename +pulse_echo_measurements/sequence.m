@@ -1,9 +1,9 @@
 %
-% superclass for all sequential pulse-echo measurements
+% superclass for all sequences of pulse-echo measurements
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-06-07
+% modified: 2019-08-23
 %
 classdef sequence
 
@@ -17,8 +17,19 @@ classdef sequence
         settings %( :, : ) pulse_echo_measurements.setting	% pulse-echo measurement settings
 
         % dependent properties
-        interval_hull_t ( 1, 1 ) math.interval	% hull of all recording time intervals
-        interval_hull_f ( 1, 1 ) math.interval	% hull of all frequency intervals
+        interval_hull_t ( 1, 1 ) math.interval          % hull of all recording time intervals
+        interval_hull_f ( 1, 1 ) math.interval          % hull of all frequency intervals
+
+        % dependent properties
+        axis_f_unique ( 1, 1 ) math.sequence_increasing	% axis of global unique frequencies
+        indices_f_to_unique                             % cell array mapping unique frequencies of each pulse-echo measurement to global unique frequencies
+        prefactors                                      % prefactors for scattering (local frequencies)
+        size ( 1, : ) double                            % size of the discretization
+
+        % optional properties
+        h_ref ( :, 1 ) discretizations.field            % reference spatial transfer function (unique frequencies)
+        h_ref_aa ( :, 1 ) discretizations.field         % reference spatial transfer function (unique frequencies)
+        h_ref_grad ( :, 1 ) discretizations.field       % spatial gradient of the reference spatial transfer function (unique frequencies)
 
     end % properties
 
@@ -63,16 +74,16 @@ classdef sequence
             %--------------------------------------------------------------
             % 2.) create sequences of pulse-echo measurements
             %--------------------------------------------------------------
-            % repeat default sequence
+            % repeat default sequence of pulse-echo measurements
             objects = repmat( objects, size( setups ) );
 
-            % iterate sequences
+            % iterate sequences of pulse-echo measurements
             for index_object = 1:numel( objects )
 
                 % ensure class pulse_echo_measurements.setting
                 if ~isa( settings{ index_object }, 'pulse_echo_measurements.setting' )
-                    errorStruct.message     = 'settings must be pulse_echo_measurements.setting!';
-                    errorStruct.identifier	= 'sequence:NoSetting';
+                    errorStruct.message = 'settings must be pulse_echo_measurements.setting!';
+                    errorStruct.identifier = 'sequence:NoSetting';
                     error( errorStruct );
                 end
 
@@ -88,57 +99,6 @@ classdef sequence
             end % for index_object = 1:numel( objects )
 
         end % function objects = sequence( setups, settings )
-
-        %------------------------------------------------------------------
-        % spatiospectral discretizations
-        %------------------------------------------------------------------
-        function spatiospectrals = discretize( sequences, options )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class pulse_echo_measurements.sequence
-            if ~isa( sequences, 'pulse_echo_measurements.sequence' )
-                errorStruct.message = 'sequences must be pulse_echo_measurements.sequence!';
-                errorStruct.identifier = 'discretize:NoSequences';
-                error( errorStruct );
-            end
-
-            % ensure class discretizations.options
-            if ~isa( options, 'discretizations.options' )
-                errorStruct.message = 'options must be discretizations.options!';
-                errorStruct.identifier = 'discretize:NoDiscretizationOptions';
-                error( errorStruct );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, options );
-
-            %--------------------------------------------------------------
-            % 2.) spatial discretizations
-            %--------------------------------------------------------------
-            spatials = discretize( [ sequences.setup ], [ options.spatial ] );
-
-            %--------------------------------------------------------------
-            % 3.) spectral discretizations
-            %--------------------------------------------------------------
-            % specify cell array for spectrals
-            spectrals = cell( size( sequences ) );
-
-            % iterate sequential pulse-echo measurements
-            for index_object = 1:numel( sequences )
-
-                % discretize pulse-echo measurement settings
-                spectrals{ index_object } = discretize( sequences( index_object ).settings, options( index_object ).spectral );
-
-            end % for index_object = 1:numel( sequences )
-
-            %--------------------------------------------------------------
-            % 4.) create spatiospectral discretizations
-            %--------------------------------------------------------------
-            spatiospectrals = discretizations.spatiospectral( spatials, spectrals );
-
-        end % function spatiospectrals = discretize( sequences, options )
 
         %------------------------------------------------------------------
         % apply windows to mixed voltage signals
@@ -496,6 +456,131 @@ classdef sequence
             fprintf( 'done! (%f s)\n', time_elapsed );
 
         end % function [ u_M_tilde, u_M ] = synthesize_voltage_signals( sequences, u_SA_tilde, varargin )
+
+        %------------------------------------------------------------------
+        % spatiospectral discretization
+        %------------------------------------------------------------------
+        function sequences = discretize( sequences, options )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class pulse_echo_measurements.sequence
+            if ~isa( sequences, 'pulse_echo_measurements.sequence' )
+                errorStruct.message = 'sequences must be pulse_echo_measurements.sequence!';
+                errorStruct.identifier = 'discretize:NoSequences';
+                error( errorStruct );
+            end
+
+            % ensure class discretizations.options
+            if ~isa( options, 'discretizations.options' )
+                errorStruct.message = 'options must be discretizations.options!';
+                errorStruct.identifier = 'discretize:NoDiscretizationOptions';
+                error( errorStruct );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, options );
+
+            %--------------------------------------------------------------
+            % 2.) spatiospectral discretizations
+            %--------------------------------------------------------------
+            % iterate sequences of pulse-echo measurements
+            for index_object = 1:numel( sequences )
+
+                % spatial discretization
+                sequences( index_object ).setup = discretize( sequences( index_object ).setup, options( index_object ).spatial );
+
+                % spectral discretization
+                sequences( index_object ).settings = discretize( sequences( index_object ).settings, options( index_object ).spectral );
+
+                % extract unique frequency axis
+                v_d_unique = reshape( [ sequences( index_object ).settings.v_d_unique ], size( sequences( index_object ).settings ) );
+                [ sequences( index_object ).axis_f_unique, ~, sequences( index_object ).indices_f_to_unique ] = unique( [ v_d_unique.axis ] );
+
+                % compute prefactors for scattering (local frequencies)
+% TODO: What is the exact requirement?
+                if isa( sequences( index_object ).setup.FOV.shape.grid, 'math.grid_regular' )
+                    sequences( index_object ).prefactors = compute_prefactors( sequences( index_object ) );
+                end
+
+                % size of the discretization
+                sequences( index_object ).size = [ sum( cellfun( @( x ) sum( x( : ) ), { sequences( index_object ).settings.N_observations } ) ), sequences( index_object ).setup.FOV.shape.grid.N_points ];
+
+                %----------------------------------------------------------
+                % c) set optional properties for symmetric spatial discretizations based on orthogonal regular grids
+                %----------------------------------------------------------
+                if isa( sequences( index_object ).setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+
+                    % create format string for filename
+                    str_format = sprintf( 'data/%s/setup_%%s/h_ref_axis_f_unique_%%s.mat', sequences( index_object ).setup.str_name );
+
+                    % load or compute reference spatial transfer function (unique frequencies)
+                    sequences( index_object ).h_ref...
+                    = auxiliary.compute_or_load_hash( str_format, @transfer_function, [ 3, 2 ], [ 1, 2 ],...
+                        sequences( index_object ).setup, sequences( index_object ).axis_f_unique,...
+                        { sequences( index_object ).setup.xdc_array.aperture, sequences( index_object ).setup.homogeneous_fluid, sequences( index_object ).setup.FOV, sequences( index_object ).setup.str_name } );
+
+                end % if isa( sequences( index_object ).setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+
+            end % for index_object = 1:numel( sequences )
+
+        end % function sequences = discretize( sequences, options )
+
+
+        function sequences = apply_anti_aliasing_filter( sequences, options_anti_aliasing )
+
+            sequences.h_ref_aa = anti_aliasing_filter( sequences.setup, sequences.h_ref, options_anti_aliasing );
+        end
+
+        %------------------------------------------------------------------
+        % compute prefactors (local frequencies)
+        %------------------------------------------------------------------
+        function prefactors = compute_prefactors( sequences )
+
+            % specify cell array for prefactors
+            prefactors = cell( size( sequences ) );
+
+            % iterate spatiospectral discretizations
+            for index_object = 1:numel( sequences )
+
+                % compute prefactors (global unique frequencies)
+                prefactors_unique = compute_prefactors( sequences( index_object ).setup, sequences( index_object ).axis_f_unique );
+
+                % cell array mapping unique frequencies of each pulse-echo measurement to global unique frequencies
+                indices_f_measurement_to_global = sequences( index_object ).indices_f_to_unique;
+
+                % subsample prefactors (unique frequencies of each pulse-echo measurement)
+                prefactors_measurement = subsample( prefactors_unique, indices_f_measurement_to_global );
+
+                % specify cell array for prefactors{ index_object }
+                prefactors{ index_object } = cell( size( sequences( index_object ).settings ) );
+
+                % iterate sequential pulse-echo measurements
+                for index_measurement = 1:numel( sequences( index_object ).settings )
+
+                    % cell array mapping frequencies of each mixed voltage signal to unique frequencies of current pulse-echo measurement
+                    indices_f_mix_to_measurement = sequences( index_object ).settings( index_measurement ).indices_f_to_unique;
+
+                    % subsample prefactors (frequencies of each mixed voltage signal)
+                    prefactors_mix = subsample( prefactors_measurement( index_measurement ), indices_f_mix_to_measurement );
+
+                    % extract impulse responses of mixing channels
+                    impulse_responses_rx = reshape( [ sequences( index_object ).settings( index_measurement ).rx.impulse_responses ], size( sequences( index_object ).settings( index_measurement ).rx ) );
+
+                    % compute prefactors (frequencies of each mixed voltage signal)
+                    prefactors{ index_object }{ index_measurement } = prefactors_mix .* impulse_responses_rx;
+
+                end % for index_measurement = 1:numel( sequences( index_object ).settings )
+
+            end % for index_object = 1:numel( sequences )
+
+            % avoid cell array for single sequences
+            if isscalar( sequences )
+                prefactors = prefactors{ 1 };
+            end
+
+        end % function prefactors = compute_prefactors( sequences )
 
 	end % methods
 

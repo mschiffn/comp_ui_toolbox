@@ -11,18 +11,7 @@ classdef spectral_points < discretizations.spectral
 	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
-
-        % independent properties
-        tx ( :, : ) controls.setting_tx
-        rx ( :, : ) controls.setting_rx
-
-        % dependent properties
-        tx_unique ( :, : ) controls.setting_tx
-        v_d_unique ( :, 1 ) discretizations.signal_matrix       % normal velocities (unique frequencies)
-        indices_f_to_unique
-        indices_active_rx_unique ( 1, : ) double
-        indices_active_rx_to_unique
-        N_observations ( :, : ) double                          % numbers of observations in each mixed voltage signal
+        
 
     end % properties
 
@@ -88,18 +77,7 @@ classdef spectral_points < discretizations.spectral
                 %----------------------------------------------------------
                 % b) set dependent properties
                 %----------------------------------------------------------
-                % determine tx settings for unique frequencies
-                [ objects( index_object ).tx_unique, ~, objects( index_object ).indices_f_to_unique ] = unique( objects( index_object ).tx );
-                if isscalar( objects( index_object ).tx )
-                    objects( index_object ).indices_f_to_unique = repmat( objects( index_object ).indices_f_to_unique, size( objects( index_object ).rx ) );
-                end
-                [ objects( index_object ).indices_active_rx_unique, objects( index_object ).indices_active_rx_to_unique ] = unique_indices_active( objects( index_object ).rx );
-
-                % numbers of observations in each mixed voltage signal
-                objects( index_object ).N_observations = compute_N_observations( objects( index_object ).rx );
-
-                % compute normal velocities (unique frequencies)
-                objects( index_object ).v_d_unique = compute_normal_velocities( objects( index_object ).tx_unique );
+                
 
             end % for index_object = 1:numel( settings_tx )
 

@@ -93,9 +93,9 @@ sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 6 )
 % specify options
 %--------------------------------------------------------------------------
 % discretization options
-parameters_elements = discretizations.parameters_number( 12 );
-parameters_FOV = discretizations.parameters_distance( physical_values.meter( [ 76.2e-6, 76.2e-6 ] ) );
-options_disc_spatial = discretizations.options_spatial_grid( parameters_FOV, parameters_elements );
+method_faces = discretizations.options_spatial_method_grid_numbers( 12 );
+method_FOV = discretizations.options_spatial_method_grid_distances( physical_values.meter( [ 76.2e-6, 76.2e-6 ] ) );
+options_disc_spatial = discretizations.options_spatial( method_faces, method_FOV );
 options_disc_spectral = discretizations.options_spectral.signal;
 options_disc = discretizations.options( options_disc_spatial, options_disc_spectral );
 

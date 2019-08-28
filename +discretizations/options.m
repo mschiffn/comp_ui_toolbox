@@ -13,7 +13,7 @@ classdef options
 	properties (SetAccess = private)
 
         % independent properties
-        spatial ( 1, 1 ) discretizations.options_spatial { mustBeNonempty } = discretizations.options_spatial_grid          % spatial discretization
+        spatial ( 1, 1 ) discretizations.options_spatial { mustBeNonempty } = discretizations.options_spatial               % spatial discretization
         spectral ( 1, 1 ) discretizations.options_spectral { mustBeNonempty } = discretizations.options_spectral_sequence	% spectral discretization
 
     end % properties

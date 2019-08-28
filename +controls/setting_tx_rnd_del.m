@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-05-21
+% modified: 2019-08-25
 %
 classdef setting_tx_rnd_del < controls.setting_tx
 
@@ -26,7 +26,7 @@ classdef setting_tx_rnd_del < controls.setting_tx
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_tx_rnd_del( setup, excitation_voltages_common, e_theta, settings_rng )
+        function objects = setting_tx_rnd_del( setup, u_tx_tilde, e_theta, settings_rng )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -45,7 +45,7 @@ classdef setting_tx_rnd_del < controls.setting_tx
                 error( errorStruct );
             end
 
-            % excitation_voltages_common will be checked in superclass
+            % superclass checks u_tx_tilde
 
             % ensure class math.unit_vector
             if ~isa( e_theta, 'math.unit_vector' )
@@ -62,18 +62,18 @@ classdef setting_tx_rnd_del < controls.setting_tx
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( excitation_voltages_common, e_theta, settings_rng );
+            auxiliary.mustBeEqualSize( u_tx_tilde, e_theta, settings_rng );
 
             %--------------------------------------------------------------
             % 2.) compute synthesis settings for superpositions of randomly-delayed quasi-(d-1)-spherical waves
             %--------------------------------------------------------------
             % number of sequential syntheses
-            N_objects = numel( excitation_voltages_common );
+            N_objects = numel( u_tx_tilde );
 
             % specify cell arrays to store synthesis settings
-            indices_active = cell( size( excitation_voltages_common ) );
-            impulse_responses = cell( size( excitation_voltages_common ) );
-            excitation_voltages = cell( size( excitation_voltages_common ) );
+            indices_active = cell( size( u_tx_tilde ) );
+            impulse_responses = cell( size( u_tx_tilde ) );
+            excitation_voltages = cell( size( u_tx_tilde ) );
 
             % iterate synthesis settings
             for index_object = 1:N_objects
@@ -90,10 +90,11 @@ classdef setting_tx_rnd_del < controls.setting_tx
                 rng( settings_rng( index_object ).seed, settings_rng( index_object ).str_name );
 
                 % compute permissible maximum time shift
-                N_dimensions_lateral = setup.FOV.N_dimensions - 1;
-                t_shift_max = sum( ( setup.xdc_array.N_elements_axis( 1:N_dimensions_lateral ) - 1 ) .* setup.xdc_array.cell_ref.edge_lengths( 1:N_dimensions_lateral ) .* abs( e_theta( index_object ).components( 1:N_dimensions_lateral ) ), 2 ) / setup.homogeneous_fluid.c_avg;
+                N_dimensions_lateral = setup.FOV.shape.N_dimensions - 1;
+                t_shift_max = sum( ( setup.xdc_array.N_elements_axis( 1:N_dimensions_lateral )' - 1 ) .* setup.xdc_array.cell_ref.edge_lengths( 1:N_dimensions_lateral ) .* abs( e_theta( index_object ).components( 1:N_dimensions_lateral ) ), 2 ) / setup.homogeneous_fluid.c_avg;
                 % incorrect value for reproduction of old results: T_inc = t_shift_max / setup.xdc_array.N_elements;
                 T_inc = t_shift_max / ( setup.xdc_array.N_elements - 1 );
+%                 T_inc = physical_values.second( 2e-6 );	% test using full pulse length
 
                 % compute random time delays
                 time_delays_act = ( randperm( setup.xdc_array.N_elements ) - 1 ) * T_inc;
@@ -105,7 +106,7 @@ classdef setting_tx_rnd_del < controls.setting_tx
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements
                 %----------------------------------------------------------
-                excitation_voltages{ index_object } = excitation_voltages_common( index_object );
+                excitation_voltages{ index_object } = u_tx_tilde( index_object );
 
             end % for index_object = 1:N_objects
 
@@ -122,7 +123,7 @@ classdef setting_tx_rnd_del < controls.setting_tx
                 objects( index_object ).e_theta = e_theta( index_object );
             end
 
-        end % function objects = setting_tx_rnd_del( setup, excitation_voltages_common, e_theta, settings_rng )
+        end % function objects = setting_tx_rnd_del( setup, u_tx_tilde, e_theta, settings_rng )
 
 	end % methods
 

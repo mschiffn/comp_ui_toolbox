@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-08-03
+% modified: 2019-08-23
 %
-classdef operator
+classdef (Abstract) operator
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -17,7 +17,6 @@ classdef operator
         options ( 1, 1 ) scattering.options                         % scattering operator options
 
         % dependent properties
-        discretization ( 1, 1 ) discretizations.spatiospectral      % spatiospectral discretization
         incident_waves ( :, 1 ) syntheses.incident_wave             % incident waves
         indices_measurement_sel ( :, 1 ) double { mustBePositive, mustBeInteger } % indices of selected sequential pulse-echo measurements
 
@@ -84,23 +83,25 @@ classdef operator
                 %----------------------------------------------------------
                 % b) spatiospectral discretization of the sequence
                 %----------------------------------------------------------
-                objects( index_object ).discretization = discretize( objects( index_object ).sequence, objects( index_object ).options.static.discretization );
+                objects( index_object ).sequence = discretize( objects( index_object ).sequence, objects( index_object ).options.static.discretization );
 
                 %----------------------------------------------------------
-                % c) incident acoustic fields (unique frequencies)
+                % c) apply spatial anti-aliasing filter
                 %----------------------------------------------------------
-                objects( index_object ).incident_waves = syntheses.incident_wave( objects( index_object ).discretization );
-
-                %----------------------------------------------------------
-                % d) apply spatial anti-aliasing filter
-                %----------------------------------------------------------
-                if isa( objects( index_object ).discretization.spatial, 'discretizations.spatial_grid_symmetric' )
-                    objects( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( objects( index_object ).sequence.setup.xdc_array, objects( index_object ).sequence.setup.homogeneous_fluid, objects( index_object ).discretization.h_ref, objects( index_object ).options.momentary.anti_aliasing );
+                if isa( objects( index_object ).sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                    objects( index_object ).sequence = apply_anti_aliasing_filter( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing );
+                    objects( index_object ).h_ref_aa = anti_aliasing_filter( objects( index_object ).sequence.setup, objects( index_object ).sequence.h_ref, objects( index_object ).options.momentary.anti_aliasing );
                 end
+
+                %----------------------------------------------------------
+                % d) incident acoustic fields (unique frequencies)
+                %----------------------------------------------------------
+                objects( index_object ).incident_waves = syntheses.incident_wave( objects( index_object ).sequence );
+                
 % TODO: use update function
                 % update indices of selected sequential pulse-echo measurements
                 if isa( objects( index_object ).options.momentary.sequence, 'scattering.options.sequence_full' )
-                    objects( index_object ).indices_measurement_sel = 1:numel( objects( index_object ).discretization.spectral );
+                    objects( index_object ).indices_measurement_sel = 1:numel( objects( index_object ).sequence.settings );
                 else
                     objects( index_object ).indices_measurement_sel = objects( index_object ).options.momentary.sequence.indices;
                 end
@@ -145,7 +146,7 @@ classdef operator
 
                 % apply spatial anti-aliasing filter via external function
                 if ~isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_off' )
-                    spatiospectrals( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( spatiospectrals( index_object ).spatial, spatiospectrals( index_object ).h_ref, options_anti_aliasing( index_object ).parameter );
+                    spatiospectrals( index_object ).h_ref_aa = anti_aliasing_filter( spatiospectrals( index_object ).spatial, spatiospectrals( index_object ).h_ref, options_anti_aliasing( index_object ).parameter );
                 end
 
             end % for index_object = 1:numel( operators )
@@ -219,13 +220,13 @@ classdef operator
                     if isa( operators( index_object ).options.momentary.sequence, 'scattering.options.sequence_full' )
 
                         % select all sequential pulse-echo measurements
-                        operators( index_object ).indices_measurement_sel = 1:numel( operators( index_object ).discretization.spectral );
+                        operators( index_object ).indices_measurement_sel = 1:numel( operators( index_object ).sequence.settings );
 
                     else
 
                         % ensure valid indices
-                        if any( operators( index_object ).options.momentary.sequence.indices > numel( operators( index_object ).discretization.spectral ) )
-                            errorStruct.message = sprintf( 'operators( %d ).options.momentary.sequence.indices must not exceed %d!', index_object, numel( operators( index_object ).discretization.spectral ) );
+                        if any( operators( index_object ).options.momentary.sequence.indices > numel( operators( index_object ).sequence.settings ) )
+                            errorStruct.message = sprintf( 'operators( %d ).options.momentary.sequence.indices must not exceed %d!', index_object, numel( operators( index_object ).sequence.settings ) );
                             errorStruct.identifier = 'set_properties_momentary:InvalidSequenceIndices';
                             error( errorStruct );
                         end
@@ -244,8 +245,8 @@ classdef operator
                     % ii.) change in spatial anti-aliasing filter options
                     %------------------------------------------------------
                     % update reference spatial transfer function w/ anti-aliasing filter
-                    if isa( operators( index_object ).discretization.spatial, 'discretizations.spatial_grid_symmetric' )
-                        operators( index_object ).h_ref_aa = discretizations.anti_aliasing_filter( operators( index_object ).sequence.setup.xdc_array, operators( index_object ).sequence.setup.homogeneous_fluid, operators( index_object ).discretization.h_ref, operators( index_object ).options.momentary.anti_aliasing );
+                    if isa( operators( index_object ).sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                        operators( index_object ).h_ref_aa = anti_aliasing_filter( operators( index_object ).sequence.setup, operators( index_object ).sequence.h_ref, operators( index_object ).options.momentary.anti_aliasing );
                     end
 
                 end % if ~isequal( operators( index_object ).options.momentary.anti_aliasing, options_old( index_object ).momentary.anti_aliasing )
@@ -344,4 +345,4 @@ classdef operator
 
     end % methods
 
-end % classdef operator
+end % classdef (Abstract) operator

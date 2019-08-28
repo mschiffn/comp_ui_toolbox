@@ -4,7 +4,7 @@ function varargout = compute_or_load_hash( str_format, hdl_function, indices_arg
 %
 % author: Martin F. Schiffner
 % date: 2019-05-16
-% modified: 2019-05-17
+% modified: 2019-08-23
 %
 
     %----------------------------------------------------------------------
@@ -96,7 +96,7 @@ function varargout = compute_or_load_hash( str_format, hdl_function, indices_arg
 
         % iterate arguments to hash
         for index_hash = 1:N_args_hash
-
+% TODO: problematic for function handles!
             % ensure equality of arguments
             if ~isequal( temp.( str_name_args{ index_hash } ), varargin{ indices_args_hash( index_hash ) } )
                 errorStruct.message = sprintf( 'Hash collision for argument %d!', indices_args_hash( index_hash ) );

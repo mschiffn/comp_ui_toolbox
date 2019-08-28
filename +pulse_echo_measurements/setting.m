@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-08-01
+% modified: 2019-08-21
 %
 classdef setting
 
@@ -13,12 +13,20 @@ classdef setting
 	properties (SetAccess = private)
 
         % independent properties
-        tx ( 1, 1 ) controls.setting_tx     % synthesis settings
-        rx ( :, : ) controls.setting_rx     % mixer settings
+        tx ( :, 1 ) controls.setting_tx     % synthesis settings
+        rx ( :, 1 ) controls.setting_rx     % mixer settings
 
         % dependent properties
         interval_hull_t ( 1, 1 ) math.interval	% hull of all recording time intervals
         interval_hull_f ( 1, 1 ) math.interval	% hull of all frequency intervals
+
+        % discretization
+        tx_unique ( :, : ) controls.setting_tx                  % synthesis settings (unique frequencies)
+        v_d_unique ( :, 1 ) discretizations.signal_matrix       % normal velocities (unique frequencies)
+        indices_f_to_unique                                     % cell array mapping frequencies of each mixed voltage signal to unique frequencies of current pulse-echo measurement
+        indices_active_rx_unique ( 1, : ) double
+        indices_active_rx_to_unique
+        N_observations ( :, : ) double                          % numbers of observations in each mixed voltage signal
 
     end % properties
 
@@ -64,9 +72,9 @@ classdef setting
         end % function objects = setting( settings_tx, settings_rx )
 
         %------------------------------------------------------------------
-        % spectral discretization
+        % discretize
         %------------------------------------------------------------------
-        function objects_out = discretize( settings, options_spectral )
+        function settings = discretize( settings, options_spectral )
 % TODO: various types of discretization / regular vs irregular
 
             %--------------------------------------------------------------
@@ -174,8 +182,8 @@ classdef setting
                 for index_object = 1:numel( settings )
 
                     % discretize rx and tx settings
-                    settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, interval_hull_f );
-                    settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_hull_t_quantized, interval_hull_f );
+                    settings( index_object ).rx = discretize( settings( index_object ).rx, interval_hull_t_quantized, interval_hull_f );
+                    settings( index_object ).tx = discretize( settings( index_object ).tx, interval_hull_t_quantized, interval_hull_f );
 
                 end % for index_object = 1:numel( settings )
 
@@ -190,12 +198,25 @@ classdef setting
 
             end % if isa( options_spectral, 'discretizations.options_spectral_signal' )
 
-            %--------------------------------------------------------------
-            % 3.) create spectral discretizations
-            %--------------------------------------------------------------
-            objects_out = discretizations.spectral_points( settings_tx, settings_rx );
+            % iterate pulse-echo measurement settings
+            for index_object = 1:numel( settings )
 
-        end % function objects_out = discretize( settings, options_spectral )
+                % determine tx settings for unique frequencies
+                [ settings( index_object ).tx_unique, ~, settings( index_object ).indices_f_to_unique ] = unique( settings( index_object ).tx );
+                if isscalar( settings( index_object ).tx )
+                    settings( index_object ).indices_f_to_unique = repmat( settings( index_object ).indices_f_to_unique, size( settings( index_object ).rx ) );
+                end
+%               [ settings( index_object ).indices_active_rx_unique, settings( index_object ).indices_active_rx_to_unique ] = unique_indices_active( settings( index_object ).rx );
+
+                % numbers of observations in each mixed voltage signal
+                settings( index_object ).N_observations = compute_N_observations( settings( index_object ).rx );
+
+                % compute normal velocities (unique frequencies)
+                settings( index_object ).v_d_unique = compute_normal_velocities( settings( index_object ).tx_unique );
+
+            end % for index_object = 1:numel( settings )
+
+        end % function settings = discretize( settings, options_spectral )
 
         %------------------------------------------------------------------
         % unique deltas
