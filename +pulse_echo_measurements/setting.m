@@ -134,7 +134,11 @@ classdef setting
 
                     % largest delta_unique must be integer multiple of smaller deltas_unique
                     delta_unique_max = max( deltas_unique );
-                    mustBeInteger( delta_unique_max ./ deltas_unique );
+                    if any( abs( delta_unique_max ./ deltas_unique - round( delta_unique_max ./ deltas_unique ) ) > eps( round( delta_unique_max ./ deltas_unique ) ) )
+                        errorStruct.message = 'delta_unique_max must be integer multiple of all deltas_unique!';
+                        errorStruct.identifier = 'discretize:NoIntegerMultiple';
+                        error( errorStruct );
+                    end
 
                     % quantize hull of all recording time intervals using largest delta
                     interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_unique_max );
@@ -155,7 +159,11 @@ classdef setting
 
                 % largest delta_unique must be integer multiple of smaller deltas_unique
                 delta_unique_max = max( deltas_unique );
-                mustBeInteger( delta_unique_max ./ deltas_unique );
+                if any( abs( delta_unique_max ./ deltas_unique - round( delta_unique_max ./ deltas_unique ) ) > eps( round( delta_unique_max ./ deltas_unique ) ) )
+                    errorStruct.message = 'delta_unique_max must be integer multiple of all deltas_unique!';
+                    errorStruct.identifier = 'discretize:NoIntegerMultiple';
+                    error( errorStruct );
+                end
 
                 % determine hulls of all time and frequency intervals
                 [ interval_hull_t, interval_hull_f ] = hulls( settings );

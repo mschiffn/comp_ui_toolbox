@@ -228,6 +228,68 @@ classdef face
 
         end % function faces = discretize( faces, methods )
 
+        %------------------------------------------------------------------
+        % is symmetric
+        %------------------------------------------------------------------
+        function tf = issymmetric( faces )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class transducers.face
+            if ~isa( faces, 'transducers.face' )
+                errorStruct.message = 'faces must be transducers.face!';
+                errorStruct.identifier = 'issymmetric:NoFaces';
+                error( errorStruct );
+            end
+
+            % ensure class geometry.orthotope_grid
+            indicator = cellfun( @( x ) ~isa( x, 'geometry.orthotope_grid' ), { faces.shape } );
+            if any( indicator( : ) )
+                errorStruct.message = 'faces.shape must be geometry.orthotope_grid!';
+                errorStruct.identifier = 'issymmetric:NoGridOrthotopes';
+                error( errorStruct );
+            end
+
+            % ensure class math.grid_regular_orthogonal
+            indicator = cellfun( @( x ) ~isa( x.grid, 'math.grid_regular_orthogonal' ), { faces.shape } );
+            if any( indicator( : ) )
+                errorStruct.message = 'The grids representing faces.shape must be math.grid_regular_orthogonal!';
+                errorStruct.identifier = 'issymmetric:NoOrthogonalRegularGrids';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) check arguments
+            %--------------------------------------------------------------
+            % initialize tf w/ true
+            tf = true( size( faces ) );
+% TODO: lateral symmetry of grid?
+            % iterate vibrating faces
+            for index_face = 1:numel( faces )
+
+                % numbers of grid points on each side of the center
+                M_points_axis = ceil( ( faces( index_face ).shape.grid.N_points_axis - 1 ) / 2 );
+
+                % ensure lateral symmetries of the apodization
+                apodization = reshape( faces( index_face ).apodization, faces( index_face ).shape.grid.N_points_axis );
+                indicator_1 = ( apodization( 1:M_points_axis( 1 ), : ) - apodization( end:-1:( end - M_points_axis( 1 ) + 1 ), : ) ) > eps( 0 );
+                indicator_2 = ( apodization( :, 1:M_points_axis( 2 ) ) - apodization( :, end:-1:( end - M_points_axis( 2 ) + 1 ) ) ) > eps( 0 );
+
+                % ensure lateral symmetries of the apodization
+                thickness = reshape( faces( index_face ).lens.thickness, faces( index_face ).shape.grid.N_points_axis );
+                indicator_3 = double( thickness( 1:M_points_axis( 1 ), : ) - thickness( end:-1:( end - M_points_axis( 1 ) + 1 ), : ) ) > eps( 0 );
+                indicator_4 = double( thickness( :, 1:M_points_axis( 2 ) ) - thickness( :, end:-1:( end - M_points_axis( 2 ) + 1 ) ) ) > eps( 0 );
+
+                % check symmetry
+                if any( indicator_1( : ) ) || any( indicator_2( : ) ) || any( indicator_3( : ) ) || any( indicator_4( : ) )
+                    tf( index_face ) = false;
+                end
+
+            end % for index_face = 1:numel( faces )
+
+        end % function tf = issymmetric( faces )
+
     end % methods
 
 end % classdef face

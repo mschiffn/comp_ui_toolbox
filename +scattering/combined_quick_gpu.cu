@@ -53,8 +53,8 @@
 #define N_THREADS_Y 8
 
 // version
-#define REVISION "0.1"
-#define DATE "2019-07-30"
+#define REVISION "0.2"
+#define DATE "2019-09-05"
 
 // toggle debug mode
 #define DEBUG_MODE 0
@@ -110,7 +110,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	int*** indices_f_mix_to_sequence = NULL;			// indices of unique frequencies for each mixed voltage signal
 
 	// options
-	int mode = 1;										// mode of operation (1 = forward, 2 = adjoint)
+	int mode = 1;										// mode of operation (1 = forward, other = adjoint)
 	int index_device = 0;								// index of CUDA device
 
 	// dimensions of output vector
@@ -373,9 +373,15 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 
 		// index of CUDA device
 		index_device = (int) mxGetScalar( mxGetProperty( mxGetProperty( mxGetProperty( mxGetProperty( prhs[ 0 ], 0, "options" ), 0, "momentary" ), 0, "gpu" ), 0, "index" ) );
+		if( DEBUG_MODE ) mexPrintf( "index_device = %d\n", index_device );
 
 		// extract reference spatial transfer function
 		h_ref = mxGetProperty( mxGetProperty( mxGetProperty( prhs[ 0 ], 0, "h_ref_aa" ), 0, "samples" ), 0, "values" );
+
+		// ensure complex doubles (mxDOUBLE_CLASS)
+		if( !( mxIsDouble( h_ref ) && mxIsComplex( h_ref ) ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoComplexDoubles", "operator_born.h_ref_aa must be complex doubles!" );
+
+		// read complex doubles
 		h_ref_complex = mxGetComplexDoubles( h_ref );
 
 		// number of unique frequencies
@@ -385,14 +391,13 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	}
 	else
 	{
-
 		mexErrMsgIdAndTxt( "combined_quick_gpu:NoOperatorBorn", "operator_born must be a single scattering.operator_born!" );
-
 	} // if( mxIsClass( prhs[ 0 ], "scattering.operator_born" ) && mxIsScalar( prhs[ 0 ] ) )
 
 	//------------------------------------------------------------------------------------------------------------------------------------------
 	// b) mode of operation
 	//------------------------------------------------------------------------------------------------------------------------------------------
+	// TODO: Use mxGetScalar on a nonempty mxArray of type numeric, logical, or char only. mxIsEmpty, mxIsLogical, mxIsNumeric, or mxIsChar
 	if( mxIsNumeric( prhs[ 1 ] ) && mxIsScalar( prhs[ 1 ] ) && !mxIsComplex( prhs[ 1 ] ) )
 	{
 
@@ -403,9 +408,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	}
 	else
 	{
-
-		mexErrMsgIdAndTxt( "combined_quick_gpu:NoNumericScalarMode", "mode must be a numeric scalar!" );
-
+		mexErrMsgIdAndTxt( "combined_quick_gpu:NoNumericScalarMode", "mode must be a real-valued numeric scalar!" );
 	}
 
 	//------------------------------------------------------------------------------------------------------------------------------------------
@@ -416,6 +419,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	{
 
 		// check for imaginary part
+		// TODO: mxMakeArrayComplex( prhs[ 2 ] )
 		if( mxIsComplex( prhs[ 2 ] ) )
 		{
 			// extract input matrix

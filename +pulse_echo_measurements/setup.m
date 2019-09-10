@@ -19,7 +19,8 @@ classdef setup
         str_name = 'default'                                                    % name
 
 % TODO: move to different class
-        T_clk = physical_values.second( 1 / 80e6 );                     % time period of the clock signal
+%         T_clk = physical_values.second( 1 / 80e6 );                   % time period of the clock signal
+        T_clk = physical_values.second( ( 1 / 20832000 ) / 12 );        % time period of the clock signal
 
         % dependent properties
         intervals_tof ( :, : ) math.interval                            % lower and upper bounds on the times-of-flight
@@ -740,21 +741,10 @@ classdef setup
                 %----------------------------------------------------------
                 % b) ensure orthotopes discretized by orthogonal regular grids
                 %----------------------------------------------------------
-                % ensure class geometry.orthotope_grid
-                if ~isa( [ setups( index_setup ).xdc_array.aperture.shape ], 'geometry.orthotope_grid' )
-                    errorStruct.message = sprintf( 'The faces of setups( %d ).xdc_array must be geometry.orthotope_grid!', index_setup );
-                    errorStruct.identifier = 'issymmetric:NoGridOrthotopes';
-                    error( errorStruct );
-                end
+                % method issymmetric of vibrating face ensures class geometry.orthotope_grid
+                % method issymmetric of vibrating face ensures class math.grid_regular_orthogonal
 
-                % ensure class math.grid_regular_orthogonal
-                indicator = cellfun( @( x ) ~isa( x.grid, 'math.grid_regular_orthogonal' ), { setups( index_setup ).xdc_array.aperture.shape } );
-                if any( indicator( : ) )
-                    errorStruct.message = sprintf( 'The grids representing setups( %d ).xdc_array.aperture.shape must be math.grid_regular_orthogonal!', index_setup );
-                    errorStruct.identifier = 'issymmetric:NoOrthogonalRegularGrids';
-                    error( errorStruct );
-                end
-
+% TODO: move to fields_of_view.field_of_view
                 % ensure class geometry.orthotope_grid
                 if ~isa( setups( index_setup ).FOV.shape, 'geometry.orthotope_grid' )
                     errorStruct.message = sprintf( 'setups( %d ).FOV.shape must be geometry.orthotope_grid!', index_setup );
@@ -772,11 +762,13 @@ classdef setup
                 %----------------------------------------------------------
                 % c) check lateral symmetries of the FOV about the axial axis
                 %----------------------------------------------------------
-% TODO: move to face or orthotope_grid
-                % ensure lateral symmetries of apodization weights and thickness
-                apodization = reshape( setups( index_setup ).xdc_array.aperture( 1 ).apodization, setups( index_setup ).xdc_array.aperture( 1 ).grid.N_points_axis );
-                M_points_axis = ceil( ( setups( index_setup ).xdc_array.aperture( 1 ).grid.N_points_axis - 1 ) / 2 );
-%                 apodization( :, 1 ) - apodization( :, end )
+                % ensure lateral symmetries of the vibrating faces
+                indicator = issymmetric( setups( index_setup ).xdc_array.aperture );
+                if any( ~indicator( : ) )
+                    errorStruct.message = 'Symmetric spatial grid requires the lateral symmetries of the vibrating faces!';
+                    errorStruct.identifier = 'issymmetric:NoSymmetry';
+                    error( errorStruct );
+                end
 
                 % ensure lateral symmetries of the FOV about the axial axis
                 FOV_pos_ctr = 2 * setups( index_setup ).FOV.shape.grid.offset_axis( 1:(end - 1) ) + ( setups( index_setup ).FOV.shape.grid.N_points_axis( 1:(end - 1) ) - 1 ) .* setups( index_setup ).FOV.shape.grid.cell_ref.edge_lengths( 1:(end - 1) );
@@ -787,7 +779,18 @@ classdef setup
                 end
 
                 %----------------------------------------------------------
-                % d) TODO: check minimal # of lateral grid points
+                % d) lateral spacing is an integer fraction of the element pitch
+                %    => translational invariance by shifts of factor_interp_tx points
+                %----------------------------------------------------------
+                N_points_per_pitch_axis{ index_setup } = setups( index_setup ).xdc_array.cell_ref.edge_lengths ./ setups( index_setup ).FOV.shape.grid.cell_ref.edge_lengths( 1:( end - 1 ) );
+                if any( abs( N_points_per_pitch_axis{ index_setup } - round( N_points_per_pitch_axis{ index_setup } ) ) > eps( round( N_points_per_pitch_axis{ index_setup } ) ) )
+                    errorStruct.message = 'Symmetric discretized setup requires the lateral spacings of the grid points in the FOV to be integer fractions of the element pitch!';
+                    errorStruct.identifier = 'issymmetric:NoIntegerFraction';
+                    error( errorStruct );
+                end
+
+                %----------------------------------------------------------
+                % e) TODO: check minimal # of lateral grid points
                 %----------------------------------------------------------
                 % minimum number of grid points on x-axis [ FOV_pos_x(1) <= XDC_pos_ctr_x(1) ]
                 % 1.) x-coordinates of grid points coincide with centroids of vibrating faces:
@@ -813,17 +816,6 @@ classdef setup
                 % end
                 % % assertion: N_lattice_axis_x_symmetry_left >= 0
 
-                %----------------------------------------------------------
-                % e) lateral spacing is an integer fraction of the element pitch
-                %    => translational invariance by shifts of factor_interp_tx points
-                %----------------------------------------------------------
-                N_points_per_pitch_axis{ index_setup } = setups( index_setup ).xdc_array.cell_ref.edge_lengths ./ setups( index_setup ).FOV.shape.grid.cell_ref.edge_lengths( 1:( end - 1 ) );
-                if any( abs( N_points_per_pitch_axis{ index_setup } - round( N_points_per_pitch_axis{ index_setup } ) ) > eps( round( N_points_per_pitch_axis{ index_setup } ) ) )
-                    errorStruct.message = 'Symmetric discretized setup requires the lateral spacings of the grid points in the FOV to be integer fractions of the element pitch!';
-                    errorStruct.identifier = 'issymmetric:NoIntegerFraction';
-                    error( errorStruct );
-                end
-
                 % declare discretized setup to be symmetric
                 tf( index_setup ) = true;
                 N_points_per_pitch_axis{ index_setup } = round( N_points_per_pitch_axis{ index_setup } );
@@ -835,7 +827,7 @@ classdef setup
                 N_points_per_pitch_axis = N_points_per_pitch_axis{ 1 };
             end
 
-        end % function tf = issymmetric( setups )
+        end % function [ tf, N_points_per_pitch_axis ] = issymmetric( setups )
 
         %
         function setup_grid_symmetric( setups )

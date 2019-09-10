@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-06-15
+% modified: 2019-09-05
 %
 classdef interval
 
@@ -196,8 +196,20 @@ classdef interval
             ubs = reshape( [ intervals.ub ], size( intervals ) );
 
             % compute lower and upper boundary indices
-            lbs_q = ceil( lbs ./ deltas );
-            ubs_q = floor( ubs ./ deltas );
+            lbs_exact = lbs ./ deltas;
+            lbs_q = ceil( lbs_exact );
+
+            ubs_exact = ubs ./ deltas;
+            ubs_q = floor( ubs_exact );
+
+            % correct rounding errors
+            lbs_rnd = round( lbs_exact );
+            indicator_rnd = abs( lbs_exact - lbs_rnd ) <= eps( lbs_rnd );
+            lbs_q( indicator_rnd ) = lbs_rnd( indicator_rnd );
+
+            ubs_rnd = round( ubs_exact );
+            indicator_rnd = abs( ubs_exact - ubs_rnd ) <= eps( ubs_rnd );
+            ubs_q( indicator_rnd ) = ubs_rnd( indicator_rnd );
 
             %--------------------------------------------------------------
             % 3.) create quantized intervals
@@ -210,7 +222,7 @@ classdef interval
         % discretize
         %------------------------------------------------------------------
         function objects_out = discretize( intervals, deltas )
-% TODO: enumeration class discretization method
+% TODO: options discretization method
 
             %--------------------------------------------------------------
             % 1.) quantize intervals

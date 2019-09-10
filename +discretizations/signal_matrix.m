@@ -134,10 +134,12 @@ classdef signal_matrix
             ubs_q_signal = reshape( [ axes_t.q_ub ], size( signal_matrices ) );
             deltas = reshape( [ axes_t.delta ], size( signal_matrices ) );
 
-            % ensure nonempty intervals_t
+            % ensure nonempty T_rec
             if nargin >= 2 && isa( varargin{ 1 }, 'math.interval' )
+%                 T_rec = varargin{ 1 };
                 intervals_t = varargin{ 1 };
             else
+%                 T_rec = ( ubs_q_signal - lbs_q_signal ) .* deltas;
                 intervals_t = math.interval_quantized( lbs_q_signal, ubs_q_signal + 1, deltas );
             end
 
@@ -182,6 +184,12 @@ classdef signal_matrix
             T_rec = abs( intervals_t_quantized );
             lbs_q = reshape( [ intervals_t_quantized.q_lb ], size( signal_matrices ) );
             ubs_q = reshape( [ intervals_t_quantized.q_ub ], size( signal_matrices ) );
+%             N_dft = round( T_rec ./ deltas );
+%           if any( abs( T_rec ./ deltas - N_dft ) > eps( N_dft ) )
+%               errorStruct.message = sprintf( 'T_rec must be integer multiples of deltas!' );
+%               errorStruct.identifier = 'DFT:InvalidTrec';
+%               error( errorStruct );
+%           end
             N_dft = double( ubs_q - lbs_q );
 
             % numbers of zeros to pad
@@ -229,6 +237,7 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 3.) create signal matrices
             %--------------------------------------------------------------
+% TODO: in-place transform!
             signal_matrices = discretizations.signal_matrix( axes_f, samples_dft );
 
         end % function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, varargin )

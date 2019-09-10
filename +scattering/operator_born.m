@@ -593,6 +593,7 @@ classdef operator_born < scattering.operator
                     mustBePositive( indices{ index_operator }{ index_transform } );
 
                     % ensure class linear_transforms.linear_transform
+% TODO: empty transform?
                     if ~isa( linear_transforms{ index_operator }{ index_transform }, 'linear_transforms.linear_transform' )
                         errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
                         errorStruct.identifier = 'tpsf:NoLinearTransforms';
@@ -1262,7 +1263,7 @@ classdef operator_born < scattering.operator
 
                 % print progress in percent
                 if index_batch > 1
-                    N_bytes = fprintf( '%5.1f %% (elapsed: %d min. | remaining: %d min. | last: %.2f s)', ( index_batch - 1 ) / N_batches * 1e2, round( toc( time_start ) / 60 ), round( mean( seconds_per_batch( 1:(index_batch - 1) ) ) * N_batches / 60 ), seconds_per_batch( index_batch - 1 ) );
+                    N_bytes = fprintf( '%5.1f %% (elapsed: %d min. | remaining: %d min. | mean: %.2f s | last: %.2f s)', ( index_batch - 1 ) / N_batches * 1e2, round( toc( time_start ) / 60 ), round( ( N_batches - index_batch + 1 ) * mean( seconds_per_batch( 1:(index_batch - 1) ) ) / 60 ), mean( seconds_per_batch( 1:(index_batch - 1) ) ), seconds_per_batch( index_batch - 1 ) );
                 else
                     N_bytes = fprintf( '%5.1f %% (elapsed: %d min.)', 0, round( toc( time_start ) / 60 ) );
                 end
