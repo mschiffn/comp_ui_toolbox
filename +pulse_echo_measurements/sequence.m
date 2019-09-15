@@ -392,8 +392,8 @@ classdef sequence
 
                 % compute Fourier coefficients
                 interval_f = math.interval( physical_values.hertz( 0 ), physical_values.hertz( 19e6 ) );
-%                 u_SA = fourier_coefficients( u_SA_tilde{ index_object }, interval_hull_t_quantized, sequences( index_object ).interval_hull_f );
-                u_SA = fourier_coefficients( u_SA_tilde{ index_object }, interval_hull_t_quantized, interval_f );
+%                 u_SA = fourier_coefficients( u_SA_tilde{ index_object }, abs( interval_hull_t_quantized ), sequences( index_object ).interval_hull_f );
+                u_SA = fourier_coefficients( u_SA_tilde{ index_object }, abs( interval_hull_t_quantized ), interval_f );
 
                 % specify cell array for samples
                 samples = cell( size( sequences( index_object ).settings ) );
@@ -412,8 +412,8 @@ classdef sequence
                     end
 
                     % compute fourier transforms
-%                     impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, interval_hull_t_quantized, sequences( index_object ).interval_hull_f );
-                    impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, interval_hull_t_quantized, interval_f );
+%                     impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, abs( interval_hull_t_quantized ), sequences( index_object ).interval_hull_f );
+                    impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, abs( interval_hull_t_quantized ), interval_f );
 
                     % number of active array elements
                     N_elements_active_tx = numel( sequences( index_object ).settings( index_measurement ).tx.indices_active );

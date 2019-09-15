@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2019-06-21
+% modified: 2019-09-10
 %
 classdef signal_matrix
 
@@ -98,7 +98,6 @@ classdef signal_matrix
         %------------------------------------------------------------------
         function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, varargin )
 % TODO: generalize for complex-valued samples
-% TODO: absolute position of recording interval does not matter: provide T_rec
 % TODO: circshift not suitable for Fourier transform?!
 
             %--------------------------------------------------------------
@@ -112,7 +111,8 @@ classdef signal_matrix
             end
 
             % ensure real-valued samples
-            if any( cellfun( @( x ) ~isreal( x ), { signal_matrices.samples } ) )
+            indicator = cellfun( @( x ) ~isreal( x ), { signal_matrices.samples } );
+            if any( indicator( : ) )
                 errorStruct.message = 'signal_matrices.samples must be real-valued!';
                 errorStruct.identifier = 'DFT:NoRealSamples';
                 error( errorStruct );
@@ -134,25 +134,34 @@ classdef signal_matrix
             ubs_q_signal = reshape( [ axes_t.q_ub ], size( signal_matrices ) );
             deltas = reshape( [ axes_t.delta ], size( signal_matrices ) );
 
-            % ensure nonempty T_rec
-            if nargin >= 2 && isa( varargin{ 1 }, 'math.interval' )
-%                 T_rec = varargin{ 1 };
-                intervals_t = varargin{ 1 };
+            % ensure nonempty T_ref
+            if nargin >= 2 && ~isempty( varargin{ 1 } )
+                T_ref = varargin{ 1 };
             else
-%                 T_rec = ( ubs_q_signal - lbs_q_signal ) .* deltas;
-                intervals_t = math.interval_quantized( lbs_q_signal, ubs_q_signal + 1, deltas );
+                T_ref = ( ubs_q_signal - lbs_q_signal + 1 ) .* deltas;
             end
 
-            % ensure equal subclasses of physical_values.time
+            % ensure class physical_values.time
 % TODO: generalize for arbitrary physical units
 % ensure equal subclasses of class( deltas )
-            auxiliary.mustBeEqualSubclasses( 'physical_values.time', intervals_t.lb );
+            if ~isa( T_ref, 'physical_values.time' )
+                errorStruct.message = 'T_ref must be physical_values.time!';
+                errorStruct.identifier = 'DFT:NoTimes';
+                error( errorStruct );
+            end
 
             % ensure nonempty intervals_f
-            if nargin >= 3 && isa( varargin{ 2 }, 'math.interval' )
+            if nargin >= 3 && ~isempty( varargin{ 2 } )
                 intervals_f = varargin{ 2 };
             else
                 intervals_f = math.interval( physical_values.hertz( zeros( size( deltas ) ) ), 1 ./ ( 2 * deltas ) );
+            end
+
+            % ensure class math.interval
+            if ~isa( intervals_f, 'math.interval' )
+                errorStruct.message = 'intervals_f must be math.interval!';
+                errorStruct.identifier = 'DFT:NoTimes';
+                error( errorStruct );
             end
 
             % ensure equal subclasses of physical_values.frequency
@@ -160,9 +169,9 @@ classdef signal_matrix
 % ensure equal subclasses of reciprocal( class( deltas ) )
             auxiliary.mustBeEqualSubclasses( 'physical_values.frequency', intervals_f.lb );
 
-            % multiple signal_matrices / single intervals_t
-            if ~isscalar( signal_matrices ) && isscalar( intervals_t )
-                intervals_t = repmat( intervals_t, size( signal_matrices ) );
+            % multiple signal_matrices / single T_ref
+            if ~isscalar( signal_matrices ) && isscalar( T_ref )
+                T_ref = repmat( T_ref, size( signal_matrices ) );
             end
 
             % multiple signal_matrices / single intervals_f
@@ -171,7 +180,7 @@ classdef signal_matrix
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_matrices, intervals_t, intervals_f );
+            auxiliary.mustBeEqualSize( signal_matrices, T_ref, intervals_f );
 
             %--------------------------------------------------------------
             % 2.) compute orthonormal discrete Fourier transforms
@@ -179,31 +188,26 @@ classdef signal_matrix
             % numbers of temporal samples
             N_samples_signal = abs( axes_t );
 
-            % quantize recording time intervals and determine lengths
-            intervals_t_quantized = quantize( intervals_t, deltas );
-            T_rec = abs( intervals_t_quantized );
-            lbs_q = reshape( [ intervals_t_quantized.q_lb ], size( signal_matrices ) );
-            ubs_q = reshape( [ intervals_t_quantized.q_ub ], size( signal_matrices ) );
-%             N_dft = round( T_rec ./ deltas );
-%           if any( abs( T_rec ./ deltas - N_dft ) > eps( N_dft ) )
-%               errorStruct.message = sprintf( 'T_rec must be integer multiples of deltas!' );
-%               errorStruct.identifier = 'DFT:InvalidTrec';
-%               error( errorStruct );
-%           end
-            N_dft = double( ubs_q - lbs_q );
+            % compute numbers of points in the DFTs (numbers of intervals)
+            N_dft = round( T_ref ./ deltas );
+            if any( abs( T_ref ./ deltas - N_dft ) > eps( N_dft ) )
+                errorStruct.message = sprintf( 'T_ref must be integer multiples of deltas!' );
+                errorStruct.identifier = 'DFT:InvalidTRec';
+                error( errorStruct );
+            end
 
             % numbers of zeros to pad
             N_zeros_pad = N_dft - N_samples_signal;
 
             % ensure that numbers of samples do not exceed the order of the DFT
             if any( N_zeros_pad( : ) < 0 )
-                errorStruct.message = sprintf( 'Number of signal samples exceeds order of DFT!' );
-                errorStruct.identifier = 'DFT:IntervalMismatch';
+                errorStruct.message = sprintf( 'Numbers of signal samples exceed orders of the DFTs!' );
+                errorStruct.identifier = 'DFT:ShortTRec';
                 error( errorStruct );
             end
 
             % compute axes of relevant frequencies
-            axes_f = discretize( intervals_f, 1 ./ T_rec );
+            axes_f = discretize( intervals_f, 1 ./ T_ref );
             lbs_q_f = reshape( [ axes_f.q_lb ], size( axes_f ) );
             ubs_q_f = reshape( [ axes_f.q_ub ], size( axes_f ) );
 
@@ -215,30 +219,24 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % specify cell array for samples_dft
-            samples_dft = cell( size( signal_matrices ) );
-
             % iterate signal matrices
-            for index_object = 1:numel( signal_matrices )
+            for index_matrix = 1:numel( signal_matrices )
 
                 % specify relevant frequency indices
-                indices_relevant = double( lbs_q_f( index_object ):ubs_q_f( index_object ) ) + 1;
+                indices_relevant = double( lbs_q_f( index_matrix ):ubs_q_f( index_matrix ) ) + 1;
 
                 % zero-pad and shift samples
-                samples_act = [ signal_matrices( index_object ).samples; zeros( N_zeros_pad( index_object ), signal_matrices( index_object ).N_signals ) ];
-                samples_act = circshift( samples_act, lbs_q_signal( index_object ), 1 );
+                samples_act = [ signal_matrices( index_matrix ).samples; zeros( N_zeros_pad( index_matrix ), signal_matrices( index_matrix ).N_signals ) ];
+                samples_act = circshift( samples_act, lbs_q_signal( index_matrix ), 1 );
 
                 % compute and truncate DFT
-                DFT_act = fft( samples_act, [], 1 ) / sqrt( N_dft( index_object ) );
-                samples_dft{ index_object } = DFT_act( indices_relevant, : );
+                DFT_act = fft( samples_act, [], 1 ) / sqrt( N_dft( index_matrix ) );
+                signal_matrices( index_matrix ).samples = DFT_act( indices_relevant, : );
 
-            end % for index_object = 1:numel( signal_matrices )
+                % update axis
+                signal_matrices( index_matrix ).axis = axes_f( index_matrix );
 
-            %--------------------------------------------------------------
-            % 3.) create signal matrices
-            %--------------------------------------------------------------
-% TODO: in-place transform!
-            signal_matrices = discretizations.signal_matrix( axes_f, samples_dft );
+            end % for index_matrix = 1:numel( signal_matrices )
 
         end % function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, varargin )
 
@@ -246,21 +244,21 @@ classdef signal_matrix
         % Fourier transform (cf. book:Briggs1995, pp. 40, 41)
         %------------------------------------------------------------------
         function signal_matrices = fourier_transform( signal_matrices, varargin )
-
+% TODO: Fourier transform does not exhibit periodicity!
             %--------------------------------------------------------------
             % 1.) compute orthonormal discrete Fourier transforms (DFTs)
             %--------------------------------------------------------------
-% TODO: Fourier transform does not exhibit periodicity!
             [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, varargin{ : } );
 
             %--------------------------------------------------------------
             % 2.) compute Fourier transform samples
             %--------------------------------------------------------------
-            for index_object = 1:numel( signal_matrices )
+            for index_matrix = 1:numel( signal_matrices )
 
-                signal_matrices( index_object ).samples = deltas( index_object ) * sqrt( N_dft( index_object ) ) * signal_matrices( index_object ).samples;
+                % scale samples
+                signal_matrices( index_matrix ).samples = deltas( index_matrix ) * sqrt( N_dft( index_matrix ) ) * signal_matrices( index_matrix ).samples;
 
-            end % for index_object = 1:numel( signal_matrices )
+            end % for index_matrix = 1:numel( signal_matrices )
 
         end % function signal_matrices = fourier_transform( signal_matrices, varargin )
 
@@ -277,11 +275,12 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 2.) compute Fourier series coefficients
             %--------------------------------------------------------------
-            for index_object = 1:numel( signal_matrices )
+            for index_matrix = 1:numel( signal_matrices )
 
-                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples / sqrt( N_dft( index_object ) );
+                % scale samples
+                signal_matrices( index_matrix ).samples = signal_matrices( index_matrix ).samples / sqrt( N_dft( index_matrix ) );
 
-            end % for index_object = 1:numel( signal_matrices )
+            end % for index_matrix = 1:numel( signal_matrices )
 
         end % function signal_matrices = fourier_coefficients( signal_matrices, varargin )
 

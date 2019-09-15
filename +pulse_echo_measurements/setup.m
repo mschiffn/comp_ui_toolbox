@@ -19,8 +19,9 @@ classdef setup
         str_name = 'default'                                                    % name
 
 % TODO: move to different class
-%         T_clk = physical_values.second( 1 / 80e6 );                   % time period of the clock signal
-        T_clk = physical_values.second( ( 1 / 20832000 ) / 12 );        % time period of the clock signal
+        T_clk = physical_values.second( 1 / 80e6 );                   % time period of the clock signal
+%         T_clk = physical_values.second( ( 1 / 20832000 ) / 12 );        % time period of the clock signal
+%         T_clk = physical_values.second( 1 / (12 * 20832000) );          % time period of the clock signal
 
         % dependent properties
         intervals_tof ( :, : ) math.interval                            % lower and upper bounds on the times-of-flight

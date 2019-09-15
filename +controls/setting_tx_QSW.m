@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-06-02
+% modified: 2019-09-11
 %
 classdef setting_tx_QSW < controls.setting_tx
 
@@ -26,7 +26,7 @@ classdef setting_tx_QSW < controls.setting_tx
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_tx_QSW( setup, excitation_voltages_common, positions_src, angles )
+        function objects = setting_tx_QSW( setup, u_tx_tilde, positions_src, angles )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -38,7 +38,7 @@ classdef setting_tx_QSW < controls.setting_tx
                 error( errorStruct );
             end
 
-            % excitation_voltages_common will be checked in superclass
+            % u_tx_tilde will be checked in superclass
 
             % ensure class physical_values.length
             if ~isa( positions_src, 'physical_values.length' )
@@ -48,14 +48,14 @@ classdef setting_tx_QSW < controls.setting_tx
             end
 
             % ensure correct number of dimensions for positions_src
-            if size( positions_src, 2 ) ~= setup.FOV.N_dimensions
+            if size( positions_src, 2 ) ~= setup.FOV.shape.N_dimensions
                 errorStruct.message = 'The second dimension of positions_src must match the number of dimensions!';
                 errorStruct.identifier = 'setting_tx_QSW:DimensionMismatch';
                 error( errorStruct );
             end
 
             % number of lateral dimensions
-            N_dimensions_lateral = setup.FOV.N_dimensions - 1;
+            N_dimensions_lateral = setup.FOV.shape.N_dimensions - 1;
 
             % ensure correct number of dimensions for angles
             if size( angles, 2 ) ~= N_dimensions_lateral
@@ -72,12 +72,12 @@ classdef setting_tx_QSW < controls.setting_tx
             % 2.) compute synthesis settings for QSWs
             %--------------------------------------------------------------
             % number of sequential syntheses
-            N_objects = numel( excitation_voltages_common );
+            N_objects = numel( u_tx_tilde );
 
             % allocate cell arrays to store synthesis settings
-            indices_active = cell( size( excitation_voltages_common ) );
-            impulse_responses = cell( size( excitation_voltages_common ) );
-            excitation_voltages = cell( size( excitation_voltages_common ) );
+            indices_active = cell( size( u_tx_tilde ) );
+            impulse_responses = cell( size( u_tx_tilde ) );
+            excitation_voltages = cell( size( u_tx_tilde ) );
 
             % iterate synthesis settings
             for index_object = 1:N_objects
@@ -107,7 +107,7 @@ classdef setting_tx_QSW < controls.setting_tx
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements
                 %----------------------------------------------------------
-                excitation_voltages{ index_object } = excitation_voltages_common( index_object );
+                excitation_voltages{ index_object } = discretizations.signal_matrix( u_tx_tilde( index_object ).axis, u_tx_tilde( index_object ).samples( :, indices_active{ index_object } ) );
 
             end % for index_object = 1:N_objects
 
@@ -126,7 +126,7 @@ classdef setting_tx_QSW < controls.setting_tx
 
             end
 
-        end % function objects = setting_tx_QSW( setup, excitation_voltages_common, positions_src, angles )
+        end % function objects = setting_tx_QSW( setup, u_tx_tilde, positions_src, angles )
 
 	end % methods
 

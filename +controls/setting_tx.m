@@ -106,7 +106,7 @@ classdef setting_tx < controls.setting
         %------------------------------------------------------------------
         % spectral discretization (overload discretize method)
         %------------------------------------------------------------------
-        function settings_tx = discretize( settings_tx, intervals_t, intervals_f )
+        function settings_tx = discretize( settings_tx, Ts_ref, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -114,13 +114,13 @@ classdef setting_tx < controls.setting
             % ensure correct number of arguments
             if nargin ~= 3
                 errorStruct.message = 'Three arguments are required!';
-                errorStruct.identifier = 'discretize:NumberArguments';
+                errorStruct.identifier = 'discretize:InvalidNumberOfArguments';
                 error( errorStruct );
             end
 
-            % multiple settings_tx / single intervals_t
-            if ~isscalar( settings_tx ) && isscalar( intervals_t )
-                intervals_t = repmat( intervals_t, size( settings_tx ) );
+            % multiple settings_tx / single Ts_ref
+            if ~isscalar( settings_tx ) && isscalar( Ts_ref )
+                Ts_ref = repmat( Ts_ref, size( settings_tx ) );
             end
 
             % multiple settings_tx / single intervals_f
@@ -128,25 +128,25 @@ classdef setting_tx < controls.setting
                 intervals_f = repmat( intervals_f, size( settings_tx ) );
             end
 
-            % single settings_tx / multiple intervals_t
-            if isscalar( settings_tx ) && ~isscalar( intervals_t )
-                settings_tx = repmat( settings_tx, size( intervals_t ) );
+            % single settings_tx / multiple Ts_ref
+            if isscalar( settings_tx ) && ~isscalar( Ts_ref )
+                settings_tx = repmat( settings_tx, size( Ts_ref ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( settings_tx, intervals_t, intervals_f );
+            auxiliary.mustBeEqualSize( settings_tx, Ts_ref, intervals_f );
 
             %--------------------------------------------------------------
             % 2.) compute Fourier transform samples and coefficients
             %--------------------------------------------------------------
             % transfer behavior via superclass
-            settings_tx = discretize@controls.setting( settings_tx, intervals_t, intervals_f );
+            settings_tx = discretize@controls.setting( settings_tx, Ts_ref, intervals_f );
 
             % iterate transducer control settings
             for index_object = 1:numel( settings_tx )
 
                 % compute Fourier coefficients
-                settings_tx( index_object ).excitation_voltages = fourier_coefficients( settings_tx( index_object ).excitation_voltages, intervals_t( index_object ), intervals_f( index_object ) );
+                settings_tx( index_object ).excitation_voltages = fourier_coefficients( settings_tx( index_object ).excitation_voltages, Ts_ref( index_object ), intervals_f( index_object ) );
 
                 % merge transforms to ensure class signal_matrix
                 settings_tx( index_object ).excitation_voltages = merge( settings_tx( index_object ).excitation_voltages );
@@ -154,13 +154,13 @@ classdef setting_tx < controls.setting
                 % ensure that settings_tx( index_object ).excitation_voltages and settings_tx( index_object ).impulse_responses have identical frequency axes
                 if ~isequal( settings_tx( index_object ).excitation_voltages.axis, settings_tx( index_object ).impulse_responses.axis )
                     errorStruct.message = sprintf( 'Excitation voltages and impulse responses in settings_tx( %d ) must have identical frequency axes!', index_object );
-                    errorStruct.identifier = 'discretize:AxesMismatch';
+                    errorStruct.identifier = 'discretize:MismatchFrequencyAxis';
                     error( errorStruct );
                 end
 
             end % for index_object = 1:numel( settings_tx )
 
-        end % function settings_tx = discretize( settings_tx, intervals_t, intervals_f )
+        end % function settings_tx = discretize( settings_tx, Ts_ref, intervals_f )
 
         %------------------------------------------------------------------
         % unique values in array (overload unique function)

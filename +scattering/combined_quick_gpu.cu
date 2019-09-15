@@ -414,34 +414,25 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	//------------------------------------------------------------------------------------------------------------------------------------------
 	// c) input matrix (N_columns x N_objects)
 	//------------------------------------------------------------------------------------------------------------------------------------------
-	// ensure numeric matrix w/ correct number of rows
-	if( mxIsNumeric( prhs[ 2 ] ) && mxGetNumberOfDimensions( prhs[ 2 ] ) == 2 && mxGetM( prhs[ 2 ] ) == N_columns )
+	// ensure matrix of doubles (mxDOUBLE_CLASS) w/ correct number of rows
+	if( !( mxIsDouble( prhs[ 2 ] ) && mxGetNumberOfDimensions( prhs[ 2 ] ) == 2 && mxGetM( prhs[ 2 ] ) == N_columns ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoDoublesMatrix", "input must be a double matrix with xxx rows!" );
+
+	// TODO: mxMakeArrayComplex( prhs[ 2 ] )
+	if( mxIsComplex( prhs[ 2 ] ) )
 	{
-
-		// check for imaginary part
-		// TODO: mxMakeArrayComplex( prhs[ 2 ] )
-		if( mxIsComplex( prhs[ 2 ] ) )
-		{
-			// extract input matrix
-			input_complex = mxGetComplexDoubles( prhs[ 2 ] );
-		}
-		else
-		{
-// TODO: add zero imaginary part
-			mexErrMsgIdAndTxt( "combined_quick_gpu:NoNumericMatrix", "u_M must be a numeric matrix!" );
-		}
-
-		// number of objects
-		N_objects = mxGetN( prhs[ 2 ] );
-		if( DEBUG_MODE ) mexPrintf( "N_objects = %d\n", N_objects );
-
+		// extract input matrix
+		input_complex = mxGetComplexDoubles( prhs[ 2 ] );
 	}
 	else
 	{
+// TODO: add zero imaginary part
+		input_complex = (mxComplexDouble*) mxGetDoubles( prhs[ 2 ] );
+		mexErrMsgIdAndTxt( "combined_quick_gpu:NoNumericMatrix", "u_M must be a numeric matrix!" );
+	}
 
-		mexErrMsgIdAndTxt( "combined_quick_gpu:NoNumericMatrix", "input must be a numeric matrix with xxx rows!" );
-
-	} // if( mxIsNumeric( prhs[ 2 ] ) && mxGetNumberOfDimensions( prhs[ 2 ] ) == 2 && mxGetM( prhs[ 2 ] ) == N_columns )
+	// number of objects
+	N_objects = mxGetN( prhs[ 2 ] );
+	if( DEBUG_MODE ) mexPrintf( "N_objects = %d\n", N_objects );
 
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	// 3.) MATLAB output
@@ -818,7 +809,11 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 		//--------------------------------------------------------------------------------------------------------------------------------------
 		// extract incident acoustic pressure field
 		p_incident_measurement = mxGetProperty( mxGetProperty( mxGetProperty( mxGetProperty( prhs[ 0 ], 0, "incident_waves" ), index_measurement, "p_incident" ), 0, "samples" ), 0, "values" );
-// TODO: check complex entries?
+
+		// ensure complex doubles (mxDOUBLE_CLASS)
+		if( !( mxIsDouble( p_incident_measurement ) && mxIsComplex( p_incident_measurement ) ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoComplexDoubles", "operator_born.incident_waves.p_incident must be complex doubles!" );
+
+		// access complex doubles
 		p_incident_measurement_complex = mxGetComplexDoubles( p_incident_measurement );
 
 		//--------------------------------------------------------------------------------------------------------------------------------------

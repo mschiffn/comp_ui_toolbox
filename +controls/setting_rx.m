@@ -113,13 +113,13 @@ classdef setting_rx < controls.setting
             if nargin == 1
 
                 % use intervals from transducer control settings
-                intervals_t = reshape( [ settings_rx.interval_t ], size( settings_rx ) );
+                Ts_ref = reshape( abs( [ settings_rx.interval_t ] ), size( settings_rx ) );
                 intervals_f = reshape( [ settings_rx.interval_f ], size( settings_rx ) );
 
             else
 
                 % use external intervals
-                intervals_t = varargin{ 1 };
+                Ts_ref = varargin{ 1 };
                 intervals_f = varargin{ 2 };
 
             end % if nargin == 1
@@ -127,7 +127,7 @@ classdef setting_rx < controls.setting
             %--------------------------------------------------------------
             % 2.) compute Fourier transform samples via superclass method
             %--------------------------------------------------------------
-            settings_rx = discretize@controls.setting( settings_rx, intervals_t, intervals_f );
+            settings_rx = discretize@controls.setting( settings_rx, Ts_ref, intervals_f );
 
         end % function settings_rx = discretize( settings_rx, varargin )
 

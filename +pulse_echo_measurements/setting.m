@@ -75,7 +75,7 @@ classdef setting
         % discretize
         %------------------------------------------------------------------
         function settings = discretize( settings, options_spectral )
-% TODO: various types of discretization / regular vs irregular
+% TODO: various types of discretization (e.g. regular vs irregular)
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -117,7 +117,7 @@ classdef setting
 
                     % discretize rx and tx settings
                     settings_rx{ index_object } = discretize( settings( index_object ).rx );
-                    settings_tx{ index_object } = discretize( settings( index_object ).tx, intervals_t, intervals_f );
+                    settings_tx{ index_object } = discretize( settings( index_object ).tx, abs( intervals_t ), intervals_f );
 
                 end % for index_object = 1:numel( settings )
 
@@ -144,8 +144,8 @@ classdef setting
                     interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_unique_max );
 
                     % discretize rx and tx settings
-                    settings_rx{ index_object } = discretize( settings( index_object ).rx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
-                    settings_tx{ index_object } = discretize( settings( index_object ).tx, interval_hull_t_quantized, settings( index_object ).interval_hull_f );
+                    settings_rx{ index_object } = discretize( settings( index_object ).rx, abs( interval_hull_t_quantized ), settings( index_object ).interval_hull_f );
+                    settings_tx{ index_object } = discretize( settings( index_object ).tx, abs( interval_hull_t_quantized ), settings( index_object ).interval_hull_f );
 
                 end % for index_object = 1:numel( settings )
 
@@ -190,8 +190,8 @@ classdef setting
                 for index_object = 1:numel( settings )
 
                     % discretize rx and tx settings
-                    settings( index_object ).rx = discretize( settings( index_object ).rx, interval_hull_t_quantized, interval_hull_f );
-                    settings( index_object ).tx = discretize( settings( index_object ).tx, interval_hull_t_quantized, interval_hull_f );
+                    settings( index_object ).rx = discretize( settings( index_object ).rx, abs( interval_hull_t_quantized ), interval_hull_f );
+                    settings( index_object ).tx = discretize( settings( index_object ).tx, abs( interval_hull_t_quantized ), interval_hull_f );
 
                 end % for index_object = 1:numel( settings )
 
@@ -206,6 +206,27 @@ classdef setting
 
             end % if isa( options_spectral, 'discretizations.options_spectral_signal' )
 
+            %--------------------------------------------------------------
+            % 3.) ensure identical frequency axes
+            %--------------------------------------------------------------
+            % iterate pulse-echo measurement settings
+            for index_object = 1:numel( settings )
+
+                % ensure that settings( index_object ).rx and settings( index_object ).tx have identical frequency axes
+                IR_rx = [ settings( index_object ).rx.impulse_responses ];
+                IR_tx = [ settings( index_object ).tx.impulse_responses ];
+
+                if ~isequal( IR_rx.axis, IR_tx.axis )
+                    errorStruct.message = sprintf( 'settings( %d ).rx and settings( %d ).tx must have identical frequency axes!', index_object, index_object );
+                    errorStruct.identifier = 'discretize:MismatchFrequencyAxis';
+                    error( errorStruct );
+                end
+
+            end % for index_object = 1:numel( settings )
+
+            %--------------------------------------------------------------
+            % 4.) ensure identical frequency axes
+            %--------------------------------------------------------------
             % iterate pulse-echo measurement settings
             for index_object = 1:numel( settings )
 

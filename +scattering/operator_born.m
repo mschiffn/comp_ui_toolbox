@@ -459,12 +459,11 @@ classdef operator_born < scattering.operator
                     end % for index_config = 1:numel( operators_born_config )
 
                     %------------------------------------------------------
-                    % iii.) create fields
+                    % iii.) create images
                     %------------------------------------------------------
-%                     theta_hat{ index_operator }{ index_transform }...
-%                     = discretizations.field( repmat( math.sequence_increasing( physical_values.second( 0 ) ), size( operators_born_config ) ),...
-%                                              repmat( operators_born( index_operator ).sequence.setup.FOV.shape.grid, size( operators_born_config ) ),...
-%                                              theta_hat{ index_operator }{ index_transform } );
+                    theta_hat{ index_operator }{ index_transform } ...
+                    = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
+                                             mat2cell( theta_hat{ index_operator }{ index_transform }, N_coefficients( 1 ), ones( 1, numel( operators_born_config ) ) ) );
 
                 end % for index_transform = 1:numel( linear_transforms{ index_operator } )
 

@@ -48,7 +48,7 @@ classdef incident_wave
             for index_object = 1:numel( sequence.settings )
 
                 %----------------------------------------------------------
-                % a) check for and inspect file on disk
+                % a) check type of wave
                 %----------------------------------------------------------
                 % determine number of active elements
                 N_elements_active = numel( sequence.settings( index_object ).tx_unique.indices_active );

@@ -98,21 +98,39 @@ classdef setting
         %------------------------------------------------------------------
         % spectral discretization
         %------------------------------------------------------------------
-        function settings = discretize( settings, intervals_t, intervals_f )
+        function settings = discretize( settings, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure correct number of arguments
-            if nargin ~= 3
-                errorStruct.message = 'Three arguments are required!';
-                errorStruct.identifier = 'discretize:NumberArguments';
+            % ensure class controls.setting
+            if ~isa( settings, 'controls.setting' )
+                errorStruct.message = 'settings must be controls.setting!';
+                errorStruct.identifier = 'discretize:NoSettings';
                 error( errorStruct );
             end
 
-            % multiple settings / single intervals_t
-            if ~isscalar( settings ) && isscalar( intervals_t )
-                intervals_t = repmat( intervals_t, size( settings ) );
+            % ensure existence of Ts_ref
+            if nargin >= 2 && ~isempty( varargin{ 1 } )
+                Ts_ref = varargin{ 1 };
+            else
+                Ts_ref = [];
+            end
+
+            % method fourier_transform ensures valid Ts_ref
+
+            % ensure existence of intervals_f
+            if nargin >= 3 && ~isempty( varargin{ 2 } )
+                intervals_f = varargin{ 2 };
+            else
+                intervals_f = [];
+            end
+
+            % method fourier_transform ensures valid intervals_f
+
+            % multiple settings / single Ts_ref
+            if ~isscalar( settings ) && isscalar( Ts_ref )
+                Ts_ref = repmat( Ts_ref, size( settings ) );
             end
 
             % multiple settings / single intervals_f
@@ -121,7 +139,7 @@ classdef setting
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( settings, intervals_t, intervals_f );
+            auxiliary.mustBeEqualSize( settings, Ts_ref, intervals_f );
 
             %--------------------------------------------------------------
             % 2.) compute Fourier transform samples
@@ -130,14 +148,14 @@ classdef setting
             for index_object = 1:numel( settings )
 
                 % compute Fourier transform samples
-                settings( index_object ).impulse_responses = fourier_transform( settings( index_object ).impulse_responses, intervals_t( index_object ), intervals_f( index_object ) );
+                settings( index_object ).impulse_responses = fourier_transform( settings( index_object ).impulse_responses, Ts_ref( index_object ), intervals_f( index_object ) );
 
                 % merge transforms to ensure class signal_matrix
                 settings( index_object ).impulse_responses = merge( settings( index_object ).impulse_responses );
 
             end % for index_object = 1:numel( settings )
 
-        end % function settings = discretize( settings, intervals_t, intervals_f )
+        end % function settings = discretize( settings, varargin )
 
         %------------------------------------------------------------------
         % unique indices of active array elements
