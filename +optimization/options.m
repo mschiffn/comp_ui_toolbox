@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2019-09-17
+% modified: 2019-09-22
 %
 classdef options
 
@@ -13,9 +13,9 @@ classdef options
 	properties (SetAccess = private)
 
         % independent properties
-        normalization ( 1, 1 ) optimization.options_normalization { mustBeNonempty } = optimization.options_normalization_off	% normalization options
-        algorithm ( 1, 1 ) optimization.options_algorithm { mustBeNonempty } = optimization.options_algorithm_omp( 0.3, 1e3 )	% algorithm options
-        reweighting ( 1, 1 ) optimization.options_reweighting { mustBeNonempty } = optimization.options_reweighting_off         % reweighting options
+        normalization ( 1, 1 ) optimization.options.normalization { mustBeNonempty } = optimization.options.normalization_off	% normalization options
+        algorithm ( 1, 1 ) optimization.options.algorithm { mustBeNonempty } = optimization.options.algorithm_omp( 0.3, 1e3 )	% algorithm options
+        reweighting ( 1, 1 ) optimization.options.reweighting { mustBeNonempty } = optimization.options.reweighting_off         % reweighting options
 
     end % properties
 
@@ -60,21 +60,21 @@ classdef options
                 % iterate arguments
                 for index_arg = 1:numel( varargin )
 
-                    if isa( varargin{ index_arg }, 'optimization.options_normalization' )
+                    if isa( varargin{ index_arg }, 'optimization.options.normalization' )
 
                         %--------------------------------------------------
                         % a) normalization options
                         %--------------------------------------------------
                         objects( index_object ).normalization = varargin{ index_arg }( index_object );
 
-                    elseif isa( varargin{ index_arg }, 'optimization.options_algorithm' )
+                    elseif isa( varargin{ index_arg }, 'optimization.options.algorithm' )
 
                         %--------------------------------------------------
                         % b) algorithm options
                         %--------------------------------------------------
                         objects( index_object ).algorithm = varargin{ index_arg }( index_object );
 
-                    elseif isa( varargin{ index_arg }, 'optimization.options_reweighting' )
+                    elseif isa( varargin{ index_arg }, 'optimization.options.reweighting' )
 
                         %--------------------------------------------------
                         % c) reweighting options
@@ -90,7 +90,7 @@ classdef options
                         errorStruct.identifier = 'options:UnknownClass';
                         error( errorStruct );
 
-                    end % if isa( varargin{ index_arg }, 'optimization.options_normalization' )
+                    end % if isa( varargin{ index_arg }, 'optimization.options.normalization' )
 
                 end % for index_arg = 1:numel( varargin )
 

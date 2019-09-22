@@ -161,7 +161,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                     error( errorStruct );
                 end
 
-                % ensure class optimization.options_lq_minimization
+                % ensure class optimization.options
                 if ~isa( options{ index_operator }{ index_transform }{ index_config }, 'optimization.options' )
                     errorStruct.message = sprintf( 'options{ %d }{ %d }{ %d } must be optimization.options!', index_operator, index_transform, index_config );
                     errorStruct.identifier = 'lq_minimization:NoOptions';
@@ -190,7 +190,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                     %------------------------------------------------------
                     % i.) apply normalization settings
                     %------------------------------------------------------
-                    if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options_normalization_off' )
+                    if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options.normalization_off' )
 
                         %--------------------------------------------------
                         % a) complete normalization w/o threshold
@@ -198,7 +198,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         % copy linear transform
                         LT_act = LTs{ index_operator }{ index_transform }( index_config );
 
-                    elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options_normalization_threshold' )
+                    elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options.normalization_threshold' )
 
                         %--------------------------------------------------
                         % b) apply threshold to inverse weighting matrix
@@ -220,7 +220,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         errorStruct.identifier = 'lq_minimization:UnknownOptionsClass';
                         error( errorStruct );
 
-                    end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options_normalization_off' )
+                    end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options.normalization_off' )
 
                     %------------------------------------------------------
                     % ii.) define anonymous function for sensing matrix
@@ -230,7 +230,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                     %------------------------------------------------------
                     % iii.) execute algorithm
                     %------------------------------------------------------
-                    if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options_algorithm_spgl1' )
+                    if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_spgl1' )
 
                         %--------------------------------------------------
                         % a) SPGL1: l2- or l1-minimization (convex)
@@ -263,7 +263,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
                         = spgl1( op_A_bar, u_M_vect_normed, tau, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.rel_RMSE, x_0, spgl_opts );
 
-                    elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options_algorithm_omp' )
+                    elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_omp' )
 
                         %--------------------------------------------------
                         % b) OMP: l0-minimization (nonconvex)
@@ -284,7 +284,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         errorStruct.identifier = 'lq_minimization:UnknownOptionsClass';
                         error( errorStruct );
 
-                    end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options_algorithm_spgl1' )
+                    end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_spgl1' )
 
                     %------------------------------------------------------
                     % iv.) reshape residual mixed RF voltage signals
@@ -300,7 +300,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                     %------------------------------------------------------
                     % v.) optional reweighting (Foucart's algorithm, nonconvex)
                     %------------------------------------------------------
-                    if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).reweighting, 'optimization.options_reweighting_sequence' )
+                    if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).reweighting, 'optimization.options.reweighting_sequence' )
 
                         %--------------------------------------------------
                         % a) sequential reweighting
@@ -341,7 +341,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         % store results for entire reweighting sequence
                         theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options } = theta_n;
 
-                    end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).reweighting, 'optimization.options_reweighting_sequence' )
+                    end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).reweighting, 'optimization.options.reweighting_sequence' )
 
                     %------------------------------------------------------
                     % vi.) invert normalization and apply adjoint linear transform

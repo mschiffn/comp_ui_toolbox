@@ -5,7 +5,7 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
 %
 % author: Martin F. Schiffner
 % date: 2011-06-15
-% modified: 2019-05-09
+% modified: 2019-09-22
 %
 
 	% print status
@@ -31,9 +31,9 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
     y_m = y_m( : );
     y_m_norm = norm( y_m, 2 );
 
-    % ensure class optimization.options_algorithm_omp
-    if ~isa( options, 'optimization.options_algorithm_omp' )
-        errorStruct.message = 'options must be optimization.options_algorithm_omp!';
+    % ensure class optimization.options.algorithm_omp
+    if ~isa( options, 'optimization.options.algorithm_omp' )
+        errorStruct.message = 'options must be optimization.options.algorithm_omp!';
         errorStruct.identifier = 'omp:NoOptionsAlgorithmOMP';
         error( errorStruct );
     end
