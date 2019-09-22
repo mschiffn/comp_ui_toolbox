@@ -1,22 +1,47 @@
-## Computational Ultrasound Imaging Toolbox for MATLAB
+# Computational Ultrasound Imaging Toolbox for MATLAB
 
-This MATLAB (The MathWorks, Inc., Natick, MA, USA) toolbox facilitates
+This [MATLAB](https://mathworks.com/products/matlab.html) (The MathWorks, Inc., Natick, MA, USA) toolbox facilitates
 the development and evaluation of
-computational ultrasound imaging methods for
+computational ultrasound imaging (UI) methods for
 freely programmable UI systems.
 
-These methods recover
+## Motivation
+
+Advances in
+electronic miniaturization and
+processing power have recently led to
+freely programmable UI systems and
+software-based “ultrafast” imaging modes, e.g.
+
+- coherent plane-wave compounding,
+- synthetic aperture (SA) imaging, or
+- limited-diffraction beam imaging, that
+
+capture large FOVs at rates in the kilohertz range.
+
+Established image recovery methods, e.g.
+delay-and-sum (DAS) or
+Fourier methods, however, do not support
+complex imaging sequences and, thus, seriously limit
+the unprecedented flexibility of
+freely programmable UI systems.
+
+## What Does This Toolbox Accomplish?
+
+Computational UI methods recover
 the acoustic material parameters in
 a specified field of view from
 a relatively short sequence of
-pulse-echo scattering experiments.
+arbitrarily complex pulse-echo scattering experiments.
+
 Each experiment comprises
-(i) the synthesis of
+
+1. the synthesis of
 an arbitrary incident wave,
-(ii) the subsequent recording of
+2. the subsequent recording of
 the resulting echoes via
 a fully-sampled transducer array, and
-(iii) their optional mixing into
+3. their optional mixing into
 compound signals.
 
 Considering soft tissue structures as
@@ -30,32 +55,26 @@ the relative spatial fluctuations in
 compressibility and/or mass density to
 the mixed RF voltage signals.
 
-Usability and simplicity were
-crucial design paradigms.
+The toolbox excels in
+the *repetitive* evaluation of
+identical scattering operators in
+iterative image recovery algorithms and, thus, complements
+popular simulation tools, e.g.
+[Field II](https://field-ii.dk/) and
+[FOCUS](https://www.egr.msu.edu/~fultras-web/).
+Although
+the setup of
+a scattering sequence is relatively costly,
+the evaluation is extremely fast.
 
 Typical applications include
 - regularized structured insonification,
 - coded excitation, and
 - compressed sensing / sparse recovery.
 
-The toolbox excels at
-the efficient repetitive evaluation of
-identical scattering operators in
-iterative algorithms.
-This goal contrasts
-popular simulation tools, e.g.
-Field II (Jensen et al.) and
-FoCUS (Michigan), which permit
-the rapid evaluation of
-various parameters.
-The setup and
-precomputation steps are relatively costly, whereas
-the evaluation is much faster.
-Although
-the computational costs and
-the memory consumption for
+Usability and simplicity were crucial design paradigms.
 
-**Main Features**:
+## Main Features
 
 - d-dimensional Euclidean space (d = 2, 3)
 - two types of heterogeneous acoustic material parameters: compressibility and mass density
@@ -76,23 +95,19 @@ the memory consumption for
   hierarchical matrix factorizations
 - multi GPU support via mex / CUDA API
 
-**Current Limitations**:
+## Current Limitations
 
 - Born approximation (future releases might support Rytov, WKB, Padé, and full wave solutions)
-- linear systems (wave propagation, transfer behavior)
+- linear systems (wave propagation, scattering, transducer behavior)
 - pulse-echo mode, i.e. no transmission measurements
-- half-space with rigid boundary
+- half-space with rigid (Neumann) boundary
 - symmetric grids (future releases might support the fast multipole method (FMM) and adaptive cross approximation (ACA))
 - developed and tested in MATLAB R2018b / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
 
-**Relationship to popular software **
-
-
-**References**:
+## References
 
 The physical models underlying this toolbox and exemplary images were published in:
 
-[1] M. F. Schiffner, "Random Incident Waves for Fast Compressed Pulse-Echo Ultrasound Imaging", arXiv:1801.00205 [physics.med-ph]
-[2] M. F. Schiffner and G. Schmitz, "Compensating the Combined Effects of Absorption and Dispersion in Plane Wave Pulse-Echo Ultrasound Imaging Using Sparse Recovery", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 573--576, DOI: 10.1109/ULTSYM.2013.0148
-[3] M. F. Schiffner and G. Schmitz, "The Separate Recovery of Spatial Fluctuations in Compressibility and Mass Density in Plane Wave Pulse-Echo Ultrasound Imaging", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 577--580, DOI: 10.1109/ULTSYM.2013.0149
-
+1. M. F. Schiffner, "Random Incident Waves for Fast Compressed Pulse-Echo Ultrasound Imaging", [arXiv:1801.00205](https://arxiv.org/abs/1801.00205) [physics.med-ph]
+2. M. F. Schiffner and G. Schmitz, "Compensating the Combined Effects of Absorption and Dispersion in Plane Wave Pulse-Echo Ultrasound Imaging Using Sparse Recovery", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 573--576, DOI: [10.1109/ULTSYM.2013.0148](http://dx.doi.org/10.1109/ULTSYM.2013.0148)
+3. M. F. Schiffner and G. Schmitz, "The Separate Recovery of Spatial Fluctuations in Compressibility and Mass Density in Plane Wave Pulse-Echo Ultrasound Imaging", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 577--580, DOI: [10.1109/ULTSYM.2013.0149](http://dx.doi.org/10.1109/ULTSYM.2013.0149)

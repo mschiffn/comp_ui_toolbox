@@ -158,9 +158,13 @@ classdef operator_born < scattering.operator
             switch mode
 
                 case 0
-% TODO: wrong size if scattering.options.sequence_selected is used!
                     % return size of forward transform
-                    y = operator_born.discretization.size;
+                    N_observations = 0;
+                    for index_setting = operator_born.indices_measurement_sel
+                        N_observations = N_observations + sum( cellfun( @numel, operator_born.sequence.settings( index_setting ).indices_f_to_unique ) );
+                    end % for index_setting = operator_born.indices_measurement_sel
+% TODO: wrong! number of coefficients in 2nd entry
+                    y = [ N_observations, operator_born.sequence.size( 2 ) ];
                 case 1
                     % quick forward scattering (wrapper)
                     y = forward_quick( operator_born, x, varargin{ : } );
