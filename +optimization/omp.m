@@ -2,6 +2,10 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
 %
 % orthogonal matching pursuit (OMP) recovers sparse coefficient vectors
 % OMP never selects the same atom twice
+% (cf. Sect. II.C.2) in [1])
+%
+% [1] J. A. Tropp, "Greed is Good: Algorithmic Results for Sparse Approximation",
+%     IEEE Trans. Inf. Theory, Oct. 2004, Vol. 50, No. 10, pp. 2231-2242
 %
 % author: Martin F. Schiffner
 % date: 2011-06-15
@@ -49,7 +53,7 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
     %----------------------------------------------------------------------
     % 2.) initialization
     %----------------------------------------------------------------------
-    % initialize reduced sensing matrix with selected columns
+	% initialize reduced sensing matrix with selected columns
     A_sel = zeros( N_observations, N_iterations_max );
 
     % initialize atoms

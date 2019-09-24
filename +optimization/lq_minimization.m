@@ -10,7 +10,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 	% print status
 	time_start = tic;
 	str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-	fprintf( '\t %s: minimizing lq-norms.. ', str_date_time );
+	fprintf( '\t %s: minimizing lq-norms...\n', str_date_time );
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
@@ -275,10 +275,20 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                           info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
                         = optimization.omp( op_A_bar, u_M_vect_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
 
+                    elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_cosamp' )
+
+                        %--------------------------------------------------
+                        % c) CoSaMP: l0-minimization (nonconvex)
+                        %--------------------------------------------------
+                        [ theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, ...
+                          u_M_vect_normed_res, ...
+                          info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
+                        = optimization.cosamp( op_A_bar, u_M_vect_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
+
                     else
 
                         %--------------------------------------------------
-                        % c) unknown algorithm
+                        % d) unknown algorithm
                         %--------------------------------------------------
                         errorStruct.message = sprintf( 'Class of options{ %d }{ %d }{ %d }( %d ).algorithm is unknown!', index_operator, index_transform, index_config, index_options );
                         errorStruct.identifier = 'lq_minimization:UnknownOptionsClass';
