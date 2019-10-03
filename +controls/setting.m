@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-26
+% modified: 2019-09-24
 %
-classdef setting
+classdef (Abstract) setting
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -250,4 +250,4 @@ classdef setting
 
 	end % methods
 
-end % classdef setting
+end % classdef (Abstract) setting

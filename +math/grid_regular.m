@@ -102,19 +102,55 @@ classdef grid_regular < math.grid
         %------------------------------------------------------------------
         % compute discrete positions of the grid points along each axis
         %------------------------------------------------------------------
-        function positions_axis = compute_positions_axis( grids_regular )
+        function axes = get_axes( grids_regular )
 
-            %
-            positions_axis = cell( 1, grids_regular.N_dimensions );
-
-            %
-            for index_dim = 1:grids_regular.N_dimensions
-
-                indices_axis = (0:grids_regular.N_points_axis( index_dim ) - 1)';
-                positions_axis{ index_dim } = repmat( grids_regular.offset_axis, [grids_regular.N_points_axis( index_dim ), 1] ) + indices_axis * grids_regular.delta_axis( index_dim ) * grids_regular.lattice_vectors( index_dim, : );
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.grid_regular
+            if ~isa( grids_regular, 'math.grid_regular' )
+                errorStruct.message = 'grids_regular must be math.grid_regular!';
+                errorStruct.identifier = 'get_axes:NoRegularGrids';
+                error( errorStruct );
             end
 
-        end % function positions_axis = compute_positions_axis( grids_regular )
+            %--------------------------------------------------------------
+            % 2.) extract axes
+            %--------------------------------------------------------------
+            % specify cell array for axes
+            axes = cell( size( grids_regular ) );
+
+            % iterate regular grids
+            for index_object = 1:numel( grids_regular )
+
+                % specify cell array for axes{ index_object }
+                axes{ index_object } = cell( grids_regular( index_object ).N_dimensions, 1 );
+
+                % iterate dimensions
+                for index_dim = 1:grids_regular( index_object ).N_dimensions
+
+                    % extract positions
+                    if index_dim > 1
+                        N_points_skip = prod( grids_regular( index_object ).N_points_axis( 1:(index_dim - 1) ) );
+                        axes{ index_object }{ index_dim } = grids_regular( index_object ).positions( 1:N_points_skip:grids_regular( index_object ).N_points_axis( index_dim ) * N_points_skip, index_dim );
+                    else
+                        N_points_skip = 1;
+                        axes{ index_object }{ index_dim } = grids_regular( index_object ).positions( 1:grids_regular( index_object ).N_points_axis( 1 ), index_dim );
+                    end
+
+                end % for index_dim = 1:grids_regular( index_object ).N_dimensions
+
+                % create increasing sequences
+                axes{ index_object } = math.sequence_increasing( axes{ index_object } );
+
+            end % for index_object = 1:numel( grids_regular )
+
+            % avoid cell array for single grids_regular
+            if isscalar( grids_regular )
+                axes = axes{ 1 };
+            end
+
+        end % function axes = get_axes( grids_regular )
 
         %------------------------------------------------------------------
         % compute discrete spatial frequencies along each axis
@@ -168,6 +204,43 @@ classdef grid_regular < math.grid
         end % function positions = compute_positions( grids_regular )
 
         %------------------------------------------------------------------
+        % forward index transform
+        %------------------------------------------------------------------
+        function indices_linear = forward_index_transform( grids_regular, indices_axis )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for indices_axis
+            if ~iscell( indices_axis )
+                indices_axis = { indices_axis };
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( grids_regular, indices_axis );
+
+            %--------------------------------------------------------------
+            % 2.) convert array indices into linear indices
+            %--------------------------------------------------------------
+            % specify cell array for indices_axis
+            indices_linear = cell( size( grids_regular ) );
+
+            % iterate regular grids
+            for index_object = 1:numel( grids_regular )
+% TODO: ensure numeric matrix
+                temp = mat2cell( indices_axis{ index_object }, size( indices_axis{ index_object }, 1 ), ones( 1, grids_regular( index_object ).N_dimensions ) );
+                indices_linear{ index_object } = sub2ind( grids_regular( index_object ).N_points_axis, temp{ : } );
+
+            end % for index_object = 1:numel( grids_regular )
+
+            % avoid cell array for single grids_regular
+            if isscalar( grids_regular )
+                indices_linear = indices_linear{ 1 };
+            end
+
+        end % function indices_linear = forward_index_transform( grids_regular, indices_axis )
+
+        %------------------------------------------------------------------
         % inverse index transform
         %------------------------------------------------------------------
         function indices_axis = inverse_index_transform( grids_regular, indices_linear )
@@ -205,43 +278,6 @@ classdef grid_regular < math.grid
             end
 
         end % function indices_axis = inverse_index_transform( grids_regular, indices_linear )
-
-        %------------------------------------------------------------------
-        % forward index transform
-        %------------------------------------------------------------------
-        function indices_linear = forward_index_transform( grids_regular, indices_axis )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure cell array for indices_axis
-            if ~iscell( indices_axis )
-                indices_axis = { indices_axis };
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( grids_regular, indices_axis );
-
-            %--------------------------------------------------------------
-            % 2.) convert array indices into linear indices
-            %--------------------------------------------------------------
-            % specify cell array for indices_axis
-            indices_linear = cell( size( grids_regular ) );
-
-            % iterate regular grids
-            for index_object = 1:numel( grids_regular )
-% TODO: ensure numeric matrix
-                temp = mat2cell( indices_axis{ index_object }, size( indices_axis{ index_object }, 1 ), ones( 1, grids_regular( index_object ).N_dimensions ) );
-                indices_linear{ index_object } = sub2ind( grids_regular( index_object ).N_points_axis, temp{ : } );
-
-            end % for index_object = 1:numel( grids_regular )
-
-            % avoid cell array for single grids_regular
-            if isscalar( grids_regular )
-                indices_linear = indices_linear{ 1 };
-            end
-
-        end % function indices_linear = forward_index_transform( grids_regular, indices_axis )
 
     end % methods
 

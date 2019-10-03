@@ -420,7 +420,7 @@ classdef operator_born < scattering.operator
                     end
 
                     % initialize adjoint coefficients w/ zeros
-                    theta_hat{ index_operator }{ index_transform } = zeros( N_coefficients( 1 ), numel( operators_born_config ) ); % cell( size( operators_born_config ) );
+                    theta_hat{ index_operator }{ index_transform } = zeros( N_coefficients( 1 ), numel( operators_born_config ) );
                     rel_RMSE{ index_operator }{ index_transform } = zeros( 1, numel( operators_born_config ) );
 
                     % iterate configurations
@@ -664,15 +664,14 @@ classdef operator_born < scattering.operator
                         theta_tpsf{ index_operator }{ index_transform }{ index_config } = adjoint_quick( operators_born_config( index_config ), u_M, linear_transforms{ index_operator }{ index_transform }( index_config ) );
                         adjointness{ index_operator }{ index_transform }( index_config, : ) = E_M{ index_operator }{ index_transform }( index_config, : ) - theta_tpsf{ index_operator }{ index_transform }{ index_config }( indices_tpsf );
 
-                        %             discretizations.image( theta_tpsf )
-% TODO: create image objects
-
                     end % for index_config = 1:numel( operators_born_config )
 
-                    % avoid cell array for single operators_born_config
-                    if isscalar( operators_born_config )
-                        theta_tpsf{ index_operator }{ index_transform } = theta_tpsf{ index_operator }{ index_transform }{ 1 };
-                    end
+                    %------------------------------------------------------
+                    % iii.) create images
+                    %------------------------------------------------------
+                    theta_tpsf{ index_operator }{ index_transform } ...
+                    = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
+                                             theta_tpsf{ index_operator }{ index_transform } );
 
                 end % for index_transform = 1:numel( linear_transforms{ index_operator } )
 

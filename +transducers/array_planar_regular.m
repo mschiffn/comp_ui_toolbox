@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-16
-% modified: 2019-08-21
+% modified: 2019-09-26
 %
 classdef array_planar_regular < transducers.array_planar
 
@@ -127,8 +127,8 @@ classdef array_planar_regular < transducers.array_planar
             for index_array = 1:numel( arrays_planar_regular )
 
                 % convert subscripts into linear indices
-                temp = mat2cell( indices_axis{ index_object }, size( indices_axis{ index_object }, 1 ), ones( 1, arrays_planar_regular( index_array ).N_dimensions ) );
-                indices_linear{ index_object } = sub2ind( grids_regular( index_object ).N_points_axis, temp{ : } );
+                temp = mat2cell( indices_axis{ index_array }, size( indices_axis{ index_array }, 1 ), ones( 1, arrays_planar_regular( index_array ).N_dimensions ) );
+                indices_linear{ index_array } = sub2ind( arrays_planar_regular( index_array ).N_elements_axis, temp{ : } );
 
             end % for index_array = 1:numel( arrays_planar_regular )
 

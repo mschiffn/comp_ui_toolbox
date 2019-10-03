@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-05-25
+% modified: 2019-09-25
 %
 classdef setting_tx < controls.setting
 
@@ -173,7 +173,7 @@ classdef setting_tx < controls.setting
             % return settings_tx_in if only one argument
             if isscalar( settings_tx_in )
                 setting_tx_out = settings_tx_in;
-                [ axis_f_unique, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx_in.excitation_voltages.axis );
+                [ ~, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx_in.excitation_voltages.axis );
                 return;
             end
 

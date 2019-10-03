@@ -6,6 +6,7 @@ function fields = compute_p_in( sequence, varargin )
 % date: 2019-03-16
 % modified: 2019-08-28
 %
+% TODO: move to class sequence
 
 	% print status
 	time_start = tic;

@@ -35,7 +35,7 @@ classdef (Abstract) normalization
             %--------------------------------------------------------------
             % 2.) create normalization options
             %--------------------------------------------------------------
-            % repeat normalization options
+            % repeat default normalization options
             objects = repmat( objects, size );
 
         end % function objects = normalization( size )

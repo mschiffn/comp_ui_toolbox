@@ -207,7 +207,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                             LT_act = threshold( LTs{ index_operator }{ index_transform }( index_config ), options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization.threshold );
                         catch
                             errorStruct.message = sprintf( 'Could not apply threshold to LTs{ %d }{ %d }( %d )!', index_operator, index_transform, index_config );
-                            errorStruct.identifier = 'lq_minimization:UnknownOptionsClass';
+                            errorStruct.identifier = 'lq_minimization:ThresholdError';
                             error( errorStruct );
                         end
 
@@ -246,16 +246,30 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         end
 
                         % specify start vector
-% TODO: might cause problems if normalization changes!
                         indicator_q = index_options > 1 && isequal( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.q, options{ index_operator }{ index_transform }{ index_config }( index_options - 1 ).algorithm.q );
                         indicator_rel_RMSE = index_options > 1 && options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.rel_RMSE < options{ index_operator }{ index_transform }{ index_config }( index_options - 1 ).algorithm.rel_RMSE;
-                        if indicator_q && indicator_rel_RMSE
-                            x_0 = theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options - 1 };
-                            tau = info{ index_operator }{ index_transform }{ index_config }{ index_options - 1 }.tau;
-                        else
+
+                        if ~indicator_q || ~indicator_rel_RMSE || isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).warm_start, 'optimization.options.warm_start_off' )
+
+                            % A) inactive or impossible warm start
                             x_0 = [];
                             tau = [];
-                        end
+
+                        elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).warm_start, 'optimization.options.warm_start_previous' )
+
+% TODO: might cause problems if normalization changes!
+                            % B) use result for previous options for warm start
+                            x_0 = theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options - 1 };
+                            tau = info{ index_operator }{ index_transform }{ index_config }{ index_options - 1 }.tau;
+
+                        else
+
+                            % C) invalid warm start settings
+                            errorStruct.message = sprintf( 'Options{ %d }{ %d }{ %d }( %d ).warm_start is invalid for SPGL1!', index_operator, index_transform, index_config, index_options );
+                            errorStruct.identifier = 'lq_minimization:InvalidWarmStartSetting';
+                            error( errorStruct );
+
+                        end % if ~indicator_q || ~indicator_rel_RMSE || isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).warm_start, 'optimization.options.warm_start_off' )
 
                         % call SPGL1
                         [ theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, ...
@@ -268,8 +282,24 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         %--------------------------------------------------
                         % b) OMP: l0-minimization (nonconvex)
                         %--------------------------------------------------
+                        % specify start vector
+                        if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).warm_start, 'optimization.options.warm_start_off' )
+
+                            % A) inactive or impossible warm start
+                            x_0 = [];
+                            atoms = [];
+
+                        else
+
+                            % B) invalid warm start settings
+                            errorStruct.message = sprintf( 'Options{ %d }{ %d }{ %d }( %d ).warm_start is invalid for OMP!', index_operator, index_transform, index_config, index_options );
+                            errorStruct.identifier = 'lq_minimization:InvalidWarmStartSetting';
+                            error( errorStruct );
+
+                        end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).warm_start, 'optimization.options.warm_start_off' )
+
                         % call OMP
-% TODO: start vector x_0
+% TODO: start vector x_0, atoms
                         [ theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, ...
                           u_M_vect_normed_res, ...
                           info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
@@ -325,7 +355,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         theta_n( :, 1 ) = theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options };
 % TODO: residual voltages
                         % statistics
-                        info{ index_operator }{ index_transform }{ index_config }{ index_options }.info_inner = cell(1, N_iterations);
+                        info{ index_operator }{ index_transform }{ index_config }{ index_options }.info_reweighting = cell(1, N_iterations);
 
                         % iterate reweighted problems
                         for index_iter = 1:N_iterations
@@ -336,15 +366,29 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 
                             % define anonymous function for reweighted sensing matrix
                             op_A_bar_n = @( x, mode ) combined_quick( operators_born_config( index_config ), x, mode, LT_act_n );
-% TODO: check algorithm
+
                             % solve reweighted problem
-                            [ temp, r, g, spgl1_info ] = spgl1( op_A_bar_n, u_M_vect_normed, [], options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.rel_RMSE, [], spgl_opts );
+                            if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_spgl1' )
+
+                                [ temp, ~, ~, info_reweighting ] = spgl1( op_A_bar_n, u_M_vect_normed, [], options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.rel_RMSE, [], spgl_opts );
+
+                            elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_omp' )
+
+                                [ temp, ~, info_reweighting ] = optimization.omp( op_A_bar_n, u_M_vect_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
+
+                            else
+
+                                errorStruct.message = sprintf( 'Options{ %d }{ %d }{ %d }( %d ).algorithm is invalid for reweighting!', index_operator, index_transform, index_config, index_options );
+                                errorStruct.identifier = 'lq_minimization:InvalidAlgorithmSetting';
+                                error( errorStruct );
+
+                            end
 
                             % remove reweighting
                             theta_n( :, index_iter + 1 ) = temp .* weights_act;
 
                             % statistics for computational costs
-                            info{ index_operator }{ index_transform }{ index_config }{ index_options }.info_inner{ index_iter } = spgl1_info;
+                            info{ index_operator }{ index_transform }{ index_config }{ index_options }.info_reweighting{ index_iter } = info_reweighting;
 
                         end % for index_iter = 1:N_iterations
 

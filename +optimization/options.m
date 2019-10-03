@@ -3,21 +3,22 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2019-09-22
+% modified: 2019-09-24
 %
 classdef options
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
-        normalization ( 1, 1 ) optimization.options.normalization { mustBeNonempty } = optimization.options.normalization_off	% normalization options
-        algorithm ( 1, 1 ) optimization.options.algorithm { mustBeNonempty } = optimization.options.algorithm_omp( 0.3, 1e3 )	% algorithm options
-        reweighting ( 1, 1 ) optimization.options.reweighting { mustBeNonempty } = optimization.options.reweighting_off         % reweighting options
+        normalization ( 1, 1 ) optimization.options.normalization { mustBeNonempty } = optimization.options.normalization_threshold( 1 ) % normalization options
+        algorithm ( 1, 1 ) optimization.options.algorithm { mustBeNonempty } = optimization.options.algorithm_spgl1( 0.3, 1e3, 1 )	% algorithm options
+        reweighting ( 1, 1 ) optimization.options.reweighting { mustBeNonempty } = optimization.options.reweighting_off             % reweighting options
+        warm_start ( 1, 1 ) optimization.options.warm_start { mustBeNonempty } = optimization.options.warm_start_off                % warm start options
 
-    end % properties
+	end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -81,10 +82,17 @@ classdef options
                         %--------------------------------------------------
                         objects( index_object ).reweighting = varargin{ index_arg }( index_object );
 
+                    elseif isa( varargin{ index_arg }, 'optimization.options.warm_start' )
+
+                        %--------------------------------------------------
+                        % d) warm start options
+                        %--------------------------------------------------
+                        objects( index_object ).warm_start = varargin{ index_arg }( index_object );
+
                     else
 
                         %--------------------------------------------------
-                        % d) unknown class
+                        % e) unknown class
                         %--------------------------------------------------
                         errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
                         errorStruct.identifier = 'options:UnknownClass';

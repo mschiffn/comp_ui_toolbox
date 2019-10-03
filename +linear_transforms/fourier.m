@@ -118,7 +118,7 @@ classdef fourier < linear_transforms.orthonormal_linear_transform
 
             end % for index_object = 1:numel( LTs )
 
-            % avoid cell array for single diagonal weighting matrix
+            % avoid cell array for single LTs
             if isscalar( LTs )
                 y = y{ 1 };
             end
@@ -189,7 +189,7 @@ classdef fourier < linear_transforms.orthonormal_linear_transform
 
             end % for index_object = 1:numel( LTs )
 
-            % avoid cell array for single diagonal weighting matrix
+            % avoid cell array for single LTs
             if isscalar( LTs )
                 y = y{ 1 };
             end

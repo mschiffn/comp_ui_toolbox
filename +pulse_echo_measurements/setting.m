@@ -225,7 +225,7 @@ classdef setting
             end % for index_object = 1:numel( settings )
 
             %--------------------------------------------------------------
-            % 4.) ensure identical frequency axes
+            % 4.) compute dependent properties
             %--------------------------------------------------------------
             % iterate pulse-echo measurement settings
             for index_object = 1:numel( settings )

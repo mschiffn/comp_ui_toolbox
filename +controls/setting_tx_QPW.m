@@ -1,9 +1,9 @@
 %
-% superclass for all synthesis settings for quasi-plane waves (QPWs)
+% superclass for all quasi-plane wave (QPWs) synthesis settings
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-08-27
+% modified: 2019-09-25
 %
 classdef setting_tx_QPW < controls.setting_tx
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2019-09-22
+% modified: 2019-09-24
 %
 classdef (Abstract) reweighting
 
@@ -33,9 +33,9 @@ classdef (Abstract) reweighting
             mustBeNonempty( size );
 
             %--------------------------------------------------------------
-            % 2.) create normalization options
+            % 2.) create reweighting options
             %--------------------------------------------------------------
-            % repeat normalization options
+            % repeat default reweighting options
             objects = repmat( objects, size );
 
         end % function objects = reweighting( size )
