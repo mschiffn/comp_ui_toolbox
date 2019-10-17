@@ -1,44 +1,44 @@
 %
 % parameters for commercially available linear transducer array
-% vendor name: Ultrasonix Medical Corporation
-% model name: L14-5/38
+% vendor name: Verasonics Inc. (Kirkland, WA)
+% model name: L11-5v
 %
 % author: Martin F. Schiffner
-% date: 2019-02-18
-% modified: 2019-06-04
+% date: 2019-09-03
+% modified: 2019-09-03
 %
-classdef parameters_L14_5_38
+classdef parameters_L11_5v
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         %------------------------------------------------------------------
-        % 1.) model and vendor (Ultrasonix Medical Corporation, L14-5/38)
+        % 1.) model and vendor (Verasonics Inc., L11-5v)
         %------------------------------------------------------------------
-        str_model = 'L14-5/38';
-        str_vendor = 'Ultrasonix Medical Corporation';
+        str_model = 'L11-5v';
+        str_vendor = 'Verasonics, Inc.';
 
         %------------------------------------------------------------------
         % 2.) geometrical specifications
         %------------------------------------------------------------------
         N_elements_axis = [ 128, 1 ];                                           % number of physical elements along each coordinate axis (1)
-        element_width_axis = physical_values.meter( [ 279.8, 4000 ] * 1e-6 );	% widths of physical elements along each coordinate axis
-        element_kerf_axis  = physical_values.meter( [ 25, 0 ] * 1e-6 );         % kerfs between physical elements along each coordinate axis
+        element_width_axis = physical_values.meter( [ 270, 5000 ] * 1e-6 );     % widths of physical elements along each coordinate axis
+        element_kerf_axis  = physical_values.meter( [ 30, 0 ] * 1e-6 );         % kerfs between physical elements along each coordinate axis
 
         %------------------------------------------------------------------
         % 3.) acoustic lens specifications
         %------------------------------------------------------------------
         apodization = @transducers.apodization.uniform;                         % apodization along each coordinate axis
-        axial_focus_axis = physical_values.meter( [ Inf, 16e-3 ] );             % axial distances of the lateral foci
+        axial_focus_axis = physical_values.meter( [ Inf, 18e-3 ] );             % axial distances of the lateral foci
         absorption_model = absorption_models.none( physical_values.meter_per_second( 1540 ) );	% absorption model for the acoustic lens
 
         %------------------------------------------------------------------
         % 4.) electromechanical specifications
         %------------------------------------------------------------------
-        f_center  = physical_values.hertz( 7.5e6 );     % temporal center frequency
-        B_frac_lb = 0.65;                               % fractional bandwidth at -6 dB (1)
+        f_center  = physical_values.hertz( 5.208e6 );	% temporal center frequency
+        B_frac_lb = 0.67;                               % fractional bandwidth at -6 dB (1)
 
     end % properties
 
@@ -50,7 +50,7 @@ classdef parameters_L14_5_38
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = parameters_L14_5_38
+        function objects = parameters_L11_5v
 
             %
 
@@ -59,8 +59,8 @@ classdef parameters_L14_5_38
             %--------------------------------------------------------------
 %             objects@transducers.parameters_planar_regular_orthogonal( N_elements_axis, element_width_axis, element_kerf_axis, apodization, axial_focus_axis, str_model, str_vendor );
 
-        end % function objects = parameters_L14_5_38
+        end % function objects = parameters_L11_5v
 
 	end % methods
 
-end % classdef parameters_L14_5_38 < transducers.parameters_planar_orthotope
+end % classdef parameters_L11_5v < transducers.parameters_planar_orthotope
