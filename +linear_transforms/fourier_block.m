@@ -68,7 +68,7 @@ classdef fourier_block < linear_transforms.orthonormal_linear_transform
 
                 % ensure row vectors
                 if ~isrow( N_points_axis{ index_object } )
-                    errorStruct.message = sprintf( 'N_points_axis{ %d } must be pulse_echo_measurements.setting!', index_object );
+                    errorStruct.message = sprintf( 'N_points_axis{ %d } must be a row vector!', index_object );
                     errorStruct.identifier = 'fourier_block:NoRowVector';
                     error( errorStruct );
                 end

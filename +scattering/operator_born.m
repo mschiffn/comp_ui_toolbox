@@ -260,7 +260,7 @@ classdef operator_born < scattering.operator
                 % c) create signals or signal matrices
                 %----------------------------------------------------------
                 % partition matrix into cell arrays
-                N_observations = { operators_born( index_object ).discretization.spectral.N_observations };
+                N_observations = { operators_born( index_object ).sequence.size( 1 ) };
                 u_M{ index_object } = mat2cell( u_M{ index_object }, cellfun( @( x ) sum( x( : ) ), N_observations( operators_born( index_object ).indices_measurement_sel ) ), size( u_M{ index_object }, 2 ) );
 
                 % iterate selected sequential pulse-echo measurements
@@ -1015,7 +1015,7 @@ classdef operator_born < scattering.operator
                         index_element = operator_born.sequence.settings( index_measurement ).rx( index_mix ).indices_active( index_active );
 
                         % spatial transfer function of the active array element
-                        if isa( operator_born.sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                        if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
 
                             %----------------------------------------------
                             % a) symmetric spatial discretization based on orthogonal regular grids
@@ -1042,7 +1042,7 @@ classdef operator_born < scattering.operator
                             h_rx = anti_aliasing_filter( operator_born.sequence.setup, h_rx, operator_born.options.momentary.anti_aliasing );
                             h_rx = double( h_rx.samples );
 
-                        end % if isa( operator_born.sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                        end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
 
                         %--------------------------------------------------
                         % compute matrix-vector product and mix voltage signals
@@ -1150,7 +1150,7 @@ classdef operator_born < scattering.operator
                         index_element = operator_born.sequence.settings( index_measurement ).rx( index_mix ).indices_active( index_active );
 
                         % spatial transfer function of the active array element
-                        if isa( operator_born.sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                        if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
 
                             %----------------------------------------------
                             % a) symmetric spatial discretization based on orthogonal regular grids
@@ -1177,7 +1177,7 @@ classdef operator_born < scattering.operator
                             h_rx = anti_aliasing_filter( operator_born.sequence.setup, h_rx, operator_born.options.momentary.anti_aliasing );
                             h_rx = double( h_rx.samples );
 
-                        end % if isa( operator_born.sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                        end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
 
                         %--------------------------------------------------
                         % compute matrix-vector product
@@ -1381,7 +1381,7 @@ classdef operator_born < scattering.operator
                     index_element = operator_born.sequence.settings( index_measurement ).rx( index_mix ).indices_active( index_active );
 
                     % spatial transfer function of the active array element
-                    if isa( operator_born.sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                    if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
 
                         %--------------------------------------------------
                         % i.) symmetric spatial discretization based on orthogonal regular grids
@@ -1408,7 +1408,7 @@ classdef operator_born < scattering.operator
                         h_rx = anti_aliasing_filter( operator_born.sequence.setup, h_rx, operator_born.options.momentary.anti_aliasing );
                         h_rx = double( h_rx.samples );
 
-                    end % if isa( operator_born.sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                    end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
 
                     %------------------------------------------------------
                     % iii.) compute mixed voltage signals

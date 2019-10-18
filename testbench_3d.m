@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-10
-% modified: 2019-06-18
+% modified: 2019-10-17
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -28,7 +28,7 @@ str_name = 'wire_phantom';
 %--------------------------------------------------------------------------
 % transducer array
 %--------------------------------------------------------------------------
-xdc_array = transducers.L14_5_38( 2 );
+xdc_array = scattering.sequences.setups.transducers.L14_5_38( 2 );
 
 %--------------------------------------------------------------------------
 % homogeneous fluids
@@ -39,18 +39,18 @@ rho_0 = physical_values.kilogram_per_cubicmeter( 1000 );
 % time-causal absorption model
 c_ref = physical_values.meter_per_second( (1480:5:1520) );
 f_ref = physical_values.hertz( 4e6 );
-absorption_model = absorption_models.time_causal( zeros( size( c_ref ) ), 2.17e-3 * ones( size( c_ref ) ), 2 * ones( size( c_ref ) ), c_ref, f_ref * ones( size( c_ref ) ) );
+absorption_model = scattering.sequences.setups.materials.absorption_models.time_causal( zeros( size( c_ref ) ), 2.17e-3 * ones( size( c_ref ) ), 2 * ones( size( c_ref ) ), c_ref, f_ref * ones( size( c_ref ) ) );
 
 % average group velocity
 c_avg = c_ref;
 
 % create homogeneous fluid
-homogeneous_fluid = pulse_echo_measurements.homogeneous_fluid( repmat( rho_0, size( c_ref ) ), absorption_model, c_avg );
+homogeneous_fluid = scattering.sequences.setups.materials.homogeneous_fluid( repmat( rho_0, size( c_ref ) ), absorption_model, c_avg );
 
 %--------------------------------------------------------------------------
 % field of view
 %--------------------------------------------------------------------------
-FOV_size_lateral = xdc_array.N_elements_axis .* xdc_array.cell_ref.edge_lengths;
+FOV_size_lateral = xdc_array.N_elements_axis .* xdc_array.cell_ref.edge_lengths(:);
 FOV_size_axial = FOV_size_lateral( 1 );
 
 FOV_offset_axial = physical_values.meter( 350 * 76.2e-6 );
@@ -58,12 +58,12 @@ FOV_offset_axial = physical_values.meter( 350 * 76.2e-6 );
 FOV_intervals_lateral = num2cell( math.interval( - FOV_size_lateral / 2, FOV_size_lateral / 2 ) );
 FOV_interval_axial = math.interval( FOV_offset_axial, FOV_offset_axial + FOV_size_axial );
 
-FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral{ : }, FOV_interval_axial );
+FOV_cs = scattering.sequences.setups.fields_of_view.orthotope( FOV_intervals_lateral{ : }, FOV_interval_axial );
 
 %--------------------------------------------------------------------------
 % create pulse-echo measurement setup
 %--------------------------------------------------------------------------
-setup = pulse_echo_measurements.setup( repmat( xdc_array, size( c_ref ) ), homogeneous_fluid, repmat( FOV_cs, size( c_ref ) ), repmat( { str_name }, size( c_ref ) ) );
+setup = scattering.sequences.setups.setup( repmat( xdc_array, size( c_ref ) ), homogeneous_fluid, repmat( FOV_cs, size( c_ref ) ), repmat( { str_name }, size( c_ref ) ) );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% specify sequential pulse-echo measurements
@@ -102,18 +102,18 @@ sequences = cell( size( setup ) );
 for index_sequence = 1:numel( setup )
 
     % standard waves
-    % sequence_PW = pulse_echo_measurements.sequence_QPW( setup, repmat( u_tx_tilde, [3,1] ), e_theta( [1, 6, 11] ), interval_t, interval_f );
-    % sequence_QSW = pulse_echo_measurements.sequence_QSW( setup, repmat( u_tx_tilde, size( positions_src, 1 ) ), positions_src, angles, data_RF_qsw.interval_f );
-    sequences{ index_sequence } = pulse_echo_measurements.sequence_QPW( setup( index_sequence ), repmat( u_tx_tilde, size( e_theta ) ), e_theta, interval_f );
+    % sequence_PW = scattering.sequences.sequence_QPW( setup, repmat( u_tx_tilde, [3,1] ), e_theta( [1, 6, 11] ), interval_t, interval_f );
+    % sequence_QSW = scattering.sequences.sequence_QSW( setup, repmat( u_tx_tilde, size( positions_src, 1 ) ), positions_src, angles, data_RF_qsw.interval_f );
+    sequences{ index_sequence } = scattering.sequences.sequence_QPW( setup( index_sequence ), repmat( u_tx_tilde, size( e_theta ) ), e_theta, interval_f );
 
-    % sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 1 ), interval_f );
-    %         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
+    % sequence = scattering.sequences.sequence_QPW( setup, u_tx_tilde, e_theta( 1 ), interval_f );
+    %         sequence = scattering.sequences.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
     %         settings_rng_apo = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
     %         settings_rng_del = auxiliary.setting_rng( 3 * ones(1, 1), repmat({'twister'}, [ 1, 1 ]) );
-    %         sequence = pulse_echo_measurements.sequence_rnd_apo( setup, excitation_voltages_common, settings_rng_apo );
+    %         sequence = scattering.sequences.sequence_rnd_apo( setup, excitation_voltages_common, settings_rng_apo );
     %         e_dir = math.unit_vector( [ cos( 89.9 * pi / 180 ), sin( 89.9 * pi / 180 ) ] );
-    %         sequence = pulse_echo_measurements.sequence_rnd_del( setup, excitation_voltages_common, e_dir, settings_rng_del );
-    %         sequence = pulse_echo_measurements.sequence_rnd_apo_del( setup, excitation_voltages_common, e_dir, settings_rng_apo, settings_rng_del );
+    %         sequence = scattering.sequences.sequence_rnd_del( setup, excitation_voltages_common, e_dir, settings_rng_del );
+    %         sequence = scattering.sequences.sequence_rnd_apo_del( setup, excitation_voltages_common, e_dir, settings_rng_apo, settings_rng_del );
 
 end
 
@@ -122,58 +122,54 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %--------------------------------------------------------------------------
-% 1.) specify options
+% 1.) specify scattering operator options
 %--------------------------------------------------------------------------
 % spatial discretization options
-method_faces = discretizations.options_spatial_method_grid_numbers( [ 4, 53 ] );
-method_FOV = discretizations.options_spatial_method_grid_distances( physical_values.meter( [ 76.2e-6, 4e-3, 76.2e-6 ] ) );
+method_faces = discretizations.options_spatial_method_grid_numbers( [ 4; 53 ] );
+method_FOV = discretizations.options_spatial_method_grid_distances( physical_values.meter( [ 76.2e-6; 4e-3; 76.2e-6 ] ) );
 options_disc_spatial = discretizations.options_spatial( method_faces, method_FOV );
 
 % spectral discretization options
-% options_disc_spectral = discretizations.options_spectral.signal;
-% options_disc_spectral = discretizations.options_spectral.setting;
-options_disc_spectral = discretizations.options_spectral.sequence;
+% t_lb = 0 .* T_s;        % lower cut-off time
+% t_ub = 4 * 1700 .* T_s;     % upper cut-off time
+% interval_t = math.interval( t_lb, t_ub );
+options_disc_spectral = discretizations.options_spectral_sequence;
 
 % create discretization options
 options_disc = discretizations.options( options_disc_spatial, options_disc_spectral );
 
-% scattering options
-options = scattering.options( options_disc );
+% create static scattering operator options
+options_static = scattering.options.static( options_disc );
 
-% specify recording time interval
-% t_lb = 0 .* T_s;        % lower cut-off time
-% t_ub = 4 * 1700 .* T_s;     % upper cut-off time
-% interval_t = math.interval( t_lb, t_ub );
+% create momentary scattering operator options
+options_momentary = scattering.options.momentary;
+
+% scattering options
+options = scattering.options( options_static, options_momentary );
 
 %--------------------------------------------------------------------------
-% 2.) create scattering operators
+% 2.) create scattering operators and linear transforms
 %--------------------------------------------------------------------------
 % specify cell arrays
 operators_born = cell( size( sequences ) );
-LT_weighting = cell( size( sequences ) );
+LTs = cell( size( sequences ) );
 
 % iterate pulse-echo measurement sequences
 for index_sequence = 1:numel( sequences )
 
-	%----------------------------------------------------------------------
-	% a) initialize scattering operator (Born approximation)
+    %----------------------------------------------------------------------
+	% a) create scattering operator (Born approximation)
 	%----------------------------------------------------------------------
 	operators_born{ index_sequence } = scattering.operator_born( sequences{ index_sequence }, options );
 
     %----------------------------------------------------------------------
-    % b) specify transform and weighting matrices
-    %----------------------------------------------------------------------
-    % threshold for weighting
-%     E_M_rnd_apo = operator_born_rnd_apo.E_M;
-%     E_M_rnd_apo_max = max( E_M_rnd_apo );
-%     E_M_threshold = E_M_rnd_apo_max * 0;
-%     indicator = E_M_rnd_apo < E_M_threshold;
-%     N_cols_threshold_kappa_id = sum( indicator(:) );
-%     E_M_rnd_apo( indicator ) = E_M_threshold;
-	LT_weighting{ index_sequence } = linear_transforms.weighting( 1 ./ sqrt( double( operators_born{ index_sequence }.E_M ) ) );
+	% b) specify linear transforms
+	%----------------------------------------------------------------------
+	LTs{ index_sequence }{ 1 } = [];
 
 end % for index_sequence = 1:numel( sequences )
 
+% concatenate cell array contents into vector
 operators_born = cat( 2, operators_born{ : } );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -184,10 +180,10 @@ operators_born = cat( 2, operators_born{ : } );
 % 1.) specify coefficient vector
 %--------------------------------------------------------------------------
 N_coefficients = 9;
-N_dimensions = operators_born( 1 ).discretization.spatial.grid_FOV.N_dimensions;
-direction = operators_born( 1 ).discretization.spatial.grid_FOV.N_points_axis - ones( 1, N_dimensions );
+N_dimensions = operators_born( 1 ).sequence.setup.FOV.shape.grid.N_dimensions;
+direction = operators_born( 1 ).sequence.setup.FOV.shape.grid.N_points_axis - ones( 1, N_dimensions );
 indices_tpsf_axis = round( ones( N_coefficients, N_dimensions ) + linspace( 0.05, 0.95, N_coefficients )' * direction );
-indices_tpsf = forward_index_transform( operators_born( 1 ).discretization.spatial.grid_FOV, indices_tpsf_axis );
+indices_tpsf = forward_index_transform( operators_born( 1 ).sequence.setup.FOV.shape.grid, indices_tpsf_axis );
 
 theta = zeros( 512^2, 1 );
 theta( indices_tpsf ) = 1;
@@ -195,7 +191,7 @@ theta( indices_tpsf ) = 1;
 %--------------------------------------------------------------------------
 % 2.) perform forward scattering
 %--------------------------------------------------------------------------
-u_M = forward( operators_born, theta );
+u_M = forward( operators_born, theta, [], scattering.options.gpu_off );
 
 lbs_q = zeros( size( u_M ) );
 for index_sequence = 1:numel( sequences )
@@ -280,7 +276,7 @@ end
 % 2.) options
 %--------------------------------------------------------------------------
 % absorption model
-handle_absorption_model = @( x ) absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
+handle_absorption_model = @( x ) scattering.sequences.setups.materials.absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
 options = calibration.options( physical_values.second( 3e-6 ), 31 * T_s, 1, 128, interval_f, handle_absorption_model );
 
 %--------------------------------------------------------------------------

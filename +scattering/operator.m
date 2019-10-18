@@ -13,11 +13,11 @@ classdef (Abstract) operator
 	properties (SetAccess = private)
 
         % independent properties
-        sequence %( 1, 1 ) pulse_echo_measurements.sequence         % pulse-echo measurement sequence
+        sequence %( 1, 1 ) scattering.sequences.sequence         % pulse-echo measurement sequence
         options ( 1, 1 ) scattering.options                         % scattering operator options
 
         % dependent properties
-        incident_waves ( :, 1 ) syntheses.incident_wave             % incident waves
+        incident_waves ( :, 1 ) scattering.sequences.syntheses.incident_wave             % incident waves
         indices_measurement_sel ( :, 1 ) double { mustBePositive, mustBeInteger } % indices of selected sequential pulse-echo measurements
 
         % optional properties
@@ -38,9 +38,9 @@ classdef (Abstract) operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class pulse_echo_measurements.sequence
-            if ~isa( sequences, 'pulse_echo_measurements.sequence' )
-                errorStruct.message = 'sequences must be pulse_echo_measurements.sequence!';
+            % ensure class scattering.sequences.sequence
+            if ~isa( sequences, 'scattering.sequences.sequence' )
+                errorStruct.message = 'sequences must be scattering.sequences.sequence!';
                 errorStruct.identifier = 'operator:NoSequences';
                 error( errorStruct );
             end
@@ -88,7 +88,7 @@ classdef (Abstract) operator
                 %----------------------------------------------------------
                 % c) apply spatial anti-aliasing filter
                 %----------------------------------------------------------
-                if isa( objects( index_object ).sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                if isa( objects( index_object ).sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
                     objects( index_object ).sequence = apply_anti_aliasing_filter( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing );
                     objects( index_object ).h_ref_aa = anti_aliasing_filter( objects( index_object ).sequence.setup, objects( index_object ).sequence.h_ref, objects( index_object ).options.momentary.anti_aliasing );
                 end
@@ -96,7 +96,7 @@ classdef (Abstract) operator
                 %----------------------------------------------------------
                 % d) incident acoustic fields (unique frequencies)
                 %----------------------------------------------------------
-                objects( index_object ).incident_waves = syntheses.incident_wave( objects( index_object ).sequence );
+                objects( index_object ).incident_waves = scattering.sequences.syntheses.incident_wave( objects( index_object ).sequence );
                 
 % TODO: use update function
                 % update indices of selected sequential pulse-echo measurements
@@ -245,7 +245,7 @@ classdef (Abstract) operator
                     % ii.) change in spatial anti-aliasing filter options
                     %------------------------------------------------------
                     % update reference spatial transfer function w/ anti-aliasing filter
-                    if isa( operators( index_object ).sequence.setup, 'pulse_echo_measurements.setup_grid_symmetric' )
+                    if isa( operators( index_object ).sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
                         operators( index_object ).h_ref_aa = anti_aliasing_filter( operators( index_object ).sequence.setup, operators( index_object ).sequence.h_ref, operators( index_object ).options.momentary.anti_aliasing );
                     end
 

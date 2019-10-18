@@ -3,6 +3,7 @@
 %
 % author: Martin Schiffner
 % date: 2019-01-10
+% modified: 2019-10-17
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -19,8 +20,8 @@ addpath( genpath( sprintf('%s/toolbox/spgl1-1.8/', matlabroot) ) );
 %% physical parameters of linear array L14-5/38
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-xdc_array = transducers.L14_5_38( 1 );
-% xdc_array = transducers.array_planar( transducers.parameters_test, 1 );
+xdc_array = scattering.sequences.setups.transducers.L14_5_38( 1 );
+% xdc_array = scattering.sequences.setups.transducers.array_planar( scattering.sequences.setups.transducers.parameters_test, 1 );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% general parameters
@@ -53,7 +54,7 @@ FOV_size_axial = FOV_size_lateral( 1 );
 FOV_intervals_lateral = num2cell( math.interval( - FOV_size_lateral ./ 2, FOV_size_lateral ./ 2 ) );
 FOV_interval_axial = math.interval( physical_values.meter( 0 ), FOV_size_axial );
 
-FOV_cs = fields_of_view.orthotope( FOV_intervals_lateral{ : }, FOV_interval_axial );
+FOV_cs = scattering.sequences.setups.fields_of_view.orthotope( FOV_intervals_lateral{ : }, FOV_interval_axial );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% reconstruct material parameters with CS ((quasi) plane waves)
@@ -70,7 +71,7 @@ f_ub = f_tx .* ( 1 + 0.5 * frac_bw );       % upper cut-off frequency
 interval_f = math.interval( f_lb, f_ub );
 
 % create pulse-echo measurement setup
-setup = pulse_echo_measurements.setup( xdc_array, FOV_cs, absorption_model, str_name );
+setup = scattering.sequences.setups.setup( xdc_array, FOV_cs, absorption_model, str_name );
 
 % specify common excitation voltages
 tc = gauspuls( 'cutoff', double( f_tx ), frac_bw, frac_bw_ref, -60 );     % calculate cutoff time
@@ -80,14 +81,14 @@ axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
 u_tx_tilde = discretizations.signal( axis_t, physical_values.volt( pulse ) );
 
 % create pulse-echo measurement sequence
-sequence = pulse_echo_measurements.sequence_QPW( setup, u_tx_tilde, e_theta( 6 ), interval_t, interval_f );
-%         sequence = pulse_echo_measurements.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
+sequence = scattering.sequences.sequence_QPW( setup, u_tx_tilde, e_theta( 6 ), interval_t, interval_f );
+%         sequence = scattering.sequences.sequence_SA( setup, excitation_voltages_common, pi / 2 * ones( 128, 1 ) );
 %         settings_rng_apo = auxiliary.setting_rng( 10 * ones(11, 1), repmat({'twister'}, [ 11, 1 ]) );
 %         settings_rng_del = auxiliary.setting_rng( 3 * ones(1, 1), repmat({'twister'}, [ 1, 1 ]) );
-%         sequence = pulse_echo_measurements.sequence_rnd_apo( setup, excitation_voltages_common, settings_rng_apo );
+%         sequence = scattering.sequences.sequence_rnd_apo( setup, excitation_voltages_common, settings_rng_apo );
 %         e_dir = math.unit_vector( [ cos( 89.9 * pi / 180 ), sin( 89.9 * pi / 180 ) ] );
-%         sequence = pulse_echo_measurements.sequence_rnd_del( setup, excitation_voltages_common, e_dir, settings_rng_del );
-%         sequence = pulse_echo_measurements.sequence_rnd_apo_del( setup, excitation_voltages_common, e_dir, settings_rng_apo, settings_rng_del );
+%         sequence = scattering.sequences.sequence_rnd_del( setup, excitation_voltages_common, e_dir, settings_rng_del );
+%         sequence = scattering.sequences.sequence_rnd_apo_del( setup, excitation_voltages_common, e_dir, settings_rng_apo, settings_rng_del );
 
 %--------------------------------------------------------------------------
 % specify options
