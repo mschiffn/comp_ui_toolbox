@@ -94,11 +94,11 @@ sequence = scattering.sequences.sequence_QPW( setup, u_tx_tilde, e_theta( 6 ), i
 % specify options
 %--------------------------------------------------------------------------
 % discretization options
-method_faces = discretizations.options_spatial_method_grid_numbers( 12 );
-method_FOV = discretizations.options_spatial_method_grid_distances( physical_values.meter( [ 76.2e-6, 76.2e-6 ] ) );
-options_disc_spatial = discretizations.options_spatial( method_faces, method_FOV );
-options_disc_spectral = discretizations.options_spectral.signal;
-options_disc = discretizations.options( options_disc_spatial, options_disc_spectral );
+method_faces = scattering.sequences.setups.discretizations.methods.grid_numbers( 12 );
+method_FOV = scattering.sequences.setups.discretizations.methods.grid_distances( physical_values.meter( [ 76.2e-6, 76.2e-6 ] ) );
+options_disc_spatial = scattering.sequences.setups.discretizations.options( method_faces, method_FOV );
+options_disc_spectral = scattering.sequences.settings.discretizations.signal;
+options_disc = scattering.options.discretization( options_disc_spatial, options_disc_spectral );
 
 % scattering options
 options = scattering.options( options_disc );

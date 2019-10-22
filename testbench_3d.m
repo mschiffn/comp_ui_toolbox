@@ -125,15 +125,15 @@ end
 % 1.) specify scattering operator options
 %--------------------------------------------------------------------------
 % spatial discretization options
-method_faces = discretizations.options_spatial_method_grid_numbers( [ 4; 53 ] );
-method_FOV = discretizations.options_spatial_method_grid_distances( physical_values.meter( [ 76.2e-6; 4e-3; 76.2e-6 ] ) );
-options_disc_spatial = discretizations.options_spatial( method_faces, method_FOV );
+method_faces = scattering.sequences.setups.discretizations.methods.grid_numbers( [ 4; 53 ] );
+method_FOV = scattering.sequences.setups.discretizations.methods.grid_distances( physical_values.meter( [ 76.2e-6; 4e-3; 76.2e-6 ] ) );
+options_disc_spatial = scattering.sequences.setups.discretizations.options( method_faces, method_FOV );
 
 % spectral discretization options
 % t_lb = 0 .* T_s;        % lower cut-off time
 % t_ub = 4 * 1700 .* T_s;     % upper cut-off time
 % interval_t = math.interval( t_lb, t_ub );
-options_disc_spectral = discretizations.options_spectral_sequence;
+options_disc_spectral = scattering.sequences.settings.discretizations.sequence;
 
 % create discretization options
 options_disc = discretizations.options( options_disc_spatial, options_disc_spectral );
