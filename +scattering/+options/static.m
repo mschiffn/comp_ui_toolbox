@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-09
-% modified: 2019-08-03
+% modified: 2019-10-22
 %
 classdef static
 
@@ -13,7 +13,7 @@ classdef static
 	properties (SetAccess = private)
 
         % independent properties
-        discretization ( 1, 1 ) discretizations.options = discretizations.options                       % spatiospectral discretization
+        discretization ( 1, 1 ) scattering.options.discretization = scattering.options.discretization	% spatiospectral discretization
         materials ( 1, 1 ) scattering.options.material = scattering.options.material.compressibility	% material parameters
 
     end % properties
@@ -46,7 +46,7 @@ classdef static
                     %------------------------------------------------------
                     % spatiospectral discretization options
                     %------------------------------------------------------
-                    case 'discretizations.options'
+                    case 'scattering.options.discretization'
                         object.discretization = varargin{ index_arg };
 
                     %------------------------------------------------------

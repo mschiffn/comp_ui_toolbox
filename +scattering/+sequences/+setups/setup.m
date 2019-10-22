@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2019-10-17
+% modified: 2019-10-21
 %
 classdef setup
 
@@ -263,9 +263,9 @@ classdef setup
                 error( errorStruct );
             end
 
-            % ensure class discretizations.options_spatial
-            if ~isa( options_spatial, 'discretizations.options_spatial')
-                errorStruct.message = 'options_spatial must be discretizations.options_spatial!';
+            % ensure class scattering.sequences.setups.discretizations.options
+            if ~isa( options_spatial, 'scattering.sequences.setups.discretizations.options')
+                errorStruct.message = 'options_spatial must be scattering.sequences.setups.discretizations.options!';
                 errorStruct.identifier = 'discretize:NoOptionsSpatial';
                 error( errorStruct );
             end
@@ -313,7 +313,7 @@ classdef setup
         end % function setups = discretize( setups, options_spatial )
 
         %------------------------------------------------------------------
-        % compute prefactors
+        % compute prefactors (- delta_V * axis_k_tilde.^2)
         %------------------------------------------------------------------
         function prefactors = compute_prefactors( setups, axes_f )
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-10-17
+% modified: 2019-10-21
 %
 classdef face
 
@@ -193,7 +193,7 @@ classdef face
                 error( errorStruct );
             end
 
-            % method discretize in shape ensures shape and class discretizations.options_spatial_method for methods
+            % method discretize in shape ensures shape and class scattering.sequences.setups.discretizations.methods.method for methods
 
             %--------------------------------------------------------------
             % 2.) discretize vibrating faces

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-10-18
+% modified: 2019-10-22
 %
 classdef setting
 
@@ -87,9 +87,9 @@ classdef setting
                 error( errorStruct );
             end
 
-            % ensure class discretizations.options_spectral (scalar)
-            if ~( isa( options_spectral, 'discretizations.options_spectral' ) && isscalar( options_spectral ) )
-                errorStruct.message = 'options_spectral must be a single discretizations.options_spectral!';
+            % ensure class scattering.sequences.settings.discretizations.options (scalar)
+            if ~( isa( options_spectral, 'scattering.sequences.settings.discretizations.options' ) && isscalar( options_spectral ) )
+                errorStruct.message = 'options_spectral must be a single scattering.sequences.settings.discretizations.options!';
                 errorStruct.identifier = 'discretize:NoSingleOptionsSpectral';
                 error( errorStruct );
             end
@@ -102,7 +102,7 @@ classdef setting
             settings_tx = cell( size( settings ) );
 
             % check spectral discretization options
-            if isa( options_spectral, 'discretizations.options_spectral_signal' )
+            if isa( options_spectral, 'scattering.sequences.settings.discretizations.signal' )
 
                 %----------------------------------------------------------
                 % a) individual frequency axis for each recorded signal
@@ -121,7 +121,7 @@ classdef setting
 
                 end % for index_object = 1:numel( settings )
 
-            elseif isa( options_spectral, 'discretizations.options_spectral_setting' )
+            elseif isa( options_spectral, 'scattering.sequences.settings.discretizations.setting' )
 
                 %----------------------------------------------------------
                 % b) common frequency axis for all recorded signals per setting
@@ -149,7 +149,7 @@ classdef setting
 
                 end % for index_object = 1:numel( settings )
 
-            elseif isa( options_spectral, 'discretizations.options_spectral_sequence' )
+            elseif isa( options_spectral, 'scattering.sequences.settings.discretizations.sequence' )
 
                 %----------------------------------------------------------
                 % c) common frequency axis for all recorded signals
@@ -169,7 +169,7 @@ classdef setting
                 [ interval_hull_t, interval_hull_f ] = hulls( settings );
 
                 % check specification of custom recording time interval
-                if isa( options_spectral, 'discretizations.options_spectral_sequence_custom' )
+                if isa( options_spectral, 'scattering.sequences.settings.discretizations.sequence_custom' )
 
                     % ensure valid recording time interval
                     if ~isequal( hull( [ options_spectral.interval_hull_t, interval_hull_t ] ), options_spectral.interval_hull_t )
@@ -181,7 +181,7 @@ classdef setting
                     % use custom recording time interval
                     interval_hull_t = options_spectral.interval_hull_t;
 
-                end % if isa( options_spectral, 'discretizations.options_spectral_sequence_custom' )
+                end % if isa( options_spectral, 'scattering.sequences.settings.discretizations.sequence_custom' )
 
                 % quantize hull of all recording time intervals using delta_unique_max
                 interval_hull_t_quantized = quantize( interval_hull_t, delta_unique_max );
@@ -204,7 +204,7 @@ classdef setting
                 errorStruct.identifier = 'discretize:UnknownOptionsClass';
                 error( errorStruct );
 
-            end % if isa( options_spectral, 'discretizations.options_spectral_signal' )
+            end % if isa( options_spectral, 'scattering.sequences.settings.discretizations.signal' )
 
             %--------------------------------------------------------------
             % 3.) ensure identical frequency axes

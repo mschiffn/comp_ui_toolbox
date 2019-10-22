@@ -50,9 +50,9 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
                 error( errorStruct );
             end
 
-            % ensure class discretizations.options_spatial_method
-            if ~isa( methods, 'discretizations.options_spatial_method' )
-                errorStruct.message = 'methods must be discretizations.options_spatial_method!';
+            % ensure class scattering.sequences.setups.discretizations.methods.method
+            if ~isa( methods, 'scattering.sequences.setups.discretizations.methods.method' )
+                errorStruct.message = 'methods must be scattering.sequences.setups.discretizations.methods.method!';
                 errorStruct.identifier = 'discretize:NoSpatialDiscretizationMethod';
                 error( errorStruct );
             end
@@ -74,7 +74,7 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
             % 2.) discretize orthotopes
             %--------------------------------------------------------------
             % check discretization method
-            if isa( methods, 'discretizations.options_spatial_method_grid' )
+            if isa( methods, 'scattering.sequences.setups.discretizations.methods.grid' )
 % TODO: define grid subtype
                 %----------------------------------------------------------
                 % a) discretization based on (regular) grids
@@ -85,7 +85,7 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
                 N_points_axis = cell( size( orthotopes ) );
 
                 % check discretization subtype
-                if isa( methods, 'discretizations.options_spatial_method_grid_numbers' )
+                if isa( methods, 'scattering.sequences.setups.discretizations.methods.grid_numbers' )
 
                     %------------------------------------------------------
                     % i.)
@@ -104,7 +104,7 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
 
                     end % for index_object = 1:numel( orthotopes )
 
-                elseif isa( methods, 'discretizations.options_spatial_method_grid_distances' )
+                elseif isa( methods, 'scattering.sequences.setups.discretizations.methods.grid_distances' )
 
                     %------------------------------------------------------
                     % ii.)
@@ -132,7 +132,7 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
                     errorStruct.identifier = 'discretize:UnknownParameters';
                     error( errorStruct );
 
-                end % if isa( methods, 'discretizations.options_spatial_method_grid_numbers' )
+                end % if isa( methods, 'scattering.sequences.setups.discretizations.methods.grid_numbers' )
 
                 % iterate orthotopes
                 for index_object = 1:numel( orthotopes )
@@ -157,11 +157,11 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
                 %----------------------------------------------------------
                 % b) unknown discretization method
                 %----------------------------------------------------------
-                errorStruct.message = 'methods must be discretizations.options_spatial_method!';
-                errorStruct.identifier = 'discretize:NoSpatialDiscretizationMethod';
+                errorStruct.message = 'Class of methods is unknown!';
+                errorStruct.identifier = 'discretize:UnknownMethodClass';
                 error( errorStruct );
 
-            end % if isa( methods, 'discretizations.options_spatial_method_grid' )
+            end % if isa( methods, 'scattering.sequences.setups.discretizations.methods.grid' )
 
         end % function orthotopes_discrete = discretize( orthotopes, methods )
 

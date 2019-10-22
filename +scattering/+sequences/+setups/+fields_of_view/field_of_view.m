@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-16
-% modified: 2019-10-18
+% modified: 2019-10-21
 %
 classdef field_of_view
 
@@ -73,7 +73,7 @@ classdef field_of_view
                 error( errorStruct );
             end
 
-            % method discretize in shape ensures class discretizations.options_spatial_method for methods
+            % method discretize in shape ensures class scattering.sequences.setups.discretizations.methods.method for methods
 
             % multiple FOVs / single methods
             if ~isscalar( FOVs ) && isscalar( methods )

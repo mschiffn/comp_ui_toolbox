@@ -472,9 +472,9 @@ classdef sequence
                 error( errorStruct );
             end
 
-            % ensure class discretizations.options
-            if ~isa( options, 'discretizations.options' )
-                errorStruct.message = 'options must be discretizations.options!';
+            % ensure class scattering.options.discretization
+            if ~isa( options, 'scattering.options.discretization' )
+                errorStruct.message = 'options must be scattering.options.discretization!';
                 errorStruct.identifier = 'discretize:NoDiscretizationOptions';
                 error( errorStruct );
             end
@@ -527,7 +527,9 @@ classdef sequence
 
         end % function sequences = discretize( sequences, options )
 
-
+        %------------------------------------------------------------------
+        %
+        %------------------------------------------------------------------
         function sequences = apply_anti_aliasing_filter( sequences, options_anti_aliasing )
 
             sequences.h_ref_aa = anti_aliasing_filter( sequences.setup, sequences.h_ref, options_anti_aliasing );
@@ -581,6 +583,12 @@ classdef sequence
             end
 
         end % function prefactors = compute_prefactors( sequences )
+
+        %------------------------------------------------------------------
+        % compute incident acoustic pressure field
+        %------------------------------------------------------------------
+        function fields = compute_p_in( sequences, varargin )
+        end
 
 	end % methods
 

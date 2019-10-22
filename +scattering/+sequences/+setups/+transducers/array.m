@@ -91,7 +91,7 @@ classdef array
                 error( errorStruct );
             end
 
-            % method discretize in scattering.sequences.setups.transducers.face ensures shapes and class discretizations.options_spatial_method for methods_faces
+            % method discretize in scattering.sequences.setups.transducers.face ensures shapes and class scattering.sequences.setups.discretizations.methods.method for methods_faces
 
             % multiple arrays / single methods_faces
             if ~isscalar( arrays ) && isscalar( methods_faces )

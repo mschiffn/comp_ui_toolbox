@@ -185,7 +185,7 @@ classdef operator_born < scattering.operator
         % forward scattering (overload forward method)
         %------------------------------------------------------------------
         function u_M = forward( operators_born, fluctuations, varargin )
-
+% TODO: adapt to convention (cf. TPSF)
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -267,19 +267,19 @@ classdef operator_born < scattering.operator
                 for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
 
                     % index of sequential pulse-echo measurement
-                    index_measurement = operator_born.indices_measurement_sel( index_measurement_sel );
+                    index_measurement = operators_born( index_object ).indices_measurement_sel( index_measurement_sel );
 
                     % map unique frequencies of pulse-echo measurement to global unique frequencies
-                    indices_f_measurement_to_global = operators_born( index_object ).discretization.indices_f_to_unique{ index_measurement };
+                    indices_f_measurement_to_global = operators_born( index_object ).sequence.indices_f_to_unique{ index_measurement };
 
                     % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
-                    indices_f_mix_to_measurement = operators_born( index_object ).discretization.spectral( index_measurement ).indices_f_to_unique;
+                    indices_f_mix_to_measurement = operators_born( index_object ).sequence.settings( index_measurement ).indices_f_to_unique;
 
                     % partition matrix into cell arrays
-                    u_M{ index_object }{ index_measurement_sel } = mat2cell( u_M{ index_object }{ index_measurement_sel }, operators_born( index_object ).discretization.spectral( index_measurement ).N_observations, size( u_M{ index_object }{ index_measurement_sel }, 2 ) );
+                    u_M{ index_object }{ index_measurement_sel } = mat2cell( u_M{ index_object }{ index_measurement_sel }, operators_born( index_object ).sequence.settings( index_measurement ).N_observations, size( u_M{ index_object }{ index_measurement_sel }, 2 ) );
 
                     % subsample global unique frequencies to get unique frequencies of pulse-echo measurement
-                    axis_f_measurement_unique = subsample( operators_born( index_object ).discretization.axis_f_unique, indices_f_measurement_to_global );
+                    axis_f_measurement_unique = subsample( operators_born( index_object ).sequence.axis_f_unique, indices_f_measurement_to_global );
 
                     % subsample unique frequencies of pulse-echo measurement to get frequencies of mixed voltage signals
                     axes_f_mix = reshape( subsample( axis_f_measurement_unique, indices_f_mix_to_measurement ), size( u_M{ index_object }{ index_measurement_sel } ) );
