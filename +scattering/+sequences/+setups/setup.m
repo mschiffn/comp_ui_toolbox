@@ -18,7 +18,7 @@ classdef setup
         FOV ( 1, 1 ) scattering.sequences.setups.fields_of_view.field_of_view               % field of view
         str_name = 'default'                                                                % name
 
-% TODO: move to different class
+% TODO: move to different class!
         T_clk = physical_values.second( 1 / 80e6 );                   % time period of the clock signal
 %         T_clk = physical_values.second( ( 1 / 20832000 ) / 12 );        % time period of the clock signal
 %         T_clk = physical_values.second( 1 / (12 * 20832000) );          % time period of the clock signal
@@ -98,10 +98,12 @@ classdef setup
             end
 
             % ensure planar transducer array and FOV with orthotope shape
+% TODO: ensure orthotopic shapes of the faces!
             indicator_array_planar = cellfun( @( x ) ~isa( x, 'scattering.sequences.setups.transducers.array_planar' ), { setups.xdc_array } );
+%             indicator_faces_orthotope = cellfun( @( x ) ~isa( x.aperture.shape, 'scattering.sequences.setups.transducers.array_planar' ), { setups.xdc_array } );
             indicator_FOV = cellfun( @( x ) ~isa( x.shape, 'scattering.sequences.setups.geometry.orthotope' ), { setups.FOV } );
             if any( indicator_array_planar( : ) ) || any( indicator_FOV( : ) )
-                errorStruct.message = 'Current implementation requires a planar transducer array and a FOV with orthotope shape!';
+                errorStruct.message = 'Current implementation of method times_of_flight requires a planar transducer array and a FOV with orthotope shape!';
                 errorStruct.identifier = 'times_of_flight:NoPlanarOrOrthotope';
                 error( errorStruct );
             end
@@ -142,27 +144,51 @@ classdef setup
             %--------------------------------------------------------------
             % 2.) estimate lower and upper bounds on the times-of-flight
             %--------------------------------------------------------------
-            % vertices of the FOV
-            pos_vertices = vertices( [ setups.FOV.shape ] );
-
-            % ensure cell array for pos_vertices
-            if ~iscell( pos_vertices )
-                pos_vertices = { pos_vertices };
-            end
-
             % specify cell array for intervals_tof
             intervals_tof = cell( size( setups ) );
 
             % iterate pulse-echo measurement setups
             for index_setup = 1:numel( setups )
 
+                % print status
+                time_start = tic;
+                str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+                fprintf( '\t %s: computing lower and upper bounds on the times-of-flight...', str_date_time );
+
                 % initialize lower and upper bounds with zeros
                 t_tof_lbs = physical_values.second( zeros( numel( indices_active_tx{ index_setup } ), numel( indices_active_rx{ index_setup } ) ) );
                 t_tof_ubs = physical_values.second( zeros( numel( indices_active_tx{ index_setup } ), numel( indices_active_rx{ index_setup } ) ) );
 
+                % check for symmetric bounds
+                if isequal( indices_active_tx{ index_setup }, indices_active_rx{ index_setup } )
+                    flag_symmetric = true;
+                else
+                    flag_symmetric = false;
+                end
+
+                % lower and upper bounds on the intervals
+                FOV_lbs = [ setups( index_setup ).FOV.shape.intervals.lb ];
+                FOV_ubs = [ setups( index_setup ).FOV.shape.intervals.ub ];
+
+                % initialize elapsed times with zero
+                seconds_per_tx = zeros( 1, numel( indices_active_tx{ index_setup } ) );
+
                 % iterate active tx elements
                 for index_active_tx = 1:numel( indices_active_tx{ index_setup } )
 
+                    % print progress in percent
+                    if index_active_tx > 1
+                        N_bytes = fprintf( '%5.1f %% (elapsed: %d min. | remaining: %d min. | mean: %.2f s | last: %.2f s)', ( index_active_tx - 1 ) / numel( indices_active_tx{ index_setup } ) * 1e2, round( toc( time_start ) / 60 ), round( ( numel( indices_active_tx{ index_setup } ) - index_active_tx + 1 ) * mean( seconds_per_tx( 1:(index_active_tx - 1) ) ) / 60 ), mean( seconds_per_tx( 1:(index_active_tx - 1) ) ), seconds_per_tx( index_active_tx - 1 ) );
+                    else
+                        N_bytes = fprintf( '%5.1f %% (elapsed: %d min.)', 0, round( toc( time_start ) / 60 ) );
+                    end
+
+                    % start time measurement per tx
+                    time_tx_start = tic;
+
+                    %------------------------------------------------------
+                    % extract lower and upper bounds on tx face
+                    %------------------------------------------------------
                     % index of active tx element
                     index_element_tx = indices_active_tx{ index_setup }( index_active_tx );
 
@@ -170,12 +196,23 @@ classdef setup
                     face_tx = setups( index_setup ).xdc_array.aperture( index_element_tx );
 
                     % lower and upper bounds on the intervals
-                    shape_tx_lbs = [ face_tx.shape.intervals.lb ];
-                    shape_tx_ubs = [ face_tx.shape.intervals.ub ];
+                    face_tx_lbs = [ face_tx.shape.intervals.lb ];
+                    face_tx_ctr = setups( index_setup ).xdc_array.positions_ctr( index_element_tx, : );
+                    face_tx_ubs = [ face_tx.shape.intervals.ub ];
+
+                    % set upper bound for iteration
+                    if flag_symmetric
+                        index_active_rx_ub = index_active_tx;
+                    else
+                        index_active_rx_ub = numel( indices_active_rx{ index_setup } );
+                    end
 
                     % iterate active rx elements
-                    for index_active_rx = 1:numel( indices_active_rx{ index_setup } )
+                    for index_active_rx = 1:index_active_rx_ub
 
+                        %--------------------------------------------------
+                        % extract lower and upper bounds on rx face
+                        %--------------------------------------------------
                         % index of active rx element
                         index_element_rx = indices_active_rx{ index_setup }( index_active_rx );
 
@@ -183,61 +220,156 @@ classdef setup
                         face_rx = setups( index_setup ).xdc_array.aperture( index_element_rx );
 
                         % lower and upper bounds on the intervals
-                        shape_rx_lbs = [ face_rx.shape.intervals.lb ];
-                        shape_rx_ubs = [ face_rx.shape.intervals.ub ];
+                        face_rx_lbs = [ face_rx.shape.intervals.lb ];
+                        face_rx_ctr = setups( index_setup ).xdc_array.positions_ctr( index_element_rx, : );
+                        face_rx_ubs = [ face_rx.shape.intervals.ub ];
 
-                        % orthotope including center coordinates of prolate spheroid
-                        shape_ctr_lbs = ( shape_tx_lbs + shape_rx_lbs ) / 2;
-                        shape_ctr_ubs = ( shape_tx_ubs + shape_rx_ubs ) / 2;
-                        shape_ctr_intervals = num2cell( math.interval( shape_ctr_lbs, shape_ctr_ubs ) );
-                        shape_ctr = scattering.sequences.setups.geometry.orthotope( shape_ctr_intervals{ : } );
+                        %--------------------------------------------------
+                        % lower and upper bounds on the center coordinates of the prolate spheroid
+                        %--------------------------------------------------
+                        spheroid_ctr_lbs = ( face_tx_lbs + face_rx_lbs ) / 2;
+                        spheroid_ctr_ubs = ( face_tx_ubs + face_rx_ubs ) / 2;
 
-% TODO: does lateral extent of FOV contain shape_ctr?
-%                         if intersection( setups( index_setup ).FOV.intervals, shape_ctr_intervals )
+                        % initialize positions w/ zeros
+                        position_tx = physical_values.meter( zeros( 1, setups( index_setup ).FOV.shape.N_dimensions ) );
+                        position_rx = physical_values.meter( zeros( 1, setups( index_setup ).FOV.shape.N_dimensions ) );
+                        position_FOV = physical_values.meter( zeros( 1, setups( index_setup ).FOV.shape.N_dimensions ) );
 
-                            % distance from center coordinates to focal points
-                            dist_focus_ctr = norm( setups( index_setup ).xdc_array.positions_ctr( index_element_rx, : ) - setups( index_setup ).xdc_array.positions_ctr( index_element_tx, : ) ) / 2;
+                        % display results
+%                         figure(1);
+%                         plot( face_tx_lbs( 1 ), face_tx_lbs( 2 ) );
+%                         line( [ face_tx_lbs( 1 ), face_tx_ubs( 1 ), face_tx_lbs( 1 ), face_tx_lbs( 1 ); face_tx_lbs( 1 ), face_tx_ubs( 1 ), face_tx_ubs( 1 ), face_tx_ubs( 1 ) ], [ face_tx_lbs( 2 ), face_tx_lbs( 2 ), face_tx_lbs( 2 ), face_tx_ubs( 2 ); face_tx_ubs( 2 ), face_tx_ubs( 2 ), face_tx_lbs( 2 ), face_tx_ubs( 2 ) ], 'Color', 'b' );
+%                         line( [ face_rx_lbs( 1 ), face_rx_ubs( 1 ), face_rx_lbs( 1 ), face_rx_lbs( 1 ); face_rx_lbs( 1 ), face_rx_ubs( 1 ), face_rx_ubs( 1 ), face_rx_ubs( 1 ) ], [ face_rx_lbs( 2 ), face_rx_lbs( 2 ), face_rx_lbs( 2 ), face_rx_ubs( 2 ); face_rx_ubs( 2 ), face_rx_ubs( 2 ), face_rx_lbs( 2 ), face_rx_ubs( 2 ) ], 'Color', 'r' );
+%                         line( [ FOV_lbs( 1 ), FOV_ubs( 1 ), FOV_lbs( 1 ), FOV_lbs( 1 ); FOV_lbs( 1 ), FOV_ubs( 1 ), FOV_ubs( 1 ), FOV_ubs( 1 ) ], [ FOV_lbs( 2 ), FOV_lbs( 2 ), FOV_lbs( 2 ), FOV_ubs( 2 ); FOV_ubs( 2 ), FOV_ubs( 2 ), FOV_lbs( 2 ), FOV_ubs( 2 ) ], 'Color', 'g' );
+%                         hold on;
 
-                            %----------------------------------------------
-                            % a) lower bound on the time-of-flight
-                            %----------------------------------------------
-                            t_tof_lbs( index_active_tx, index_active_rx ) = 2 * sqrt( dist_focus_ctr^2 + setups( index_setup ).FOV.shape.intervals( end ).lb^2 ) / setups( index_setup ).homogeneous_fluid.c_avg;
-                            t_tof_lbs( index_active_rx, index_active_tx ) = t_tof_lbs( index_active_tx, index_active_rx );
+                        %--------------------------------------------------
+                        % a) lower bound on the time-of-flight
+                        %--------------------------------------------------
+                        % center position
+                        position_ctr = 0.5 * ( min( face_tx_ubs, face_rx_ubs ) + max( face_tx_lbs, face_rx_lbs ) );
 
-                            %----------------------------------------------
-                            % b) upper bound on the time-of-flight
-                            %----------------------------------------------
-                            % determine vertices of maximum distance for lower and upper interval bounds
-                            [ dist_ctr_vertices_max_lb, index_max_lb ] = max( vecnorm( [ [ shape_ctr.intervals.lb ], 0 ] - pos_vertices{ index_setup }, 2, 2 ) );
-                            [ dist_ctr_vertices_max_ub, index_max_ub ] = max( vecnorm( [ [ shape_ctr.intervals.ub ], 0 ] - pos_vertices{ index_setup }, 2, 2 ) );
+                        % define cases
+                        indicator_1 = FOV_ubs( 1:(end - 1) ) <= min( face_tx_lbs, face_rx_lbs );
+                        indicator_2 = ( FOV_ubs( 1:(end - 1) ) > min( face_tx_lbs, face_rx_lbs ) ) & ( FOV_ubs( 1:(end - 1) ) <= min( face_tx_ubs, face_rx_ubs ) );
+                        indicator_3 = ( FOV_ubs( 1:(end - 1) ) > min( face_tx_ubs, face_rx_ubs ) ) & ( FOV_ubs( 1:(end - 1) ) <= position_ctr );
+                        indicator_4 = ( FOV_lbs( 1:(end - 1) ) <= position_ctr ) & ( FOV_ubs(  1:(end - 1) ) > position_ctr );
+                        indicator_5 = ( FOV_lbs( 1:(end - 1) ) > position_ctr ) & ( FOV_lbs( 1:(end - 1) ) <= max( face_tx_lbs, face_rx_lbs ) );
+                        indicator_6 = ( FOV_lbs( 1:(end - 1) ) > max( face_tx_lbs, face_rx_lbs ) ) & ( FOV_lbs( 1:(end - 1) ) < max( face_tx_ubs, face_rx_ubs ) );
+                        indicator_7 = FOV_lbs( 1:(end - 1) ) >= max( face_tx_ubs, face_rx_ubs );
 
-                            % find index and maximum distance
-                            if dist_ctr_vertices_max_lb > dist_ctr_vertices_max_ub
-                                index_max = index_max_lb;
-                                % TODO:compute correct position
-                                pos_tx = [ shape_tx_lbs, 0 ];
-                                pos_rx = [ shape_rx_lbs, 0 ];
-                            else
-                                index_max = index_max_ub;
-                                % TODO:compute correct position
-                                pos_tx = [ shape_tx_ubs, 0 ];
-                                pos_rx = [ shape_rx_ubs, 0 ];
-                            end
+                        indicator_tx_left = face_tx_ubs < face_rx_lbs;
+                        indicator_tx_right = face_rx_ubs < face_tx_lbs;
+                        indicator_tx_equal = ~indicator_tx_left & ~ indicator_tx_right; % abs( face_tx_lbs - face_rx_lbs ) <= eps( 0 ) .* face_tx_lbs;
+                        indicator_FOV_left = indicator_1 | indicator_2 | indicator_3; % FOV_ubs( 1:(end - 1) ) <= position_ctr;
+                        indicator_FOV_right = indicator_5 | indicator_6 | indicator_7; % FOV_lbs( 1:(end - 1) ) >= position_ctr;
 
-                            % compute upper bound
-                            t_tof_ubs( index_active_tx, index_active_rx ) = ( norm( pos_vertices{ index_setup }( index_max, : ) - pos_tx ) + norm( pos_rx - pos_vertices{ index_setup }( index_max, : ) ) ) / setups( index_setup ).homogeneous_fluid.c_avg;
-                            t_tof_ubs( index_active_rx, index_active_tx ) = t_tof_ubs( index_active_tx, index_active_rx );
+                        % tx positions
+                        position_tx( indicator_1 ) = face_tx_lbs( indicator_1 );
+                        position_tx( indicator_2 ) = ( indicator_tx_left( indicator_2 ) + indicator_tx_equal( indicator_2 ) ) .* FOV_ubs( [ indicator_2, false ] ) + ...
+                                                       indicator_tx_right( indicator_2 ) .* face_tx_lbs( indicator_2 );
+                        position_tx( indicator_3 ) = indicator_tx_left( indicator_3 ) .* face_tx_ubs( indicator_3 ) + ...
+                                                     indicator_tx_right( indicator_3 ) .* face_tx_lbs( indicator_3 );
+                        position_tx( indicator_4 ) = indicator_tx_left( indicator_4 ) .* face_tx_ubs( indicator_4 ) + ...
+                                                     indicator_tx_right( indicator_4 ) .* face_tx_lbs( indicator_4 ) + ...
+                                                     indicator_tx_equal( indicator_4 ) .* position_ctr( indicator_4 );
+                        position_tx( indicator_5 ) = indicator_tx_left( indicator_5 ) .* face_tx_ubs( indicator_5 ) + ...
+                                                     indicator_tx_right( indicator_5 ) .* face_tx_lbs( indicator_5 );
+                        position_tx( indicator_6 ) = indicator_tx_left( indicator_6 ) .* face_tx_ubs( indicator_6 ) + ...
+                                                   ( indicator_tx_right( indicator_6 ) + indicator_tx_equal( indicator_6 ) ) .* FOV_lbs( [ indicator_6, false ] );
+                        position_tx( indicator_7 ) = face_tx_ubs( indicator_7 );
 
-%                         else
-                            % find vertex intersecting with smallest prolate spheroid
-%                         end
+                        % rx positions
+                        position_rx( indicator_1 ) = face_rx_lbs( indicator_1 );
+                        position_rx( indicator_2 ) =    indicator_tx_left( indicator_2 ) .* face_rx_lbs( indicator_2 ) + ...
+                                                     ( indicator_tx_right( indicator_2 ) + indicator_tx_equal( indicator_2 ) ) .* FOV_ubs( [ indicator_2, false ] );
+                        position_rx( indicator_3 ) = indicator_tx_left( indicator_3 ) .* face_rx_lbs( indicator_3 ) + ...
+                                                     indicator_tx_right( indicator_3 ) .* face_rx_ubs( indicator_3 );
+                        position_rx( indicator_4 ) = indicator_tx_left( indicator_4 ) .* face_rx_lbs( indicator_4 ) + ...
+                                                     indicator_tx_right( indicator_4 ) .* face_rx_ubs( indicator_4 ) + ...
+                                                     indicator_tx_equal( indicator_4 ) .* position_ctr( indicator_4 );
+                        position_rx( indicator_5 ) = indicator_tx_left( indicator_5 ) .* face_rx_lbs( indicator_5 ) + ...
+                                                     indicator_tx_right( indicator_5 ) .* face_rx_ubs( indicator_5 );
+                        position_rx( indicator_6 ) = ( indicator_tx_left( indicator_6 ) + indicator_tx_equal( indicator_6 ) ) .* FOV_lbs( [ indicator_6, false ] ) + ...
+                                                      indicator_tx_right( indicator_6 ) .* face_rx_ubs( indicator_6 );
+                        position_rx( indicator_7 ) = face_rx_ubs( indicator_7 );
 
-                    end % for index_active_rx = 1:numel( indices_active_rx{ index_setup } )
+                        % FOV positions
+                        position_FOV( indicator_FOV_left ) = FOV_ubs( [ indicator_FOV_left, false ] );
+                        position_FOV( indicator_4 ) = position_ctr( indicator_4 );
+                        position_FOV( indicator_FOV_right ) = FOV_lbs( [ indicator_FOV_right, false ] );
+                        position_FOV( end ) = FOV_lbs( end );
+
+                        % lower bound on the time-of-flight
+                        t_tof_lbs( index_active_tx, index_active_rx ) = ( norm( position_FOV - position_tx ) + norm( position_rx - position_FOV ) ) / setups( index_setup ).homogeneous_fluid.c_avg;
+
+                        % display results
+%                         plot( position_tx( 1 ), position_tx( 2 ), '+', 'Color', 'b' );
+%                         plot( position_rx( 1 ), position_rx( 2 ), '+', 'Color', 'r' );
+%                         plot( position_FOV( 1 ), position_FOV( 2 ), '+', 'Color', 'g' );
+
+                        %--------------------------------------------------
+                        % b) upper bound on the time-of-flight
+                        %--------------------------------------------------
+                        % define cases
+                        indicator_FOV_lbs = abs( FOV_lbs( 1:(end - 1) ) - spheroid_ctr_ubs ) >= abs( FOV_ubs( 1:(end - 1) ) - spheroid_ctr_lbs );
+
+                        indicator_1 = indicator_FOV_lbs & FOV_lbs( 1:(end - 1) ) <= min( face_tx_ctr, face_rx_ctr );
+                        indicator_2 = indicator_FOV_lbs & FOV_lbs( 1:(end - 1) ) > min( face_tx_ctr, face_rx_ctr );
+                        indicator_3 = ~indicator_FOV_lbs & FOV_ubs( 1:(end - 1) ) < max( face_tx_ctr, face_rx_ctr );
+                        indicator_4 = ~indicator_FOV_lbs & FOV_ubs( 1:(end - 1) ) >= max( face_tx_ctr, face_rx_ctr );
+
+                        indicator_5 = indicator_2 | indicator_3;
+
+                        % tx positions
+                        position_tx( indicator_1 ) = face_tx_ubs( indicator_1 );
+                        position_tx( indicator_5 ) = indicator_tx_left( indicator_5 ) .* face_tx_lbs( indicator_5 ) + indicator_tx_right( indicator_5 ) .* face_tx_ubs( indicator_5 );
+%                         position_tx( indicator_3 ) = indicator_tx_left( indicator_3 ) .* face_tx_lbs( indicator_3 ) + indicator_tx_right( indicator_3 ) .* face_tx_ubs( indicator_3 );
+                        position_tx( indicator_4 ) = face_tx_lbs( indicator_4 );
+
+                        % rx positions
+                        position_rx( indicator_1 ) = face_rx_ubs( indicator_1 );
+                        position_rx( indicator_5 ) = indicator_tx_left( indicator_5 ) .* face_rx_ubs( indicator_5 ) + indicator_tx_right( indicator_5 ) .* face_rx_lbs( indicator_5 );
+%                         position_rx( indicator_3 ) = indicator_tx_left( indicator_3 ) .* face_rx_ubs( indicator_3 ) + indicator_tx_right( indicator_3 ) .* face_rx_lbs( indicator_3 );
+                        position_rx( indicator_4 ) = face_rx_lbs( indicator_4 );
+
+                        % FOV positions
+                        position_FOV( indicator_FOV_lbs ) = FOV_lbs( [ indicator_FOV_lbs, false ] );
+                        position_FOV( ~indicator_FOV_lbs ) = FOV_ubs( [ ~indicator_FOV_lbs, false ] );
+                        position_FOV( end ) = FOV_ubs( end );
+
+                        % upper bound on the time-of-flight
+                        t_tof_ubs( index_active_tx, index_active_rx ) = ( norm( position_FOV - position_tx ) + norm( position_rx - position_FOV ) ) / setups( index_setup ).homogeneous_fluid.c_avg;
+
+                        % display results
+%                         plot( position_tx( 1 ), position_tx( 2 ), 'o' );
+%                         plot( position_rx( 1 ), position_rx( 2 ), 'o' );
+%                         plot( position_FOV( 1 ), position_FOV( 2 ), 'o' );
+%                         hold off;
+%                         pause;
+
+                    end % for index_active_rx = 1:index_active_rx_ub
+
+                    % stop time measurement per tx
+                    seconds_per_tx( index_active_tx ) = toc( time_tx_start );
+
+                    % erase progress in percent
+                    fprintf( repmat( '\b', [ 1, N_bytes ] ) );
 
                 end % for index_active_tx = 1:numel( indices_active_tx{ index_setup } )
 
+                % complete symmetric matrices
+                if flag_symmetric
+                    t_tof_lbs = t_tof_lbs + tril( t_tof_lbs, -1 ).';
+                    t_tof_ubs = t_tof_ubs + tril( t_tof_ubs, -1 ).';
+                end
+
                 % create time intervals
                 intervals_tof{ index_setup } = math.interval( t_tof_lbs, t_tof_ubs );
+
+                % infer and print elapsed time
+                time_elapsed = toc( time_start );
+                fprintf( 'done! (%f s)\n', time_elapsed );
 
             end % for index_setup = 1:numel( setups )
 
@@ -353,8 +485,8 @@ classdef setup
 
                 % ensure class math.grid_regular
                 if ~( isa( setups( index_object ).FOV.shape, 'scattering.sequences.setups.geometry.orthotope_grid' ) && isa( setups( index_object ).FOV.shape.grid, 'math.grid_regular' ) )
-                    errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
-                    errorStruct.identifier = 'compute_prefactors:NoSetups';
+                    errorStruct.message = sprintf( 'setups( %d ).FOV.shape must be scattering.sequences.setups.geometry.orthotope_grid and setups( %d ).FOV.shape.grid must be math.grid_regular!', index_object, index_object );
+                    errorStruct.identifier = 'compute_prefactors:NoRegularGridInDiscretizedOrthotope';
                     error( errorStruct );
                 end
 

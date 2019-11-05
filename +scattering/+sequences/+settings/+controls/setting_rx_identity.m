@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-05-27
+% modified: 2019-10-22
 %
 classdef setting_rx_identity < scattering.sequences.settings.controls.setting_rx
 
@@ -20,14 +20,14 @@ classdef setting_rx_identity < scattering.sequences.settings.controls.setting_rx
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.sequences.setups.setup
+            % ensure class scattering.sequences.setups.setup (scalar)
             if ~( isa( setup, 'scattering.sequences.setups.setup' ) && isscalar( setup ) )
                 errorStruct.message = 'setup must be a single scattering.sequences.setups.setup!';
                 errorStruct.identifier = 'setting_rx_identity:NoSingleSetup';
                 error( errorStruct );
             end
 
-            % ensure class scattering.sequences.settings.controls.setting_tx
+            % ensure class scattering.sequences.settings.controls.setting_tx (scalar)
             if ~( isa( setting_tx, 'scattering.sequences.settings.controls.setting_tx' ) && isscalar( setting_tx ) )
                 errorStruct.message = 'setting_tx must be a single scattering.sequences.settings.controls.setting_tx!';
                 errorStruct.identifier = 'setting_rx_identity:NoSingleSettingTx';

@@ -11,26 +11,27 @@ Advances in
 electronic miniaturization and
 processing power have recently led to
 freely programmable UI systems and
-software-based “ultrafast” imaging modes, e.g.
+software-based "ultrafast" imaging modes, e.g.
 
 - coherent plane-wave compounding,
-- synthetic aperture (SA) imaging, or
+- synthetic aperture imaging, or
 - limited-diffraction beam imaging, that
 
-capture large FOVs at rates in the kilohertz range.
+capture large fields of view (FOVs) at
+rates in the kilohertz range.
 
 Established image recovery methods, e.g.
 delay-and-sum (DAS) or
 Fourier methods, however, do not support
 complex imaging sequences and, thus, seriously limit
 the unprecedented flexibility of
-freely programmable UI systems.
+these systems.
 
 ## What Does This Toolbox Accomplish?
 
 Computational UI methods recover
 the acoustic material parameters in
-a specified field of view from
+a specified FOV from
 a relatively short sequence of
 arbitrarily complex pulse-echo scattering experiments.
 
@@ -53,26 +54,32 @@ their adjoints.
 These operators map
 the relative spatial fluctuations in
 compressibility and/or mass density to
-the mixed RF voltage signals.
+the mixed radio frequency voltage signals.
 
 The toolbox excels in
-the *repetitive* evaluation of
+the *repetitive* application of
 identical scattering operators in
-iterative image recovery algorithms and, thus, complements
+iterative image recovery methods and, thus, complements
 popular simulation tools, e.g.
 [Field II](https://field-ii.dk/) and
 [FOCUS](https://www.egr.msu.edu/~fultras-web/).
 Although
-the setup of
-a scattering sequence is relatively costly,
-the evaluation is extremely fast.
+the initialization of
+a scattering operator is relatively costly,
+its application is extremely fast.
 
 Typical applications include
+
 - regularized structured insonification,
-- coded excitation, and
-- compressed sensing / sparse recovery.
+- coded excitation,
+- compressed sensing / sparse recovery, and
+- machine learning.
 
 Usability and simplicity were crucial design paradigms.
+The toolbox enables
+the solution of
+complex inverse scattering problems with
+only a few lines of code.
 
 ## Main Features
 
@@ -86,7 +93,7 @@ Usability and simplicity were crucial design paradigms.
 - arbitrary types of incident waves, including
   - steered quasi-plane waves,
   - quasi-(d-1)-spherical waves with virtual sources,
-  - focused beams,
+  - steered and focused beams,
   - random waves, and
   - coded waves
 - regularization based on

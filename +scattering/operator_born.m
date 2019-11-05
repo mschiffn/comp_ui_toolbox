@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-08-28
+% modified: 2019-10-28
 %
 classdef operator_born < scattering.operator
 
@@ -49,6 +49,7 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 2.) adjoint linear transform
             %--------------------------------------------------------------
+% TODO: skip for identity transform
             if nargin >= 3 && ~isempty( varargin{ 1 } )
 
                 % ensure class linear_transforms.linear_transform (scalar)
@@ -113,6 +114,7 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 3.) forward linear transform
             %--------------------------------------------------------------
+% TODO: skip for identity transform
             if nargin >= 3 && ~isempty( varargin{ 1 } )
 
                 % ensure class linear_transforms.linear_transform (scalar)
@@ -329,19 +331,19 @@ classdef operator_born < scattering.operator
                 u_M = { u_M };
             end
 
-            % ensure nonempty linear_transforms
+            % ensure nonempty LTs
             if nargin >= 3 && ~isempty( varargin{ 1 } )
-                linear_transforms = varargin{ 1 };
+                LTs = varargin{ 1 };
             else
-                linear_transforms = cell( size( operators_born ) );
+                LTs = cell( size( operators_born ) );
                 for index_operator = 1:numel( operators_born )
-                    linear_transforms{ index_operator } = { { [] } };
+                    LTs{ index_operator } = { linear_transforms.identity( operators_born( index_operator ).sequence.size( 2 ) ) };
                 end
             end
 
-            % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms ) || all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
-                linear_transforms = { linear_transforms };
+            % ensure cell array for LTs
+            if ~iscell( LTs ) || all( cellfun( @( x ) ~iscell( x ), LTs ) )
+                LTs = { LTs };
             end
  
             % multiple operators_born / single u_M
@@ -349,13 +351,13 @@ classdef operator_born < scattering.operator
                 u_M = repmat( u_M, size( operators_born ) );
             end
 
-            % multiple operators_born / single linear_transforms
-            if ~isscalar( operators_born ) && isscalar( linear_transforms )
-                linear_transforms = repmat( linear_transforms, size( operators_born ) );
+            % multiple operators_born / single LTs
+            if ~isscalar( operators_born ) && isscalar( LTs )
+                LTs = repmat( LTs, size( operators_born ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, u_M, linear_transforms );
+            auxiliary.mustBeEqualSize( operators_born, u_M, LTs );
 
             %--------------------------------------------------------------
             % 2.) process scattering operators
@@ -370,20 +372,20 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure cell array for linear_transforms{ index_operator }
-                if ~iscell( linear_transforms{ index_operator } )
-                    linear_transforms{ index_operator } = linear_transforms( index_operator );
+                % ensure cell array for LTs{ index_operator }
+                if ~iscell( LTs{ index_operator } )
+                    LTs{ index_operator } = LTs( index_operator );
                 end
 
                 %----------------------------------------------------------
                 % b) process linear transforms
                 %----------------------------------------------------------
                 % specify cell arrays
-                theta_hat{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
-                rel_RMSE{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
+                theta_hat{ index_operator } = cell( size( LTs{ index_operator } ) );
+                rel_RMSE{ index_operator } = cell( size( LTs{ index_operator } ) );
 
                 % iterate linear transforms
-                for index_transform = 1:numel( linear_transforms{ index_operator } )
+                for index_transform = 1:numel( LTs{ index_operator } )
 
                     %------------------------------------------------------
                     % i.) check arguments
@@ -392,29 +394,29 @@ classdef operator_born < scattering.operator
                     operators_born_config = set_properties_momentary( operators_born( index_operator ), varargin{ 2:end } );
 
                     % ensure class linear_transforms.linear_transform
-                    if ~isa( linear_transforms{ index_operator }{ index_transform }, 'linear_transforms.linear_transform' )
-                        errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
+                    if ~isa( LTs{ index_operator }{ index_transform }, 'linear_transforms.linear_transform' )
+                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
                         errorStruct.identifier = 'adjoint:NoLinearTransforms';
                         error( errorStruct );
                     end
 
-                    % multiple operators_born_config / single linear_transforms{ index_operator }{ index_transform }
-                    if ~isscalar( operators_born_config ) && isscalar( linear_transforms{ index_operator }{ index_transform } )
-                        linear_transforms{ index_operator }{ index_transform } = repmat( linear_transforms{ index_operator }{ index_transform }, size( operators_born_config ) );
+                    % multiple operators_born_config / single LTs{ index_operator }{ index_transform }
+                    if ~isscalar( operators_born_config ) && isscalar( LTs{ index_operator }{ index_transform } )
+                        LTs{ index_operator }{ index_transform } = repmat( LTs{ index_operator }{ index_transform }, size( operators_born_config ) );
                     end
 
                     % ensure equal number of dimensions and sizes
-                    auxiliary.mustBeEqualSize( operators_born_config, linear_transforms{ index_operator }{ index_transform } );
+                    auxiliary.mustBeEqualSize( operators_born_config, LTs{ index_operator }{ index_transform } );
 
                     %------------------------------------------------------
                     % ii.) process configurations
                     %------------------------------------------------------
                     % numbers of transform coefficients
-                    N_coefficients = reshape( [ linear_transforms{ index_operator }{ index_transform }.N_coefficients ], size( linear_transforms{ index_operator }{ index_transform } ) );
+                    N_coefficients = reshape( [ LTs{ index_operator }{ index_transform }.N_coefficients ], size( LTs{ index_operator }{ index_transform } ) );
 
                     % ensure identical numbers of transform coefficients
                     if any( N_coefficients( : ) ~= N_coefficients( 1 ) )
-                        errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d } must have identical numbers of transform coefficients!', index_operator, index_transform );
+                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must have identical numbers of transform coefficients!', index_operator, index_transform );
                         errorStruct.identifier = 'adjoint:InvalidNumbersOfCoefficients';
                         error( errorStruct );
                     end
@@ -447,14 +449,14 @@ classdef operator_born < scattering.operator
                         % C) quick adjoint scattering
                         %--------------------------------------------------
 %                       profile on
-                        theta_hat{ index_operator }{ index_transform }( :, index_config ) = adjoint_quick( operators_born_config( index_config ), u_M_vect_normed, linear_transforms{ index_operator }{ index_transform }( index_config ) );
+                        theta_hat{ index_operator }{ index_transform }( :, index_config ) = adjoint_quick( operators_born_config( index_config ), u_M_vect_normed, LTs{ index_operator }{ index_transform }( index_config ) );
 %                       profile viewer
 
                         %--------------------------------------------------
                         % D) quick forward scattering and rel. RMSEs
                         %--------------------------------------------------
                         % estimate normalized mixed voltage signals
-                        u_M_vect_normed_est = forward_quick( operators_born_config( index_config ), theta_hat{ index_operator }{ index_transform }( :, index_config ), linear_transforms{ index_operator }{ index_transform }( index_config ) );
+                        u_M_vect_normed_est = forward_quick( operators_born_config( index_config ), theta_hat{ index_operator }{ index_transform }( :, index_config ), LTs{ index_operator }{ index_transform }( index_config ) );
 
                         % compute relative RMSE
                         u_M_vect_normed_res = u_M_vect_normed - u_M_vect_normed_est;
@@ -469,10 +471,10 @@ classdef operator_born < scattering.operator
                     = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
                                              mat2cell( theta_hat{ index_operator }{ index_transform }, N_coefficients( 1 ), ones( 1, numel( operators_born_config ) ) ) );
 
-                end % for index_transform = 1:numel( linear_transforms{ index_operator } )
+                end % for index_transform = 1:numel( LTs{ index_operator } )
 
-                % avoid cell arrays for single linear_transforms{ index_operator }
-                if isscalar( linear_transforms{ index_operator } )
+                % avoid cell arrays for single LTs{ index_operator }
+                if isscalar( LTs{ index_operator } )
                     theta_hat{ index_operator } = theta_hat{ index_operator }{ 1 };
                     rel_RMSE{ index_operator } = rel_RMSE{ index_operator }{ 1 };
                 end
@@ -507,19 +509,19 @@ classdef operator_born < scattering.operator
                 indices = { indices };
             end
 
-            % ensure nonempty linear_transforms
+            % ensure nonempty LTs
             if nargin >= 3 && ~isempty( varargin{ 1 } )
-                linear_transforms = varargin{ 1 };
+                LTs = varargin{ 1 };
             else
-                linear_transforms = cell( size( operators_born ) );
+                LTs = cell( size( operators_born ) );
                 for index_operator = 1:numel( operators_born )
-                    linear_transforms{ index_operator } = { [] };
+                    LTs{ index_operator } = { linear_transforms.identity( operators_born( index_operator ).sequence.size( 2 ) ) };
                 end
             end
 
-            % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms ) || all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
-                linear_transforms = { linear_transforms };
+            % ensure cell array for LTs
+            if ~iscell( LTs ) || all( cellfun( @( x ) ~iscell( x ), LTs ) )
+                LTs = { LTs };
             end
 
             % multiple operators_born / single indices
@@ -527,13 +529,13 @@ classdef operator_born < scattering.operator
                 indices = repmat( indices, size( operators_born ) );
             end
 
-            % multiple operators_born / single linear_transforms
-            if ~isscalar( operators_born ) && isscalar( linear_transforms )
-                linear_transforms = repmat( linear_transforms, size( operators_born ) );
+            % multiple operators_born / single LTs
+            if ~isscalar( operators_born ) && isscalar( LTs )
+                LTs = repmat( LTs, size( operators_born ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, indices, linear_transforms );
+            auxiliary.mustBeEqualSize( operators_born, indices, LTs );
 
             %--------------------------------------------------------------
             % 2.) process scattering operators
@@ -549,9 +551,9 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure cell array for linear_transforms{ index_operator }
-                if ~iscell( linear_transforms{ index_operator } )
-                    linear_transforms{ index_operator } = { linear_transforms{ index_operator } };
+                % ensure cell array for LTs{ index_operator }
+                if ~iscell( LTs{ index_operator } )
+                    LTs{ index_operator } = { LTs{ index_operator } };
                 end
 
                 % ensure cell array for indices{ index_operator }
@@ -559,24 +561,24 @@ classdef operator_born < scattering.operator
                     indices{ index_operator } = indices( index_operator );
                 end
 
-                % multiple linear_transforms{ index_operator } / single indices{ index_operator }
-                if ~isscalar( linear_transforms{ index_operator } ) && isscalar( indices{ index_operator } )
-                    indices{ index_operator } = repmat( indices{ index_operator }, size( linear_transforms{ index_operator } ) );
+                % multiple LTs{ index_operator } / single indices{ index_operator }
+                if ~isscalar( LTs{ index_operator } ) && isscalar( indices{ index_operator } )
+                    indices{ index_operator } = repmat( indices{ index_operator }, size( LTs{ index_operator } ) );
                 end
 
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( linear_transforms{ index_operator }, indices{ index_operator } );
+                auxiliary.mustBeEqualSize( LTs{ index_operator }, indices{ index_operator } );
 
                 %----------------------------------------------------------
                 % b) process linear transforms
                 %----------------------------------------------------------
                 % specify cell arrays
-                theta_tpsf{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
-                E_M{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
-                adjointness{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
+                theta_tpsf{ index_operator } = cell( size( LTs{ index_operator } ) );
+                E_M{ index_operator } = cell( size( LTs{ index_operator } ) );
+                adjointness{ index_operator } = cell( size( LTs{ index_operator } ) );
 
                 % iterate linear transforms
-                for index_transform = 1:numel( linear_transforms{ index_operator } )
+                for index_transform = 1:numel( LTs{ index_operator } )
 
                     %------------------------------------------------------
                     % i.) check arguments
@@ -596,20 +598,19 @@ classdef operator_born < scattering.operator
                     mustBePositive( indices{ index_operator }{ index_transform } );
 
                     % ensure class linear_transforms.linear_transform
-% TODO: empty transform?
-                    if ~isa( linear_transforms{ index_operator }{ index_transform }, 'linear_transforms.linear_transform' )
-                        errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
+                    if ~isa( LTs{ index_operator }{ index_transform }, 'linear_transforms.linear_transform' )
+                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
                         errorStruct.identifier = 'tpsf:NoLinearTransforms';
                         error( errorStruct );
                     end
 
-                    % multiple operators_born_config / single linear_transforms{ index_operator }{ index_transform }
-                    if ~isscalar( operators_born_config ) && isscalar( linear_transforms{ index_operator }{ index_transform } )
-                        linear_transforms{ index_operator }{ index_transform } = repmat( linear_transforms{ index_operator }{ index_transform }, size( operators_born_config ) );
+                    % multiple operators_born_config / single LTs{ index_operator }{ index_transform }
+                    if ~isscalar( operators_born_config ) && isscalar( LTs{ index_operator }{ index_transform } )
+                        LTs{ index_operator }{ index_transform } = repmat( LTs{ index_operator }{ index_transform }, size( operators_born_config ) );
                     end
 
                     % ensure equal number of dimensions and sizes
-                    auxiliary.mustBeEqualSize( operators_born_config, linear_transforms{ index_operator }{ index_transform } );
+                    auxiliary.mustBeEqualSize( operators_born_config, LTs{ index_operator }{ index_transform } );
 
                     %------------------------------------------------------
                     % ii.) process configurations
@@ -618,18 +619,18 @@ classdef operator_born < scattering.operator
                     N_tpsf = numel( indices{ index_operator }{ index_transform } );
 
                     % numbers of transform coefficients
-                    N_coefficients = reshape( [ linear_transforms{ index_operator }{ index_transform }.N_coefficients ], size( linear_transforms{ index_operator }{ index_transform } ) );
+                    N_coefficients = reshape( [ LTs{ index_operator }{ index_transform }.N_coefficients ], size( LTs{ index_operator }{ index_transform } ) );
 
                     % ensure identical numbers of transform coefficients
                     if any( N_coefficients( : ) ~= N_coefficients( 1 ) )
-                        errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d } must have identical numbers of transform coefficients!', index_operator, index_transform );
+                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must have identical numbers of transform coefficients!', index_operator, index_transform );
                         errorStruct.identifier = 'tpsf:InvalidNumbersOfCoefficients';
                         error( errorStruct );
                     end
 
                     % ensure indices{ index_operator }{ index_transform } less than or equal N_coefficients
                     if any( indices{ index_operator }{ index_transform }( : ) > N_coefficients( 1 ) )
-                        errorStruct.message = sprintf( 'linear_transforms{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
+                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
                         errorStruct.identifier = 'tpsf:NoLinearTransforms';
                         error( errorStruct );
                     end
@@ -655,13 +656,13 @@ classdef operator_born < scattering.operator
                         %--------------------------------------------------
                         % B) quick forward scattering and received energies
                         %--------------------------------------------------
-                        u_M = forward_quick( operators_born_config( index_config ), theta, linear_transforms{ index_operator }{ index_transform }( index_config ) );
+                        u_M = forward_quick( operators_born_config( index_config ), theta, LTs{ index_operator }{ index_transform }( index_config ) );
                         E_M{ index_operator }{ index_transform }( index_config, : ) = vecnorm( u_M, 2, 1 ).^2;
 
                         %--------------------------------------------------
                         % C) quick adjoint scattering and test for adjointness
                         %--------------------------------------------------
-                        theta_tpsf{ index_operator }{ index_transform }{ index_config } = adjoint_quick( operators_born_config( index_config ), u_M, linear_transforms{ index_operator }{ index_transform }( index_config ) );
+                        theta_tpsf{ index_operator }{ index_transform }{ index_config } = adjoint_quick( operators_born_config( index_config ), u_M, LTs{ index_operator }{ index_transform }( index_config ) );
                         adjointness{ index_operator }{ index_transform }( index_config, : ) = E_M{ index_operator }{ index_transform }( index_config, : ) - theta_tpsf{ index_operator }{ index_transform }{ index_config }( indices_tpsf );
 
                     end % for index_config = 1:numel( operators_born_config )
@@ -673,10 +674,10 @@ classdef operator_born < scattering.operator
                     = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
                                              theta_tpsf{ index_operator }{ index_transform } );
 
-                end % for index_transform = 1:numel( linear_transforms{ index_operator } )
+                end % for index_transform = 1:numel( LTs{ index_operator } )
 
-                % avoid cell array for single linear_transforms{ index_operator }
-                if isscalar( linear_transforms{ index_operator } )
+                % avoid cell array for single LTs{ index_operator }
+                if isscalar( LTs{ index_operator } )
                     theta_tpsf{ index_operator } = theta_tpsf{ index_operator }{ 1 };
                     E_M{ index_operator } = E_M{ index_operator }{ 1 };
                     adjointness{ index_operator } = adjointness{ index_operator }{ 1 };
@@ -708,19 +709,19 @@ classdef operator_born < scattering.operator
                 error( errorStruct );
             end
 
-            % ensure nonempty linear_transforms
+            % ensure nonempty LTs
             if nargin >= 2 && ~isempty( varargin{ 1 } )
-                linear_transforms = varargin{ 1 };
+                LTs = varargin{ 1 };
             else
-                linear_transforms = cell( size( operators_born ) );
+                LTs = cell( size( operators_born ) );
                 for index_operator = 1:numel( operators_born )
-                    linear_transforms{ index_operator } = { [] };
+                    LTs{ index_operator } = { linear_transforms.identity( operators_born( index_operator ).sequence.size( 2 ) ) };
                 end
             end
 
-            % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms ) || all( cellfun( @( x ) ~iscell( x ), linear_transforms ) )
-                linear_transforms = { linear_transforms };
+            % ensure cell array for LTs
+            if ~iscell( LTs ) || all( cellfun( @( x ) ~iscell( x ), LTs ) )
+                LTs = { LTs };
             end
 
             % ensure nonempty indices_measurement_sel
@@ -738,9 +739,9 @@ classdef operator_born < scattering.operator
                 indices_measurement_sel = { indices_measurement_sel };
             end
 
-            % multiple operators_born / single linear_transforms
-            if ~isscalar( operators_born ) && isscalar( linear_transforms )
-                linear_transforms = repmat( linear_transforms, size( operators_born ) );
+            % multiple operators_born / single LTs
+            if ~isscalar( operators_born ) && isscalar( LTs )
+                LTs = repmat( LTs, size( operators_born ) );
             end
 
             % multiple operators_born / single indices_measurement_sel
@@ -749,7 +750,7 @@ classdef operator_born < scattering.operator
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, linear_transforms, indices_measurement_sel );
+            auxiliary.mustBeEqualSize( operators_born, LTs, indices_measurement_sel );
 
             %--------------------------------------------------------------
             % 2.) compute received energies
@@ -763,9 +764,9 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure cell array for linear_transforms{ index_operator }
-                if ~iscell( linear_transforms{ index_operator } )
-                    linear_transforms{ index_operator } = num2cell( linear_transforms{ index_operator } );
+                % ensure cell array for LTs{ index_operator }
+                if ~iscell( LTs{ index_operator } )
+                    LTs{ index_operator } = num2cell( LTs{ index_operator } );
                 end
 
                 % ensure cell array for indices_measurement_sel{ index_operator }
@@ -773,22 +774,22 @@ classdef operator_born < scattering.operator
                     indices_measurement_sel{ index_operator } = { indices_measurement_sel{ index_operator } };
                 end
 
-                % multiple linear_transforms{ index_operator } / single indices_measurement_sel{ index_operator }
-                if ~isscalar( linear_transforms{ index_operator } ) && isscalar( indices_measurement_sel{ index_operator } )
-                    indices_measurement_sel{ index_operator } = repmat( indices_measurement_sel{ index_operator }, size( linear_transforms{ index_operator } ) );
+                % multiple LTs{ index_operator } / single indices_measurement_sel{ index_operator }
+                if ~isscalar( LTs{ index_operator } ) && isscalar( indices_measurement_sel{ index_operator } )
+                    indices_measurement_sel{ index_operator } = repmat( indices_measurement_sel{ index_operator }, size( LTs{ index_operator } ) );
                 end
 
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( linear_transforms{ index_operator }, indices_measurement_sel{ index_operator } );
+                auxiliary.mustBeEqualSize( LTs{ index_operator }, indices_measurement_sel{ index_operator } );
 
                 %----------------------------------------------------------
                 % b) compute received energies
                 %----------------------------------------------------------
                 % specify cell array for E_M{ index_operator }
-                E_M{ index_operator } = cell( size( linear_transforms{ index_operator } ) );
+                E_M{ index_operator } = cell( size( LTs{ index_operator } ) );
 
                 % iterate linear transforms
-                for index_transform = 1:numel( linear_transforms{ index_operator } )
+                for index_transform = 1:numel( LTs{ index_operator } )
 
                     %------------------------------------------------------
                     % i.) check arguments
@@ -811,13 +812,13 @@ classdef operator_born < scattering.operator
                     str_format_common = sprintf( 'data/%s/setup_%%s/E_M_settings_%%s', operators_born( index_operator ).sequence.setup.str_name );
 
                     % check linear transform
-                    if ~isempty( linear_transforms{ index_operator }{ index_transform } )
+                    if ~isempty( LTs{ index_operator }{ index_transform } )
 
                         %--------------------------------------------------
                         % i.) arbitrary linear transform
                         %--------------------------------------------------
                         % initialize unique received energies w/ zeros
-                        E_M_unique = physical_values.squarevolt( zeros( linear_transforms{ index_operator }{ index_transform }.N_coefficients, numel( indices_measurement_sel_unique ) ) );
+                        E_M_unique = physical_values.squarevolt( zeros( LTs{ index_operator }{ index_transform }.N_coefficients, numel( indices_measurement_sel_unique ) ) );
 
                         % create format string for filename
                         str_format = sprintf( '%s_transform_%%s_options_aliasing_%%s.mat', str_format_common );
@@ -834,7 +835,7 @@ classdef operator_born < scattering.operator
                             % load or compute received energies (arbitrary linear transform)
                             E_M_unique( :, index_measurement_sel )...
                             = auxiliary.compute_or_load_hash( str_format, @energy_rx_arbitrary, [ 3, 4, 2, 5 ], [ 1, 2 ],...
-                                operators_born( index_operator ), linear_transforms{ index_operator }{ index_transform },...
+                                operators_born( index_operator ), LTs{ index_operator }{ index_transform },...
                                 { operators_born( index_operator ).sequence.setup.xdc_array.aperture, operators_born( index_operator ).sequence.setup.homogeneous_fluid, operators_born( index_operator ).sequence.setup.FOV, operators_born( index_operator ).sequence.setup.str_name },...
                                 operators_born( index_operator ).sequence.settings( index_measurement ),...
                                 operators_born( index_operator ).options.momentary.anti_aliasing );
@@ -871,7 +872,7 @@ classdef operator_born < scattering.operator
 
                         end % for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
 
-                    end % if ~isempty( linear_transforms{ index_operator }{ index_transform } )
+                    end % if ~isempty( LTs{ index_operator }{ index_transform } )
 
                     %------------------------------------------------------
                     % iii.) sum unique received energies according to config
@@ -887,10 +888,10 @@ classdef operator_born < scattering.operator
 
                     end % for index_config = 1:numel( indices_config )
                 
-                end % for index_transform = 1:numel( linear_transforms{ index_operator } )
+                end % for index_transform = 1:numel( LTs{ index_operator } )
 
-                % avoid cell array for single linear_transforms{ index_operator }
-                if isscalar( linear_transforms{ index_operator } )
+                % avoid cell array for single LTs{ index_operator }
+                if isscalar( LTs{ index_operator } )
                     E_M{ index_operator } = E_M{ index_operator }{ 1 };
                 end
 
@@ -1205,7 +1206,7 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % single received energy (arbitrary linear transform)
         %------------------------------------------------------------------
-        function E_M = energy_rx_arbitrary( operator_born, linear_transform )
+        function E_M = energy_rx_arbitrary( operator_born, LT )
 
             % internal constant (adjust to capabilities of GPU)
             N_objects = 1024;
@@ -1226,8 +1227,8 @@ classdef operator_born < scattering.operator
             end
 
             % ensure class linear_transforms.linear_transform (scalar)
-            if ~( isa( linear_transform, 'linear_transforms.linear_transform' ) && isscalar( linear_transform ) )
-                errorStruct.message = 'linear_transform must be a single linear_transforms.linear_transform!';
+            if ~( isa( LT, 'linear_transforms.linear_transform' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be a single linear_transforms.linear_transform!';
                 errorStruct.identifier = 'energy_rx:NoSingleLinearTransform';
                 error( errorStruct );
             end
@@ -1236,14 +1237,14 @@ classdef operator_born < scattering.operator
             % 2.) compute received energies (arbitrary linear transform)
             %--------------------------------------------------------------
             % compute number of batches and objects in last batch
-            N_batches = ceil( linear_transform.N_coefficients / N_objects );
-            N_objects_last = linear_transform.N_coefficients - ( N_batches - 1 ) * N_objects;
+            N_batches = ceil( LT.N_coefficients / N_objects );
+            N_objects_last = LT.N_coefficients - ( N_batches - 1 ) * N_objects;
 
             % partition indices of transform coefficients into N_batches batches
-            indices_coeff = mat2cell( ( 1:linear_transform.N_coefficients ), 1, [ N_objects * ones( 1, N_batches - 1 ), N_objects_last ] );
+            indices_coeff = mat2cell( ( 1:LT.N_coefficients ), 1, [ N_objects * ones( 1, N_batches - 1 ), N_objects_last ] );
 
             % initialize received energies with zeros
-            E_M = zeros( linear_transform.N_coefficients, 1 );
+            E_M = zeros( LT.N_coefficients, 1 );
 
             % name for temporary file
             str_filename = sprintf( 'data/%s/energy_rx_temp.mat', operator_born.sequence.setup.str_name );
@@ -1274,10 +1275,10 @@ classdef operator_born < scattering.operator
                 % a) create batch of coefficient vectors
                 %----------------------------------------------------------
                 % indices of transform coefficients
-                indices_theta = ( 0:( numel( indices_coeff{ index_batch } ) - 1 ) ) * linear_transform.N_coefficients + indices_coeff{ index_batch };
+                indices_theta = ( 0:( numel( indices_coeff{ index_batch } ) - 1 ) ) * LT.N_coefficients + indices_coeff{ index_batch };
 
                 % initialize transform coefficients
-                theta_kappa = zeros( linear_transform.N_coefficients, numel( indices_coeff{ index_batch } ) );
+                theta_kappa = zeros( LT.N_coefficients, numel( indices_coeff{ index_batch } ) );
                 theta_kappa( indices_theta ) = 1;
 
                 %----------------------------------------------------------
@@ -1285,7 +1286,7 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % quick forward scattering
                 time_batch_start = tic;
-                u_M = forward_quick( operator_born, theta_kappa, linear_transform );
+                u_M = forward_quick( operator_born, theta_kappa, LT );
                 seconds_per_batch( index_batch ) = toc( time_batch_start );
 
                 % compute received energy
@@ -1310,7 +1311,7 @@ classdef operator_born < scattering.operator
             time_elapsed = toc( time_start );
             fprintf( 'done! (%f s)\n', time_elapsed );
 
-        end % function E_M = energy_rx_arbitrary( operator_born, linear_transform )
+        end % function E_M = energy_rx_arbitrary( operator_born, LT )
 
         %------------------------------------------------------------------
         % single received energy (canonical basis)

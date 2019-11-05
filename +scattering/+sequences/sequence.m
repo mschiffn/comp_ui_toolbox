@@ -370,6 +370,7 @@ classdef sequence
                 end
 
 % TODO: ensure time axes
+% TODO: mixing
 
                 % extract unique deltas from all transducer control settings
                 deltas_unique = unique( [ unique_deltas( sequences( index_object ).settings ), u_SA_tilde{ index_object }( 1 ).axis.delta ] );

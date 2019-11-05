@@ -1,5 +1,5 @@
 %
-% compute d-dimensional discrete fourier transform for various options
+% compute d-dimensional discrete Fourier transform for various options
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12

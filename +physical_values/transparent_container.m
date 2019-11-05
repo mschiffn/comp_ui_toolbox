@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-25
-% modified: 2019-04-07
+% modified: 2019-11-02
 %
 classdef transparent_container
 
@@ -293,6 +293,16 @@ classdef transparent_container
             container.values = transpose( container.values );
         end
 
+        % lower triangular part of matrix
+        function container = tril( container, varargin )
+            container.values = tril( container.values, varargin{ : } );
+        end
+
+        % upper triangular part of matrix
+        function container = triu( container, varargin )
+            container.values = triu( container.values, varargin{ : } );
+        end
+
         % convert data types without changing underlying data
         function result = typecast( container, type )
             result = typecast( container.values, type );
@@ -392,6 +402,11 @@ classdef transparent_container
         % determine if array is sorted
         function result = issorted( container, varargin )
             result = issorted( container.values, varargin{ : } );
+        end
+
+        % determine if matrix is symmetric or skew-symmetric
+        function tf = issymmetric( container, varargin )
+            tf = issymmetric( container.values, varargin{ : } );
         end
 
         %------------------------------------------------------------------

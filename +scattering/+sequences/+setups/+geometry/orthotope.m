@@ -88,7 +88,7 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
                 if isa( methods, 'scattering.sequences.setups.discretizations.methods.grid_numbers' )
 
                     %------------------------------------------------------
-                    % i.)
+                    % i.) fixed number of grid points along each axis
                     %------------------------------------------------------
                     % iterate orthotopes
                     for index_object = 1:numel( orthotopes )
@@ -107,7 +107,7 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
                 elseif isa( methods, 'scattering.sequences.setups.discretizations.methods.grid_distances' )
 
                     %------------------------------------------------------
-                    % ii.)
+                    % ii.) fixed distances between adjacent grid points along each axis
                     %------------------------------------------------------
                     % iterate orthotopes
                     for index_object = 1:numel( orthotopes )

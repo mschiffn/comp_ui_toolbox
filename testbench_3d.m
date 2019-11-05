@@ -1,9 +1,9 @@
-% reconstruct object A from simulated RF signals
+% testbench for three-dimensional space
 % material parameter: compressibility
 %
 % author: Martin F. Schiffner
 % date: 2019-01-10
-% modified: 2019-10-17
+% modified: 2019-11-04
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -23,12 +23,12 @@ addpath( genpath( sprintf( '/opt/matlab/R2013b/toolbox/Wavelab850/' ) ) );
 %--------------------------------------------------------------------------
 % name of the simulation
 %--------------------------------------------------------------------------
-str_name = 'wire_phantom';
+str_name = 'testbench_3d';
 
 %--------------------------------------------------------------------------
 % transducer array
 %--------------------------------------------------------------------------
-xdc_array = scattering.sequences.setups.transducers.L14_5_38( 2 );
+xdc_array = scattering.sequences.setups.transducers.L14_5_38;
 
 %--------------------------------------------------------------------------
 % homogeneous fluids
@@ -37,7 +37,7 @@ xdc_array = scattering.sequences.setups.transducers.L14_5_38( 2 );
 rho_0 = physical_values.kilogram_per_cubicmeter( 1000 );
 
 % time-causal absorption model
-c_ref = physical_values.meter_per_second( (1480:5:1520) );
+c_ref = physical_values.meter_per_second( (1460:10:1520) );
 f_ref = physical_values.hertz( 4e6 );
 absorption_model = scattering.sequences.setups.materials.absorption_models.time_causal( zeros( size( c_ref ) ), 2.17e-3 * ones( size( c_ref ) ), 2 * ones( size( c_ref ) ), c_ref, f_ref * ones( size( c_ref ) ) );
 
@@ -53,12 +53,16 @@ homogeneous_fluid = scattering.sequences.setups.materials.homogeneous_fluid( rep
 FOV_size_lateral = xdc_array.N_elements_axis .* xdc_array.cell_ref.edge_lengths(:);
 FOV_size_axial = FOV_size_lateral( 1 );
 
-FOV_offset_axial = physical_values.meter( 350 * 76.2e-6 );
+FOV_offset_axial = physical_values.meter( 150 * 76.2e-6 );
 
 FOV_intervals_lateral = num2cell( math.interval( - FOV_size_lateral / 2, FOV_size_lateral / 2 ) );
 FOV_interval_axial = math.interval( FOV_offset_axial, FOV_offset_axial + FOV_size_axial );
 
 FOV_cs = scattering.sequences.setups.fields_of_view.orthotope( FOV_intervals_lateral{ : }, FOV_interval_axial );
+
+% FOV_cs = scattering.sequences.setups.fields_of_view.orthotope( math.interval( physical_values.meter(-15e-3), physical_values.meter(-5e-3) ),...
+%                                                                math.interval( physical_values.meter(5e-3), physical_values.meter(10e-3) ),...
+%                                                                math.interval( physical_values.meter(3e-3), physical_values.meter(43e-3) ));
 
 %--------------------------------------------------------------------------
 % create pulse-echo measurement setup
@@ -74,7 +78,7 @@ setup = scattering.sequences.setups.setup( repmat( xdc_array, size( c_ref ) ), h
 %--------------------------------------------------------------------------
 % specify bandwidth for the simulation
 f_tx = f_ref;
-frac_bw = 0.7;                  % fractional bandwidth of incident pulse
+frac_bw = 1;                    % fractional bandwidth of incident pulse
 frac_bw_ref = -60;              % dB value that determines frac_bw
 f_lb = f_tx .* ( 1 - 0.5 * frac_bw );       % lower cut-off frequency
 f_ub = f_tx .* ( 1 + 0.5 * frac_bw );       % upper cut-off frequency
@@ -120,6 +124,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% initialize scattering operators (Born approximation)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO: turn off anti-aliasing in p_in!
 
 %--------------------------------------------------------------------------
 % 1.) specify scattering operator options
@@ -130,19 +135,16 @@ method_FOV = scattering.sequences.setups.discretizations.methods.grid_distances(
 options_disc_spatial = scattering.sequences.setups.discretizations.options( method_faces, method_FOV );
 
 % spectral discretization options
-% t_lb = 0 .* T_s;        % lower cut-off time
-% t_ub = 4 * 1700 .* T_s;     % upper cut-off time
-% interval_t = math.interval( t_lb, t_ub );
 options_disc_spectral = scattering.sequences.settings.discretizations.sequence;
 
 % create discretization options
-options_disc = discretizations.options( options_disc_spatial, options_disc_spectral );
+options_disc = scattering.options.discretization( options_disc_spatial, options_disc_spectral );
 
 % create static scattering operator options
 options_static = scattering.options.static( options_disc );
 
 % create momentary scattering operator options
-options_momentary = scattering.options.momentary;
+options_momentary = scattering.options.momentary( scattering.options.anti_aliasing_off );
 
 % scattering options
 options = scattering.options( options_static, options_momentary );
@@ -172,6 +174,54 @@ end % for index_sequence = 1:numel( sequences )
 % concatenate cell array contents into vector
 operators_born = cat( 2, operators_born{ : } );
 
+%--------------------------------------------------------------------------
+% 3.) compute received energies
+%--------------------------------------------------------------------------
+% a) default settings
+E_M = energy_rx( operators_born, LTs );
+
+% ensure cell array structure
+if isscalar( operators_born )
+	% single operators_born && single/multiple LTs
+	E_M = { E_M };
+end
+for index_sequence = 1:numel( sequences )
+	if isscalar( LTs{ index_sequence } )
+        % single/multiple operators_born && single LTs
+        E_M{ index_sequence } = E_M( index_sequence );
+    end
+end % for index_sequence = 1:numel( sequences )
+
+%--------------------------------------------------------------------------
+% 4.) compose inverse weighting matrices and linear transforms
+%--------------------------------------------------------------------------
+% specify cell arrays
+LT_weighting_inv = cell( size( sequences ) );
+
+% iterate pulse-echo measurement sequences
+for index_sequence = 1:numel( sequences )
+
+	% specify cell arrays
+	LT_weighting_inv{ index_sequence } = cell( size( LTs{ index_sequence } ) );
+
+    %----------------------------------------------------------------------
+	% a) canonical basis
+    %----------------------------------------------------------------------
+	LT_weighting_inv{ index_sequence }{ 1 } = linear_transforms.weighting( 1 ./ sqrt( double( E_M{ index_sequence }{ 1 } ) ) )';
+
+	%----------------------------------------------------------------------
+	% b) arbitrary linear transform
+	%----------------------------------------------------------------------
+	% iterate linear transforms
+	for index_transform = 2:numel( LTs{ index_sequence } )
+
+        % i.) default settings
+        LT_weighting_inv{ index_sequence }{ index_transform } = linear_transforms.composition( linear_transforms.weighting( 1 ./ sqrt( double( E_M{ index_sequence }{ index_transform } ) ) )', LTs{ index_sequence }{ index_transform } );
+
+	end % for index_transform = 2:numel( LTs{ index_sequence } )
+
+end % for index_sequence = 1:numel( sequences )
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% forward simulation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -191,7 +241,8 @@ theta( indices_tpsf ) = 1;
 %--------------------------------------------------------------------------
 % 2.) perform forward scattering
 %--------------------------------------------------------------------------
-u_M = forward( operators_born, theta, [], scattering.options.gpu_off );
+u_M = forward( operators_born, theta, [], scattering.options.gpu_off, scattering.options.anti_aliasing_off );
+u_M = cat( 2, u_M{:} );
 
 lbs_q = zeros( size( u_M ) );
 for index_sequence = 1:numel( sequences )
@@ -200,65 +251,57 @@ for index_sequence = 1:numel( sequences )
     lbs_q( index_sequence ) = temp.q_lb;
 end
 
-u_M_tilde = signal( [u_M{:}], lbs_q, T_s );
+u_M_tilde = signal( u_M, lbs_q, T_s );
 
+%--------------------------------------------------------------------------
+% display results
+%--------------------------------------------------------------------------
+figure( 1 );
+imagesc( illustration.dB( abs( hilbert( double( u_M_tilde( 1 ).samples ) ) ), 20 ), [ -60, 0 ] );
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% adjoint simulation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % perform adjoint scattering
-theta_hat = adjoint_quick( operators_born, double( return_vector( u_M ) ) );
+theta_hat = adjoint( operators_born, u_M, [], scattering.options.gpu_off );
 time_start = tic;
 for index_test = 1:1
     theta_hat_test = scattering.adjoint_quick_gpu( operators_born, repmat( double( return_vector( u_M ) ), [1,2] ), 0 );
 end
 time_elapsed = toc( time_start ) / 1;
 
-
 theta_hat_aa = adjoint_quick( operators_born, double( return_vector( u_M ) ) );
 theta_hat_weighting = adjoint_quick( operator_born, u_rx, LT_weighting );
 
 % transform point spread functions
-[ theta_hat_tpsf, E_rx, adjointness ] = tpsf( operators_born, indices_tpsf, LT_weighting{1} );
-[ theta_hat_tpsf_aa, E_rx_aa, adjointness_aa ] = tpsf( operators_born, indices_tpsf, LT_weighting{1} );
-
-% u_rx_tilde = signal( u_rx, 0, T_s );
-
-%--------------------------------------------------------------------------
-% display results
-%--------------------------------------------------------------------------
-figure( 1 );
-subplot( 1, 2, 1 );
-imagesc( double( u_M_tilde( 1 ).samples ) );
-subplot( 1, 2, 2 );
-imagesc( illustration.dB( abs( hilbert( double( u_M_tilde( 1 ).samples ) ) ), 20 ), [ -20, 0 ] );
+[ theta_hat_tpsf, E_M, adjointness ] = tpsf( operators_born, indices_tpsf, LT_weighting_inv, scattering.options.gpu_off );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% test calibration procedure
+%% calibration methods
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %--------------------------------------------------------------------------
 % 1.) initial states for estimate
 %--------------------------------------------------------------------------
 indices_t = {...
-	[ 59, 176, 295, 413, 532, 648, 767, 886, 1004 ];...
-	[ 59, 176, 295, 413, 532, 648, 767, 886, 1004 ];...
-    [ 59, 175, 292, 410, 529, 645, 761, 880,  997 ];...
-    [ 59, 175, 292, 410, 529, 645, 761, 880,  997 ];...
-    [ 57, 172, 290, 406, 523, 639, 755, 872,  989 ];...
-    [ 58, 173, 290, 406, 523, 639, 754, 871,  987 ];...
-	[ 57, 172, 289, 404, 521, 636, 751, 868,  984 ];...
-    [ 57, 171, 288, 403, 519, 634, 748, 865,  980 ];...
-	[ 57, 171, 287, 401, 517, 631, 746, 861,  976 ] };
+    [ 59, 180, 301, 420, 542, 661, 781, 902, 1021 ];...
+	[ 59, 178, 298, 417, 537, 656, 774, 894, 1013 ];...
+    [ 59, 174, 291, 409, 527, 644, 760, 872, 987 ];...
+    [ 59, 174, 291, 409, 527, 644, 760, 872, 987 ];...
+    [ 59, 174, 291, 407, 524, 640, 755, 878, 994 ];...
+    [ 59, 174, 291, 407, 524, 640, 755, 872, 987 ];...
+	[ 59, 173, 290, 405, 521, 636, 751, 867, 982 ] };
 
 indices_elements = {...
-	[  7,  22,  36,  46,  64,  79,  89, 109,  117 ];...
-    [  7,  22,  36,  46,  64,  79,  89, 109,  117 ];...
-    [  7,  21,  36,  46,  63,  79,  93, 107,  117 ];...
-    [  7,  21,  36,  46,  63,  79,  93, 107,  117 ];...
-	[  7,  21,  36,  46,  64,  80,  93, 107,  117 ];...
-	[  7,  21,  36,  46,  65,  79,  91, 108,  117 ];...
-    [  7,  21,  36,  47,  64,  79,  94, 107,  117 ];...
-    [  7,  21,  36,  47,  64,  79,  94, 107,  117 ];...
-    [  7,  21,  36,  47,  64,  79,  94, 107,  117 ] };
+	[  7,  22,  36,  50,  64,  80,  94, 107,  122 ];...
+    [  7,  21,  36,  50,  64,  79,  93, 108,  123 ];...
+    [  7,  21,  36,  50,  65,  79,  93, 108,  122 ];...
+    [  7,  21,  36,  50,  63,  79,  94, 107,  122 ];...
+	[  7,  21,  36,  50,  64,  80,  94, 107,  122 ];...
+	[  7,  21,  36,  50,  64,  79,  94, 107,  122 ];...
+    [  7,  21,  36,  50,  64,  79,  94, 106,  122 ] };
 
-c_avg_start = physical_values.meter_per_second( 1488 * ones( size( sequences ) ) );
+c_avg_start = c_ref;%physical_values.meter_per_second( 1490 * ones( size( sequences ) ) );
 
 % specify cell array for states_0
 states_0 = cell( size( sequences ) );
@@ -267,7 +310,8 @@ states_0 = cell( size( sequences ) );
 for index_sequence = 1:numel( sequences )
 
 	% create initial states
-	pos_start = [ xdc_array.positions_ctr( indices_elements{ index_sequence }, 1:2 ), u_M_tilde( index_sequence ).axis.members( indices_t{ index_sequence }( : ) ) * c_avg_start( index_sequence ) / 2 ];
+% 	pos_start = [ xdc_array.positions_ctr( indices_elements{ index_sequence }, : ), u_M_tilde( index_sequence ).axis.members( indices_t{ index_sequence }( : ) ) * c_avg_start( index_sequence ) / 2 ];
+    pos_start = operators_born( index_sequence ).sequence.setup.FOV.shape.grid.positions( indices_tpsf, : );
 	states_0{ index_sequence } = calibration.state( pos_start, c_avg_start( index_sequence ) );
 
 end
@@ -275,9 +319,9 @@ end
 %--------------------------------------------------------------------------
 % 2.) options
 %--------------------------------------------------------------------------
-% absorption model
+% absorption model and options
 handle_absorption_model = @( x ) scattering.sequences.setups.materials.absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
-options = calibration.options( physical_values.second( 3e-6 ), 31 * T_s, 1, 128, interval_f, handle_absorption_model );
+options = calibration.options( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, 1, 128, interval_f, handle_absorption_model );
 
 %--------------------------------------------------------------------------
 % 3.) perform estimates
@@ -286,44 +330,55 @@ options = calibration.options( physical_values.second( 3e-6 ), 31 * T_s, 1, 128,
 [ states_est, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = calibration.estimate_SOS_point( u_M_tilde, xdc_array, states_0, options );
 
 % estimate pulse-echo responses
-[ e_B_td, e_B_td_mean, e_B_td_mean_std_dev ] = calibration.estimate_PER_point( u_M_tilde, xdc_array, states_est, options );
+[ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = calibration.estimate_PER_point( u_M_tilde( 1 ), xdc_array, states_0{1}, options );
 
 %--------------------------------------------------------------------------
 % 4.) compute errors
 %--------------------------------------------------------------------------
 % specify cell arrays
 rel_RMSE_positions = cell( size( states_est ) );
-rel_RMSE_c_avg = zeros( size( states_est ) );
-rel_RMSE_e_B_td = cell( size( states_est ) );
-rel_RMSE_e_B_td_mean = cell( size( states_est ) );
+rel_RMSE_c_avg = cell( size( states_est ) );
+rel_RMSE_c_avg_mean = zeros( size( states_est ) );
+
+rel_RMSE_e_B_tilde = cell( size( states_est ) );
+rel_RMSE_e_B_tilde_mean = cell( size( states_est ) );
 
 % iterate pulse-echo measurement sequences
-for index_sequence = 2:numel( sequences )
+for index_sequence = 1:numel( sequences )
 
-    positions_est = { states_est{ index_sequence }.position_target };
-    positions_est = cat( 1, positions_est{ : } );
-    error_pos = positions_est - operators_born( index_sequence ).discretization.spatial.grid_FOV.positions( indices_tpsf, : );
-    rel_RMSE_positions{ index_sequence } = vecnorm( error_pos, 2, 2 ) ./ vecnorm( operators_born( index_sequence ).discretization.spatial.grid_FOV.positions( indices_tpsf, : ), 2, 2 );
+	% estimated positions
+	positions_est = { states_est{ index_sequence }.position_target };
+	positions_est = cat( 1, positions_est{ : } );
+	error_pos = positions_est - operators_born( index_sequence ).sequence.setup.FOV.shape.grid.positions( indices_tpsf, : );
+	rel_RMSE_positions{ index_sequence } = vecnorm( error_pos, 2, 2 ) ./ vecnorm( operators_born( index_sequence ).sequence.setup.FOV.shape.grid.positions( indices_tpsf, : ), 2, 2 );
 
-    error_c_avg = [ states_est{ index_sequence }.c_avg ]' - c_ref( index_sequence );
-    rel_RMSE_c_avg( index_sequence ) = norm( error_c_avg ) / ( c_ref( index_sequence ) * sqrt( numel( states_est{ index_sequence } ) ) );
+	% estimated SoS
+	error_c_avg = [ states_est{ index_sequence }.c_avg ]' - c_ref( index_sequence );
+	rel_RMSE_c_avg{ index_sequence } = vecnorm( error_c_avg, 2, 2 ) / c_ref( index_sequence );
 
-    rel_RMSE_e_B_td{ index_sequence } = cell( size( states_est{ index_sequence } ) );
-    rel_RMSE_e_B_td_mean{ index_sequence } = zeros( size( states_est{ index_sequence } ) );
+	% mean SoS
+	weights = 1 ./ rel_RMSE{ index_sequence };
+	weights = weights / sum( weights );
+	c_avg_mean = [ states_est{ index_sequence }.c_avg ] * weights;
+	rel_RMSE_c_avg_mean( index_sequence ) = abs( c_avg_mean - c_ref( index_sequence ) ) / c_ref( index_sequence );
 
-	for index_target = 1:numel( states_est{ index_sequence } )
+    rel_RMSE_e_B_tilde{ index_sequence } = cell( size( states_est{ index_sequence } ) );
+    rel_RMSE_e_B_tilde_mean{ index_sequence } = zeros( size( states_est{ index_sequence } ) );
+
+	for index_target = 1:4%numel( states_est{ index_sequence } )
 
         % pulse-echo responses
-        N_samples_min = min( [ abs( e_B_td{ index_sequence }{ index_target }.axis ), abs( u_tx_tilde.axis ) ] );
-        error_e_B_td = e_B_td{ index_sequence }{ index_target }.samples( 1:N_samples_min, : ) / double( operators_born( index_sequence ).discretization.spatial.grid_FOV.cell_ref.volume ) - u_tx_tilde.samples;
-        rel_RMSE_e_B_td{ index_sequence }{ index_target } = vecnorm( error_e_B_td, 2, 1 ) / norm( u_tx_tilde.samples );
+%         N_samples_min = min( [ abs( e_B_tilde{ index_sequence }{ index_target }.axis ), abs( u_tx_tilde.axis ) ] );
+%         error_e_B_td = e_B_tilde{ index_sequence }{ index_target }.samples( 1:N_samples_min, : ) / double( operators_born( index_sequence ).sequence.setup.FOV.shape.grid.cell_ref.volume ) - u_tx_tilde.samples;
+%         rel_RMSE_e_B_tilde{ index_sequence }{ index_target } = vecnorm( error_e_B_td, 2, 1 ) / norm( u_tx_tilde.samples );
 
-        error_e_B_td_mean = e_B_td_mean{ index_sequence }{ index_target }.samples( 1:N_samples_min, : ) / double( operators_born( index_sequence ).discretization.spatial.grid_FOV.cell_ref.volume ) - u_tx_tilde.samples;
-        rel_RMSE_e_B_td_mean{ index_sequence }( index_target ) = norm( error_e_B_td_mean ) / norm( u_tx_tilde.samples );
+%         error_e_B_td_mean = e_B_tilde_mean{ index_sequence }{ index_target }.samples( 1:N_samples_min, : ) / double( operators_born( index_sequence ).sequence.setup.FOV.shape.grid.cell_ref.volume ) - u_tx_tilde.samples;
+%         rel_RMSE_e_B_tilde_mean{ index_sequence }( index_target ) = norm( error_e_B_td_mean ) / norm( u_tx_tilde.samples );
 
-%         figure( index_target );
-%         plot( (1:N_samples_min), e_B_td{ index_sequence }{ index_target }.samples( 1:N_samples_min, : ) ./ max( e_B_td{ index_sequence }{ index_target }.samples( 1:N_samples_min, : ) ), (1:N_samples_min), u_tx_tilde.samples / max( u_tx_tilde.samples ) )
-%         plot( (1:N_samples_min), e_B_td{ index_sequence }{ index_target }.samples( 1:N_samples_min, : ) / double( operators_born( index_sequence ).discretization.spatial.grid_FOV.cell_ref.volume ), (1:N_samples_min), u_tx_tilde.samples, (1:N_samples_min), error_e_B_td )
+        figure( index_target );
+        plot( e_B_tilde{index_target}.axis.members, e_B_tilde{index_target}.samples ./ max( e_B_tilde{index_target}.samples, [], 1 ), u_tx_tilde.axis.members, u_tx_tilde.samples / max( u_tx_tilde.samples ) );
+%         plot( e_B_tilde{ index_sequence }{ index_target }.axis.members, e_B_tilde{ index_sequence }{ index_target }.samples ./ max( e_B_tilde{ index_sequence }{ index_target }.samples, [], 1 ), u_tx_tilde.axis.members, u_tx_tilde.samples / max( u_tx_tilde.samples ) )
+%         plot( (1:N_samples_min), e_B_tilde{ index_sequence }{ index_target }.samples( 1:N_samples_min, : ) / double( operators_born( index_sequence ).sequence.setup.FOV.shape.grid.cell_ref.volume ), (1:N_samples_min), u_tx_tilde.samples, (1:N_samples_min), error_e_B_td )
 
     end % for index_target = 1:numel( states_est{ index_sequence } )
 

@@ -1,16 +1,11 @@
 %
-% compute identity transform for various options
-% author: Martin Schiffner
+% compute identity for various options
+%
+% author: Martin F. Schiffner
 % date: 2016-08-13
+% modified: 2019-10-27
 %
 classdef identity < linear_transforms.orthonormal_linear_transform
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties (SetAccess = private)
-        N_lattice_axis
-    end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
@@ -20,33 +15,84 @@ classdef identity < linear_transforms.orthonormal_linear_transform
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function LT_identity = identity( N_lattice_axis )
+        function objects = identity( N_points )
 
-            % total number of lattice points
-            N_lattice = N_lattice_axis(1) * N_lattice_axis(2);
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % superclass ensures nonempty positive integers for N_points
 
+            %--------------------------------------------------------------
+            % 2.) create identity operators
+            %--------------------------------------------------------------
             % constructor of superclass
-            LT_identity@linear_transforms.orthonormal_linear_transform( N_lattice, 'none' );
+            objects@linear_transforms.orthonormal_linear_transform( N_points );
 
-            % internal properties
-            LT_identity.N_lattice_axis = N_lattice_axis;
-        end
+        end % function objects = identity( N_points )
 
         %------------------------------------------------------------------
-        % overload method: forward transform
+        % forward transform (overload forward_transform method)
         %------------------------------------------------------------------
-        function y = forward_transform( LT_identity, x )
+        function y = forward_transform( LTs, x )
 
-            y = x;
-        end
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure cell array for x
+            if ~iscell( x )
+                x = { x };
+            end
+
+            % multiple LTs / single x
+            if ~isscalar( LTs ) && isscalar( x )
+                x = repmat( x, size( LTs ) );
+            end
+
+            % single LTs / multiple x
+            if isscalar( LTs ) && ~isscalar( x )
+                x = repmat( LTs, size( x ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( LTs, x );
+
+            %--------------------------------------------------------------
+            % 2.) compute identity operators
+            %--------------------------------------------------------------
+            % specify cell array for y
+            y = cell( size( LTs ) );
+
+            % iterate identity operators
+            for index_object = 1:numel( LTs )
+
+                % ensure numeric matrix
+                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
+                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
+                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
+                    error( errorStruct );
+                end
+
+                % copy numeric matrix
+                y{ index_object } = x{ index_object };
+
+            end % for index_object = 1:numel( LTs )
+
+            % avoid cell array for single LTs
+            if isscalar( LTs )
+                y = y{ 1 };
+            end
+
+        end % function y = forward_transform( LTs, x )
 
         %------------------------------------------------------------------
-        % overload method: adjoint transform
+        % adjoint transform (overload adjoint_transform method)
         %------------------------------------------------------------------
-        function y = adjoint_transform( LT_identity, x )
+        function y = adjoint_transform( LTs, x )
 
-            y = x;
-        end
+            % adjoint transform equals forward transform
+            y = forward_transform( LTs, x );
+
+        end % function y = adjoint_transform( LTs, x )
 
     end % methods
 

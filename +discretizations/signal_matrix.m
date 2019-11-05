@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2019-09-10
+% modified: 2019-10-25
 %
 classdef signal_matrix
 
@@ -129,9 +129,9 @@ classdef signal_matrix
 % ensure equal subclasses of physical_values.physical_quantity
             auxiliary.mustBeEqualSubclasses( 'physical_values.time', axes_t.delta );
 
-            % extract integer bounds and temporal sampling periods
-            lbs_q_signal = reshape( [ axes_t.q_lb ], size( signal_matrices ) );
-            ubs_q_signal = reshape( [ axes_t.q_ub ], size( signal_matrices ) );
+            % extract integer bounds (int64) and temporal sampling periods
+            lbs_q_signal = reshape( double( [ axes_t.q_lb ] ), size( signal_matrices ) );
+            ubs_q_signal = reshape( double( [ axes_t.q_ub ] ), size( signal_matrices ) );
             deltas = reshape( [ axes_t.delta ], size( signal_matrices ) );
 
             % ensure nonempty T_ref

@@ -3,13 +3,13 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-05-23
+% modified: 2019-10-22
 %
 classdef sequence_QPW < scattering.sequences.sequence
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
@@ -31,9 +31,22 @@ classdef sequence_QPW < scattering.sequences.sequence
             % iterate transducer control settings in synthesis mode
             for index_object = 1:numel( settings_tx )
 
-                % create reception settings w/o mixing
-                settings_rx{ index_object } = scattering.sequences.settings.controls.setting_rx_identity( setup, settings_tx( index_object ), interval_f );
+%                 if isa( options_mixing( index_object ), 'options_mixing_identity' )
+                    %------------------------------------------------------
+                    % create reception settings w/o mixing
+                    %------------------------------------------------------
+                    settings_rx{ index_object } = scattering.sequences.settings.controls.setting_rx_identity( setup, settings_tx( index_object ), interval_f );
 
+%                 elseif isa( options_mixing( index_object ), 'options_mixing_random' )
+
+                    %------------------------------------------------------
+                    % create reception settings w/ random mixing
+                    %------------------------------------------------------
+%                     settings_rx{ index_object } = scattering.sequences.settings.controls.setting_rx_random( setup, settings_tx( index_object ), auxiliary.setting_rng, interval_f );
+
+%                   else
+%                       error
+%                   end
             end % for index_object = 1:numel( settings_tx )
 
             %--------------------------------------------------------------

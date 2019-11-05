@@ -31,12 +31,12 @@ classdef linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure positive integers for N_coefficients
+            % ensure nonempty positive integers for N_coefficients
             mustBeNonempty( N_coefficients );
             mustBePositive( N_coefficients );
             mustBeInteger( N_coefficients );
 
-            % ensure positive integers for N_points
+            % ensure nonempty positive integers for N_points
             mustBeNonempty( N_points );
             mustBePositive( N_points );
             mustBeInteger( N_points );
