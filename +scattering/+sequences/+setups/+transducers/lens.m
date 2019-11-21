@@ -1,6 +1,11 @@
 %
 % abstract superclass for all acoustic lenses
 %
+% acoustic elevation lens:
+% 1.) typically made of RTV silicone rubber (approx. 1025 m/s at 25°C)
+% 2.) thickness >= 0.5 mm, thicker in the center
+% 3.) used as protective layer
+%
 % author: Martin F. Schiffner
 % date: 2019-08-15
 % modified: 2019-10-17

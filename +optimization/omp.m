@@ -1,7 +1,7 @@
 function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
 %
 % orthogonal matching pursuit (OMP) recovers sparse coefficient vectors
-% OMP never selects the same atom twice
+% it never selects the same atom twice
 % (cf. Sect. II.C.2) in [1])
 %
 % [1] J. A. Tropp, "Greed is Good: Algorithmic Results for Sparse Approximation",
@@ -47,8 +47,10 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
 
     strings = { 'number of rows', 'number of columns'; 'y_m_norm', 'number of iterations' };
     N_chars_max = max( max( cellfun( @numel, strings ) ) );
-    fprintf( ' %-20s: %7d %10s %-30s: %7d\n', 'number of rows', N_observations, '', 'number of columns', N_coefficients );
-    fprintf( ' %-20s: %7.2f %10s %-20s: %7d\n', 'y_m_norm', y_m_norm, '', 'number of iterations', N_iterations_max );
+	fprintf( ' %-20s: %7d %10s %-30s: %7d\n', 'number of rows', N_observations, '', 'number of columns', N_coefficients );
+	fprintf( ' %-20s: %7.2f %10s %-30s: %7d\n', 'y_m_norm', y_m_norm, '', 'number of iterations', N_iterations_max );
+    fprintf( ' %-20s: %7.2f\n', 'objective', options.rel_RMSE );
+    fprintf( ' %s\n', repmat( '-', [ 1, 80 ] ) );
 
     %----------------------------------------------------------------------
     % 2.) initialization
@@ -111,6 +113,33 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
         y_approx = A_sel( :, 1:k_iter ) * coeff;
         y_m_res = y_m - y_approx;
         y_m_res_norm_rel( k_iter ) = norm( y_m_res, 2 ) / y_m_norm;
+
+        axis = math.sequence_increasing_regular( 168, 502, physical_values.hertz( 13445.378151260505546815693378448486328125 ) );
+        y_m_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 335, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        y_approx_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 335, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        y_m_res_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 335, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        y_m_tilde_max = max( abs( y_m_tilde.samples(:) ) );
+
+        figure( k_iter );
+        subplot( 2, 3, 1 );
+        imagesc( 20*log10( abs( y_m_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+        subplot( 2, 3, 2 );
+        imagesc( 20*log10( abs( y_approx_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+        subplot( 2, 3, 3 );
+        imagesc( 20*log10( abs( y_m_res_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+        subplot( 2, 3, 4 );
+        plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 32 ), 'b', ...
+              (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 32 ), 'g', ...
+              (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 32 ), 'r:' );
+        subplot( 2, 3, 5 );
+        plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 64 ), 'b', ...
+              (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 64 ), 'g', ...
+              (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 64 ), 'r:' );
+        subplot( 2, 3, 6 );
+        plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 96 ), 'b', ...
+              (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 96 ), 'g', ...
+              (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 96 ), 'r:' );
+        colormap parula;
 
 %         subplot(1,2,2);
 %         imagesc(reshape(abs(theta_recon), [N_lattice_z, N_lattice_x]));

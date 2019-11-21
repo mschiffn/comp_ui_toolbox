@@ -107,7 +107,11 @@ classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements
                 %----------------------------------------------------------
-                excitation_voltages{ index_object } = discretizations.signal_matrix( u_tx_tilde( index_object ).axis, u_tx_tilde( index_object ).samples( :, indices_active{ index_object } ) );
+                if isa( u_tx_tilde( index_object ), 'discretizations.signal' )
+                    excitation_voltages{ index_object } = u_tx_tilde( index_object );
+                else
+                    excitation_voltages{ index_object } = discretizations.signal_matrix( u_tx_tilde( index_object ).axis, u_tx_tilde( index_object ).samples( :, indices_active{ index_object } ) );
+                end
 
             end % for index_object = 1:N_objects
 

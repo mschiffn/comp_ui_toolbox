@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-10-28
+% modified: 2019-11-12
 %
 classdef operator_born < scattering.operator
 
@@ -262,8 +262,8 @@ classdef operator_born < scattering.operator
                 % c) create signals or signal matrices
                 %----------------------------------------------------------
                 % partition matrix into cell arrays
-                N_observations = { operators_born( index_object ).sequence.size( 1 ) };
-                u_M{ index_object } = mat2cell( u_M{ index_object }, cellfun( @( x ) sum( x( : ) ), N_observations( operators_born( index_object ).indices_measurement_sel ) ), size( u_M{ index_object }, 2 ) );
+                N_observations = cellfun( @( x ) sum( x( : ) ), { operators_born( index_object ).sequence.settings( operators_born( index_object ).indices_measurement_sel ).N_observations } );
+                u_M{ index_object } = mat2cell( u_M{ index_object }, N_observations, size( u_M{ index_object }, 2 ) );
 
                 % iterate selected sequential pulse-echo measurements
                 for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )

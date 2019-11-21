@@ -16,7 +16,7 @@ classdef face
         shape ( 1, 1 ) scattering.sequences.setups.geometry.shape { mustBeNonempty } = scattering.sequences.setups.geometry.orthotope % shape of the vibrating face
         apodization ( :, 1 ) = @scattering.sequences.setups.transducers.apodization.uniform % apodization along each coordinate axis
         lens ( 1, 1 ) scattering.sequences.setups.transducers.lens % acoustic lens
-
+% TODO: matching layers
 	end % properties
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

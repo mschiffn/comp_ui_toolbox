@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-06
-% modified: 2019-06-14
+% modified: 2019-11-05
 %
 classdef interval_quantized < math.interval
 
@@ -42,26 +42,59 @@ classdef interval_quantized < math.interval
             auxiliary.mustBeEqualSize( lbs_q, ubs_q, deltas );
 
             %--------------------------------------------------------------
-            % 2.) compute lower and upper bounds
+            % 2.) create quantized intervals of physical quantities
             %--------------------------------------------------------------
+            % compute lower and upper interval bounds
             lbs = double( lbs_q ) .* deltas;
             ubs = double( ubs_q ) .* deltas;
 
-            %--------------------------------------------------------------
-            % 3.) constructor of superclass
-            %--------------------------------------------------------------
+            % constructor of superclass
             objects@math.interval( lbs, ubs );
 
-            %--------------------------------------------------------------
-            % 4.) set independent properties
-            %--------------------------------------------------------------
+            % iterate quantized intervals of physical quantities
             for index_object = 1:numel( objects )
+
+                % set independent properties
                 objects( index_object ).q_lb = int64( lbs_q( index_object ) );
                 objects( index_object ).q_ub = int64( ubs_q( index_object ) );
                 objects( index_object ).delta = deltas( index_object );
-            end
+
+            end % for index_object = 1:numel( objects )
 
         end % function objects = interval_quantized( lbs_q, ubs_q, deltas )
+
+        %------------------------------------------------------------------
+        % length (overload abs function)
+        %------------------------------------------------------------------
+        function lengths = abs( intervals )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.interval_quantized
+            if ~isa( intervals, 'math.interval_quantized')
+                errorStruct.message = 'intervals must be math.interval_quantized!';
+                errorStruct.identifier = 'abs:NoQuantizedIntervals';
+                error( errorStruct );
+            end
+
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', intervals.delta );
+
+            %--------------------------------------------------------------
+            % 2.) compute interval lengths
+            %--------------------------------------------------------------
+            % extract lower and upper integer bounds
+            lbs_q = [ intervals.q_lb ];
+            ubs_q = [ intervals.q_ub ];
+
+            % extract deltas
+            deltas = [ intervals.delta ];
+
+            % compute interval lengths
+            lengths = reshape( double( ubs_q - lbs_q ) .* deltas, size( intervals ) );
+
+        end % function lengths = abs( intervals )
 
         %------------------------------------------------------------------
         % quantization (overload quantize method)

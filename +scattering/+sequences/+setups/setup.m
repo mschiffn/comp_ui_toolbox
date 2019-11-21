@@ -253,16 +253,17 @@ classdef setup
                         indicator_1 = FOV_ubs( 1:(end - 1) ) <= min( face_tx_lbs, face_rx_lbs );
                         indicator_2 = ( FOV_ubs( 1:(end - 1) ) > min( face_tx_lbs, face_rx_lbs ) ) & ( FOV_ubs( 1:(end - 1) ) <= min( face_tx_ubs, face_rx_ubs ) );
                         indicator_3 = ( FOV_ubs( 1:(end - 1) ) > min( face_tx_ubs, face_rx_ubs ) ) & ( FOV_ubs( 1:(end - 1) ) <= position_ctr );
-                        indicator_4 = ( FOV_lbs( 1:(end - 1) ) <= position_ctr ) & ( FOV_ubs(  1:(end - 1) ) > position_ctr );
+                        indicator_4 = ( FOV_lbs( 1:(end - 1) ) <= position_ctr ) & ( FOV_ubs( 1:(end - 1) ) > position_ctr );
                         indicator_5 = ( FOV_lbs( 1:(end - 1) ) > position_ctr ) & ( FOV_lbs( 1:(end - 1) ) <= max( face_tx_lbs, face_rx_lbs ) );
                         indicator_6 = ( FOV_lbs( 1:(end - 1) ) > max( face_tx_lbs, face_rx_lbs ) ) & ( FOV_lbs( 1:(end - 1) ) < max( face_tx_ubs, face_rx_ubs ) );
                         indicator_7 = FOV_lbs( 1:(end - 1) ) >= max( face_tx_ubs, face_rx_ubs );
 
+                        % relative position of tx and rx faces
                         indicator_tx_left = face_tx_ubs < face_rx_lbs;
                         indicator_tx_right = face_rx_ubs < face_tx_lbs;
-                        indicator_tx_equal = ~indicator_tx_left & ~ indicator_tx_right; % abs( face_tx_lbs - face_rx_lbs ) <= eps( 0 ) .* face_tx_lbs;
-                        indicator_FOV_left = indicator_1 | indicator_2 | indicator_3; % FOV_ubs( 1:(end - 1) ) <= position_ctr;
-                        indicator_FOV_right = indicator_5 | indicator_6 | indicator_7; % FOV_lbs( 1:(end - 1) ) >= position_ctr;
+                        indicator_tx_equal = ~indicator_tx_left & ~ indicator_tx_right;
+                        indicator_FOV_left = indicator_1 | indicator_2 | indicator_3;
+                        indicator_FOV_right = indicator_5 | indicator_6 | indicator_7;
 
                         % tx positions
                         position_tx( indicator_1 ) = face_tx_lbs( indicator_1 );
@@ -281,7 +282,7 @@ classdef setup
 
                         % rx positions
                         position_rx( indicator_1 ) = face_rx_lbs( indicator_1 );
-                        position_rx( indicator_2 ) =    indicator_tx_left( indicator_2 ) .* face_rx_lbs( indicator_2 ) + ...
+                        position_rx( indicator_2 ) =   indicator_tx_left( indicator_2 ) .* face_rx_lbs( indicator_2 ) + ...
                                                      ( indicator_tx_right( indicator_2 ) + indicator_tx_equal( indicator_2 ) ) .* FOV_ubs( [ indicator_2, false ] );
                         position_rx( indicator_3 ) = indicator_tx_left( indicator_3 ) .* face_rx_lbs( indicator_3 ) + ...
                                                      indicator_tx_right( indicator_3 ) .* face_rx_ubs( indicator_3 );
@@ -324,13 +325,11 @@ classdef setup
                         % tx positions
                         position_tx( indicator_1 ) = face_tx_ubs( indicator_1 );
                         position_tx( indicator_5 ) = indicator_tx_left( indicator_5 ) .* face_tx_lbs( indicator_5 ) + indicator_tx_right( indicator_5 ) .* face_tx_ubs( indicator_5 );
-%                         position_tx( indicator_3 ) = indicator_tx_left( indicator_3 ) .* face_tx_lbs( indicator_3 ) + indicator_tx_right( indicator_3 ) .* face_tx_ubs( indicator_3 );
                         position_tx( indicator_4 ) = face_tx_lbs( indicator_4 );
 
                         % rx positions
                         position_rx( indicator_1 ) = face_rx_ubs( indicator_1 );
                         position_rx( indicator_5 ) = indicator_tx_left( indicator_5 ) .* face_rx_ubs( indicator_5 ) + indicator_tx_right( indicator_5 ) .* face_rx_lbs( indicator_5 );
-%                         position_rx( indicator_3 ) = indicator_tx_left( indicator_3 ) .* face_rx_ubs( indicator_3 ) + indicator_tx_right( indicator_3 ) .* face_rx_lbs( indicator_3 );
                         position_rx( indicator_4 ) = face_rx_lbs( indicator_4 );
 
                         % FOV positions

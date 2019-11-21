@@ -221,8 +221,8 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 		N_points = (int) size[ 1 ];
 		if( DEBUG_MODE ) mexPrintf( "N_points = %d\n", N_points );
 
-		// ensure class pulse_echo_measurements.setup_grid_symmetric
-		if( !mxIsClass( mxGetProperty( sequence, 0, "setup" ), "pulse_echo_measurements.setup_grid_symmetric" ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoSymmetricGridsSetup", "sequence.setup must be pulse_echo_measurements.setup_grid_symmetric!" );
+		// ensure class scattering.sequences.setups.setup_grid_symmetric
+		if( !mxIsClass( mxGetProperty( sequence, 0, "setup" ), "scattering.sequences.setups.setup_grid_symmetric" ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoSymmetricGridsSetup", "sequence.setup must be scattering.sequences.setups.setup_grid_symmetric!" );
 
 		// extract indices of shifted grid points
 		indices_grid_FOV_shift_double = mxGetDoubles( mxGetProperty( mxGetProperty( sequence, 0, "setup" ), 0, "indices_grid_FOV_shift" ) );
