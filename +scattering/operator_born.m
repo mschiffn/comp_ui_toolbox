@@ -161,10 +161,8 @@ classdef operator_born < scattering.operator
 
                 case 0
                     % return size of forward transform
-                    N_observations = 0;
-                    for index_setting = operator_born.indices_measurement_sel
-                        N_observations = N_observations + sum( cellfun( @numel, operator_born.sequence.settings( index_setting ).indices_f_to_unique ) );
-                    end % for index_setting = operator_born.indices_measurement_sel
+                    N_observations = cellfun( @( x ) sum( x( : ) ), { operator_born.sequence.settings( operator_born.indices_measurement_sel ).N_observations } );
+                    N_observations = sum( N_observations( : ) );
 % TODO: wrong! number of coefficients in 2nd entry
                     y = [ N_observations, operator_born.sequence.size( 2 ) ];
                 case 1

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-10-27
+% modified: 2019-11-21
 %
 classdef identity < linear_transforms.orthonormal_linear_transform
 
@@ -59,8 +59,8 @@ classdef identity < linear_transforms.orthonormal_linear_transform
             %--------------------------------------------------------------
             % 2.) compute identity operators
             %--------------------------------------------------------------
-            % specify cell array for y
-            y = cell( size( LTs ) );
+            % copy input cell array
+            y = x;
 
             % iterate identity operators
             for index_object = 1:numel( LTs )
@@ -71,9 +71,6 @@ classdef identity < linear_transforms.orthonormal_linear_transform
                     errorStruct.identifier = 'forward_transform:NoNumericMatrix';
                     error( errorStruct );
                 end
-
-                % copy numeric matrix
-                y{ index_object } = x{ index_object };
 
             end % for index_object = 1:numel( LTs )
 
