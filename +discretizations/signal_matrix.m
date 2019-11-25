@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2019-10-25
+% modified: 2019-11-25
 %
 classdef signal_matrix
 
@@ -14,7 +14,7 @@ classdef signal_matrix
 
         % independent properties
         axis ( 1, 1 ) math.sequence_increasing
-        samples ( :, : ) physical_values.physical_quantity
+        samples ( :, : )
 
         % dependent properties
         N_signals ( 1, 1 ) { mustBeInteger, mustBePositive } = 1
@@ -51,6 +51,11 @@ classdef signal_matrix
                 samples = { samples };
             end
 
+            % multiple axes / single samples
+            if ~isscalar( axes ) && isscalar( samples )
+                samples = repmat( samples, size( axes ) );
+            end
+
             % single axes / multiple samples
             if isscalar( axes ) && ~isscalar( samples )
                 axes = repmat( axes, size( samples ) );
@@ -62,21 +67,31 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 2.) create signal matrices
             %--------------------------------------------------------------
+            % numbers of axis members
+            N_members = abs( axes );
+
             % repeat default signal matrix
             objects = repmat( objects, size( axes ) );
 
             % iterate signal matrices
             for index_object = 1:numel( objects )
 
-                % ensure sample matrix
+                % ensure matrix for samples{ index_object }
                 if ~ismatrix( samples{ index_object } )
                     errorStruct.message = sprintf( 'samples{ %d } must be a matrix!', index_object );
                     errorStruct.identifier = 'signal_matrix:NoMatrix';
                     error( errorStruct );
                 end
 
+                % ensure numeric type or physical_values.physical_quantity for samples{ index_object }
+                if ~( isnumeric( samples{ index_object } ) || isa( samples{ index_object }, 'physical_values.physical_quantity' ) )
+                    errorStruct.message = sprintf( 'samples{ %d } must be numeric or physical_values.physical_quantity!', index_object );
+                    errorStruct.identifier = 'signal_matrix:NoNumericOrPhysicalQuantity';
+                    error( errorStruct );
+                end
+
                 % ensure correct sizes
-                if abs( axes( index_object ) ) ~= size( samples{ index_object }, 1 )
+                if N_members( index_object ) ~= size( samples{ index_object }, 1 )
                     errorStruct.message = sprintf( 'Cardinality of axes( %d ) must match the size of samples{ %d } along the first dimension!', index_object, index_object );
                     errorStruct.identifier = 'signal_matrix:SizeMismatch';
                     error( errorStruct );
@@ -287,7 +302,7 @@ classdef signal_matrix
         %------------------------------------------------------------------
         % time-domain signal
         %------------------------------------------------------------------
-        function signal_matrices = signal( signal_matrices, varargin )
+        function [ signal_matrices, N_samples_t ] = signal( signal_matrices, varargin )
 % TODO: transform in place!
 
             %--------------------------------------------------------------
@@ -399,7 +414,30 @@ classdef signal_matrix
             %--------------------------------------------------------------
             signal_matrices = discretizations.signal_matrix( axes_t, samples_td );
 
-        end % function signal_matrices = signal( signal_matrices, varargin )
+        end % function [ signal_matrices, N_samples_t ] = signal( signal_matrices, varargin )
+
+        %------------------------------------------------------------------
+        % inverse Fourier transform
+        %------------------------------------------------------------------
+        function signal_matrices = inverse_fourier_transform( signal_matrices, varargin )
+
+            %--------------------------------------------------------------
+            % 1.) time-domain signal
+            %--------------------------------------------------------------
+            [ signal_matrices, N_samples_t ] = signal( signal_matrices, varargin{ : } );
+
+            %--------------------------------------------------------------
+            % 2.) scale for inverse Fourier transform
+            %--------------------------------------------------------------
+            % iterate signal matrices
+            for index_matrix = 1:numel( signal_matrices )
+
+                % scale samples
+                signal_matrices( index_matrix ).samples = signal_matrices( index_matrix ).samples / ( N_samples_t( index_matrix ) * signal_matrices( index_matrix ).axis.delta );
+
+            end % for index_matrix = 1:numel( signal_matrices )
+
+        end % function signal_matrices = inverse_fourier_transform( signal_matrices, varargin )
 
         %------------------------------------------------------------------
         % interpolate
@@ -549,6 +587,9 @@ classdef signal_matrix
                 % perform element-wise multiplication
                 args_1( index_object ).samples = args_1( index_object ).samples .* args_2( index_object ).samples;
 
+                % update number of signals
+                args_1( index_object ).N_signals = size( args_1( index_object ).samples, 2 );
+
             end % for index_object = 1:numel( args_1 )
 
         end % function args_1 = times( args_1, args_2 )
@@ -597,7 +638,10 @@ classdef signal_matrix
                 % add samples
                 args_1( index_object ).samples = args_1( index_object ).samples + args_2( index_object ).samples;
 
-            end
+                % update number of signals
+                args_1( index_object ).N_signals = size( args_1( index_object ).samples, 2 );
+
+            end % for index_object = 1:numel( args_1 )
 
         end % function args_1 = plus( args_1, args_2 )
 
@@ -645,7 +689,10 @@ classdef signal_matrix
                 % subtract samples
                 args_1( index_object ).samples = args_1( index_object ).samples - args_2( index_object ).samples;
 
-            end
+                % update number of signals
+                args_1( index_object ).N_signals = size( args_1( index_object ).samples, 2 );
+
+            end % for index_object = 1:numel( args_1 )
 
         end % function args_1 = minus( args_1, args_2 )
 
@@ -681,7 +728,7 @@ classdef signal_matrix
         end % function signal_matrices = sum( signal_matrices, varargin )
 
         %------------------------------------------------------------------
-        % cross-correlation (overload xcorr method)
+% TODO: cross-correlation (overload xcorr method)
         %------------------------------------------------------------------
         function varargout = xcorr( varargin )
 

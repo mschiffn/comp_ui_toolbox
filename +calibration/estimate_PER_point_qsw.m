@@ -1,4 +1,4 @@
-function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_qsw( u_SA_tilde, xdc_array, states, options )
+function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_tilde ] = estimate_PER_point_qsw( u_SA_tilde, xdc_array, states, options )
 %
 % estimate the pulse-echo responses for multiple point-like targets
 % (cf. [1], [2])
@@ -10,15 +10,15 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_q
 %
 % author: Martin F. Schiffner
 % date: 2019-10-24
-% modified: 2019-11-21
+% modified: 2019-11-25
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
 	%----------------------------------------------------------------------
-    % ensure cell array for u_SA_tilde
-    if ~iscell( u_SA_tilde )
+	% ensure cell array for u_SA_tilde
+	if ~iscell( u_SA_tilde )
         u_SA_tilde = { u_SA_tilde };
-    end
+	end
 
 	% ensure class scattering.sequences.setups.transducers.array_planar_regular
 	if ~isa( xdc_array, 'scattering.sequences.setups.transducers.array_planar_regular' )
@@ -62,6 +62,8 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_q
     e_B_tilde = cell( size( u_SA_tilde ) );
     e_B_tilde_mean = cell( size( u_SA_tilde ) );
     e_B_tilde_std_dev = cell( size( u_SA_tilde ) );
+    cal_tx_tilde = cell( size( u_SA_tilde ) );
+    cal_rx_tilde = cell( size( u_SA_tilde ) );
 
 	% iterate SA datasets
 	for index_data = 1:numel( u_SA_tilde )
@@ -132,6 +134,8 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_q
         e_B_tilde{ index_data } = cell( size( states{ index_data } ) );
         e_B_tilde_mean{ index_data } = cell( size( states{ index_data } ) );
         e_B_tilde_std_dev{ index_data } = cell( size( states{ index_data } ) );
+        cal_tx_tilde{ index_data } = cell( size( states{ index_data } ) );
+        cal_rx_tilde{ index_data } = cell( size( states{ index_data } ) );
 
         % iterate point-like targets
         for index_target = 1:N_targets
@@ -206,7 +210,7 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_q
             prefactors = compute_prefactors( setup, u_SA_window.axis );
 
             %--------------------------------------------------------------
-            % e) estimate pulse-echo response
+            % e) estimate pulse-echo responses
             %--------------------------------------------------------------
             epsilon_squared = 7.5e-3;
             e_B_samples = u_SA_window.samples;
@@ -256,20 +260,57 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_q
             e_B_tilde_std_dev{ index_data }{ index_target } = discretizations.signal( e_B_tilde{ index_data }{ index_target }.axis, sqrt( var( e_B_tilde{ index_data }{ index_target }.samples, [], 2 ) ) );
 
             %--------------------------------------------------------------
-            % f) illustrate results
+            % f) estimate calibration factors
+            %--------------------------------------------------------------
+            e_B_samples = reshape( e_B_samples, [ abs( u_SA_window.axis ), numel( options{ index_data }( index_target ).indices_elements ), numel( options{ index_data }( index_target ).indices_elements ) ] );
+
+            % ratios of transmitter electromechanical transfer functions
+            filter = e_B_samples( :, :, options{ index_data }( index_target ).index_element_tx_ref );
+            filter_abs_squared = abs( filter ).^2;
+            filter_abs_squared_max = max( filter_abs_squared );
+            cal_tx_samples = squeeze( mean( e_B_samples .* conj( filter ) ./ ( filter_abs_squared + epsilon_squared * filter_abs_squared_max ), 2 ) );
+
+            % inverse Fourier transforms
+            cal_tx = discretizations.signal_matrix( e_B.axis, cal_tx_samples );
+            cal_tx_tilde{ index_data }{ index_target } = inverse_fourier_transform( cal_tx, - round( 0.5 * abs( interval_t_tof_quantized ) / u_SA_tilde{ index_data }( 1 ).axis.delta ), u_SA_tilde{ index_data }( 1 ).axis.delta );
+
+            % apply windows (use original time window)
+            cal_tx_tilde{ index_data }{ index_target } = cut_out( cal_tx_tilde{ index_data }{ index_target }, cal_tx_tilde{ index_data }{ index_target }.axis.members( 1 ), cal_tx_tilde{ index_data }{ index_target }.axis.members( end ), [], options{ index_data }( index_target ).setting_window );
+
+            % ratios of receiver electromechanical transfer functions
+            filter = e_B_samples( :, options{ index_data }( index_target ).index_element_rx_ref, : );
+            filter_abs_squared = abs( filter ).^2;
+            filter_abs_squared_max = max( filter_abs_squared );
+            cal_rx_samples = mean( e_B_samples .* conj( filter ) ./ ( filter_abs_squared + epsilon_squared * filter_abs_squared_max ), 3 );
+
+            % inverse Fourier transforms
+            cal_rx = discretizations.signal_matrix( e_B.axis, cal_rx_samples );
+            cal_rx_tilde{ index_data }{ index_target } = inverse_fourier_transform( cal_rx, - round( 0.5 * abs( interval_t_tof_quantized ) / u_SA_tilde{ index_data }( 1 ).axis.delta ), u_SA_tilde{ index_data }( 1 ).axis.delta );
+
+            % apply windows (use original time window)
+            cal_rx_tilde{ index_data }{ index_target } = cut_out( cal_rx_tilde{ index_data }{ index_target }, cal_rx_tilde{ index_data }{ index_target }.axis.members( 1 ), cal_rx_tilde{ index_data }{ index_target }.axis.members( end ), [], options{ index_data }( index_target ).setting_window );
+
+            %--------------------------------------------------------------
+            % g) illustrate results
             %--------------------------------------------------------------
             figure( index_data );
-            subplot( 3, N_targets, index_target );
+            subplot( 5, N_targets, index_target );
             imagesc( options{ index_data }( index_target ).indices_elements, double( e_B_tilde{ index_data }{ index_target }.axis.members ), double( e_B_tilde{ index_data }{ index_target }.samples( :, 1:128 ) ) );
             title( 'P-E Responses' );
-            subplot( 3, N_targets, N_targets + index_target );
+            subplot( 5, N_targets, N_targets + index_target );
             plot( double( e_B_tilde{ index_data }{ index_target }.axis.members ), double( e_B_tilde{ index_data }{ index_target }.samples ) );
             title( 'P-E Responses' );
-            subplot( 3, N_targets, 2 * N_targets + index_target );
+            subplot( 5, N_targets, 2 * N_targets + index_target );
             plot( double( e_B_tilde_mean{ index_data }{ index_target }.axis.members ), double( e_B_tilde_mean{ index_data }{ index_target }.samples ), '-b', ...
                   double( e_B_tilde_mean{ index_data }{ index_target }.axis.members ), double( e_B_tilde_mean{ index_data }{ index_target }.samples - e_B_tilde_std_dev{ index_data }{ index_target }.samples ), '--r', ...
                   double( e_B_tilde_mean{ index_data }{ index_target }.axis.members ), double( e_B_tilde_mean{ index_data }{ index_target }.samples + e_B_tilde_std_dev{ index_data }{ index_target }.samples ), '--r' );
             title( 'Mean +- Std. Dev.' );
+            subplot( 5, N_targets, 3 * N_targets + index_target );
+            imagesc( abs( cal_tx.samples ) );
+            title( 'TX calibration' );
+            subplot( 5, N_targets, 4 * N_targets + index_target );
+            imagesc( abs( cal_rx.samples ) );
+            title( 'RX calibration' );
 
         end % for index_target = 1:N_targets
 
@@ -277,6 +318,8 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_q
         e_B_tilde{ index_data } = reshape( [ e_B_tilde{ index_data }{ : } ], size( states{ index_data } ) );
         e_B_tilde_mean{ index_data } = reshape( [ e_B_tilde_mean{ index_data }{ : } ], size( states{ index_data } ) );
         e_B_tilde_std_dev{ index_data } = reshape( [ e_B_tilde_std_dev{ index_data }{ : } ], size( states{ index_data } ) );
+        cal_tx_tilde{ index_data } = reshape( [ cal_tx_tilde{ index_data }{ : } ], size( states{ index_data } ) );
+        cal_rx_tilde{ index_data } = reshape( [ cal_rx_tilde{ index_data }{ : } ], size( states{ index_data } ) );
 
     end % for index_data = 1:numel( u_SA_tilde )
 
@@ -285,6 +328,8 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_q
         e_B_tilde = e_B_tilde{ 1 };
         e_B_tilde_mean = e_B_tilde_mean{ 1 };
         e_B_tilde_std_dev = e_B_tilde_std_dev{ 1 };
+        cal_tx_tilde = cal_tx_tilde{ 1 };
+        cal_rx_tilde = cal_rx_tilde{ 1 };
 	end
 
-end % function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point_qsw( u_SA_tilde, xdc_array, states, options )
+end % function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_tilde ] = estimate_PER_point_qsw( u_SA_tilde, xdc_array, states, options )

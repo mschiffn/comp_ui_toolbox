@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-16
-% modified: 2019-06-03
+% modified: 2019-11-25
 %
 classdef physical_quantity < physical_values.transparent_container
 
@@ -18,7 +18,7 @@ classdef physical_quantity < physical_values.transparent_container
 	properties (SetAccess = private)
 
         % independent properties
-        exponents ( 1, 8 ) double
+        exponents ( 1, 8 ) double { mustBeNonempty } = [ 1, 0, 0, 0, 0, 0, 0, 0 ]
 
     end % properties
 
@@ -31,7 +31,7 @@ classdef physical_quantity < physical_values.transparent_container
         %% 1.) original functions
         %------------------------------------------------------------------
         % constructor
-        function object = physical_quantity( exponents, varargin )
+        function object = physical_quantity( exponents, values )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -45,26 +45,24 @@ classdef physical_quantity < physical_values.transparent_container
             % default values
             if nargin < 2
                 values = 1;
-            else
-                values = varargin{ 1 };
             end
 
-            % ensure nonemptyness of the argument
+            % property validation functions ensure nonempty double row vector for exponents
+
+            % ensure nonempty numeric values
             mustBeNonempty( values );
-%             mustBeReal( values );
-%             mustBeFinite( values );
+            mustBeNumeric( values );
 
             %--------------------------------------------------------------
-            % 2.) constructor of superclass
+            % 2.) create physical quantities
             %--------------------------------------------------------------
+            % constructor of superclass
             object@physical_values.transparent_container( values );
 
-            %--------------------------------------------------------------
-            % 3.) set independent properties
-            %--------------------------------------------------------------
+            % set independent properties
             object.exponents = exponents;
 
-        end % function object = physical_quantity( exponents, varargin )
+        end % function object = physical_quantity( exponents, values )
 
         % compatible
         function mustBeCompatible( physical_quantity_ref, varargin )

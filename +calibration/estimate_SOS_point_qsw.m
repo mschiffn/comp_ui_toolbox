@@ -11,7 +11,7 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 %
 % author: Martin F. Schiffner
 % date: 2014-09-20
-% modified: 2019-11-20
+% modified: 2019-11-25
 
     %----------------------------------------------------------------------
 	% 1.) check arguments
@@ -169,7 +169,8 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
             times_of_flight_est{ index_target } = cell( size( options{ index_data }( index_target ).indices_elements ) );
 
             % iterate specified tx elements
-            INDICES_TX = options{ index_data }( index_target ).indices_elements;
+            INDICES_TX = options{ index_data }( index_target ).indices_elements; %([1, end])
+            INDICES_RX = options{ index_data }( index_target ).indices_elements; %([1, end])
             for index_selected_tx = 1:numel( INDICES_TX )
 
                 % index of the array element
@@ -182,7 +183,13 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
                 u_rx_tilde_qsw_int = interpolate( u_rx_tilde_qsw{ index_data }( index_element_tx ), options{ index_data }( index_target ).factor_interp );
 
                 % cut out waveforms (apply windows)
-                u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, [ intervals_t{ index_target }( index_element_tx, : ).lb ], [ intervals_t{ index_target }( index_element_tx, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements ), options{ index_data }( index_target ).setting_window );
+                u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, [ intervals_t{ index_target }( index_selected_tx, : ).lb ], [ intervals_t{ index_target }( index_selected_tx, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements ), options{ index_data }( index_target ).setting_window );
+
+                % illustrate cut out
+%                 figure(998);
+%                 imagesc( options{ index_data }( index_target ).indices_elements, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, options{ index_data }( index_target ).indices_elements ) ), 20 ), [ -60, 0 ] );
+%                 line( options{ index_data }( index_target ).indices_elements, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+%                 line( options{ index_data }( index_target ).indices_elements, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
 
                 %----------------------------------------------------------
                 % b) compute inter-element lags
@@ -212,6 +219,9 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 
                 end % for index_selected_rx = 2:numel( options{ index_data }( index_target ).indices_elements )
 
+                %----------------------------------------------------------
+                % c) estimate TOFs
+                %----------------------------------------------------------
                 % integrate inter-element delays and find lateral position of minimum
                 lags_adjacent_cs{ index_selected_tx } = cumsum( lags_adjacent{ index_selected_tx }, 2 );
                 [ lags_adjacent_cs_min, index_min ] = min( lags_adjacent_cs{ index_selected_tx }, [], 2 );
@@ -242,8 +252,8 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
             theta_0 = [ double( states{ index_data }( index_target ).position_target ), double( states{ index_data }( index_target ).c_avg ) ];
 
             % boundaries
-            theta_lbs = [ -2e-2, -5e-3, 0,    1450 ];
-            theta_ubs = [  2e-2,  5e-3, 8e-2, 1580 ];
+            theta_lbs = [ -2e-2, -5e-3, 0,    1400 ];
+            theta_ubs = [  2e-2,  5e-3, 8e-2, 1850 ];
 
             % set optimization options
             options_optimization = optimoptions( 'lsqcurvefit', 'Algorithm', 'trust-region-reflective', 'FunValCheck', 'on', 'Diagnostics', 'on', 'Display', 'iter-detailed', 'FunctionTolerance', 1e-10, 'OptimalityTolerance', 1e-10, 'StepTolerance', 1e-10, 'SpecifyObjectiveGradient', true, 'CheckGradients', false, 'FiniteDifferenceType', 'central', 'FiniteDifferenceStepSize', 1e-10, 'MaxFunctionEvaluations', 5e3, 'MaxIterations', 5e3 );
@@ -265,6 +275,20 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
             if rel_RMSE{ index_data }( index_target ) > rel_RMSE_0
                 warning('No improvement!');
             end
+
+            %--------------------------------------------------------------
+            % d) illustration
+            %--------------------------------------------------------------
+            figure( index_data );
+            subplot( 3, N_targets, index_target );
+            imagesc( double( times_of_flight_est{ index_target } ) );
+            title( 'Detected' );
+            subplot( 3, N_targets, N_targets + index_target );
+            imagesc( double( tof_us( theta_tof, double( xdc_array( index_data ).positions_ctr ) ) ) );
+            title( 'Estimated' );
+            subplot( 3, N_targets, 2 * N_targets + index_target );
+            imagesc( double( times_of_flight_est{ index_target } ) * 1e6 - tof_us( theta_tof, double( xdc_array( index_data ).positions_ctr ) ) );
+            title( sprintf( 'Error (%.2f %%)', rel_RMSE{ index_data }( index_target ) * 1e2 ) );
 
         end % for index_target = 1:N_targets
 
@@ -354,7 +378,7 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 
         % compute round-trip times-of-flight (us)
         y = ( dist + dist' ) / theta( end );
-        y = 1e6 * y( INDICES_TX, : );
+        y = 1e6 * y( INDICES_TX, INDICES_RX );
 
         % check if Jacobian is required
         if nargout > 1
@@ -365,7 +389,7 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
             % partial derivatives w/ respect to position
             for index_dim = 1:( numel( theta ) - 1 )
                 temp = - vect_r0_r( :, index_dim ) ./ dist;
-                temp = temp( INDICES_TX ) + temp';
+                temp = temp( INDICES_TX ) + temp( INDICES_RX )';
                 J( :, index_dim ) = 1e6 * temp( : ) / theta( end );
             end
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-06-15
-% modified: 2019-10-21
+% modified: 2019-11-25
 %
 classdef options
 
@@ -24,6 +24,8 @@ classdef options
         method_faces ( 1, 1 ) scattering.sequences.setups.discretizations.methods.method = scattering.sequences.setups.discretizations.methods.grid_numbers( [ 4; 53 ] ); % discretization parameters for the transducer array
         lens_thickness = physical_values.meter( 0e-3 );
         c_lens = physical_values.meter_per_second( 2000 );
+        index_element_tx_ref = 1                                                            % tx element for reference pulse-echo response
+        index_element_rx_ref = 1                                                            % rx element for reference pulse-echo response
 
         % dependent properties
         interval_window_t ( 1, 1 ) math.interval = math.interval( physical_values.second( 0 ), physical_values.second( 2.5e-6 ) );
