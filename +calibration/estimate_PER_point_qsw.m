@@ -1,16 +1,16 @@
-function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_tilde ] = estimate_PER_point_qsw( u_SA_tilde, xdc_array, states, options )
+function [ cal_tx_tilde, cal_rx_tilde, e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, rel_RMSE_local ] = estimate_PER_point_qsw( u_SA_tilde, xdc_array, states, options )
 %
-% estimate the pulse-echo responses for multiple point-like targets
-% (cf. [1], [2])
+% estimate the pulse-echo responses for
+% multiple point-like targets (cf. [1], [2])
 %
-% [1] Lester W. Schmerr Jr., "Phased Arrays",
-%     Ultrasonics, Vol. 49, 2009, pp. 219-225 (doi:10.1016/j.ultras.2008.08.004)
-% [2] R. Huang and Lester W. Schmerr Jr., "Characterization of the system functions of ultrasonic linear phased array inspection systems",
-%     Ultrasonics, Vol. 49, 2009, pp. 219-225 (doi:10.1016/j.ultras.2008.08.004)
+% [1] L. W. Schmerr Jr., "Fundamentals of Ultrasonic Phased Arrays", 1st, ser. Solid Mechanics and Its Applications.
+%     Springer International Publishing, 2015, vol. 215. (doi: 10.1007/978-3-319-07272-2)
+% [2] R. Huang and L. W. Schmerr Jr., "Characterization of the system functions of ultrasonic linear phased array inspection systems",
+%     Ultrasonics, Vol. 49, 2009, pp. 219-225 (doi: 10.1016/j.ultras.2008.08.004)
 %
 % author: Martin F. Schiffner
 % date: 2019-10-24
-% modified: 2019-11-25
+% modified: 2019-11-26
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
@@ -59,11 +59,12 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
 	% 2.) check arguments
 	%----------------------------------------------------------------------
 	% specify cell arrays
-    e_B_tilde = cell( size( u_SA_tilde ) );
-    e_B_tilde_mean = cell( size( u_SA_tilde ) );
-    e_B_tilde_std_dev = cell( size( u_SA_tilde ) );
-    cal_tx_tilde = cell( size( u_SA_tilde ) );
-    cal_rx_tilde = cell( size( u_SA_tilde ) );
+	e_B_tilde = cell( size( u_SA_tilde ) );
+	e_B_tilde_mean = cell( size( u_SA_tilde ) );
+	e_B_tilde_std_dev = cell( size( u_SA_tilde ) );
+	cal_tx_tilde = cell( size( u_SA_tilde ) );
+	cal_rx_tilde = cell( size( u_SA_tilde ) );
+	rel_RMSE_local = cell( size( u_SA_tilde ) );
 
 	% iterate SA datasets
 	for index_data = 1:numel( u_SA_tilde )
@@ -99,10 +100,10 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
             error( errorStruct );
         end
 
-        % ensure class calibration.options
-        if ~isa( options{ index_data }, 'calibration.options' )
-            errorStruct.message = 'options{ index_data } must be calibration.options!';
-            errorStruct.identifier = 'estimate_PER_point_qsw:NoOptions';
+        % ensure class calibration.options.PER
+        if ~isa( options{ index_data }, 'calibration.options.PER' )
+            errorStruct.message = 'options{ index_data } must be calibration.options.PER!';
+            errorStruct.identifier = 'estimate_PER_point_qsw:NoOptionsPER';
             error( errorStruct );
         end
 
@@ -136,6 +137,7 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
         e_B_tilde_std_dev{ index_data } = cell( size( states{ index_data } ) );
         cal_tx_tilde{ index_data } = cell( size( states{ index_data } ) );
         cal_rx_tilde{ index_data } = cell( size( states{ index_data } ) );
+        rel_RMSE_local{ index_data } = cell( size( states{ index_data } ) );
 
         % iterate point-like targets
         for index_target = 1:N_targets
@@ -144,7 +146,7 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
             % a) compute time intervals based on predicted times-of-flight and waveform center
             %--------------------------------------------------------------
             % predict waveform starts using times-of-flight
-            tof_start = times_of_flight{ index_target }( options{ index_data }( index_target ).indices_elements, options{ index_data }( index_target ).indices_elements );
+            tof_start = times_of_flight{ index_target }( options{ index_data }( index_target ).indices_elements_tx, options{ index_data }( index_target ).indices_elements_rx );
 
             % create time intervals for all active elements
             intervals_t = move( options{ index_data }( index_target ).interval_window_t, tof_start + abs( options{ index_data }( index_target ).interval_window_t ) / 2 );
@@ -153,16 +155,16 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
             % b) cut out waveforms
             %--------------------------------------------------------------
             % specify cell array for u_SA_tilde_window
-            u_SA_tilde_window = cell( size( options{ index_data }( index_target ).indices_elements ) );
+            u_SA_tilde_window = cell( size( options{ index_data }( index_target ).indices_elements_tx ) );
 
             % iterate specified elements
-            for index_selected = 1:numel( options{ index_data }( index_target ).indices_elements )
+            for index_selected = 1:numel( options{ index_data }( index_target ).indices_elements_tx )
 
                 % index of the array element
-                index_element = options{ index_data }( index_target ).indices_elements( index_selected );
+                index_element = options{ index_data }( index_target ).indices_elements_tx( index_selected );
 
                 % cut out waveforms (apply windows)
-                u_SA_tilde_window{ index_selected } = cut_out( u_SA_tilde{ index_data }( index_element ), [ intervals_t( index_element, : ).lb ], [ intervals_t( index_element, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements ), options{ index_data }( index_target ).setting_window );
+                u_SA_tilde_window{ index_selected } = cut_out( u_SA_tilde{ index_data }( index_element ), [ intervals_t( index_selected, : ).lb ], [ intervals_t( index_selected, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements_rx ), options{ index_data }( index_target ).setting_window );
 
             end
 
@@ -216,22 +218,22 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
             e_B_samples = u_SA_window.samples;
 
             % iterate specified elements
-            for index_selected_tx = 1:numel( options{ index_data }( index_target ).indices_elements )
+            for index_selected_tx = 1:numel( options{ index_data }( index_target ).indices_elements_tx )
 
                 % index of the array element
-                index_element_tx = options{ index_data }( index_target ).indices_elements( index_selected_tx );
+                index_element_tx = options{ index_data }( index_target ).indices_elements_tx( index_selected_tx );
 
                 % extract spatial transmit function
                 h_tx = h_transfer( index_element_tx ).samples;
 
                 % iterate specified elements
-                for index_selected_rx = 1:numel( options{ index_data }( index_target ).indices_elements )
+                for index_selected_rx = 1:numel( options{ index_data }( index_target ).indices_elements_rx )
 
                     % index of the array element
-                    index_element_rx = options{ index_data }( index_target ).indices_elements( index_selected_rx );
+                    index_element_rx = options{ index_data }( index_target ).indices_elements_rx( index_selected_rx );
 
                     % total index
-                    index = ( index_selected_tx - 1 ) * numel( options{ index_data }( index_target ).indices_elements ) + index_selected_rx;
+                    index = ( index_selected_tx - 1 ) * numel( options{ index_data }( index_target ).indices_elements_rx ) + index_selected_rx;
 
                     % round-trip transfer function
                     h_rx_tx = double( prefactors.samples .* h_tx .* h_transfer( index_element_rx ).samples );
@@ -244,9 +246,9 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
 %                   figure( 1 );
 %                   plot( double( u_rx_qpw_window.axis.members ), abs( u_rx_qpw_window.samples( :, index_selected_rx ) ), double( u_rx_qpw_window.axis.members ), abs( conj( h_rx_tx ) ./ ( h_rx_tx_abs_squared + epsilon_squared * h_rx_tx_abs_squared_max ) ), double( u_rx_qpw_window.axis.members ), abs( e_B_samples( :, index_selected_rx ) ) );
 
-                end % for index_selected_rx = 1:numel( options{ index_data }( index_target ).indices_elements )
+                end % for index_selected_rx = 1:numel( options{ index_data }( index_target ).indices_elements_rx )
 
-            end % for index_selected_tx = 1:numel( options{ index_data }( index_target ).indices_elements )
+            end % for index_selected_tx = 1:numel( options{ index_data }( index_target ).indices_elements_tx )
 
             % Fourier synthesis
             e_B = discretizations.signal_matrix( u_SA_window.axis, e_B_samples );
@@ -262,15 +264,16 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
             %--------------------------------------------------------------
             % f) estimate calibration factors
             %--------------------------------------------------------------
-            e_B_samples = reshape( e_B_samples, [ abs( u_SA_window.axis ), numel( options{ index_data }( index_target ).indices_elements ), numel( options{ index_data }( index_target ).indices_elements ) ] );
+            % reshape samples of PE responses
+            e_B_samples = reshape( e_B_samples, [ abs( u_SA_window.axis ), numel( options{ index_data }( index_target ).indices_elements_rx ), numel( options{ index_data }( index_target ).indices_elements_tx ) ] );
 
             % ratios of transmitter electromechanical transfer functions
-            filter = e_B_samples( :, :, options{ index_data }( index_target ).index_element_tx_ref );
+            filter = e_B_samples( :, :, options{ index_data }( index_target ).index_selected_tx_ref );
             filter_abs_squared = abs( filter ).^2;
             filter_abs_squared_max = max( filter_abs_squared );
             cal_tx_samples = squeeze( mean( e_B_samples .* conj( filter ) ./ ( filter_abs_squared + epsilon_squared * filter_abs_squared_max ), 2 ) );
 
-            % inverse Fourier transforms
+            % Fourier synthesis
             cal_tx = discretizations.signal_matrix( e_B.axis, cal_tx_samples );
             cal_tx_tilde{ index_data }{ index_target } = inverse_fourier_transform( cal_tx, - round( 0.5 * abs( interval_t_tof_quantized ) / u_SA_tilde{ index_data }( 1 ).axis.delta ), u_SA_tilde{ index_data }( 1 ).axis.delta );
 
@@ -278,39 +281,53 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
             cal_tx_tilde{ index_data }{ index_target } = cut_out( cal_tx_tilde{ index_data }{ index_target }, cal_tx_tilde{ index_data }{ index_target }.axis.members( 1 ), cal_tx_tilde{ index_data }{ index_target }.axis.members( end ), [], options{ index_data }( index_target ).setting_window );
 
             % ratios of receiver electromechanical transfer functions
-            filter = e_B_samples( :, options{ index_data }( index_target ).index_element_rx_ref, : );
+            filter = e_B_samples( :, options{ index_data }( index_target ).index_selected_rx_ref, : );
             filter_abs_squared = abs( filter ).^2;
             filter_abs_squared_max = max( filter_abs_squared );
             cal_rx_samples = mean( e_B_samples .* conj( filter ) ./ ( filter_abs_squared + epsilon_squared * filter_abs_squared_max ), 3 );
 
-            % inverse Fourier transforms
+            % Fourier synthesis
             cal_rx = discretizations.signal_matrix( e_B.axis, cal_rx_samples );
             cal_rx_tilde{ index_data }{ index_target } = inverse_fourier_transform( cal_rx, - round( 0.5 * abs( interval_t_tof_quantized ) / u_SA_tilde{ index_data }( 1 ).axis.delta ), u_SA_tilde{ index_data }( 1 ).axis.delta );
 
             % apply windows (use original time window)
             cal_rx_tilde{ index_data }{ index_target } = cut_out( cal_rx_tilde{ index_data }{ index_target }, cal_rx_tilde{ index_data }{ index_target }.axis.members( 1 ), cal_rx_tilde{ index_data }{ index_target }.axis.members( end ), [], options{ index_data }( index_target ).setting_window );
 
+            % prediction errors
+            index_ref = ( options{ index_data }( index_target ).index_selected_tx_ref - 1 ) * numel( options{ index_data }( index_target ).indices_elements_rx ) + options{ index_data }( index_target ).index_selected_rx_ref;
+            e_B_samples_hat = e_B_samples( :, index_ref ) .* reshape( cal_tx_samples, [ abs( u_SA_window.axis ), 1, numel( options{ index_data }( index_target ).indices_elements_tx ) ] ) .* cal_rx_samples;
+            e_B_samples_error = e_B_samples_hat - e_B_samples;
+
+            rel_RMSE_local{ index_data }{ index_target } = squeeze( vecnorm( e_B_samples_error, 2, 1 ) ./ vecnorm( e_B_samples, 2, 1 ) );
+            rel_RMSE_local_mean = mean( rel_RMSE_local{ index_data }{ index_target }( : ) );
+            rel_RMSE_local_std_dev = std( rel_RMSE_local{ index_data }{ index_target }( : ) );
+
+            rel_RMSE_global = norm( e_B_samples_error( : ) ) / norm( e_B_samples( : ) );
+
             %--------------------------------------------------------------
             % g) illustrate results
             %--------------------------------------------------------------
             figure( index_data );
-            subplot( 5, N_targets, index_target );
-            imagesc( options{ index_data }( index_target ).indices_elements, double( e_B_tilde{ index_data }{ index_target }.axis.members ), double( e_B_tilde{ index_data }{ index_target }.samples( :, 1:128 ) ) );
+            subplot( 6, N_targets, index_target );
+            imagesc( options{ index_data }( index_target ).indices_elements_rx, double( e_B_tilde{ index_data }{ index_target }.axis.members ), double( e_B_tilde{ index_data }{ index_target }.samples( :, 1:numel( options{ index_data }( index_target ).indices_elements_rx ) ) ) );
             title( 'P-E Responses' );
-            subplot( 5, N_targets, N_targets + index_target );
+            subplot( 6, N_targets, N_targets + index_target );
             plot( double( e_B_tilde{ index_data }{ index_target }.axis.members ), double( e_B_tilde{ index_data }{ index_target }.samples ) );
             title( 'P-E Responses' );
-            subplot( 5, N_targets, 2 * N_targets + index_target );
+            subplot( 6, N_targets, 2 * N_targets + index_target );
             plot( double( e_B_tilde_mean{ index_data }{ index_target }.axis.members ), double( e_B_tilde_mean{ index_data }{ index_target }.samples ), '-b', ...
                   double( e_B_tilde_mean{ index_data }{ index_target }.axis.members ), double( e_B_tilde_mean{ index_data }{ index_target }.samples - e_B_tilde_std_dev{ index_data }{ index_target }.samples ), '--r', ...
                   double( e_B_tilde_mean{ index_data }{ index_target }.axis.members ), double( e_B_tilde_mean{ index_data }{ index_target }.samples + e_B_tilde_std_dev{ index_data }{ index_target }.samples ), '--r' );
             title( 'Mean +- Std. Dev.' );
-            subplot( 5, N_targets, 3 * N_targets + index_target );
+            subplot( 6, N_targets, 3 * N_targets + index_target );
             imagesc( abs( cal_tx.samples ) );
             title( 'TX calibration' );
-            subplot( 5, N_targets, 4 * N_targets + index_target );
+            subplot( 6, N_targets, 4 * N_targets + index_target );
             imagesc( abs( cal_rx.samples ) );
             title( 'RX calibration' );
+            subplot( 6, N_targets, 5 * N_targets + index_target );
+            imagesc( rel_RMSE_local{ index_data }{ index_target } );
+            title( {'Rel. RMSE', sprintf( 'mean: %.2f +- %.2f %%', rel_RMSE_local_mean * 1e2, rel_RMSE_local_std_dev * 1e2 ), sprintf( 'global: %.2f %%', rel_RMSE_global * 1e2 ) } );
 
         end % for index_target = 1:N_targets
 
@@ -330,6 +347,7 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_ti
         e_B_tilde_std_dev = e_B_tilde_std_dev{ 1 };
         cal_tx_tilde = cal_tx_tilde{ 1 };
         cal_rx_tilde = cal_rx_tilde{ 1 };
+        rel_RMSE_local = rel_RMSE_local{ 1 };
 	end
 
-end % function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, cal_tx_tilde, cal_rx_tilde ] = estimate_PER_point_qsw( u_SA_tilde, xdc_array, states, options )
+end % function [ cal_tx_tilde, cal_rx_tilde, e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev, rel_RMSE_local ] = estimate_PER_point_qsw( u_SA_tilde, xdc_array, states, options )

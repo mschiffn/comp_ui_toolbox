@@ -1,4 +1,4 @@
-function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )
+function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )
 %
 % estimate the average speed of sound using
 % the inter-element cross-correlations for
@@ -61,9 +61,6 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 	%----------------------------------------------------------------------
 	% specify cell arrays
 	rel_RMSE = cell( size( u_rx_tilde_qsw ) );
-	pulse_shape = cell( size( u_rx_tilde_qsw ) );
-	pulse_shape_mean = cell( size( u_rx_tilde_qsw ) );
-	pulse_shape_std_dev = cell( size( u_rx_tilde_qsw ) );
 
 	% iterate signal matrices
 	for index_data = 1:numel( u_rx_tilde_qsw )
@@ -99,10 +96,10 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
             error( errorStruct );
         end
 
-        % ensure class calibration.options
-        if ~isa( options{ index_data }, 'calibration.options' )
-            errorStruct.message = sprintf( 'options{ %d } must be calibration.options!', index_data );
-            errorStruct.identifier = 'estimate_SOS_point_qsw:NoOptions';
+        % ensure class calibration.options.SoS
+        if ~isa( options{ index_data }, 'calibration.options.SoS' )
+            errorStruct.message = sprintf( 'options{ %d } must be calibration.options.SoS!', index_data );
+            errorStruct.identifier = 'estimate_SOS_point_qsw:NoOptionsSoS';
             error( errorStruct );
         end
 
@@ -133,11 +130,6 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
         tof_ctr = cell( size( states{ index_data } ) );
         intervals_t = cell( size( states{ index_data } ) );
 
-        % statistics of the pulse shape
-        pulse_shape{ index_data } = cell( size( states{ index_data } ) );
-        pulse_shape_mean{ index_data } = cell( size( states{ index_data } ) );
-        pulse_shape_std_dev{ index_data } = cell( size( states{ index_data } ) );
-
         % results for nonlinear LSE
         pos_r0_est = physical_values.meter( zeros( N_targets, 3 ) );
         c_avg_est = physical_values.meter_per_second( zeros( N_targets, 1 ) );
@@ -155,7 +147,7 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
             % a) compute time intervals based on predicted TOFs and waveform center
             %--------------------------------------------------------------
             % predict waveform centers using TOFs
-            tof_ctr{ index_target } = times_of_flight_init{ index_target }( options{ index_data }( index_target ).indices_elements, options{ index_data }( index_target ).indices_elements ) + options{ index_data }( index_target ).time_shift_ctr;
+            tof_ctr{ index_target } = times_of_flight_init{ index_target }( options{ index_data }( index_target ).indices_elements_tx, options{ index_data }( index_target ).indices_elements_rx ) + options{ index_data }( index_target ).time_shift_ctr;
 
             % create time intervals
             intervals_t{ index_target } = move( options{ index_data }( index_target ).interval_window_t, tof_ctr{ index_target } );
@@ -164,13 +156,13 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
             % b) compute inter-element correlation coefficients and lags
             %--------------------------------------------------------------
             % specify cell array for times_of_flight_est
-            lags_adjacent = cell( size( options{ index_data }( index_target ).indices_elements ) );
-            lags_adjacent_cs = cell( size( options{ index_data }( index_target ).indices_elements ) );
-            times_of_flight_est{ index_target } = cell( size( options{ index_data }( index_target ).indices_elements ) );
+            lags_adjacent = cell( size( options{ index_data }( index_target ).indices_elements_tx ) );
+            lags_adjacent_cs = cell( size( options{ index_data }( index_target ).indices_elements_tx ) );
+            times_of_flight_est{ index_target } = cell( size( options{ index_data }( index_target ).indices_elements_tx ) );
 
             % iterate specified tx elements
-            INDICES_TX = options{ index_data }( index_target ).indices_elements; %([1, end])
-            INDICES_RX = options{ index_data }( index_target ).indices_elements; %([1, end])
+            INDICES_TX = options{ index_data }( index_target ).indices_elements_tx; %([1, end])
+            INDICES_RX = options{ index_data }( index_target ).indices_elements_rx; %([1, end])
             for index_selected_tx = 1:numel( INDICES_TX )
 
                 % index of the array element
@@ -183,22 +175,22 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
                 u_rx_tilde_qsw_int = interpolate( u_rx_tilde_qsw{ index_data }( index_element_tx ), options{ index_data }( index_target ).factor_interp );
 
                 % cut out waveforms (apply windows)
-                u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, [ intervals_t{ index_target }( index_selected_tx, : ).lb ], [ intervals_t{ index_target }( index_selected_tx, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements ), options{ index_data }( index_target ).setting_window );
+                u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, [ intervals_t{ index_target }( index_selected_tx, : ).lb ], [ intervals_t{ index_target }( index_selected_tx, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements_rx ), options{ index_data }( index_target ).setting_window );
 
                 % illustrate cut out
-%                 figure(998);
-%                 imagesc( options{ index_data }( index_target ).indices_elements, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, options{ index_data }( index_target ).indices_elements ) ), 20 ), [ -60, 0 ] );
-%                 line( options{ index_data }( index_target ).indices_elements, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
-%                 line( options{ index_data }( index_target ).indices_elements, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+                figure(998);
+                imagesc( options{ index_data }( index_target ).indices_elements_rx, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, options{ index_data }( index_target ).indices_elements_rx ) ), 20 ), [ -60, 0 ] );
+                line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+                line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
 
                 %----------------------------------------------------------
                 % b) compute inter-element lags
                 %----------------------------------------------------------
                 % initialize lags with zeros
-                lags_adjacent{ index_selected_tx } = physical_values.second( zeros( 1, numel( options{ index_data }( index_target ).indices_elements ) ) );
+                lags_adjacent{ index_selected_tx } = physical_values.second( zeros( 1, numel( options{ index_data }( index_target ).indices_elements_rx ) ) );
 
                 % iterate specified rx elements
-                for index_selected_rx = 2:numel( options{ index_data }( index_target ).indices_elements )
+                for index_selected_rx = 2:numel( INDICES_RX )
 
                     % extract RF data of adjacent channels
                     u_rx_tilde_qsw_int_window_act = u_rx_tilde_qsw_int_window( index_selected_rx );
@@ -214,10 +206,10 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
                     lags_adjacent{ index_selected_tx }( index_selected_rx ) = data_pw_int_cut_corr_lags( index_max ) * u_rx_tilde_qsw_int_window_act.axis.delta + u_rx_tilde_qsw_int_window_act.axis.members( 1 ) - u_rx_tilde_qsw_int_window_prev.axis.members( 1 );
 
                     % illustrate result
-%                     figure(999);
-%                     plot( u_rx_tilde_qsw_int_window_act.axis.members - lags_adjacent{ index_selected_tx }( index_selected_rx ), u_rx_tilde_qsw_int_window_act.samples / max( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.axis.members, u_rx_tilde_qsw_int_window_prev.samples / max( u_rx_tilde_qsw_int_window_prev.samples ) );
+                    figure(999);
+                    plot( u_rx_tilde_qsw_int_window_act.axis.members - lags_adjacent{ index_selected_tx }( index_selected_rx ), u_rx_tilde_qsw_int_window_act.samples / max( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.axis.members, u_rx_tilde_qsw_int_window_prev.samples / max( u_rx_tilde_qsw_int_window_prev.samples ) );
 
-                end % for index_selected_rx = 2:numel( options{ index_data }( index_target ).indices_elements )
+                end % for index_selected_rx = 2:numel( INDICES_RX )
 
                 %----------------------------------------------------------
                 % c) estimate TOFs
@@ -238,7 +230,7 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
                 % estimate TOFs for all rx elements
                 times_of_flight_est{ index_target }{ index_selected_tx } = tof_min + lags_adjacent_cs{ index_selected_tx };
 
-            end % for index_selected_tx = 1:numel( options{ index_data }( index_target ).indices_elements )
+            end % for index_selected_tx = 1:numel( INDICES_TX )
 
             % concatenate cell arrays into matrices
             lags_adjacent = cat( 1, lags_adjacent{ : } );
@@ -304,9 +296,6 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 	if isscalar( u_rx_tilde_qsw )
         states = states{ 1 };
         rel_RMSE = rel_RMSE{ 1 };
-        pulse_shape = pulse_shape{ 1 };
-        pulse_shape_mean = pulse_shape_mean{ 1 };
-        pulse_shape_std_dev = pulse_shape_std_dev{ 1 };
     end
 
 	% compute differences of TOFs for adjacent elements
@@ -400,4 +389,4 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 
     end % function y = tof( theta, positions )
 
-end % function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )
+end % function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )
