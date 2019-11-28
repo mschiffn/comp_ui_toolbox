@@ -244,8 +244,11 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
                     h_rx_tx_abs_squared_max = max( h_rx_tx_abs_squared );
                     e_B_samples( :, index ) = u_SA_window.samples( :, index ) .* conj( h_rx_tx ) ./ ( h_rx_tx_abs_squared + options{ index_data }( index_target ).epsilon_squared_PER * h_rx_tx_abs_squared_max );
 
-%                   figure( 1 );
-%                   plot( double( u_rx_qpw_window.axis.members ), abs( u_rx_qpw_window.samples( :, index_selected_rx ) ), double( u_rx_qpw_window.axis.members ), abs( conj( h_rx_tx ) ./ ( h_rx_tx_abs_squared + options{ index_data }( index_target ).epsilon_squared_PER * h_rx_tx_abs_squared_max ) ), double( u_rx_qpw_window.axis.members ), abs( e_B_samples( :, index_selected_rx ) ) );
+                    % graphical illustration
+%                     figure( 1 );
+%                     plot( double( u_SA_window.axis.members ), abs( u_SA_window.samples( :, index ) ), ...
+%                           double( u_SA_window.axis.members ), abs( conj( h_rx_tx ) ./ ( h_rx_tx_abs_squared + options{ index_data }( index_target ).epsilon_squared_PER * h_rx_tx_abs_squared_max ) ), ...
+%                           double( u_SA_window.axis.members ), abs( e_B_samples( :, index ) ) );
 
                 end % for index_selected_rx = 1:numel( options{ index_data }( index_target ).indices_elements_rx )
 
@@ -305,6 +308,8 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
             rel_RMSE_local{ index_data }{ index_target } = squeeze( vecnorm( e_B_samples_error, 2, 1 ) ./ vecnorm( e_B_samples, 2, 1 ) );
             rel_RMSE_local_mean = mean( rel_RMSE_local{ index_data }{ index_target }( : ) );
             rel_RMSE_local_std_dev = std( rel_RMSE_local{ index_data }{ index_target }( : ) );
+            rel_RMSE_local_min = min( rel_RMSE_local{ index_data }{ index_target }( : ) );
+            rel_RMSE_local_max = max( rel_RMSE_local{ index_data }{ index_target }( : ) );
 
             rel_RMSE_global = norm( e_B_samples_error( : ) ) / norm( e_B_samples( : ) );
 
@@ -323,7 +328,7 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
             title( 'RX calibration' );
             subplot( 5, N_targets, 3 * N_targets + index_target );
             imagesc( rel_RMSE_local{ index_data }{ index_target } );
-            title( {'Rel. RMSE', sprintf( 'mean: %.2f +- %.2f %%', rel_RMSE_local_mean * 1e2, rel_RMSE_local_std_dev * 1e2 ), sprintf( 'global: %.2f %%', rel_RMSE_global * 1e2 ) } );
+            title( {'Rel. RMSE', sprintf( 'mean: %.2f +- %.2f %%', rel_RMSE_local_mean * 1e2, rel_RMSE_local_std_dev * 1e2 ), sprintf( 'min/max: %.2f / %.2f %%', rel_RMSE_local_min * 1e2, rel_RMSE_local_max * 1e2 ), sprintf( 'global: %.2f %%', rel_RMSE_global * 1e2 ) } );
             subplot( 5, N_targets, 4 * N_targets + index_target );
             plot( double( e_B_tilde_mean{ index_data }{ index_target }.axis.members ), double( e_B_tilde_mean{ index_data }{ index_target }.samples ), '-b', ...
                   double( e_B_tilde_mean{ index_data }{ index_target }.axis.members ), double( e_B_tilde_mean{ index_data }{ index_target }.samples - e_B_tilde_std_dev{ index_data }{ index_target }.samples ), '--r', ...

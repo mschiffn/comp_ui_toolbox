@@ -31,6 +31,7 @@ classdef PER < calibration.options.common
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
+% TODO: add Wiener filter regularization factors
         function objects = PER( durations_window_t, indices_elements_tx, indices_elements_rx, intervals_f, handles_absorption_model, varargin )
 
             %--------------------------------------------------------------
