@@ -188,7 +188,7 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
                 %----------------------------------------------------------
                 % initialize lags with zeros
                 lags_adjacent{ index_selected_tx } = physical_values.second( zeros( 1, numel( options{ index_data }( index_target ).indices_elements_rx ) ) );
-
+                corr_vals = zeros( 1, numel( options{ index_data }( index_target ).indices_elements_rx ) );
                 % iterate specified rx elements
                 for index_selected_rx = 2:numel( INDICES_RX )
 
@@ -200,15 +200,15 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
                     [ data_pw_int_cut_corr, data_pw_int_cut_corr_lags ] = xcorr( u_rx_tilde_qsw_int_window_act.samples / norm( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.samples / norm( u_rx_tilde_qsw_int_window_prev.samples ) );
 
                     % detect and save maximum of cross-correlation
-                    [ ~, index_max ] = max( data_pw_int_cut_corr );
+                    [ corr_vals( index_selected_rx ), index_max ] = max( data_pw_int_cut_corr );
 
                     % estimate relative time delays
                     lags_adjacent{ index_selected_tx }( index_selected_rx ) = data_pw_int_cut_corr_lags( index_max ) * u_rx_tilde_qsw_int_window_act.axis.delta + u_rx_tilde_qsw_int_window_act.axis.members( 1 ) - u_rx_tilde_qsw_int_window_prev.axis.members( 1 );
 
                     % illustrate result
-                    figure(999);
-                    plot( u_rx_tilde_qsw_int_window_act.axis.members - lags_adjacent{ index_selected_tx }( index_selected_rx ), u_rx_tilde_qsw_int_window_act.samples / max( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.axis.members, u_rx_tilde_qsw_int_window_prev.samples / max( u_rx_tilde_qsw_int_window_prev.samples ) );
-
+%                     figure(999);
+%                     plot( u_rx_tilde_qsw_int_window_act.axis.members - lags_adjacent{ index_selected_tx }( index_selected_rx ), u_rx_tilde_qsw_int_window_act.samples / max( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.axis.members, u_rx_tilde_qsw_int_window_prev.samples / max( u_rx_tilde_qsw_int_window_prev.samples ) );
+%                     pause(0.1);
                 end % for index_selected_rx = 2:numel( INDICES_RX )
 
                 %----------------------------------------------------------

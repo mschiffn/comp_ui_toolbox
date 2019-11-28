@@ -276,9 +276,12 @@ end
 %--------------------------------------------------------------------------
 % 2.) options
 %--------------------------------------------------------------------------
-% absorption model and options
+% create sound speed estimation options
+options_SoS = calibration.options.SoS( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, (1:xdc_array.N_elements), 1, xdc_array.N_elements );
+
+% create pulse-echo response estimation options
 handle_absorption_model = @( x ) scattering.sequences.setups.materials.absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
-options = calibration.options( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, 1, 128, interval_f, handle_absorption_model );
+options_PER = calibration.options.PER( physical_values.second( 2.5e-6 ), (1:xdc_array.N_elements), (1:xdc_array.N_elements), interval_f, handle_absorption_model );
 
 %--------------------------------------------------------------------------
 % 3.) perform estimates
@@ -448,15 +451,18 @@ end
 %--------------------------------------------------------------------------
 % 2.) options
 %--------------------------------------------------------------------------
-% absorption model and options
+% create sound speed estimation options
+options_SoS_sa = calibration.options.SoS( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, (1:xdc_array.N_elements), 1, xdc_array.N_elements );
+
+% create pulse-echo response estimation options
 handle_absorption_model_sa = @( x ) scattering.sequences.setups.materials.absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
-options_sa = calibration.options( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, 1, 128, interval_f, handle_absorption_model_sa );
+options_PER_sa = calibration.options.PER( physical_values.second( 2.5e-6 ), (1:xdc_array.N_elements), (1:xdc_array.N_elements), interval_f, handle_absorption_model_sa );
 
 %--------------------------------------------------------------------------
 % 3.) perform estimates
 %--------------------------------------------------------------------------
 % a) estimate speed of sound
-[ states_est_sa, rel_RMSE_sa ] = calibration.estimate_SOS_point_qsw( u_M_tilde_qsw, xdc_array, states_0_sa, options_sa );
+[ states_est_sa, rel_RMSE_sa ] = calibration.estimate_SOS_point_qsw( u_M_tilde_qsw, xdc_array, states_0_sa, options_SoS_sa );
 
 % iterate pulse-echo measurement setups
 states_updated_sa = states_est_sa;
@@ -475,7 +481,7 @@ for index_setup = 1:numel( setups )
 end
 
 % b) estimate pulse-echo responses
-[ e_B_tilde_sa, e_B_tilde_mean_sa, e_B_tilde_std_dev_sa ] = calibration.estimate_PER_point_qsw( u_M_tilde_qsw, xdc_array, states_updated_sa, options_sa );
+[ e_B_tilde_ref_sa, cal_tx_tilde_sa, cal_rx_tilde_sa, rel_RMSE_local_sa, e_B_tilde_sa, e_B_tilde_mean_sa, e_B_tilde_std_dev_sa ] = calibration.estimate_PER_point_qsw( u_M_tilde_qsw, xdc_array, states_updated_sa, options_PER_sa );
 
 %--------------------------------------------------------------------------
 % 4.) compute errors
@@ -525,20 +531,20 @@ for index_setup = 1:numel( setups )
 	for index_target = 1:numel( states_est_sa{ index_setup } )
 
         % ensure identical sampling periods
-        if e_B_tilde_sa{ index_setup }( index_target ).axis.delta ~= u_tx_tilde.axis.delta
+        if e_B_tilde_ref_sa{ index_setup }( index_target ).axis.delta ~= u_tx_tilde.axis.delta
             errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
             errorStruct.identifier = 'times_of_flight:NoSetups';
             error( errorStruct );
         end
 
         % interpolate PE responses and normalize
-        e_B_tilde_int = interpolate( e_B_tilde_sa{ index_setup }( index_target ), 30 );
+        e_B_tilde_int = interpolate( e_B_tilde_ref_sa{ index_setup }( index_target ), 30 );
         e_B_tilde_int_normed = e_B_tilde_int.samples ./ vecnorm( e_B_tilde_int.samples, 2, 1 );
         e_B_tilde_mean_int = interpolate( e_B_tilde_mean_sa{ index_setup }( index_target ), 30 );
         e_B_tilde_mean_int_normed = e_B_tilde_mean_int.samples ./ vecnorm( e_B_tilde_mean_int.samples, 2, 1 );
 
         % cross-correlation
-        [ corr_vals, corr_lags ] = xcorr( e_B_tilde_int_normed( :, 1 ), u_tx_tilde_int_normed );
+        [ corr_vals, corr_lags ] = xcorr( e_B_tilde_int_normed, u_tx_tilde_int_normed );
         [ rho_e_B_tilde_sa{ index_setup }( index_target ), index_max ] = max( corr_vals );
         [ corr_vals_mean, corr_lags_mean ] = xcorr( e_B_tilde_mean_int_normed, u_tx_tilde_int_normed );
         [ rho_e_B_tilde_mean_sa{ index_setup }( index_target ), index_max_mean ] = max( corr_vals_mean );

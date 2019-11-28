@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-11-26
-% modified: 2019-11-26
+% modified: 2019-11-28
 %
 classdef PER < calibration.options.common
 
@@ -16,6 +16,8 @@ classdef PER < calibration.options.common
         interval_f ( 1, 1 ) math.interval { mustBeNonempty } = math.interval( physical_values.hertz( 2e6 ), physical_values.hertz( 6e6 ) )	% frequency interval
         handle_absorption_model ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) absorption_models.time_causal( 0, 0.5, 1, x, physical_values.hertz( 4e6 ) )	% absorption model for the lossy homogeneous fluid
         method_faces ( 1, 1 ) scattering.sequences.setups.discretizations.methods.method { mustBeNonempty } = scattering.sequences.setups.discretizations.methods.grid_numbers( [ 4; 53 ] ); % discretization parameters for the transducer array
+        epsilon_squared_PER ( 1, 1 ) double { mustBePositive, mustBeNonempty } = 1e-6%7.5e-3                 % Wiener filter regularization factor for the estimation of the pulse-echo responses
+        epsilon_squared_cal ( 1, 1 ) double { mustBePositive, mustBeNonempty } = 1e-6                   % Wiener filter regularization factor for the estimation of the calibration factors
         index_selected_tx_ref ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 64	% tx element for reference pulse-echo response
         index_selected_rx_ref ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 64	% rx element for reference pulse-echo response
 
