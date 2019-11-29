@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-10-22
+% modified: 2019-11-28
 %
 classdef setting
 
@@ -13,15 +13,15 @@ classdef setting
 	properties (SetAccess = private)
 
         % independent properties
-        tx ( :, 1 ) scattering.sequences.settings.controls.setting_tx	% synthesis settings
-        rx ( :, 1 ) scattering.sequences.settings.controls.setting_rx	% mixer settings
+        tx ( :, 1 ) scattering.sequences.settings.controls.tx	% synthesis settings
+        rx ( :, 1 ) scattering.sequences.settings.controls.rx	% mixer settings
 
         % dependent properties
         interval_hull_t ( 1, 1 ) math.interval	% hull of all recording time intervals
         interval_hull_f ( 1, 1 ) math.interval	% hull of all frequency intervals
 
         % discretization
-        tx_unique ( :, : ) scattering.sequences.settings.controls.setting_tx	% synthesis settings (unique frequencies)
+        tx_unique ( :, : ) scattering.sequences.settings.controls.tx	% synthesis settings (unique frequencies)
         v_d_unique ( :, 1 ) discretizations.signal_matrix       % normal velocities (unique frequencies)
         indices_f_to_unique                                     % cell array mapping frequencies of each mixed voltage signal to unique frequencies of current pulse-echo measurement
         indices_active_rx_unique ( 1, : ) double

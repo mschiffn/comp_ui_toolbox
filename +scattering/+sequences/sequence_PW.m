@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2019-09-24
+% modified: 2019-11-28
 %
 classdef sequence_PW < scattering.sequences.sequence
 
@@ -20,7 +20,7 @@ classdef sequence_PW < scattering.sequences.sequence
             %--------------------------------------------------------------
             % 1.) create synthesis settings
             %--------------------------------------------------------------
-            settings_tx = scattering.sequences.settings.controls.setting_tx_PW( setup, u_tx_tilde, e_theta );
+            settings_tx = scattering.sequences.settings.controls.tx_PW( setup, u_tx_tilde, e_theta );
 
             %--------------------------------------------------------------
             % 2.) create reception settings
@@ -32,7 +32,7 @@ classdef sequence_PW < scattering.sequences.sequence
             for index_object = 1:numel( settings_tx )
 
                 % create reception settings w/o mixing
-                settings_rx{ index_object } = scattering.sequences.settings.controls.setting_rx_identity( setup, settings_tx( index_object ), interval_f );
+                settings_rx{ index_object } = scattering.sequences.settings.controls.rx_identity( setup, settings_tx( index_object ), interval_f );
 
             end % for index_object = 1:numel( settings_tx )
 

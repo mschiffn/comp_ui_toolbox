@@ -114,10 +114,10 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
         y_m_res = y_m - y_approx;
         y_m_res_norm_rel( k_iter ) = norm( y_m_res, 2 ) / y_m_norm;
 
-        axis = math.sequence_increasing_regular( 168, 501, physical_values.hertz( 13468.013468013466990669257938861846923828125 ) );
-        y_m_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 334, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
-        y_approx_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 334, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
-        y_m_res_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 334, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        axis = math.sequence_increasing_regular( 188, 563, physical_values.hertz( 11986.814504045551075250841677188873291015625 ) );
+        y_m_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        y_approx_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        y_m_res_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
         y_m_tilde_max = max( abs( y_m_tilde.samples(:) ) );
 
         figure( k_iter );

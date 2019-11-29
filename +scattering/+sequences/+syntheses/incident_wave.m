@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-04-06
-% modified: 2019-09-25
+% modified: 2019-11-28
 %
 classdef incident_wave
 
@@ -50,7 +50,7 @@ classdef incident_wave
                 %----------------------------------------------------------
                 % a) check type of wave
                 %----------------------------------------------------------
-                if isa( sequence.settings( index_object ).tx_unique, 'scattering.sequences.settings.controls.setting_tx_PW' )
+                if isa( sequence.settings( index_object ).tx_unique, 'scattering.sequences.settings.controls.tx_PW' )
 
                     objects( index_object ) = compute_p_in_pw( objects( index_object ), sequence.setup, sequence.settings( index_object ).tx_unique, sequence.settings( index_object ).v_d_unique );
 
@@ -82,7 +82,7 @@ classdef incident_wave
 
                     end % if N_elements_active >= 2
 
-                end % if isa( sequence.settings( index_object ).tx_unique, 'scattering.sequences.settings.controls.setting_tx_PW' )
+                end % if isa( sequence.settings( index_object ).tx_unique, 'scattering.sequences.settings.controls.tx_PW' )
 
             end % for index_object = 1:numel( sequence.settings )
 

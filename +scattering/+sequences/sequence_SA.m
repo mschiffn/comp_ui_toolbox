@@ -20,12 +20,12 @@ classdef sequence_SA < scattering.sequences.sequence
             %--------------------------------------------------------------
             % 1.) create synthesis settings
             %--------------------------------------------------------------
-            settings_tx = scattering.sequences.settings.controls.setting_tx_QSW( setup, u_tx_tilde, centers( setup.xdc_array ), angles );
+            settings_tx = scattering.sequences.settings.controls.tx_QSW( setup, u_tx_tilde, centers( setup.xdc_array ), angles );
 
             %--------------------------------------------------------------
             % 2.) create reception settings (estimate recording time intervals via options?)
             %--------------------------------------------------------------
-            settings_rx = repmat( { scattering.sequences.settings.controls.setting_rx_identity( setup, interval_t, interval_f ) }, size( settings_tx ) );
+            settings_rx = repmat( { scattering.sequences.settings.controls.rx_identity( setup, interval_t, interval_f ) }, size( settings_tx ) );
 
             %--------------------------------------------------------------
             % 3.) create pulse-echo measurement settings

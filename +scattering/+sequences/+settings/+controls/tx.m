@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-10-18
+% modified: 2019-11-28
 %
-classdef setting_tx < scattering.sequences.settings.controls.setting
+classdef tx < scattering.sequences.settings.controls.common
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -25,7 +25,7 @@ classdef setting_tx < scattering.sequences.settings.controls.setting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_tx( indices_active, impulse_responses, excitation_voltages )
+        function objects = tx( indices_active, impulse_responses, excitation_voltages )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -52,7 +52,7 @@ classdef setting_tx < scattering.sequences.settings.controls.setting
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@scattering.sequences.settings.controls.setting( indices_active, impulse_responses );
+            objects@scattering.sequences.settings.controls.common( indices_active, impulse_responses );
 
             %--------------------------------------------------------------
             % 3.) check and set independent properties
@@ -101,7 +101,7 @@ classdef setting_tx < scattering.sequences.settings.controls.setting
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = setting_tx( indices_active, impulse_responses, excitation_voltages )
+        end % function objects = tx( indices_active, impulse_responses, excitation_voltages )
 
         %------------------------------------------------------------------
         % spectral discretization (overload discretize method)
@@ -140,7 +140,7 @@ classdef setting_tx < scattering.sequences.settings.controls.setting
             % 2.) compute Fourier transform samples and coefficients
             %--------------------------------------------------------------
             % transfer behavior via superclass
-            settings_tx = discretize@scattering.sequences.settings.controls.setting( settings_tx, Ts_ref, intervals_f );
+            settings_tx = discretize@scattering.sequences.settings.controls.common( settings_tx, Ts_ref, intervals_f );
 
             % iterate transducer control settings
             for index_object = 1:numel( settings_tx )
@@ -179,7 +179,7 @@ classdef setting_tx < scattering.sequences.settings.controls.setting
 
 % TODO: check matching dimensions
 % TODO: impulse_responses and excitation_voltages must be single signal matrices (ensured by Fourier transform)
-% TODO: move part of functionality to superclass scattering.sequences.settings.controls.setting
+% TODO: move part of functionality to superclass scattering.sequences.settings.controls.common
 
             %--------------------------------------------------------------
             % 2.) extract transfer functions and excitation voltages for unique frequencies
@@ -219,7 +219,7 @@ classdef setting_tx < scattering.sequences.settings.controls.setting
             %--------------------------------------------------------------
             % 3.) create objects
             %--------------------------------------------------------------
-            setting_tx_out = scattering.sequences.settings.controls.setting_tx( indices_active_unique, impulse_responses_unique, excitation_voltages_unique );
+            setting_tx_out = scattering.sequences.settings.controls.tx( indices_active_unique, impulse_responses_unique, excitation_voltages_unique );
 
         end % function [ setting_tx_out, indices_unique_to_f, indices_f_to_unique ] = unique( settings_tx_in )
 
@@ -229,7 +229,7 @@ classdef setting_tx < scattering.sequences.settings.controls.setting
         function deltas = unique_deltas( settings_tx )
 
             % extract unique deltas from impulse_responses via superclass
-            deltas_impulse = unique_deltas@scattering.sequences.settings.controls.setting( settings_tx );
+            deltas_impulse = unique_deltas@scattering.sequences.settings.controls.common( settings_tx );
 
             % extract excitation_voltages
             excitation_voltages = reshape( { settings_tx.excitation_voltages }, size( settings_tx ) );
@@ -291,4 +291,4 @@ classdef setting_tx < scattering.sequences.settings.controls.setting
 
 	end % methods
 
-end % classdef setting_tx < scattering.sequences.settings.controls.setting
+end % classdef tx < scattering.sequences.settings.controls.common

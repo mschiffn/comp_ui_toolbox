@@ -40,9 +40,17 @@ classdef transparent_container
                 return;
             end
 
+            % prevent nesting of transparent containers
+            if isa( values, 'physical_values.transparent_container' )
+                errorStruct.message = 'Transparent containers must not be nested!';
+                errorStruct.identifier = 'transparent_container:NoNesting';
+                error( errorStruct );
+            end
+
             %--------------------------------------------------------------
-            % 2.) set independent properties
+            % 2.) create transparent containers
             %--------------------------------------------------------------
+            % set independent properties
             object.values = values;
 
         end % function object = transparent_container( values )

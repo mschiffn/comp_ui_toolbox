@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<XMI xmlns:UML="http://schema.omg.org/spec/UML/1.3" xmi.version="1.2" timestamp="2019-11-28T15:25:42" verified="false">
+<XMI xmlns:UML="http://schema.omg.org/spec/UML/1.3" xmi.version="1.2" timestamp="2019-11-29T00:22:08" verified="false">
  <XMI.header>
   <XMI.documentation>
    <XMI.exporter>umbrello uml modeller http://umbrello.kde.org</XMI.exporter>
@@ -2750,7 +2750,7 @@
      </UML:Namespace.ownedElement>
      <XMI.extension xmi.extender="umbrello">
       <diagrams>
-       <diagram showatts="1" localid="-1" showpubliconly="0" griddotcolor="#d3d3d3" font="Ubuntu,11,-1,5,57,1,0,0,0,0" fillcolor="#ffff00" snapy="25" type="1" showattsig="1" canvaswidth="13875" showattribassocs="1" documentation="" name="Klassendiagramm" linecolor="#ff0000" showops="1" showgrid="1" zoom="20,113571875" canvasheight="6050" linewidth="0" showopsig="1" showscope="1" textcolor="#000000" snapcsgrid="1" snapx="25" xmi.id="u9Sxh7aSxb3l1" showpackage="1" usefillcolor="1" isopen="1" backgroundcolor="#ffffff" showstereotype="1" snapgrid="1">
+       <diagram showatts="1" localid="-1" showpubliconly="0" griddotcolor="#d3d3d3" font="Ubuntu,11,-1,5,57,1,0,0,0,0" fillcolor="#ffff00" snapy="25" type="1" showattsig="1" canvaswidth="13875" showattribassocs="1" documentation="" name="Klassendiagramm" linecolor="#ff0000" showops="1" showgrid="1" zoom="46,52391396064095" canvasheight="6050" linewidth="0" showopsig="1" showscope="1" textcolor="#000000" snapcsgrid="1" snapx="25" xmi.id="u9Sxh7aSxb3l1" showpackage="1" usefillcolor="1" isopen="1" backgroundcolor="#ffffff" showstereotype="1" snapgrid="1">
         <widgets>
          <classwidget showattributes="1" localid="uaJeH8h6vKgFb" isinstance="0" showoperations="1" showpubliconly="0" font="Ubuntu,11,-1,5,50,0,0,0,0,0" fillcolor="#ffff00" usesdiagramusefillcolor="0" height="325" y="-3550" usesdiagramfillcolor="0" linecolor="#ff0000" linewidth="0" width="1000" showopsigs="601" x="-4900" showscope="1" textcolor="#000000" showattsigs="601" xmi.id="uZkbrhe59JG7g" showpackage="1" usefillcolor="1" showstereotype="1"/>
          <classwidget showattributes="1" localid="umdZiIWMaFzIG" isinstance="0" showoperations="1" showpubliconly="0" font="Ubuntu,11,-1,5,50,0,0,0,0,0" fillcolor="#ffff00" usesdiagramusefillcolor="0" height="50" y="-3000" usesdiagramfillcolor="0" linecolor="#ff0000" linewidth="0" width="325" showopsigs="601" x="-4350" showscope="1" textcolor="#000000" showattsigs="601" xmi.id="uZQkPNV3hTdlg" showpackage="1" usefillcolor="1" showstereotype="1"/>
@@ -5530,7 +5530,7 @@
         <listitem type="814" id="93A39RRy6Do5" open="0"/>
        </listitem>
       </listitem>
-      <listitem type="818" id="RwjdnhbWkqLl" open="0">
+      <listitem type="818" id="RwjdnhbWkqLl" open="1">
        <listitem type="813" id="uZkbrhe59JG7g" open="0">
         <listitem type="815" id="uvykbrtZGOQCQ" open="0"/>
         <listitem type="815" id="yJMlcDxKst9o" open="0"/>
@@ -5564,8 +5564,8 @@
        <listitem type="813" id="uZQkPNV3hTdlg" open="0"/>
        <listitem type="813" id="iPYQUZbup83G" open="0"/>
        <listitem type="813" id="V2IzPmR88Bo5" open="0"/>
-       <listitem type="818" id="ufl3ypUrJ1RbE" open="0">
-        <listitem type="818" id="GandwPIXIEbk" open="0">
+       <listitem type="818" id="ufl3ypUrJ1RbE" open="1">
+        <listitem type="818" id="GandwPIXIEbk" open="1">
          <listitem type="813" id="4he1mx2VUAsh" open="0">
           <listitem type="814" id="IitkqjRwVg7G" open="0"/>
           <listitem type="814" id="APABcwiheLgO" open="0"/>

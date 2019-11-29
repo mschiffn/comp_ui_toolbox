@@ -5,7 +5,7 @@
 % date: 2019-01-21
 % modified: 2019-10-17
 %
-classdef setting_tx_QPW < scattering.sequences.settings.controls.setting_tx
+classdef tx_QPW < scattering.sequences.settings.controls.tx
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -25,7 +25,7 @@ classdef setting_tx_QPW < scattering.sequences.settings.controls.setting_tx
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_tx_QPW( setup, u_tx_tilde, e_theta )
+        function objects = tx_QPW( setup, u_tx_tilde, e_theta )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -33,14 +33,14 @@ classdef setting_tx_QPW < scattering.sequences.settings.controls.setting_tx
             % ensure class scattering.sequences.setups.setup (scalar)
             if ~( isa( setup, 'scattering.sequences.setups.setup' ) && isscalar( setup ) )
                 errorStruct.message = 'setup must be a single scattering.sequences.setups.setup!';
-                errorStruct.identifier = 'setting_tx_QPW:NoSetup';
+                errorStruct.identifier = 'tx_QPW:NoSetup';
                 error( errorStruct );
             end
 
             % ensure class scattering.sequences.setups.transducers.array_planar_regular_orthogonal
             if ~isa( setup.xdc_array, 'scattering.sequences.setups.transducers.array_planar_regular_orthogonal' )
                 errorStruct.message = 'setup.xdc_array must be scattering.sequences.setups.transducers.array_planar_regular_orthogonal!';
-                errorStruct.identifier = 'setting_tx_QPW:NoRegularOrthogonalTransducerArray';
+                errorStruct.identifier = 'tx_QPW:NoRegularOrthogonalTransducerArray';
                 error( errorStruct );
             end
 
@@ -49,7 +49,7 @@ classdef setting_tx_QPW < scattering.sequences.settings.controls.setting_tx
             % ensure class math.unit_vector
             if ~isa( e_theta, 'math.unit_vector' )
                 errorStruct.message = 'e_theta must be math.unit_vector!';
-                errorStruct.identifier = 'setting_tx_QPW:NoUnitVector';
+                errorStruct.identifier = 'tx_QPW:NoUnitVector';
                 error( errorStruct );
             end
 
@@ -96,7 +96,7 @@ classdef setting_tx_QPW < scattering.sequences.settings.controls.setting_tx
             %--------------------------------------------------------------
             % 3.) constructor of superclass
             %--------------------------------------------------------------
-            objects@scattering.sequences.settings.controls.setting_tx( indices_active, impulse_responses, excitation_voltages );
+            objects@scattering.sequences.settings.controls.tx( indices_active, impulse_responses, excitation_voltages );
 
             %--------------------------------------------------------------
             % 4.) set independent properties
@@ -108,8 +108,8 @@ classdef setting_tx_QPW < scattering.sequences.settings.controls.setting_tx
 
             end
 
-        end % function objects = setting_tx_QPW( setup, u_tx_tilde, e_theta )
+        end % function objects = tx_QPW( setup, u_tx_tilde, e_theta )
 
 	end % methods
 
-end % classdef setting_tx_QPW < scattering.sequences.settings.controls.setting_tx
+end % classdef tx_QPW < scattering.sequences.settings.controls.tx

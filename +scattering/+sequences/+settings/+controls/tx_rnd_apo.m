@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-10-18
+% modified: 2019-11-28
 %
-classdef setting_tx_rnd_apo < scattering.sequences.settings.controls.setting_tx
+classdef tx_rnd_apo < scattering.sequences.settings.controls.tx
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -25,7 +25,7 @@ classdef setting_tx_rnd_apo < scattering.sequences.settings.controls.setting_tx
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_tx_rnd_apo( setup, excitation_voltages_common, settings_rng )
+        function objects = tx_rnd_apo( setup, excitation_voltages_common, settings_rng )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -33,7 +33,7 @@ classdef setting_tx_rnd_apo < scattering.sequences.settings.controls.setting_tx
             % ensure class scattering.sequences.setups.setup (scalar)
             if ~( isa( setup, 'scattering.sequences.setups.setup' ) && isscalar( setup ) )
                 errorStruct.message     = 'setup must be a single scattering.sequences.setups.setup!';
-                errorStruct.identifier	= 'setting_tx_rnd_apo:NoSetup';
+                errorStruct.identifier	= 'tx_rnd_apo:NoSetup';
                 error( errorStruct );
             end
 
@@ -42,7 +42,7 @@ classdef setting_tx_rnd_apo < scattering.sequences.settings.controls.setting_tx
             % ensure class auxiliary.setting_rng
             if ~isa( settings_rng, 'auxiliary.setting_rng' )
                 errorStruct.message     = 'settings_rng must be auxiliary.setting_rng!';
-                errorStruct.identifier	= 'setting_tx_rnd_apo:NoSettingRng';
+                errorStruct.identifier	= 'tx_rnd_apo:NoSettingRng';
                 error( errorStruct );
             end
 
@@ -93,7 +93,7 @@ classdef setting_tx_rnd_apo < scattering.sequences.settings.controls.setting_tx
             %--------------------------------------------------------------
             % 3.) constructor of superclass
             %--------------------------------------------------------------
-            objects@scattering.sequences.settings.controls.setting_tx( indices_active, impulse_responses, excitation_voltages );
+            objects@scattering.sequences.settings.controls.tx( indices_active, impulse_responses, excitation_voltages );
 
             %--------------------------------------------------------------
             % 4.) set independent properties
@@ -105,8 +105,8 @@ classdef setting_tx_rnd_apo < scattering.sequences.settings.controls.setting_tx
 
             end
 
-        end % function objects = setting_tx_rnd_apo( setup, excitation_voltages_common, settings_rng )
+        end % function objects = tx_rnd_apo( setup, excitation_voltages_common, settings_rng )
 
 	end % methods
 
-end % classdef setting_tx_rnd_apo < scattering.sequences.settings.controls.setting_tx
+end % classdef tx_rnd_apo < scattering.sequences.settings.controls.tx

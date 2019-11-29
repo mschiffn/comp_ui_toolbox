@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-09-24
+% modified: 2019-11-28
 %
-classdef (Abstract) setting
+classdef (Abstract) common
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -13,8 +13,8 @@ classdef (Abstract) setting
 	properties (SetAccess = private)
 
         % independent properties
-        indices_active ( 1, : ) double { mustBeInteger, mustBeFinite }	% indices of active array elements (1)
-        impulse_responses ( 1, : ) discretizations.signal_matrix        % impulse responses of active channels
+        indices_active ( 1, : ) double { mustBePositive, mustBeInteger, mustBeFinite }	% indices of active array elements (1)
+        impulse_responses ( 1, : ) discretizations.signal_matrix                        % impulse responses of active channels
 
     end % properties
 
@@ -26,7 +26,7 @@ classdef (Abstract) setting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting( indices_active, impulse_responses )
+        function objects = common( indices_active, impulse_responses )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -41,10 +41,14 @@ classdef (Abstract) setting
                 indices_active = { indices_active };
             end
 
+            % property validation function ensures finite positive integers for indices_active
+
             % ensure cell array for impulse_responses
             if ~iscell( impulse_responses )
                 impulse_responses = { impulse_responses };
             end
+
+            % property validation function ensures class discretizations.signal_matrix for impulse_responses
 
             % ensure equal number of dimensions and sizes of cell arrays
             auxiliary.mustBeEqualSize( indices_active, impulse_responses );
@@ -80,8 +84,8 @@ classdef (Abstract) setting
 
                         % ensure single signal matrix of correct size
                         if ~isscalar( impulse_responses{ index_object } ) || ( numel( indices_active{ index_object } ) ~= impulse_responses{ index_object }.N_signals )
-                            errorStruct.message     = sprintf( 'impulse_responses{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
-                            errorStruct.identifier	= 'setting:SizeMismatch';
+                            errorStruct.message = sprintf( 'impulse_responses{ %d } must be a scalar and contain %d signals!', index_object, numel( indices_active{ index_object } ) );
+                            errorStruct.identifier = 'common:SizeMismatch';
                             error( errorStruct );
                         end
 
@@ -93,7 +97,7 @@ classdef (Abstract) setting
 
             end % for index_object = 1:numel( indices_active )
 
-        end % function objects = setting( indices_active, impulse_responses )
+        end % function objects = common( indices_active, impulse_responses )
 
         %------------------------------------------------------------------
         % spectral discretization
@@ -103,9 +107,9 @@ classdef (Abstract) setting
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.sequences.settings.controls.setting
-            if ~isa( settings, 'scattering.sequences.settings.controls.setting' )
-                errorStruct.message = 'settings must be scattering.sequences.settings.controls.setting!';
+            % ensure class scattering.sequences.settings.controls.common
+            if ~isa( settings, 'scattering.sequences.settings.controls.common' )
+                errorStruct.message = 'settings must be scattering.sequences.settings.controls.common!';
                 errorStruct.identifier = 'discretize:NoSettings';
                 error( errorStruct );
             end
@@ -150,7 +154,7 @@ classdef (Abstract) setting
                 % compute Fourier transform samples
                 settings( index_object ).impulse_responses = fourier_transform( settings( index_object ).impulse_responses, Ts_ref( index_object ), intervals_f( index_object ) );
 
-                % merge transforms to ensure class signal_matrix
+                % merge transforms to ensure class discretizations.signal_matrix
                 settings( index_object ).impulse_responses = merge( settings( index_object ).impulse_responses );
 
             end % for index_object = 1:numel( settings )
@@ -186,7 +190,7 @@ classdef (Abstract) setting
                 indices_local_to_unique{ index_set } = ic( index_start:index_stop );
 
             end % for index_set = 1:numel( settings )
-            
+
         end % function [ indices_unique, indices_local_to_unique ] = unique_indices_active( settings )
 
         %------------------------------------------------------------------
@@ -250,4 +254,4 @@ classdef (Abstract) setting
 
 	end % methods
 
-end % classdef (Abstract) setting
+end % classdef (Abstract) common

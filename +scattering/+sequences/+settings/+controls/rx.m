@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-10-18
+% modified: 2019-11-28
 %
-classdef setting_rx < scattering.sequences.settings.controls.setting
+classdef rx < scattering.sequences.settings.controls.common
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -26,10 +26,10 @@ classdef setting_rx < scattering.sequences.settings.controls.setting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_rx( indices_active, impulse_responses, intervals_t, intervals_f )
+        function objects = rx( indices_active, impulse_responses, intervals_t, intervals_f )
 
             %--------------------------------------------------------------
-            % 1.) constructor of superclass
+            % 1.) check arguments
             %--------------------------------------------------------------
             if nargin == 0
                 indices_active = 1;
@@ -38,51 +38,58 @@ classdef setting_rx < scattering.sequences.settings.controls.setting
                 intervals_f = math.interval( physical_values.frequency( 1 ), physical_values.frequency( 2 ) );
             end
 
-            objects@scattering.sequences.settings.controls.setting( indices_active, impulse_responses );
+            % ensure cell array for indices_active
+            if ~iscell( indices_active )
+                indices_active = { indices_active };
+            end
 
-            %--------------------------------------------------------------
-            % 2.) check arguments
-            %--------------------------------------------------------------
-            % ensure classes math.interval
+            % superclass ensures finite positive integers for indices_active
+
+            % superclass ensures class discretizations.signal_matrix for impulse_responses
+
+            % ensure class math.interval for intervals_t
             if ~( isa( intervals_t, 'math.interval' ) && isa( intervals_f, 'math.interval' ) )
-                errorStruct.message     = 'intervals_t and intervals_f must be math.interval!';
-                errorStruct.identifier	= 'setting_rx:NoIntervals';
+                errorStruct.message = 'intervals_t and intervals_f must be math.interval!';
+                errorStruct.identifier = 'rx:NoIntervals';
                 error( errorStruct );
             end
 
-            % multiple objects / single intervals_t
-            if ~isscalar( objects ) && isscalar( intervals_t )
-                intervals_t = repmat( intervals_t, size( objects ) );
+            % multiple indices_active / single intervals_t
+            if ~isscalar( indices_active ) && isscalar( intervals_t )
+                intervals_t = repmat( intervals_t, size( indices_active ) );
             end
 
-            % multiple objects / single intervals_f
-            if ~isscalar( objects ) && isscalar( intervals_f )
-                intervals_f = repmat( intervals_f, size( objects ) );
+            % multiple indices_active / single intervals_f
+            if ~isscalar( indices_active ) && isscalar( intervals_f )
+                intervals_f = repmat( intervals_f, size( indices_active ) );
             end
 
 % TODO: determine frequency intervals / assertion: f_lb > 0, f_ub >= f_lb + 1 / T_rec
 %             [ intervals_t, hulls ] = determine_interval_t( object );
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( objects, intervals_t, intervals_f );
+            auxiliary.mustBeEqualSize( indices_active, intervals_t, intervals_f );
 
             %--------------------------------------------------------------
-            % 3.) create recording settings
+            % 2.) create transducer control settings in recording mode
             %--------------------------------------------------------------
+            % constructor of superclass
+            objects@scattering.sequences.settings.controls.common( indices_active, impulse_responses );
+
             % iterate transducer control settings in recording mode
             for index_object = 1:numel( objects )
 
                 % ensure time interval
                 if ~isa( intervals_t( index_object ).lb, 'physical_values.time' )
                     errorStruct.message = sprintf( 'Bounds of intervals_t( %d ) must be physical_values.time!', index_object );
-                    errorStruct.identifier = 'setting_rx:NoTimeInterval';
+                    errorStruct.identifier = 'rx:NoTimeInterval';
                     error( errorStruct );
                 end
 
                 % ensure frequency interval
                 if ~isa( intervals_f( index_object ).lb, 'physical_values.frequency' )
                     errorStruct.message = sprintf( 'Bounds of intervals_f( %d ) must be physical_values.frequency!', index_object );
-                    errorStruct.identifier = 'setting_rx:NoFrequencyInterval';
+                    errorStruct.identifier = 'rx:NoFrequencyInterval';
                     error( errorStruct );
                 end
 
@@ -92,7 +99,7 @@ classdef setting_rx < scattering.sequences.settings.controls.setting
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = setting_rx( indices_active, impulse_responses, intervals_t, intervals_f )
+        end % function objects = rx( indices_active, impulse_responses, intervals_t, intervals_f )
 
         %------------------------------------------------------------------
         % spectral discretization (overload discretize method)
@@ -127,7 +134,7 @@ classdef setting_rx < scattering.sequences.settings.controls.setting
             %--------------------------------------------------------------
             % 2.) compute Fourier transform samples via superclass method
             %--------------------------------------------------------------
-            settings_rx = discretize@scattering.sequences.settings.controls.setting( settings_rx, Ts_ref, intervals_f );
+            settings_rx = discretize@scattering.sequences.settings.controls.common( settings_rx, Ts_ref, intervals_f );
 
         end % function settings_rx = discretize( settings_rx, varargin )
 
@@ -229,9 +236,9 @@ classdef setting_rx < scattering.sequences.settings.controls.setting
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.sequences.settings.controls.setting_rx
-            if ~isa( settings_rx, 'scattering.sequences.settings.controls.setting_rx' )
-                errorStruct.message = 'settings_rx must be scattering.sequences.settings.controls.setting_rx!';
+            % ensure class scattering.sequences.settings.controls.rx
+            if ~isa( settings_rx, 'scattering.sequences.settings.controls.rx' )
+                errorStruct.message = 'settings_rx must be scattering.sequences.settings.controls.rx!';
                 errorStruct.identifier = 'compute_N_observations:NoSettingsRx';
                 error( errorStruct );
             end
@@ -259,4 +266,4 @@ classdef setting_rx < scattering.sequences.settings.controls.setting
 
 	end % methods
 
-end % classdef setting_rx < scattering.sequences.settings.controls.setting
+end % classdef rx < scattering.sequences.settings.controls.common

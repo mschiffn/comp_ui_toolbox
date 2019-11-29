@@ -20,7 +20,7 @@ classdef sequence_QSW < scattering.sequences.sequence
             %--------------------------------------------------------------
             % 1.) create synthesis settings
             %--------------------------------------------------------------
-            settings_tx = scattering.sequences.settings.controls.setting_tx_QSW( setup, u_tx_tilde, positions_src, angles );
+            settings_tx = scattering.sequences.settings.controls.tx_QSW( setup, u_tx_tilde, positions_src, angles );
 
             %--------------------------------------------------------------
             % 2.) create reception settings
@@ -32,7 +32,7 @@ classdef sequence_QSW < scattering.sequences.sequence
             for index_object = 1:numel( settings_tx )
 
                 % create reception settings w/o mixing
-                settings_rx{ index_object } = scattering.sequences.settings.controls.setting_rx_identity( setup, settings_tx( index_object ), interval_f );
+                settings_rx{ index_object } = scattering.sequences.settings.controls.rx_identity( setup, settings_tx( index_object ), interval_f );
 
             end % for index_object = 1:numel( settings_tx )
 

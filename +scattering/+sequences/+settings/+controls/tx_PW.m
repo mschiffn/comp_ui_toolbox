@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2019-10-18
+% modified: 2019-11-28
 %
-classdef setting_tx_PW < scattering.sequences.settings.controls.setting_tx_QPW
+classdef tx_PW < scattering.sequences.settings.controls.tx_QPW
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -26,7 +26,7 @@ classdef setting_tx_PW < scattering.sequences.settings.controls.setting_tx_QPW
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_tx_PW( setup, u_tx_tilde, e_theta )
+        function objects = tx_PW( setup, u_tx_tilde, e_theta )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -37,7 +37,7 @@ classdef setting_tx_PW < scattering.sequences.settings.controls.setting_tx_QPW
             % ensure class discretizations.signal
             if ~isa( u_tx_tilde, 'discretizations.signal' )
                 errorStruct.message = 'u_tx_tilde must be discretizations.signal!';
-                errorStruct.identifier = 'setting_tx_PW:NoRegularOrthogonalTransducerArray';
+                errorStruct.identifier = 'tx_PW:NoRegularOrthogonalTransducerArray';
                 error( errorStruct );
             end
 
@@ -48,7 +48,7 @@ classdef setting_tx_PW < scattering.sequences.settings.controls.setting_tx_QPW
             % 2.) create synthesis settings for steered plane waves (PWs)
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.sequences.settings.controls.setting_tx_QPW( setup, u_tx_tilde, e_theta );
+            objects@scattering.sequences.settings.controls.tx_QPW( setup, u_tx_tilde, e_theta );
 
             % iterate synthesis settings
             for index_object = 1:numel( objects )
@@ -64,8 +64,8 @@ classdef setting_tx_PW < scattering.sequences.settings.controls.setting_tx_QPW
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = setting_tx_PW( setup, u_tx_tilde, e_theta )
+        end % function objects = tx_PW( setup, u_tx_tilde, e_theta )
 
 	end % methods
 
-end % classdef setting_tx_PW < scattering.sequences.settings.controls.setting_tx_QPW
+end % classdef tx_PW < scattering.sequences.settings.controls.tx_QPW

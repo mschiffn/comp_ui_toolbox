@@ -5,7 +5,7 @@
 % date: 2019-01-21
 % modified: 2019-09-11
 %
-classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
+classdef tx_QSW < scattering.sequences.settings.controls.tx
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -26,7 +26,7 @@ classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting_tx_QSW( setup, u_tx_tilde, positions_src, angles )
+        function objects = tx_QSW( setup, u_tx_tilde, positions_src, angles )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -34,7 +34,7 @@ classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
             % ensure class scattering.sequences.setups.setup
             if ~( isa( setup, 'scattering.sequences.setups.setup' ) && isscalar( setup ) )
                 errorStruct.message = 'setup must be a single scattering.sequences.setups.setup!';
-                errorStruct.identifier = 'setting_tx_QSW:NoSetup';
+                errorStruct.identifier = 'tx_QSW:NoSetup';
                 error( errorStruct );
             end
 
@@ -43,14 +43,14 @@ classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
             % ensure class physical_values.length
             if ~isa( positions_src, 'physical_values.length' )
                 errorStruct.message = 'positions_src must be physical_values.length!';
-                errorStruct.identifier = 'setting_tx_QSW:NoLength';
+                errorStruct.identifier = 'tx_QSW:NoLength';
                 error( errorStruct );
             end
 
             % ensure correct number of dimensions for positions_src
             if size( positions_src, 2 ) ~= setup.FOV.shape.N_dimensions
                 errorStruct.message = 'The second dimension of positions_src must match the number of dimensions!';
-                errorStruct.identifier = 'setting_tx_QSW:DimensionMismatch';
+                errorStruct.identifier = 'tx_QSW:DimensionMismatch';
                 error( errorStruct );
             end
 
@@ -60,7 +60,7 @@ classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
             % ensure correct number of dimensions for angles
             if size( angles, 2 ) ~= N_dimensions_lateral
                 errorStruct.message = 'The second dimension of angles must match the number of dimensions minus unity!';
-                errorStruct.identifier = 'setting_tx_QSW:DimensionMismatch';
+                errorStruct.identifier = 'tx_QSW:DimensionMismatch';
                 error( errorStruct );
             end
 
@@ -118,7 +118,7 @@ classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
             %--------------------------------------------------------------
             % 3.) constructor of superclass
             %--------------------------------------------------------------
-            objects@scattering.sequences.settings.controls.setting_tx( indices_active, impulse_responses, excitation_voltages );
+            objects@scattering.sequences.settings.controls.tx( indices_active, impulse_responses, excitation_voltages );
 
             %--------------------------------------------------------------
             % 4.) set independent properties
@@ -130,8 +130,8 @@ classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
 
             end
 
-        end % function objects = setting_tx_QSW( setup, u_tx_tilde, positions_src, angles )
+        end % function objects = tx_QSW( setup, u_tx_tilde, positions_src, angles )
 
 	end % methods
 
-end % classdef setting_tx_QSW < scattering.sequences.settings.controls.setting_tx
+end % classdef tx_QSW < scattering.sequences.settings.controls.tx
