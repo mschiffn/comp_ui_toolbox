@@ -91,6 +91,46 @@ classdef identity < linear_transforms.orthonormal_linear_transform
 
         end % function y = adjoint_transform( LTs, x )
 
+        %------------------------------------------------------------------
+        % threshold (TODO: inherit from weighting)
+        %------------------------------------------------------------------
+        function [ LTs, N_threshold ] = threshold( LTs, xis )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.identity
+            if ~isa( LTs, 'linear_transforms.identity' )
+                errorStruct.message = 'LTs must be linear_transforms.identity!';
+                errorStruct.identifier = 'threshold:NoIdentity';
+                error( errorStruct );
+            end
+
+            % ensure valid xis ( 0; 1 ]
+            mustBePositive( xis );
+            mustBeLessThanOrEqual( xis, 1 );
+
+            % multiple LTs / single xis
+            if ~isscalar( LTs ) && isscalar( xis )
+                xis = repmat( xis, size( LTs ) );
+            end
+
+            % single LTs / multiple xis
+            if isscalar( LTs ) && ~isscalar( xis )
+                LTs = repmat( LTs, size( xis ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( LTs, xis );
+
+            %--------------------------------------------------------------
+            % 2.) apply thresholds to identity transforms
+            %--------------------------------------------------------------
+            % initialize N_threshold with zeros
+            N_threshold = zeros( size( LTs ) );
+
+        end % function [ LTs, N_threshold ] = threshold( LTs, xis )
+
     end % methods
 
 end % classdef identity < linear_transforms.orthonormal_linear_transform

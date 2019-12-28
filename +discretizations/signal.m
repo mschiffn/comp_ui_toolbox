@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-06-09
+% modified: 2019-12-06
 %
 classdef signal < discretizations.signal_matrix
 
@@ -26,8 +26,8 @@ classdef signal < discretizations.signal_matrix
             end
 
             % ensure column vectors
-            indicator_row = cellfun( @iscolumn, samples );
-            if ~all( indicator_row( : ) )
+            indicator_row = cellfun( @( x ) ~iscolumn( x ), samples );
+            if any( indicator_row( : ) )
                 errorStruct.message = 'samples must be column vectors!';
                 errorStruct.identifier = 'signal:NoColumnVectors';
                 error( errorStruct );

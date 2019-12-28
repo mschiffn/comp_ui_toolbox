@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2019-05-20
+% modified: 2019-12-16
 %
-classdef invertible_linear_transform < linear_transforms.linear_transform
+classdef (Abstract) invertible_linear_transform < linear_transforms.linear_transform
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -34,4 +34,4 @@ classdef invertible_linear_transform < linear_transforms.linear_transform
 
     end % methods
 
-end % classdef invertible_linear_transform < linear_transforms.linear_transform
+end % classdef (Abstract) invertible_linear_transform < linear_transforms.linear_transform

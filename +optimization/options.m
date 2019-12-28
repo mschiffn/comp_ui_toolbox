@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2019-09-24
+% modified: 2019-12-16
 %
 classdef options
 
@@ -13,10 +13,11 @@ classdef options
 	properties (SetAccess = private)
 
         % independent properties
+        tgc ( 1, 1 ) optimization.options.tgc { mustBeNonempty } = optimization.options.tgc_off                                          % TGC options
         normalization ( 1, 1 ) optimization.options.normalization { mustBeNonempty } = optimization.options.normalization_threshold( 1 ) % normalization options
-        algorithm ( 1, 1 ) optimization.options.algorithm { mustBeNonempty } = optimization.options.algorithm_spgl1( 0.3, 1e3, 1 )	% algorithm options
-        reweighting ( 1, 1 ) optimization.options.reweighting { mustBeNonempty } = optimization.options.reweighting_off             % reweighting options
-        warm_start ( 1, 1 ) optimization.options.warm_start { mustBeNonempty } = optimization.options.warm_start_off                % warm start options
+        algorithm ( 1, 1 ) optimization.options.algorithm { mustBeNonempty } = optimization.options.algorithm_spgl1( 0.3, 1e3, 1 )       % algorithm options
+        reweighting ( 1, 1 ) optimization.options.reweighting { mustBeNonempty } = optimization.options.reweighting_off                  % reweighting options
+        warm_start ( 1, 1 ) optimization.options.warm_start { mustBeNonempty } = optimization.options.warm_start_off                     % warm start options
 
 	end % properties
 
@@ -61,44 +62,51 @@ classdef options
                 % iterate arguments
                 for index_arg = 1:numel( varargin )
 
-                    if isa( varargin{ index_arg }, 'optimization.options.normalization' )
+                    if isa( varargin{ index_arg }, 'optimization.options.tgc' )
 
                         %--------------------------------------------------
-                        % a) normalization options
+                        % a) TGC options
+                        %--------------------------------------------------
+                        objects( index_object ).tgc = varargin{ index_arg }( index_object );
+
+                    elseif isa( varargin{ index_arg }, 'optimization.options.normalization' )
+
+                        %--------------------------------------------------
+                        % b) normalization options
                         %--------------------------------------------------
                         objects( index_object ).normalization = varargin{ index_arg }( index_object );
 
                     elseif isa( varargin{ index_arg }, 'optimization.options.algorithm' )
 
                         %--------------------------------------------------
-                        % b) algorithm options
+                        % c) algorithm options
                         %--------------------------------------------------
                         objects( index_object ).algorithm = varargin{ index_arg }( index_object );
 
                     elseif isa( varargin{ index_arg }, 'optimization.options.reweighting' )
 
                         %--------------------------------------------------
-                        % c) reweighting options
+                        % d) reweighting options
                         %--------------------------------------------------
                         objects( index_object ).reweighting = varargin{ index_arg }( index_object );
 
                     elseif isa( varargin{ index_arg }, 'optimization.options.warm_start' )
 
                         %--------------------------------------------------
-                        % d) warm start options
+                        % e) warm start options
                         %--------------------------------------------------
                         objects( index_object ).warm_start = varargin{ index_arg }( index_object );
 
                     else
 
                         %--------------------------------------------------
-                        % e) unknown class
+                        % f) unknown class
                         %--------------------------------------------------
                         errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
                         errorStruct.identifier = 'options:UnknownClass';
                         error( errorStruct );
 
-                    end % if isa( varargin{ index_arg }, 'optimization.options.normalization' )
+                    end % if isa( varargin{ index_arg }, 'optimization.options.tgc' )
 
                 end % for index_arg = 1:numel( varargin )
 

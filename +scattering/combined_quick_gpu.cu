@@ -18,7 +18,7 @@
 //
 // author: Martin F. Schiffner
 // date: 2019-06-29
-// modified: 2019-07-30
+// modified: 2019-12-05
 // All rights reserved!
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -143,6 +143,7 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	mxComplexDouble*** prefactors_mix_complex = NULL;
 
 	// input matrix (compressibility fluctuations / mixed voltage signals)
+	mxArray* input_conversion = NULL;
 	mxComplexDouble* input_complex = NULL;
 
 	// output matrix (mixed voltage signals / adjoint compressibility fluctuations)
@@ -414,20 +415,23 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 	//------------------------------------------------------------------------------------------------------------------------------------------
 	// c) input matrix (N_columns x N_objects)
 	//------------------------------------------------------------------------------------------------------------------------------------------
-	// ensure matrix of doubles (mxDOUBLE_CLASS) w/ correct number of rows
-	if( !( mxIsDouble( prhs[ 2 ] ) && mxGetNumberOfDimensions( prhs[ 2 ] ) == 2 && mxGetM( prhs[ 2 ] ) == N_columns ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoDoublesMatrix", "input must be a double matrix with xxx rows!" );
+	// ensure nonempty matrix of doubles (mxDOUBLE_CLASS) w/ correct number of rows
+	if( !( mxIsDouble( prhs[ 2 ] ) && mxGetNumberOfDimensions( prhs[ 2 ] ) == 2 && mxGetM( prhs[ 2 ] ) == N_columns && !mxIsEmpty( prhs[ 2 ] ) ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoValidDoubleMatrix", "input must be a double matrix with xxx rows!" );
 
-	// TODO: mxMakeArrayComplex( prhs[ 2 ] )
-	if( mxIsComplex( prhs[ 2 ] ) )
+	// ensure imaginary part for input_conversion
+	if( !mxIsComplex( prhs[ 2 ] ) )
 	{
+		// deep copy constant input array
+		input_conversion = mxDuplicateArray( prhs[ 2 ] );
+		if( !mxMakeArrayComplex( input_conversion ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:ConversionFailed", "Could not convert real mxArray input_conversion to complex, preserving real data!" );
+
 		// extract input matrix
-		input_complex = mxGetComplexDoubles( prhs[ 2 ] );
+		input_complex = mxGetComplexDoubles( input_conversion );
 	}
 	else
 	{
-// TODO: add zero imaginary part
-		input_complex = (mxComplexDouble*) mxGetDoubles( prhs[ 2 ] );
-		mexErrMsgIdAndTxt( "combined_quick_gpu:NoNumericMatrix", "u_M must be a numeric matrix!" );
+		// extract input matrix
+		input_complex = mxGetComplexDoubles( prhs[ 2 ] );
 	}
 
 	// number of objects

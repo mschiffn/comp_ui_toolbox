@@ -178,10 +178,10 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
                 u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, [ intervals_t{ index_target }( index_selected_tx, : ).lb ], [ intervals_t{ index_target }( index_selected_tx, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements_rx ), options{ index_data }( index_target ).setting_window );
 
                 % illustrate cut out
-%                 figure(998);
-%                 imagesc( options{ index_data }( index_target ).indices_elements_rx, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, options{ index_data }( index_target ).indices_elements_rx ) ), 20 ), [ -60, 0 ] );
-%                 line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
-%                 line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+                figure(998);
+                imagesc( options{ index_data }( index_target ).indices_elements_rx, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, options{ index_data }( index_target ).indices_elements_rx ) ), 20 ), [ -60, 0 ] );
+                line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+                line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
 
                 %----------------------------------------------------------
                 % b) compute inter-element lags

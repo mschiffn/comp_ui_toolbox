@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-05-27
+% modified: 2019-12-16
 %
-classdef orthonormal_linear_transform < linear_transforms.invertible_linear_transform
+classdef (Abstract) orthonormal_linear_transform < linear_transforms.invertible_linear_transform
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -37,4 +37,4 @@ classdef orthonormal_linear_transform < linear_transforms.invertible_linear_tran
 
     end % methods
 
-end % classdef orthonormal_linear_transform < linear_transforms.invertible_linear_transform
+end % classdef (Abstract) orthonormal_linear_transform < linear_transforms.invertible_linear_transform

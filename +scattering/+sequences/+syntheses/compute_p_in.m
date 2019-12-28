@@ -91,8 +91,8 @@ function fields = compute_p_in( sequence, varargin )
                 indices_occupied_act = sequence.setup.indices_grid_FOV_shift( :, index_element );
 
                 % extract current frequencies from unique frequencies
-                h_tx_unique = double( sequence.h_ref.samples( indices_f_to_unique_act, indices_occupied_act ) );
-%                 h_tx_unique = double( sequence.h_ref_aa.samples( indices_f_to_unique_act, indices_occupied_act ) );
+%                 h_tx_unique = double( sequence.h_ref.samples( indices_f_to_unique_act, indices_occupied_act ) );
+                h_tx_unique = double( sequence.h_ref_aa.samples( indices_f_to_unique_act, indices_occupied_act ) );
 
             else
 

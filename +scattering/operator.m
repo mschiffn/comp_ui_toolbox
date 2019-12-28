@@ -234,7 +234,7 @@ classdef (Abstract) operator
                         % set indices of selected sequential pulse-echo measurements
                         operators( index_object ).indices_measurement_sel = operators( index_object ).options.momentary.sequence.indices;
 
-                    end
+                    end % if isa( operators( index_object ).options.momentary.sequence, 'scattering.options.sequence_full' )
 
                 end % if ~isequal( operators( index_object ).options.momentary.sequence, options_old( index_object ).momentary.sequence )
 

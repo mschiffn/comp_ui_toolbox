@@ -4,7 +4,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 %
 % author: Martin F. Schiffner
 % date: 2015-06-01
-% modified: 2019-09-18
+% modified: 2019-12-12
 %
 
 	% print status
@@ -30,14 +30,16 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 	% ensure cell array for options
 	if ~iscell( options )
         options = { options };
-	end
+    end
 
 	% ensure nonempty LTs
 	if nargin >= 4 && ~isempty( varargin{ 1 } )
         LTs = varargin{ 1 };
     else
-        % empty linear_transform is identity
         LTs = cell( size( operators_born ) );
+        for index_operator = 1:numel( operators_born )
+            LTs{ index_operator } = { linear_transforms.identity( operators_born( index_operator ).sequence.size( 2 ) ) };
+        end
     end
 
 	% ensure cell array for LTs
@@ -120,6 +122,8 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                 error( errorStruct );
             end
 
+% ensure class tgc.curve
+
             % multiple operators_born_config / single LTs{ index_operator }{ index_transform }
             if ~isscalar( operators_born_config ) && isscalar( LTs{ index_operator }{ index_transform } )
                 LTs{ index_operator }{ index_transform } = repmat( LTs{ index_operator }{ index_transform }, size( operators_born_config ) );
@@ -171,9 +175,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                 %----------------------------------------------------------
                 % B) normalize mixed voltage signals
                 %----------------------------------------------------------
-                u_M_vect = return_vector( u_M{ index_operator }{ index_config } );
-                u_M_vect_norm = norm( u_M_vect );
-                u_M_vect_normed = u_M_vect / u_M_vect_norm;
+%                 u_M_vect = return_vector( u_M{ index_operator }{ index_config } );
+%                 u_M_vect_norm = norm( u_M_vect );
+%                 u_M_vect_normed = u_M_vect / u_M_vect_norm;
 
                 %----------------------------------------------------------
                 % C) process optimization options
@@ -190,42 +194,25 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                     %------------------------------------------------------
                     % i.) apply normalization settings
                     %------------------------------------------------------
-                    if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options.normalization_off' )
-
-                        %--------------------------------------------------
-                        % a) complete normalization w/o threshold
-                        %--------------------------------------------------
-                        % copy linear transform
-                        LT_act = LTs{ index_operator }{ index_transform }( index_config );
-
-                    elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options.normalization_threshold' )
-
-                        %--------------------------------------------------
-                        % b) apply threshold to inverse weighting matrix
-                        %--------------------------------------------------
-                        try
-                            LT_act = threshold( LTs{ index_operator }{ index_transform }( index_config ), options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization.threshold );
-                        catch
-                            errorStruct.message = sprintf( 'Could not apply threshold to LTs{ %d }{ %d }( %d )!', index_operator, index_transform, index_config );
-                            errorStruct.identifier = 'lq_minimization:ThresholdError';
-                            error( errorStruct );
-                        end
-
-                    else
-
-                        %--------------------------------------------------
-                        % c) unknown normalization settings
-                        %--------------------------------------------------
-                        errorStruct.message = sprintf( 'Class of options{ %d }{ %d }{ %d }( %d ).normalization is unknown!', index_operator, index_transform, index_config, index_options );
-                        errorStruct.identifier = 'lq_minimization:UnknownOptionsClass';
-                        error( errorStruct );
-
-                    end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization, 'optimization.options.normalization_off' )
+                    LT_act = normalize( LTs{ index_operator }{ index_transform }( index_config ), options{ index_operator }{ index_transform }{ index_config }( index_options ).normalization );
 
                     %------------------------------------------------------
-                    % ii.) define anonymous function for sensing matrix
+                    % ii.) time gain compensation (TGC)
                     %------------------------------------------------------
-                    op_A_bar = @( x, mode ) combined_quick( operators_born_config( index_config ), x, mode, LT_act );
+                    LT_tgc = get_LTs_tgc( operators_born_config( index_config ), options{ index_operator }{ index_transform }{ index_config }( index_options ).tgc );
+
+                    %------------------------------------------------------
+                    % iii.) apply TGC and normalize mixed voltage signals
+                    %------------------------------------------------------
+                    u_M_vect = return_vector( u_M{ index_operator }{ index_config } );
+                    u_M_vect_tgc = forward_transform( LT_tgc, u_M_vect );
+                    u_M_vect_tgc_norm = norm( u_M_vect_tgc );
+                    u_M_vect_tgc_normed = u_M_vect_tgc / u_M_vect_tgc_norm;
+
+                    %------------------------------------------------------
+                    % iii.) define anonymous function for sensing matrix
+                    %------------------------------------------------------
+                    op_A_bar = @( x, mode ) combined_quick( operators_born_config( index_config ), mode, x, LT_act, LT_tgc );
 
                     %------------------------------------------------------
                     % iii.) execute algorithm
@@ -273,9 +260,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 
                         % call SPGL1
                         [ theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, ...
-                        u_M_vect_normed_res, ~, ...
+                        u_M_vect_tgc_normed_res, ~, ...
                         info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
-                        = spgl1( op_A_bar, u_M_vect_normed, tau, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.rel_RMSE, x_0, spgl_opts );
+                        = spgl1( op_A_bar, u_M_vect_tgc_normed, tau, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.rel_RMSE, x_0, spgl_opts );
 
                     elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_omp' )
 
@@ -301,9 +288,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         % call OMP
 % TODO: start vector x_0, atoms
                         [ theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, ...
-                          u_M_vect_normed_res, ...
+                          u_M_vect_tgc_normed_res, ...
                           info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
-                        = optimization.omp( op_A_bar, u_M_vect_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
+                        = optimization.omp( op_A_bar, u_M_vect_tgc_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
 
                     elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_cosamp' )
 
@@ -311,9 +298,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                         % c) CoSaMP: l0-minimization (nonconvex)
                         %--------------------------------------------------
                         [ theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, ...
-                          u_M_vect_normed_res, ...
+                          u_M_vect_tgc_normed_res, ...
                           info{ index_operator }{ index_transform }{ index_config }{ index_options } ] ...
-                        = optimization.cosamp( op_A_bar, u_M_vect_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
+                        = optimization.cosamp( op_A_bar, u_M_vect_tgc_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
 
                     else
 
@@ -327,15 +314,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                     end % if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_spgl1' )
 
                     %------------------------------------------------------
-                    % iv.) reshape residual mixed RF voltage signals
+                    % iv.) format residual mixed RF voltage signals
                     %------------------------------------------------------
-                    axes_f = reshape( [ u_M{ index_operator }{ index_config }.axis ], size( u_M{ index_operator }{ index_config } ) );
-                    [ N_samples_f, N_signals ] = cellfun( @( x ) size( x ), reshape( { u_M{ index_operator }{ index_config }.samples }, size( u_M{ index_operator }{ index_config } ) ) );
-                    u_M_vect_res = mat2cell( u_M_vect_normed_res * u_M_vect_norm, N_samples_f .* N_signals, 1 );
-                    for index_matrix = 1:numel( u_M{ index_operator }{ index_config } )
-                        u_M_vect_res{ index_matrix } = reshape( u_M_vect_res{ index_matrix }, [ N_samples_f( index_matrix ), N_signals( index_matrix ) ] );
-                    end
-                    u_M_res{ index_operator }{ index_transform }{ index_config }{ index_options } = discretizations.signal_matrix( axes_f, u_M_vect_res );
+                    u_M_res{ index_operator }{ index_transform }{ index_config }{ index_options } = format_voltages( operators_born_config( index_config ), u_M_vect_tgc_normed_res * u_M_vect_tgc_norm );
 
                     %------------------------------------------------------
                     % v.) optional reweighting (Foucart's algorithm, nonconvex)
@@ -365,16 +346,16 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                             LT_act_n = linear_transforms.composition( linear_transforms.weighting( weights_act ), LT_act );
 
                             % define anonymous function for reweighted sensing matrix
-                            op_A_bar_n = @( x, mode ) combined_quick( operators_born_config( index_config ), x, mode, LT_act_n );
+                            op_A_bar_n = @( x, mode ) combined_quick( operators_born_config( index_config ), mode, x, LT_act_n, LT_tgc );
 
                             % solve reweighted problem
                             if isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_spgl1' )
 
-                                [ temp, ~, ~, info_reweighting ] = spgl1( op_A_bar_n, u_M_vect_normed, [], options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.rel_RMSE, [], spgl_opts );
+                                [ temp, ~, ~, info_reweighting ] = spgl1( op_A_bar_n, u_M_vect_tgc_normed, [], options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm.rel_RMSE, [], spgl_opts );
 
                             elseif isa( options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm, 'optimization.options.algorithm_omp' )
 
-                                [ temp, ~, info_reweighting ] = optimization.omp( op_A_bar_n, u_M_vect_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
+                                [ temp, ~, info_reweighting ] = optimization.omp( op_A_bar_n, u_M_vect_tgc_normed, options{ index_operator }{ index_transform }{ index_config }( index_options ).algorithm );
 
                             else
 
@@ -401,7 +382,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                     % vi.) invert normalization and apply adjoint linear transform
                     %------------------------------------------------------
                     gamma_recon{ index_operator }{ index_transform }{ index_config }{ index_options } ...
-                    = operator_transform( LT_act, theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, 2 ) * u_M_vect_norm;
+                    = operator_transform( LT_act, theta_recon_normed{ index_operator }{ index_transform }{ index_config }{ index_options }, 2 ) * u_M_vect_tgc_norm;
 
                     %------------------------------------------------------
                     % save results to temporary file

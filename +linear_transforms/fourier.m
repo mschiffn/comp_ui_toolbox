@@ -10,11 +10,13 @@ classdef fourier < linear_transforms.orthonormal_linear_transform
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties ( SetAccess = private )
+	properties (SetAccess = private)
 
         % independent properties
-        N_dimensions
-        N_points_axis
+        N_points_axis ( 1, : ) double { mustBePositive, mustBeInteger, mustBeNonempty } = [ 512, 512 ]
+
+        % dependent properties
+        N_dimensions ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 2
         N_points_sqrt
 
     end % properties
@@ -96,6 +98,8 @@ classdef fourier < linear_transforms.orthonormal_linear_transform
                     error( errorStruct );
                 end
 
+% TODO: check compatibility  && isequal( operator_born.discretization.spatial.FOV.shape.grid.N_points_axis, varargin{ 1 }.N_lattice )
+
                 % number of vectors to transform
                 N_signals = size( x{ index_object }, 2 );
 
@@ -163,7 +167,7 @@ classdef fourier < linear_transforms.orthonormal_linear_transform
                 % ensure numeric matrix
                 if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
                     errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
+                    errorStruct.identifier = 'adjoint_transform:NoNumericMatrix';
                     error( errorStruct );
                 end
 

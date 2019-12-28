@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2019-11-25
+% modified: 2019-12-26
 %
 classdef signal_matrix
 
@@ -175,7 +175,7 @@ classdef signal_matrix
             % ensure class math.interval
             if ~isa( intervals_f, 'math.interval' )
                 errorStruct.message = 'intervals_f must be math.interval!';
-                errorStruct.identifier = 'DFT:NoTimes';
+                errorStruct.identifier = 'DFT:NoIntervals';
                 error( errorStruct );
             end
 
@@ -504,6 +504,116 @@ classdef signal_matrix
         end % function signal_matrices = interpolate( signal_matrices, factors_interp )
 
         %------------------------------------------------------------------
+        % apply time gain compensation curves
+        %------------------------------------------------------------------
+        function signal_matrices = apply_tgc( signal_matrices, TGCs )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.signal_matrix for signal_matrices
+            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+                errorStruct.identifier = 'apply_tgc:NoSignalMatrices';
+                error( errorStruct );
+            end
+
+            % ensure class tgc.curve for TGCs
+            if ~isa( TGCs, 'tgc.curve' )
+                errorStruct.message = 'TGCs must be tgc.curve!';
+                errorStruct.identifier = 'apply_tgc:NoTGC';
+                error( errorStruct );
+            end
+
+            % multiple signal_matrices / single TGCs
+            if ~isscalar( signal_matrices ) && isscalar( TGCs )
+                TGCs = repmat( TGCs, size( signal_matrices ) );
+            end
+
+            % single signal_matrices / multiple TGCs
+            if isscalar( signal_matrices ) && ~isscalar( TGCs )
+                signal_matrices = repmat( signal_matrices, size( TGCs ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( signal_matrices, TGCs );
+
+            %--------------------------------------------------------------
+            % 2.) apply time gain compensation curves
+            %--------------------------------------------------------------
+            % extract axes
+            axes = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
+
+            % sample time gain compensation curves
+            samples_tgc = sample_curve( TGCs, axes );
+
+            % ensure cell array for samples_tgc
+            if ~iscell( samples_tgc )
+                samples_tgc = { samples_tgc };
+            end
+
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
+
+                % apply TGC curve
+                signal_matrices( index_object ).samples = signal_matrices( index_object ).samples .* samples_tgc{ index_object };
+
+            end % for index_object = 1:numel( signal_matrices )
+
+        end % function signal_matrices = apply_tgc( signal_matrices, TGCs )
+
+        %------------------------------------------------------------------
+        % estimate exponential decays
+        %------------------------------------------------------------------
+        function [ exponents, factors ] = estimate_decay( signal_matrices )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.signal_matrix for signal_matrices
+            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+                errorStruct.identifier = 'estimate_decay:NoSignalMatrices';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) apply time gain compensation curves
+            %--------------------------------------------------------------
+            % specify cell arrays
+            exponents = cell( size( signal_matrices ) );
+            factors = cell( size( signal_matrices ) );
+
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
+
+                % matrix
+                X = [ ones( abs( signal_matrices( index_object ).axis ), 1 ), double( signal_matrices( index_object ).axis.members ) ];
+
+                % observations
+                Y = 20 * log10( double( abs( hilbert( signal_matrices( index_object ).samples ) ) ) );
+
+                % detect useful support
+                indicator = mean( Y, 2 ) >= 0;
+
+                % least-squares estimate
+                theta = X( indicator, : ) \ Y( indicator, : );
+
+                % extract parameters
+                exponents{ index_object } = - log( 10 ) * physical_values.hertz( theta( 2, : ) ) / 20;
+                factors{ index_object } = exp( log( 10 ) * theta( 1, : ) / 20 );
+
+            end % for index_object = 1:numel( signal_matrices )
+
+            % avoid cell arrays for single signal_matrices
+            if isscalar( signal_matrices )
+                exponents = exponents{ 1 };
+                factors = factors{ 1 };
+            end
+
+        end % function [ exponents, factors ] = estimate_decay( signal_matrices )
+
+        %------------------------------------------------------------------
         % merge compatible signal matrices
         %------------------------------------------------------------------
         function signal_matrix = merge( signal_matrices )
@@ -730,13 +840,13 @@ classdef signal_matrix
         %------------------------------------------------------------------
 % TODO: cross-correlation (overload xcorr method)
         %------------------------------------------------------------------
-        function varargout = xcorr( varargin )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            
-        end
+%         function varargout = xcorr( varargin )
+% 
+%             %--------------------------------------------------------------
+%             % 1.) check arguments
+%             %--------------------------------------------------------------
+%             
+%         end
 
         %------------------------------------------------------------------
         % subsample
@@ -933,7 +1043,7 @@ classdef signal_matrix
             end
 
             % ensure equal subclasses of physical_values.physical_quantity
-            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', signal_matrices.samples );
+%             auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', signal_matrices.samples );
 
             %--------------------------------------------------------------
             % 2.) create and return vector

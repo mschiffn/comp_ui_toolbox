@@ -150,3 +150,88 @@ error_fwd_inv_mean	= mean( error_fwd_inv, 2 ) * 1e2;
 error_adj_fwd_mean	= mean( error_inv_fwd, 2 ) * 1e2;
 error_adj_mean      = mean( error_adj, 2 );
 norms_cols_mean     = mean( norms_cols, 2 );
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% test convolution
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%--------------------------------------------------------------------------
+% 0.) parameters
+%--------------------------------------------------------------------------
+N_signals = 128;
+T_s = physical_values.second( 1 / 40e6 );
+N_samples = 3200;
+N_samples_shift = 78;
+axis_t = math.sequence_increasing_regular( N_samples_shift, N_samples_shift + N_samples - 1, T_s );
+f_0 = physical_values.hertz( 3e6 );
+
+%--------------------------------------------------------------------------
+% 1.) create bandpass signal
+%--------------------------------------------------------------------------
+samples_BP_tilde = sin( 2 * pi * f_0 * ( axis_t.members - N_samples_shift * T_s ) );
+signal_BP_tilde = discretizations.signal_matrix( axis_t, repmat( samples_BP_tilde, [ 1, N_signals ] ) );
+
+%--------------------------------------------------------------------------
+% 2.) create time-dependent variable gain
+%--------------------------------------------------------------------------
+TGC_curve = tgc.exponential( math.interval_quantized( axis_t.q_lb, axis_t.q_ub + 1, axis_t.delta ), physical_values.hertz( 2e4 ) );
+
+% sample TGC curve
+samples_gain_tilde = sample_curve( TGC_curve, axis_t );
+signal_gain_tilde = discretizations.signal( axis_t, samples_gain_tilde );
+
+%--------------------------------------------------------------------------
+% 3.) apply TGC in the time domain
+%--------------------------------------------------------------------------
+signal_BP_tgc_tilde = signal_BP_tilde .* signal_gain_tilde;
+
+%--------------------------------------------------------------------------
+% 4.) apply TGC in the frequency domain (convolution)
+%--------------------------------------------------------------------------
+% Fourier coefficients (numeric)
+signal_BP = fourier_coefficients( signal_BP_tilde );
+signal_gain = fourier_coefficients( signal_gain_tilde );
+
+% Fourier coefficients (analytic)
+TGC_curve_coef = fourier_coefficients( TGC_curve, 10 * abs( axis_t ) * T_s, -60 );
+M_kernel = abs( TGC_curve_coef.axis ) - 1;
+
+% error
+rel_RMSE_coef = norm( signal_gain.samples - TGC_curve_coef.samples ) / norm( TGC_curve_coef.samples );
+
+% define convolution
+kernel = [ conj( TGC_curve_coef.samples( end:-1:2 ) ); TGC_curve_coef.samples ];
+LT_convolution = linear_transforms.convolution( kernel, abs( signal_BP.axis ) );
+
+% apply convolution
+[ samples_BP_tgc_conv_dft, samples_BP_tgc_conv_mat ] = forward_transform( LT_convolution, signal_BP.samples );
+
+% apply adjoint convolution
+[ samples_BP_tgc_conv_adj_dft, samples_BP_tgc_conv_adj_mat ] = adjoint_transform( LT_convolution, samples_BP_tgc_conv_dft );
+
+% errors
+rel_RMSE_fwd = norm( samples_BP_tgc_conv_dft( : ) - samples_BP_tgc_conv_mat( : ) ) / norm( samples_BP_tgc_conv_mat( : ) );
+rel_RMSE_adj = norm( samples_BP_tgc_conv_adj_dft( : ) - samples_BP_tgc_conv_adj_mat( : ) ) / norm( samples_BP_tgc_conv_adj_mat( : ) );
+
+% create signal matrix
+signal_BP_tgc_conv_dft = discretizations.signal_matrix( signal_BP.axis, samples_BP_tgc_conv_dft );
+
+% time-domain signals
+signal_BP_tgc_conv_dft_tilde = signal( signal_BP_tgc_conv_dft, N_samples_shift, T_s );
+
+% relative RMSEs
+rel_RMSE_dft = norm( signal_BP_tgc_conv_dft_tilde.samples - signal_BP_tgc_tilde.samples ) / norm( signal_BP_tgc_tilde.samples );
+
+figure( 1 );
+plot( double( signal_BP_tgc_conv_dft_tilde.axis.members ), signal_BP_tgc_conv_dft_tilde.samples, signal_BP_tgc_tilde.axis.members, signal_BP_tgc_tilde.samples );
+title( sprintf( 'rel. RMSE = %.2f %%', rel_RMSE_dft * 1e2 ) );
+
+%--------------------------------------------------------------------------
+% b) test for adjointness
+%--------------------------------------------------------------------------
+% specify test vectors
+test_in = randn( LT_convolution.N_points, 1 ) + 1j * randn( LT_convolution.N_points, 1 );
+test_out = randn( LT_convolution.N_coefficients, 1 ) + 1j * randn( LT_convolution.N_coefficients, 1 );
+
+% adjointness must be close to zero
+adjointness = ( test_out' * forward_transform( LT_convolution, test_in ) - adjoint_transform( LT_convolution, test_out )' * test_in ) / ( test_out' * forward_transform( LT_convolution, test_in ) );
