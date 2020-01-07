@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2019-12-26
+% modified: 2020-01-06
 %
 classdef signal_matrix
 
@@ -518,9 +518,9 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % ensure class tgc.curve for TGCs
-            if ~isa( TGCs, 'tgc.curve' )
-                errorStruct.message = 'TGCs must be tgc.curve!';
+            % ensure class regularization.tgc.curve for TGCs
+            if ~isa( TGCs, 'regularization.tgc.curve' )
+                errorStruct.message = 'TGCs must be regularization.tgc.curve!';
                 errorStruct.identifier = 'apply_tgc:NoTGC';
                 error( errorStruct );
             end

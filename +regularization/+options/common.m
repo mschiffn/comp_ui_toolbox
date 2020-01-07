@@ -1,11 +1,11 @@
 %
-% superclass for all optimization options
+% superclass for all common regularization options
 %
 % author: Martin F. Schiffner
-% date: 2019-05-29
-% modified: 2019-12-16
+% date: 2019-12-28
+% modified: 2020-01-03
 %
-classdef options
+classdef common
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -13,11 +13,10 @@ classdef options
 	properties (SetAccess = private)
 
         % independent properties
-        tgc ( 1, 1 ) optimization.options.tgc { mustBeNonempty } = optimization.options.tgc_off                                          % TGC options
-        normalization ( 1, 1 ) optimization.options.normalization { mustBeNonempty } = optimization.options.normalization_threshold( 1 ) % normalization options
-        algorithm ( 1, 1 ) optimization.options.algorithm { mustBeNonempty } = optimization.options.algorithm_spgl1( 0.3, 1e3, 1 )       % algorithm options
-        reweighting ( 1, 1 ) optimization.options.reweighting { mustBeNonempty } = optimization.options.reweighting_off                  % reweighting options
-        warm_start ( 1, 1 ) optimization.options.warm_start { mustBeNonempty } = optimization.options.warm_start_off                     % warm start options
+        momentary ( 1, 1 ) scattering.options.momentary { mustBeNonempty } = scattering.options.momentary                       % momentary scattering options
+        tgc ( 1, 1 ) regularization.options.tgc { mustBeNonempty } = regularization.options.tgc_off                                 % TGC options
+        dictionary ( 1, 1 ) regularization.options.dictionary { mustBeNonempty } = regularization.options.dictionary_identity       % dictionary options
+        normalization ( 1, 1 ) regularization.options.normalization { mustBeNonempty } = regularization.options.normalization_off	% normalization options
 
 	end % properties
 
@@ -29,7 +28,7 @@ classdef options
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = options( varargin )
+        function objects = common( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -51,69 +50,62 @@ classdef options
             auxiliary.mustBeEqualSize( varargin{ : } );
 
             %--------------------------------------------------------------
-            % 2.) create optimization options
+            % 2.) create options
             %--------------------------------------------------------------
-            % repeat default optimization options
+            % repeat default options
             objects = repmat( objects, size( varargin{ 1 } ) );
 
-            % iterate optimization options
+            % iterate options
             for index_object = 1:numel( objects )
 
                 % iterate arguments
                 for index_arg = 1:numel( varargin )
 
-                    if isa( varargin{ index_arg }, 'optimization.options.tgc' )
+                    if isa( varargin{ index_arg }, 'scattering.options.momentary' )
 
                         %--------------------------------------------------
-                        % a) TGC options
+                        % a) momentary scattering options
+                        %--------------------------------------------------
+                        objects( index_object ).momentary = varargin{ index_arg }( index_object );
+
+                    elseif isa( varargin{ index_arg }, 'regularization.options.tgc' )
+
+                        %--------------------------------------------------
+                        % b) TGC options
                         %--------------------------------------------------
                         objects( index_object ).tgc = varargin{ index_arg }( index_object );
 
-                    elseif isa( varargin{ index_arg }, 'optimization.options.normalization' )
+                    elseif isa( varargin{ index_arg }, 'regularization.options.dictionary' )
 
                         %--------------------------------------------------
-                        % b) normalization options
+                        % c) dictionary options
+                        %--------------------------------------------------
+                        objects( index_object ).dictionary = varargin{ index_arg }( index_object );
+
+                    elseif isa( varargin{ index_arg }, 'regularization.options.normalization' )
+
+                        %--------------------------------------------------
+                        % d) normalization options
                         %--------------------------------------------------
                         objects( index_object ).normalization = varargin{ index_arg }( index_object );
-
-                    elseif isa( varargin{ index_arg }, 'optimization.options.algorithm' )
-
-                        %--------------------------------------------------
-                        % c) algorithm options
-                        %--------------------------------------------------
-                        objects( index_object ).algorithm = varargin{ index_arg }( index_object );
-
-                    elseif isa( varargin{ index_arg }, 'optimization.options.reweighting' )
-
-                        %--------------------------------------------------
-                        % d) reweighting options
-                        %--------------------------------------------------
-                        objects( index_object ).reweighting = varargin{ index_arg }( index_object );
-
-                    elseif isa( varargin{ index_arg }, 'optimization.options.warm_start' )
-
-                        %--------------------------------------------------
-                        % e) warm start options
-                        %--------------------------------------------------
-                        objects( index_object ).warm_start = varargin{ index_arg }( index_object );
 
                     else
 
                         %--------------------------------------------------
-                        % f) unknown class
+                        % e) unknown class
                         %--------------------------------------------------
                         errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
-                        errorStruct.identifier = 'options:UnknownClass';
+                        errorStruct.identifier = 'common:UnknownClass';
                         error( errorStruct );
 
-                    end % if isa( varargin{ index_arg }, 'optimization.options.tgc' )
+                    end % if isa( varargin{ index_arg }, 'scattering.options.momentary' )
 
                 end % for index_arg = 1:numel( varargin )
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = options( varargin )
+        end % function objects = common( varargin )
 
 	end % methods
 
-end % classdef options
+end % classdef common

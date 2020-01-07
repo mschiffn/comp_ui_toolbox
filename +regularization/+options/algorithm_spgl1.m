@@ -1,11 +1,11 @@
 %
-% superclass for all sequence reweighting options
+% superclass for all spectral projected gradient for l1-minimization (SPGL1) options
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2019-09-22
+% modified: 2020-01-03
 %
-classdef reweighting_sequence < optimization.options.reweighting
+classdef algorithm_spgl1 < regularization.options.algorithm
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -13,8 +13,7 @@ classdef reweighting_sequence < optimization.options.reweighting
 	properties (SetAccess = private)
 
         % independent properties
-        q ( 1, 1 ) double { mustBeNonnegative, mustBeLessThanOrEqual( q, 2 ) } = 0.5	% norm parameter
-        epsilon_n ( :, 1 ) double { mustBeNonnegative } = 1 ./ ( 1 + (1:5) )            % reweighting sequence
+        q ( 1, 1 ) double { mustBeNonnegative, mustBeLessThanOrEqual( q, 2 ) } = 1	% norm parameter
 
 	end % properties
 
@@ -26,38 +25,39 @@ classdef reweighting_sequence < optimization.options.reweighting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = reweighting_sequence( q, epsilon_n )
+        function objects = algorithm_spgl1( rel_RMSE, N_iterations_max, q )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % superclass ensures valid rel_RMSE
+            % superclass ensures valid N_iterations_max
             % property validation functions ensure valid q
 
-            % ensure cell array for epsilon_n
-            if ~iscell( epsilon_n )
-                epsilon_n = { epsilon_n };
+            % multiple rel_RMSE / single q
+            if ~isscalar( rel_RMSE ) && isscalar( q )
+                q = repmat( q, size( rel_RMSE ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( q, epsilon_n );
+            auxiliary.mustBeEqualSize( rel_RMSE, q );
 
             %--------------------------------------------------------------
-            % 2.) create sequence reweighting options
+            % 2.) create SPGL1 options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@optimization.options.reweighting( size( q ) );
+            objects@regularization.options.algorithm( rel_RMSE, N_iterations_max );
 
-            % iterate sequence reweighting options
+            % iterate SPGL1 options
             for index_object = 1:numel( objects )
 
                 % set independent properties
                 objects( index_object ).q = q( index_object );
-                objects( index_object ).epsilon_n = epsilon_n{ index_object };
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = reweighting_sequence( epsilon_n )
+        end % function objects = algorithm_spgl1( rel_RMSE, N_iterations_max, q )
 
 	end % methods
 
-end % classdef reweighting_sequence < optimization.options.reweighting
+end % classdef algorithm_spgl1 < regularization.options.algorithm

@@ -1,21 +1,21 @@
 %
-% superclass for all inactive warm start options
+% superclass for all inactive reweighting options
 %
 % author: Martin F. Schiffner
-% date: 2019-09-24
-% modified: 2019-09-24
+% date: 2019-09-17
+% modified: 2020-01-03
 %
-classdef warm_start_off < optimization.options.warm_start
+classdef reweighting_off < regularization.options.reweighting
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = warm_start_off( varargin )
+        function objects = reweighting_off( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -31,13 +31,13 @@ classdef warm_start_off < optimization.options.warm_start
             % superclass ensures nonempty positive integers
 
             %--------------------------------------------------------------
-            % 2.) create inactive warm start options
+            % 2.) create inactive normalization options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@optimization.options.warm_start( size );
+            objects@regularization.options.reweighting( size );
 
-        end % function objects = warm_start_off( size )
+        end % function objects = reweighting_off( varargin )
 
 	end % methods
 
-end % classdef warm_start_off < optimization.options.warm_start
+end % classdef reweighting_off < regularization.options.reweighting

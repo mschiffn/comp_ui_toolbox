@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2019-09-22
+% modified: 2020-01-03
 %
-classdef algorithm_omp < optimization.options.algorithm
+classdef algorithm_omp < regularization.options.algorithm
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -27,10 +27,10 @@ classdef algorithm_omp < optimization.options.algorithm
             % 2.) create OMP options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@optimization.options.algorithm( rel_RMSE, N_iterations_max );
+            objects@regularization.options.algorithm( rel_RMSE, N_iterations_max );
 
         end % function objects = algorithm_omp( rel_RMSE, N_iterations_max )
 
 	end % methods
 
-end % classdef algorithm_omp < optimization.options.algorithm
+end % classdef algorithm_omp < regularization.options.algorithm

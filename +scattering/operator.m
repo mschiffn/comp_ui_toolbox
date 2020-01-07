@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-08-23
+% modified: 2019-12-30
 %
 classdef (Abstract) operator
 
@@ -344,5 +344,22 @@ classdef (Abstract) operator
         end % function [ theta_hat, E_M, adjointness ] = tpsf( operators, indices, varargin )
 
     end % methods
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (abstract)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract)
+
+        %------------------------------------------------------------------
+        % forward scattering
+        %------------------------------------------------------------------
+        u_M = forward( operators, fluctuations, varargin )
+
+        %------------------------------------------------------------------
+        % adjoint scattering
+        %------------------------------------------------------------------
+        theta_hat = adjoint( operators, u_M, varargin )
+
+    end % methods (Abstract)
 
 end % classdef (Abstract) operator

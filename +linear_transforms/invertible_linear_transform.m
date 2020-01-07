@@ -28,6 +28,7 @@ classdef (Abstract) invertible_linear_transform < linear_transforms.linear_trans
         %------------------------------------------------------------------
         % inverse transform
         %------------------------------------------------------------------
+% TODO: make method abstract
         function y = inverse_transform( LTs, x )
 
         end % function y = inverse_transform( LTs, x )

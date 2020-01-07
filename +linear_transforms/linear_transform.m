@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2019-12-18
+% modified: 2020-01-03
 %
 classdef (Abstract) linear_transform
 
@@ -136,9 +136,9 @@ classdef (Abstract) linear_transform
                 error( errorStruct );
             end
 
-            % ensure class optimization.options.normalization
-            if ~isa( options, 'optimization.options.normalization' )
-                errorStruct.message = 'options must be optimization.options.normalization!';
+            % ensure class regularization.options.normalization
+            if ~isa( options, 'regularization.options.normalization' )
+                errorStruct.message = 'options must be regularization.options.normalization!';
                 errorStruct.identifier = 'normalize:NoNormalizationOptions';
                 error( errorStruct );
             end
@@ -153,14 +153,14 @@ classdef (Abstract) linear_transform
             % iterate linear transforms
             for index_object = 1:numel( LTs )
 
-                if isa( options( index_object ), 'optimization.options.normalization_off' )
+                if isa( options( index_object ), 'regularization.options.normalization_off' )
 
                     %------------------------------------------------------
                     % a) no normalization
                     %------------------------------------------------------
                     % do not modify linear transform
 
-                elseif isa( options( index_object ), 'optimization.options.normalization_threshold' )
+                elseif isa( options( index_object ), 'regularization.options.normalization_threshold' )
 
                     %------------------------------------------------------
                     % b) apply threshold to inverse weighting matrix
@@ -182,7 +182,7 @@ classdef (Abstract) linear_transform
                     errorStruct.identifier = 'normalize:UnknownOptionsClass';
                     error( errorStruct );
 
-                end % if isa( options( index_object ), 'optimization.options.normalization_off' )
+                end % if isa( options( index_object ), 'regularization.options.normalization_off' )
 
             end % for index_object = 1:numel( LTs )
 

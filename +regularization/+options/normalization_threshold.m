@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-10
-% modified: 2019-09-22
+% modified: 2020-01-03
 %
-classdef normalization_threshold < optimization.options.normalization
+classdef normalization_threshold < regularization.options.normalization
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -36,7 +36,7 @@ classdef normalization_threshold < optimization.options.normalization
             % 2.) create inactive normalization options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@optimization.options.normalization( size( thresholds ) );
+            objects@regularization.options.normalization( size( thresholds ) );
 
             % iterate threshold normalization options
             for index_object = 1:numel( objects )
@@ -50,4 +50,4 @@ classdef normalization_threshold < optimization.options.normalization
 
 	end % methods
 
-end % classdef normalization_threshold < optimization.options.normalization
+end % classdef normalization_threshold < regularization.options.normalization

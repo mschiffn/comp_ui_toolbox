@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-12-17
+% modified: 2020-01-06
 %
 classdef concatenate_diagonal < linear_transforms.linear_transform
 
@@ -24,7 +24,7 @@ classdef concatenate_diagonal < linear_transforms.linear_transform
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -34,14 +34,20 @@ classdef concatenate_diagonal < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class linear_transforms.linear_transform
-            for index_arg = 1:numel( varargin )
-                if ~isa( varargin{ index_arg }, 'linear_transforms.linear_transform' )
-                    errorStruct.message = sprintf( 'varargin{ %d } must be linear_transforms.linear_transform!', index_arg );
-                    errorStruct.identifier = 'concatenate_diagonal:NoLinearTransforms';
-                    error( errorStruct );
-                end
-            end % for index_arg = 1:numel( varargin )
+            % ensure sufficient number of arguments
+            if nargin < 2
+                errorStruct.message = 'A diagonal concatenation requires at least two linear transforms!';
+                errorStruct.identifier = 'concatenate_diagonal:InsufficientNumberOfLinearTransforms';
+                error( errorStruct );
+            end
+
+            % ensure classes linear_transforms.linear_transform
+            indicator = cellfun( @( x ) ~isa( x, 'linear_transforms.linear_transform' ), varargin );
+            if any( indicator( : ) )
+                errorStruct.message = 'All arguments must be linear_transforms.linear_transform!';
+                errorStruct.identifier = 'concatenate_diagonal:NoLinearTransforms';
+                error( errorStruct );
+            end
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( varargin{ : } );
@@ -49,21 +55,31 @@ classdef concatenate_diagonal < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 2.) create diagonal concatenations
             %--------------------------------------------------------------
-            % number of concatenated linear transforms
-            N_transforms = nargin;
+% TODO: detect weightings and identities
+            % detect diagonal concatenations
+            indicator_diagonal = cellfun( @( x ) isa( x, 'linear_transforms.concatenate_diagonal' ), varargin );
+
+            % numbers of concatenated linear transforms
+            N_transforms = ones( 1, numel( varargin{ 1 } ), nargin );
+            for index_arg = 1:nargin
+                if indicator_diagonal( index_arg )
+                    N_transforms( 1, :, index_arg ) = [ varargin{ index_arg }.N_transforms ];
+                end
+            end
+            N_transforms_sum = sum( N_transforms, 3 );
 
             % specify cell arrays
-            N_coefficients = cell( N_transforms, 1 );
-            N_points = cell( N_transforms, 1 );
+            N_coefficients = cell( nargin, 1 );
+            N_points = cell( nargin, 1 );
 
             % iterate arguments
-            for index_arg = 1:N_transforms
+            for index_arg = 1:nargin
 
                 % extract numbers of coefficients and points
                 N_coefficients{ index_arg } = reshape( [ varargin{ index_arg }.N_coefficients ], [ 1, numel( varargin{ index_arg } ) ] );
                 N_points{ index_arg } = reshape( [ varargin{ index_arg }.N_points ], [ 1, numel( varargin{ index_arg } ) ] );
 
-            end % for index_arg = 1:N_transforms
+            end % for index_arg = 1:nargin
 
             % concatenate vertically
             N_coefficients = cat( 1, N_coefficients{ : } );
@@ -72,18 +88,29 @@ classdef concatenate_diagonal < linear_transforms.linear_transform
             % constructor of superclass
             objects@linear_transforms.linear_transform( sum( N_coefficients, 1 ), sum( N_points, 1 ) );
 
-            % iterate vertical concatenations
+            % reshape diagonal concatenations
+            objects = reshape( objects, size( varargin{ 1 } ) );
+
+            % iterate diagonal concatenations
             for index_object = 1:numel( objects )
 
                 % set independent properties
-                objects( index_object ).transforms = cell( N_transforms, 1 );
-                for index_arg = 1:N_transforms
-                    objects( index_object ).transforms{ index_arg } = varargin{ index_arg }( index_object );
-                end
+                indices = mat2cell( 1:N_transforms_sum( index_object ), 1, N_transforms( 1, index_object, : ) );
+                objects( index_object ).transforms = cell( N_transforms_sum( index_object ), 1 );
+                objects( index_object ).sizes = ones( N_transforms_sum( index_object ), 2 );
+                for index_arg = 1:nargin
+
+                    if indicator_diagonal( index_arg )
+                        objects( index_object ).transforms( indices{ index_arg } ) = varargin{ index_arg }( index_object ).transforms;
+                    else
+                        objects( index_object ).transforms{ indices{ index_arg } } = varargin{ index_arg }( index_object );
+                    end
+
+                end % for index_arg = 1:nargin
 
                 % set dependent properties
-                objects( index_object ).N_transforms = N_transforms;
-                objects( index_object ).sizes = [ N_coefficients( :, index_object ), N_points( :, index_object ) ];
+                objects( index_object ).N_transforms = N_transforms_sum( index_object );
+                objects( index_object ).sizes = [ cellfun( @( x ) x.N_coefficients, objects( index_object ).transforms ), cellfun( @( x ) x.N_points, objects( index_object ).transforms ) ];
 
             end % for index_object = 1:numel( objects )
 

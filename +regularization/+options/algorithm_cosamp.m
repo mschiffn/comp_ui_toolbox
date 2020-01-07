@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-22
-% modified: 2019-09-22
+% modified: 2020-01-03
 %
-classdef algorithm_cosamp < optimization.options.algorithm
+classdef algorithm_cosamp < regularization.options.algorithm
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -43,7 +43,7 @@ classdef algorithm_cosamp < optimization.options.algorithm
             % 2.) create CoSaMP options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@optimization.options.algorithm( rel_RMSE, N_iterations_max );
+            objects@regularization.options.algorithm( rel_RMSE, N_iterations_max );
 
             % iterate CoSaMP options
             for index_object = 1:numel( objects )
@@ -57,4 +57,4 @@ classdef algorithm_cosamp < optimization.options.algorithm
 
 	end % methods
 
-end % classdef algorithm_cosamp < optimization.options.algorithm
+end % classdef algorithm_cosamp < regularization.options.algorithm

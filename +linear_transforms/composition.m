@@ -16,7 +16,7 @@ classdef composition < linear_transforms.linear_transform
         transforms
 
         % dependent properties
-        N_transforms
+        N_transforms ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 1  % number of composed linear transforms
 
     end % properties
 
@@ -33,6 +33,21 @@ classdef composition < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure classes linear_transforms.linear_transform
+            indicator = cellfun( @( x ) ~isa( x, 'linear_transforms.linear_transform' ), varargin );
+            if any( indicator( : ) )
+                errorStruct.message = 'All arguments must be linear_transforms.linear_transform!';
+                errorStruct.identifier = 'composition:NoLinearTransforms';
+                error( errorStruct );
+            end
+
+            % ensure sufficient number of arguments
+            if nargin < 2
+                errorStruct.message = 'A composition requires at least two linear transforms!';
+                errorStruct.identifier = 'composition:InsufficientNumberOfLinearTransforms';
+                error( errorStruct );
+            end
+
             % multiple varargin{ 1 } / single varargin{ index_arg }
             for index_arg = 2:nargin
                 if ~isscalar( varargin{ 1 } ) && isscalar( varargin{ index_arg } )
@@ -42,6 +57,9 @@ classdef composition < linear_transforms.linear_transform
 
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( varargin{ : } );
+
+            % detect identity transforms
+            indicator_identity = cellfun( @( x ) isa( x, 'linear_transforms.identity' ), varargin );
 
             % check individual transforms for validity and size
             N_coefficients = cell( size( varargin ) );
@@ -93,9 +111,10 @@ classdef composition < linear_transforms.linear_transform
                 for index_transform = 1:nargin
                     objects( index_object ).transforms{ index_transform } = varargin{ index_transform }( index_object );
                 end
+                objects( index_object ).transforms( indicator_identity ) = [];
 
                 % set dependent properties
-                objects( index_object ).N_transforms = nargin;
+                objects( index_object ).N_transforms = numel( objects( index_object ).transforms );
 %                 objects( index_object ).size_transforms = size;
 
             end % for index_object = 1:numel( varargin{ 1 } )

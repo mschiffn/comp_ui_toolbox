@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-12-27
+% modified: 2020-01-03
 %
 classdef operator_born < scattering.operator
 
@@ -48,7 +48,7 @@ classdef operator_born < scattering.operator
             end
 
             %--------------------------------------------------------------
-            % 2.) adjoint linear transform
+            % 2.) dictionary synthesis
             %--------------------------------------------------------------
             if nargin >= 3 && ~isempty( varargin{ 1 } )
 
@@ -88,11 +88,6 @@ classdef operator_born < scattering.operator
 
                 % apply time gain compensation
                 u_M = forward_transform( varargin{ 2 }, u_M );
-
-                % create signals or signal matrices: 12.934 s
-                % transform into the time domain:     3.646 s
-                % fourier coefficients:               4.784 s
-                % total:                             21.364 s vs 2.492 s
 
             end % if nargin >= 4 && ~isempty( varargin{ 2 } )
 
@@ -141,14 +136,16 @@ classdef operator_born < scattering.operator
             % 3.) compute adjoint fluctuations
             %--------------------------------------------------------------
             if isa( operator_born.options.momentary.gpu, 'scattering.options.gpu_off' )
-                gamma_hat = adjoint_quick_cpu( operator_born, u_M );
+                theta_hat = adjoint_quick_cpu( operator_born, u_M );
             else
-                gamma_hat = scattering.combined_quick_gpu( operator_born, 2, u_M );
+                theta_hat = scattering.combined_quick_gpu( operator_born, 2, u_M );
 %                 clear mex;
             end
 
+            temp_1 = squeeze( reshape( abs( theta_hat( :, 1 ) ), operator_born.sequence.setup.FOV.shape.grid.N_points_axis ) );
+
             %--------------------------------------------------------------
-            % 4.) forward linear transform
+            % 4.) dictionary analysis
             %--------------------------------------------------------------
             if nargin >= 3 && ~isempty( varargin{ 1 } )
 
@@ -160,18 +157,12 @@ classdef operator_born < scattering.operator
                 end
 
                 % apply forward linear transform
-                theta_hat = forward_transform( varargin{ 1 }, gamma_hat );
-
-            else
-
-                % use canonical basis
-                theta_hat = gamma_hat;
+                theta_hat = forward_transform( varargin{ 1 }, theta_hat );
 
             end % if nargin >= 3 && ~isempty( varargin{ 1 } )
 
             % illustrate
-            temp_1 = squeeze( reshape( double( abs( gamma_hat( :, 1 ) ) ), operator_born.sequence.setup.FOV.shape.grid.N_points_axis ) );
-            temp_2 = squeeze( reshape( double( abs( theta_hat( :, 1 ) ) ), operator_born.sequence.setup.FOV.shape.grid.N_points_axis ) );
+            temp_2 = squeeze( reshape( abs( theta_hat( :, 1 ) ), operator_born.sequence.setup.FOV.shape.grid.N_points_axis ) );
             figure(999);
             if ismatrix( temp_1 )
                 subplot( 1, 2, 1 );
@@ -190,8 +181,8 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % quick combined scattering
         %------------------------------------------------------------------
-        function y = combined_quick( operator_born, mode, x, varargin )
-% TODO: absorb x into varargin
+        function y = combined_quick( operator_born, mode, varargin )
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -201,6 +192,10 @@ classdef operator_born < scattering.operator
                 errorStruct.identifier = 'adjoint_quick:NoSingleOperatorBorn';
                 error( errorStruct );
             end
+
+            % ensure nonempty nonnegative integer for mode
+            mustBeNonnegative( mode );
+            mustBeInteger( mode );
 
             % functions forward_quick or adjoint_quick ensure numeric matrix for x
 
@@ -224,14 +219,14 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % b) quick forward scattering (wrapper)
                     %------------------------------------------------------
-                    y = forward_quick( operator_born, x, varargin{ : } );
+                    y = forward_quick( operator_born, varargin{ : } );
 
                 case 2
 
                     %------------------------------------------------------
                     % c) quick adjoint scattering (wrapper)
                     %------------------------------------------------------
-                    y = adjoint_quick( operator_born, x, varargin{ : } );
+                    y = adjoint_quick( operator_born, varargin{ : } );
 
                 otherwise
 
@@ -244,13 +239,13 @@ classdef operator_born < scattering.operator
 
             end % switch mode
 
-        end % function y = combined_quick( operator_born, mode, x, varargin )
+        end % function y = combined_quick( operator_born, mode, varargin )
 
         %------------------------------------------------------------------
         % forward scattering (overload forward method)
         %------------------------------------------------------------------
-        function u_M = forward( operators_born, fluctuations, varargin )
-% TODO: adapt to convention (cf. TPSF)
+        function u_M = forward( operators_born, fluctuations, options )
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -266,31 +261,28 @@ classdef operator_born < scattering.operator
                 fluctuations = { fluctuations };
             end
 
-            % ensure nonempty linear_transforms
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                linear_transforms = varargin{ 1 };
-            else
-                % empty linear_transform is identity
-                linear_transforms = cell( size( operators_born ) );
+            % ensure nonempty options
+            if isempty( options )
+                options = repmat( { regularization.options.common }, size( operators_born ) );
             end
 
-            % ensure cell array for linear_transforms
-            if ~iscell( linear_transforms )
-                linear_transforms = { linear_transforms };
+            % ensure cell array for options
+            if ~iscell( options )
+                options = { options };
             end
 
-            % overwrite properties of momentary scattering operator options
-            if nargin >= 4
-                operators_born = set_properties_momentary( operators_born, varargin{ 2:end } );
+            % multiple operators_born / single options
+            if ~isscalar( operators_born ) && isscalar( options )
+                options = repmat( options, size( operators_born ) );
             end
 
-            % multiple operators_born / single fluctuations
-            if ~isscalar( operators_born ) && isscalar( fluctuations )
-                fluctuations = repmat( fluctuations, size( operators_born ) );
+            % single operators_born / multiple options
+            if isscalar( operators_born ) && ~isscalar( options )
+                operators_born = repmat( operators_born, size( options ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, fluctuations, linear_transforms );
+            auxiliary.mustBeEqualSize( operators_born, fluctuations, options );
 
             %--------------------------------------------------------------
             % 2.) compute mixed voltage signals
@@ -299,11 +291,18 @@ classdef operator_born < scattering.operator
             u_M = cell( size( operators_born ) );
 
             % iterate scattering operators
-            for index_object = 1:numel( operators_born )
+            for index_operator = 1:numel( operators_born )
 
                 %----------------------------------------------------------
-                % a) check fluctuations and linear transform
+                % a) check arguments
                 %----------------------------------------------------------
+                % ensure class regularization.options.common
+                if ~isa( options{ index_operator }, 'regularization.options.common' )
+                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
+                    errorStruct.identifier = 'forward:NoCommonOptions';
+                    error( errorStruct );
+                end
+
                 % ensure numeric matrix
                 if ~( isnumeric( fluctuations{ index_object } ) && ismatrix( fluctuations{ index_object } ) )
                     errorStruct.message = sprintf( 'fluctuations{ %d } must be a numeric matrix!', index_object );
@@ -311,29 +310,49 @@ classdef operator_born < scattering.operator
                     error( errorStruct );
                 end
 
-                % method forward_quick ensures class linear_transforms.linear_transform
-
                 %----------------------------------------------------------
-                % b) quick forward scattering
+                % b) process options
                 %----------------------------------------------------------
-%                 profile on
-                u_M{ index_object } = forward_quick( operators_born( index_object ), fluctuations{ index_object }( : ), linear_transforms{ index_object } );
-                u_M{ index_object } = physical_values.volt( u_M{ index_object } );
-%                 profile viewer
+                % specify cell array for u_M{ index_operator }
+                u_M{ index_operator } = cell( size( options{ index_operator } ) );
 
-            end % for index_object = 1:numel( operators_born )
+                % iterate options
+                for index_options = 1:numel( options{ index_operator } )
 
-            %--------------------------------------------------------------
-            % 3.) create signals or signal matrices
-            %--------------------------------------------------------------
-            u_M = format_voltages( operators_born, u_M );
+                    %------------------------------------------------------
+                    % i.) create configuration
+                    %------------------------------------------------------
+                    [ operator_born_act, LT_tgc, LT_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
 
-        end % function u_M = forward( operators_born, fluctuations, varargin )
+                    %------------------------------------------------------
+                    % ii.) quick forward scattering
+                    %------------------------------------------------------
+                    u_M{ index_operator }{ index_options } = forward_quick( operator_born_act, fluctuations{ index_operator }, LT_act, LT_tgc );
+                    u_M{ index_object } = physical_values.volt( u_M{ index_object } );
+
+                    % create signals or signal matrices
+                    u_M{ index_operator }{ index_options } = format_voltages( operator_born_act, u_M{ index_operator }{ index_options } );
+
+                end % for index_options = 1:numel( options{ index_operator } )
+
+                % avoid cell array for single options{ index_operator }
+                if isscalar( options{ index_operator } )
+                    u_M{ index_operator } = u_M{ index_operator }{ 1 };
+                end
+
+            end % for index_operator = 1:numel( operators_born )
+
+            % avoid cell array for single operators_born
+            if isscalar( operators_born )
+                u_M = u_M{ 1 };
+            end
+
+        end % function u_M = forward( operators_born, fluctuations, options )
 
         %------------------------------------------------------------------
         % adjoint scattering (overload adjoint method)
         %------------------------------------------------------------------
-        function [ theta_hat, rel_RMSE ] = adjoint( operators_born, u_M, varargin )
+        function [ theta_hat, rel_RMSE ] = adjoint( operators_born, u_M, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -346,48 +365,18 @@ classdef operator_born < scattering.operator
             end
 
             % ensure cell array for u_M
-            if ~iscell( u_M ) || all( cellfun( @( x ) ~iscell( x ), u_M ) )
+            if ~iscell( u_M )
                 u_M = { u_M };
             end
 
-            % ensure nonempty LTs
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                LTs = varargin{ 1 };
-            else
-                LTs = cell( size( operators_born ) );
-                for index_operator = 1:numel( operators_born )
-                    LTs{ index_operator } = { linear_transforms.identity( operators_born( index_operator ).sequence.size( 2 ) ) };
-                end
-            end
-
-            % ensure cell array for LTs
-            if ~iscell( LTs ) || all( cellfun( @( x ) ~iscell( x ), LTs ) )
-                LTs = { LTs };
-            end
-
             % ensure nonempty options
-            if nargin >= 4 && ~isempty( varargin{ 2 } )
-                options = varargin{ 2 };
-            else
-                options = cell( size( operators_born ) );
-                for index_operator = 1:numel( operators_born )
-                    options{ index_operator } = { tgc.off };
-                end
+            if isempty( options )
+                options = repmat( { regularization.options.common }, size( operators_born ) );
             end
 
             % ensure cell array for options
-            if ~iscell( options ) || all( cellfun( @( x ) ~iscell( x ), options ) )
+            if ~iscell( options )
                 options = { options };
-            end
-
-            % multiple operators_born / single u_M
-            if ~isscalar( operators_born ) && isscalar( u_M )
-                u_M = repmat( u_M, size( operators_born ) );
-            end
-
-            % multiple operators_born / single LTs
-            if ~isscalar( operators_born ) && isscalar( LTs )
-                LTs = repmat( LTs, size( operators_born ) );
             end
 
             % multiple operators_born / single options
@@ -395,11 +384,16 @@ classdef operator_born < scattering.operator
                 options = repmat( options, size( operators_born ) );
             end
 
+            % single operators_born / multiple options
+            if isscalar( operators_born ) && ~isscalar( options )
+                operators_born = repmat( operators_born, size( options ) );
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, u_M, LTs, options );
+            auxiliary.mustBeEqualSize( operators_born, u_M, options );
 
             %--------------------------------------------------------------
-            % 2.) process scattering operators
+            % 2.) compute adjoint scattering
             %--------------------------------------------------------------
             % specify cell arrays
             theta_hat = cell( size( operators_born ) );
@@ -411,144 +405,75 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure cell array for LTs{ index_operator }
-                if ~iscell( LTs{ index_operator } )
-                    LTs{ index_operator } = LTs( index_operator );
+                % ensure class regularization.options.common
+                if ~isa( options{ index_operator }, 'regularization.options.common' )
+                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
+                    errorStruct.identifier = 'adjoint:NoCommonOptions';
+                    error( errorStruct );
                 end
 
-                % ensure cell array for options{ index_operator }
-                if ~iscell( options{ index_operator } )
-                    options{ index_operator } = options( index_operator );
+                % ensure class discretizations.signal_matrix
+                if ~isa( u_M{ index_operator }, 'discretizations.signal_matrix' )
+                    errorStruct.message = sprintf( 'u_M{ %d } must be discretizations.signal_matrix!', index_operator );
+                    errorStruct.identifier = 'adjoint:NoSignalMatrices';
+                    error( errorStruct );
                 end
-
-                % multiple LTs{ index_operator } / single options{ index_operator }
-                if ~isscalar( LTs{ index_operator } ) && isscalar( options{ index_operator } )
-                    options{ index_operator } = repmat( options{ index_operator }, size( LTs{ index_operator } ) );
-                end
-
-                % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( LTs{ index_operator }, options{ index_operator } );
 
                 %----------------------------------------------------------
-                % b) process linear transforms
+                % b) process options
                 %----------------------------------------------------------
                 % specify cell arrays
-                theta_hat{ index_operator } = cell( size( LTs{ index_operator } ) );
-                rel_RMSE{ index_operator } = cell( size( LTs{ index_operator } ) );
+                theta_hat{ index_operator } = cell( size( options{ index_operator } ) );
+                rel_RMSE{ index_operator } = cell( size( options{ index_operator } ) );
 
-                % iterate linear transforms
-                for index_transform = 1:numel( LTs{ index_operator } )
-
-                    %------------------------------------------------------
-                    % i.) check arguments
-                    %------------------------------------------------------
-                    % set momentary scattering operator options
-                    operators_born_config = set_properties_momentary( operators_born( index_operator ), varargin{ 3:end } );
-
-                    % ensure class linear_transforms.linear_transform
-                    if ~isa( LTs{ index_operator }{ index_transform }, 'linear_transforms.linear_transform' )
-                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
-                        errorStruct.identifier = 'adjoint:NoLinearTransforms';
-                        error( errorStruct );
-                    end
-
-                    % ensure class optimization.options.tgc
-                    
-
-                    % multiple operators_born_config / single LTs{ index_operator }{ index_transform }
-                    if ~isscalar( operators_born_config ) && isscalar( LTs{ index_operator }{ index_transform } )
-                        LTs{ index_operator }{ index_transform } = repmat( LTs{ index_operator }{ index_transform }, size( operators_born_config ) );
-                    end
-
-                    % multiple operators_born_config / single options{ index_operator }{ index_transform }
-                    if ~isscalar( operators_born_config ) && isscalar( options{ index_operator }{ index_transform } )
-                        options{ index_operator }{ index_transform } = repmat( options{ index_operator }{ index_transform }, size( operators_born_config ) );
-                    end
-
-                    % ensure equal number of dimensions and sizes
-                    auxiliary.mustBeEqualSize( operators_born_config, LTs{ index_operator }{ index_transform }, options{ index_operator }{ index_transform } );
+                % iterate options
+                for index_options = 1:numel( options{ index_operator } )
 
                     %------------------------------------------------------
-                    % ii.) process configurations
+                    % i.) create configuration
                     %------------------------------------------------------
-                    % numbers of transform coefficients
-                    N_coefficients = reshape( [ LTs{ index_operator }{ index_transform }.N_coefficients ], size( LTs{ index_operator }{ index_transform } ) );
+                    [ operator_born_act, LT_tgc, LT_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
 
-                    % ensure identical numbers of transform coefficients
-                    if any( N_coefficients( : ) ~= N_coefficients( 1 ) )
-                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must have identical numbers of transform coefficients!', index_operator, index_transform );
-                        errorStruct.identifier = 'adjoint:InvalidNumbersOfCoefficients';
-                        error( errorStruct );
-                    end
+                    %------------------------------------------------------
+                    % ii.) create mixed voltage signals
+                    %------------------------------------------------------
+                    % extract relevant mixed voltage signals
+% TODO: detect configuration changes first and avoid step if necessary
+                    u_M_act = u_M{ index_operator }( operator_born_act.indices_measurement_sel );
 
-                    % initialize adjoint coefficients w/ zeros
-                    theta_hat{ index_operator }{ index_transform } = zeros( N_coefficients( 1 ), numel( operators_born_config ) );
-                    rel_RMSE{ index_operator }{ index_transform } = zeros( 1, numel( operators_born_config ) );
+                    % apply TGC and normalize mixed voltage signals
+                    u_M_act_vect = return_vector( u_M_act );
+                    u_M_act_vect_tgc = forward_transform( LT_tgc, u_M_act_vect );
+                    u_M_act_vect_tgc_norm = norm( u_M_act_vect_tgc );
+                    u_M_act_vect_tgc_normed = u_M_act_vect_tgc / u_M_act_vect_tgc_norm;
 
-                    % iterate configurations
-                    for index_config = 1:numel( operators_born_config )
+                    %------------------------------------------------------
+                    % iii.) quick adjoint scattering
+                    %------------------------------------------------------
+                    theta_hat{ index_operator }{ index_options } = adjoint_quick( operator_born_act, u_M_act_vect_tgc_normed, LT_act, LT_tgc );
 
-                        %--------------------------------------------------
-                        % A) check mixed voltage signals
-                        %--------------------------------------------------
-                        % ensure class discretizations.signal_matrix
-                        if ~isa( u_M{ index_operator }{ index_config }, 'discretizations.signal_matrix' )
-                            errorStruct.message = sprintf( 'u_M{ %d }{ %d } must be discretizations.signal_matrix!', index_operator, index_config );
-                            errorStruct.identifier = 'adjoint:NoSignalMatrices';
-                            error( errorStruct );
-                        end
+                    %------------------------------------------------------
+                    % iv.) relative RMSEs by quick forward scattering
+                    %------------------------------------------------------
+                    if nargout >= 2
 
-                        %--------------------------------------------------
-                        % B) apply normalization settings
-                        %--------------------------------------------------
-                        LT_act = normalize( LTs{ index_operator }{ index_transform }( index_config ), options{ index_operator }{ index_transform }{ index_config }.normalization );
-
-                        %--------------------------------------------------
-                        % C) time gain compensation (TGC)
-                        %--------------------------------------------------
-                        LT_tgc = get_LTs_tgc( operators_born_config( index_config ), options{ index_operator }{ index_transform }{ index_config }.tgc );
-
-                        %--------------------------------------------------
-                        % D) apply TGC and normalize mixed voltage signals
-                        %--------------------------------------------------
-                        u_M_vect = return_vector( u_M{ index_operator }{ index_config } );
-                        u_M_vect_tgc = forward_transform( LT_tgc, u_M_vect );
-                        u_M_vect_tgc_norm = norm( u_M_vect_tgc );
-                        u_M_vect_tgc_normed = u_M_vect_tgc / u_M_vect_tgc_norm;
-
-                        %--------------------------------------------------
-                        % E) quick adjoint scattering
-                        %--------------------------------------------------
-%                       profile on
-                        theta_hat{ index_operator }{ index_transform }( :, index_config ) = adjoint_quick( operators_born_config( index_config ), u_M_vect_tgc_normed, LT_act, LT_tgc );
-%                       profile viewer
-
-                        %--------------------------------------------------
-                        % D) quick forward scattering and rel. RMSEs
-                        %--------------------------------------------------
-                        % estimate normalized mixed voltage signals
-                        u_M_vect_tgc_normed_est = forward_quick( operators_born_config( index_config ), theta_hat{ index_operator }{ index_transform }( :, index_config ), LT_act, LT_tgc );
+                        % estimate normalized mixed voltage signals by quick forward scattering
+                        u_M_act_vect_tgc_normed_est = forward_quick( operator_born_act, theta_hat{ index_operator }{ index_options }, LT_act, LT_tgc );
 
                         % compute relative RMSE
-                        u_M_vect_tgc_normed_res = u_M_vect_tgc_normed - u_M_vect_tgc_normed_est;
-                        rel_RMSE{ index_operator }{ index_transform }( index_config ) = norm( u_M_vect_tgc_normed_res( : ), 2 );
+                        u_M_act_vect_tgc_normed_res = u_M_act_vect_tgc_normed - u_M_act_vect_tgc_normed_est;
+                        rel_RMSE{ index_operator }{ index_options } = norm( u_M_act_vect_tgc_normed_res( : ), 2 );
 
-                    end % for index_config = 1:numel( operators_born_config )
+                    end % if nargout >= 2
 
-                    %------------------------------------------------------
-                    % iii.) create images
-                    %------------------------------------------------------
-                    theta_hat{ index_operator }{ index_transform } ...
-                    = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
-                                             mat2cell( theta_hat{ index_operator }{ index_transform }, N_coefficients( 1 ), ones( 1, numel( operators_born_config ) ) ) );
+                end % for index_options = 1:numel( options{ index_operator } )
 
-                end % for index_transform = 1:numel( LTs{ index_operator } )
-
-                % avoid cell arrays for single LTs{ index_operator }
-                if isscalar( LTs{ index_operator } )
-                    theta_hat{ index_operator } = theta_hat{ index_operator }{ 1 };
-                    rel_RMSE{ index_operator } = rel_RMSE{ index_operator }{ 1 };
-                end
+                %----------------------------------------------------------
+                % c) create images
+                %----------------------------------------------------------
+                theta_hat{ index_operator } ...
+                = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
+                                         theta_hat{ index_operator } );
 
             end % for index_operator = 1:numel( operators_born )
 
@@ -558,12 +483,12 @@ classdef operator_born < scattering.operator
                 rel_RMSE = rel_RMSE{ 1 };
             end
 
-        end % function [ theta_hat, rel_RMSE ] = adjoint( operators_born, u_M, varargin )
+        end % function [ theta_hat, rel_RMSE ] = adjoint( operators_born, u_M, options )
 
         %------------------------------------------------------------------
         % transform point spread function (overload tpsf method)
         %------------------------------------------------------------------
-        function [ theta_tpsf, E_M, adjointness ] = tpsf( operators_born, indices, varargin )
+        function [ theta_tpsf, E_M, adjointness ] = tpsf( operators_born, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -575,46 +500,14 @@ classdef operator_born < scattering.operator
                 error( errorStruct );
             end
 
-            % ensure cell array for indices
-            if ~iscell( indices ) || all( cellfun( @( x ) ~iscell( x ), indices ) )
-                indices = { indices };
-            end
-
-            % ensure nonempty LTs
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                LTs = varargin{ 1 };
-            else
-                LTs = cell( size( operators_born ) );
-                for index_operator = 1:numel( operators_born )
-                    LTs{ index_operator } = { linear_transforms.identity( operators_born( index_operator ).sequence.size( 2 ) ) };
-                end
-            end
-
-            % ensure cell array for LTs
-            if ~iscell( LTs ) || all( cellfun( @( x ) ~iscell( x ), LTs ) )
-                LTs = { LTs };
-            end
-
             % ensure nonempty options
-            if nargin >= 4 && ~isempty( varargin{ 2 } )
-                options = varargin{ 2 };
-            else
-                options = {};
+            if isempty( options )
+                options = repmat( { regularization.options.tpsf }, size( operators_born ) );
             end
 
             % ensure cell array for options
-            if ~iscell( options ) || all( cellfun( @( x ) ~iscell( x ), options ) )
+            if ~iscell( options )
                 options = { options };
-            end
-
-            % multiple operators_born / single indices
-            if ~isscalar( operators_born ) && isscalar( indices )
-                indices = repmat( indices, size( operators_born ) );
-            end
-
-            % multiple operators_born / single LTs
-            if ~isscalar( operators_born ) && isscalar( LTs )
-                LTs = repmat( LTs, size( operators_born ) );
             end
 
             % multiple operators_born / single options
@@ -622,11 +515,16 @@ classdef operator_born < scattering.operator
                 options = repmat( options, size( operators_born ) );
             end
 
+            % single operators_born / multiple options
+            if isscalar( operators_born ) && ~isscalar( options )
+                operators_born = repmat( operators_born, size( options ) );
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, indices, LTs, options );
+            auxiliary.mustBeEqualSize( operators_born, options );
 
             %--------------------------------------------------------------
-            % 2.) process scattering operators
+            % 2.) compute transform point spread functions (TPSFs)
             %--------------------------------------------------------------
             % specify cell arrays
             theta_tpsf = cell( size( operators_born ) );
@@ -639,162 +537,68 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure cell array for indices{ index_operator }
-                if ~iscell( indices{ index_operator } )
-                    indices{ index_operator } = indices( index_operator );
+                % ensure class regularization.options.tpsf
+                if ~isa( options{ index_operator }, 'regularization.options.tpsf' )
+                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.tpsf!', index_operator );
+                    errorStruct.identifier = 'adjoint:NoOptionsTPSF';
+                    error( errorStruct );
                 end
-
-                % ensure cell array for LTs{ index_operator }
-                if ~iscell( LTs{ index_operator } )
-                    LTs{ index_operator } = LTs( index_operator );
-                end
-
-                % ensure cell array for options{ index_operator }
-                if ~iscell( options{ index_operator } )
-                    options{ index_operator } = options( index_operator );
-                end
-
-                % multiple LTs{ index_operator } / single indices{ index_operator }
-                if ~isscalar( LTs{ index_operator } ) && isscalar( indices{ index_operator } )
-                    indices{ index_operator } = repmat( indices{ index_operator }, size( LTs{ index_operator } ) );
-                end
-
-                % multiple LTs{ index_operator } / single options{ index_operator }
-                if ~isscalar( LTs{ index_operator } ) && isscalar( options{ index_operator } )
-                    options{ index_operator } = repmat( options{ index_operator }, size( LTs{ index_operator } ) );
-                end
-
-                % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( LTs{ index_operator }, indices{ index_operator }, options{ index_operator } );
 
                 %----------------------------------------------------------
-                % b) process linear transforms
+                % b) process options
                 %----------------------------------------------------------
                 % specify cell arrays
-                theta_tpsf{ index_operator } = cell( size( LTs{ index_operator } ) );
-                E_M{ index_operator } = cell( size( LTs{ index_operator } ) );
-                adjointness{ index_operator } = cell( size( LTs{ index_operator } ) );
+                theta_tpsf{ index_operator } = cell( size( options{ index_operator } ) );
+                E_M{ index_operator } = cell( size( options{ index_operator } ) );
+                adjointness{ index_operator } = cell( size( options{ index_operator } ) );
 
-                % iterate linear transforms
-                for index_transform = 1:numel( LTs{ index_operator } )
-
-                    %------------------------------------------------------
-                    % i.) check arguments
-                    %------------------------------------------------------
-                    % set momentary scattering operator options
-                    operators_born_config = set_properties_momentary( operators_born( index_operator ), varargin{ 3:end } );
-
-                    % ensure numeric matrix
-                    if ~( isnumeric( indices{ index_operator }{ index_transform } ) && ismatrix( indices{ index_operator }{ index_transform } ) )
-                        errorStruct.message = sprintf( 'indices{ %d }{ %d } must be a numeric matrix!', index_operator, index_transform );
-                        errorStruct.identifier = 'tpsf:NoNumericMatrix';
-                        error( errorStruct );
-                    end
-
-                    % ensure valid indices{ index_operator }{ index_transform }
-                    mustBeInteger( indices{ index_operator }{ index_transform } );
-                    mustBePositive( indices{ index_operator }{ index_transform } );
-
-                    % ensure class linear_transforms.linear_transform
-                    if ~isa( LTs{ index_operator }{ index_transform }, 'linear_transforms.linear_transform' )
-                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
-                        errorStruct.identifier = 'tpsf:NoLinearTransforms';
-                        error( errorStruct );
-                    end
-
-                    % multiple operators_born_config / single LTs{ index_operator }{ index_transform }
-                    if ~isscalar( operators_born_config ) && isscalar( LTs{ index_operator }{ index_transform } )
-                        LTs{ index_operator }{ index_transform } = repmat( LTs{ index_operator }{ index_transform }, size( operators_born_config ) );
-                    end
-
-                    % multiple operators_born_config / single options{ index_operator }{ index_transform }
-                    if ~isscalar( operators_born_config ) && isscalar( options{ index_operator }{ index_transform } )
-                        options{ index_operator }{ index_transform } = repmat( options{ index_operator }{ index_transform }, size( operators_born_config ) );
-                    end
-
-                    % ensure equal number of dimensions and sizes
-                    auxiliary.mustBeEqualSize( operators_born_config, LTs{ index_operator }{ index_transform }, options{ index_operator }{ index_transform } );
+                % iterate options
+                for index_options = 1:numel( options{ index_operator } )
 
                     %------------------------------------------------------
-                    % ii.) process configurations
+                    % i.) create configuration
                     %------------------------------------------------------
-                    % number of TPSFs per configuration
-                    N_tpsf = numel( indices{ index_operator }{ index_transform } );
-
-                    % numbers of transform coefficients
-                    N_coefficients = reshape( [ LTs{ index_operator }{ index_transform }.N_coefficients ], size( LTs{ index_operator }{ index_transform } ) );
-
-                    % ensure identical numbers of transform coefficients
-                    if any( N_coefficients( : ) ~= N_coefficients( 1 ) )
-                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must have identical numbers of transform coefficients!', index_operator, index_transform );
-                        errorStruct.identifier = 'tpsf:InvalidNumbersOfCoefficients';
-                        error( errorStruct );
-                    end
-
-                    % ensure indices{ index_operator }{ index_transform } less than or equal N_coefficients
-                    if any( indices{ index_operator }{ index_transform }( : ) > N_coefficients( 1 ) )
-                        errorStruct.message = sprintf( 'LTs{ %d }{ %d } must be linear_transforms.linear_transform!', index_operator, index_transform );
-                        errorStruct.identifier = 'tpsf:NoLinearTransforms';
-                        error( errorStruct );
-                    end
-
-                    % specify cell array for theta_tpsf and initialize w/ zeros
-                    theta_tpsf{ index_operator }{ index_transform } = cell( size( operators_born_config ) );
-                    E_M{ index_operator }{ index_transform } = zeros( numel( operators_born_config ), N_tpsf );
-                    adjointness{ index_operator }{ index_transform } = zeros( numel( operators_born_config ), N_tpsf );
-
-                    % iterate configurations
-                    for index_config = 1:numel( operators_born_config )
-
-                        %--------------------------------------------------
-                        % A) create coefficient vectors
-                        %--------------------------------------------------
-                        % a) indices of coefficients
-                        indices_tpsf = ( 0:( N_tpsf - 1 ) ) * N_coefficients( 1 ) + indices{ index_operator }{ index_transform }( : )';
-
-                        % b) initialize coefficient vectors
-                        theta = zeros( N_coefficients( 1 ), N_tpsf );
-                        theta( indices_tpsf ) = 1;
-
-                        %--------------------------------------------------
-                        % B) apply normalization settings
-                        %--------------------------------------------------
-                        LT_act = normalize( LTs{ index_operator }{ index_transform }( index_config ), options{ index_operator }{ index_transform }( index_config ).normalization );
-
-                        %--------------------------------------------------
-                        % C) time gain compensation (TGC)
-                        %--------------------------------------------------
-                        LT_tgc = get_LTs_tgc( operators_born_config( index_config ), options{ index_operator }{ index_transform }( index_config ).tgc );
-
-                        %--------------------------------------------------
-                        % D) quick forward scattering and received energies
-                        %--------------------------------------------------
-                        u_M = forward_quick( operators_born_config( index_config ), theta, LT_act, LT_tgc );
-                        E_M{ index_operator }{ index_transform }( index_config, : ) = vecnorm( u_M, 2, 1 ).^2;
-
-                        %--------------------------------------------------
-                        % E) quick adjoint scattering and test for adjointness
-                        %--------------------------------------------------
-                        theta_tpsf{ index_operator }{ index_transform }{ index_config } = adjoint_quick( operators_born_config( index_config ), u_M, LT_act, LT_tgc );
-                        adjointness{ index_operator }{ index_transform }( index_config, : ) = E_M{ index_operator }{ index_transform }( index_config, : ) - theta_tpsf{ index_operator }{ index_transform }{ index_config }( indices_tpsf );
-
-                    end % for index_config = 1:numel( operators_born_config )
+                    [ operator_born_act, LT_tgc, LT_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
 
                     %------------------------------------------------------
-                    % iii.) create images
+                    % ii.) create coefficient vectors
                     %------------------------------------------------------
-                    theta_tpsf{ index_operator }{ index_transform } ...
-                    = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
-                                             theta_tpsf{ index_operator }{ index_transform } );
+                    % a) number of TPSFs
+                    N_tpsf = numel( options{ index_operator }( index_options ).indices );
 
-                end % for index_transform = 1:numel( LTs{ index_operator } )
+                    % b) indices of coefficients
+                    indices_tpsf = ( 0:( N_tpsf - 1 ) ) * LT_act.N_coefficients + options{ index_operator }( index_options ).indices';
 
-                % avoid cell array for single LTs{ index_operator }
-                if isscalar( LTs{ index_operator } )
-                    theta_tpsf{ index_operator } = theta_tpsf{ index_operator }{ 1 };
+                    % c) initialize coefficient vectors
+                    theta = zeros( LT_act.N_coefficients, N_tpsf );
+                    theta( indices_tpsf ) = 1;
+
+                    %------------------------------------------------------
+                    % iii.) quick forward scattering and received energies
+                    %------------------------------------------------------
+                    u_M = forward_quick( operator_born_act, theta, LT_act, LT_tgc );
+                    E_M{ index_operator }{ index_options } = vecnorm( u_M, 2, 1 ).^2;
+
+                    %------------------------------------------------------
+                    % iv.) quick adjoint scattering and test for adjointness
+                    %------------------------------------------------------
+                    theta_tpsf{ index_operator }{ index_options } = adjoint_quick( operator_born_act, u_M, LT_act, LT_tgc );
+                    adjointness{ index_operator }{ index_options } = E_M{ index_operator }{ index_options } - theta_tpsf{ index_operator }{ index_options }( indices_tpsf );
+
+                end % for index_options = 1:numel( options{ index_operator } )
+
+                % avoid cell array for single options{ index_operator }
+                if isscalar( options{ index_operator } )
                     E_M{ index_operator } = E_M{ index_operator }{ 1 };
                     adjointness{ index_operator } = adjointness{ index_operator }{ 1 };
                 end
+
+                %----------------------------------------------------------
+                % c) create images
+                %----------------------------------------------------------
+                theta_tpsf{ index_operator } ...
+                = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
+                                         theta_tpsf{ index_operator } );
 
             end % for index_operator = 1:numel( operators_born )
 
@@ -805,12 +609,12 @@ classdef operator_born < scattering.operator
                 adjointness = adjointness{ 1 };
             end
 
-        end % function [ theta_tpsf, E_M, adjointness ] = tpsf( operators_born, indices, varargin )
+        end % function [ theta_tpsf, E_M, adjointness ] = tpsf( operators_born, options )
 
         %------------------------------------------------------------------
         % received energy (wrapper)
         %------------------------------------------------------------------
-        function E_M = energy_rx( operators_born, varargin )
+        function E_M = energy_rx( operators_born, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -822,68 +626,28 @@ classdef operator_born < scattering.operator
                 error( errorStruct );
             end
 
-            % ensure nonempty LTs
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
-                LTs = varargin{ 1 };
-            else
-                LTs = cell( size( operators_born ) );
-                for index_operator = 1:numel( operators_born )
-                    LTs{ index_operator } = { linear_transforms.identity( operators_born( index_operator ).sequence.size( 2 ) ) };
-                end
+            % ensure nonempty options
+            if isempty( options )
+                options = repmat( { regularization.options.common }, size( operators_born ) );
             end
 
-            % ensure cell array for LTs
-            if ~iscell( LTs ) || all( cellfun( @( x ) ~iscell( x ), LTs ) )
-                LTs = { LTs };
+            % ensure cell array for options
+            if ~iscell( options )
+                options = { options };
             end
 
-            % ensure nonempty indices_measurement_sel
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
-                indices_measurement_sel = varargin{ 2 };
-            else
-                indices_measurement_sel = cell( size( operators_born ) );
-                for index_operator = 1:numel( operators_born )
-                    indices_measurement_sel{ index_operator } = { ( 1:numel( operators_born( index_operator ).incident_waves ) ) };
-                end
+            % multiple operators_born / single options
+            if ~isscalar( operators_born ) && isscalar( options )
+                options = repmat( options, size( operators_born ) );
             end
 
-            % ensure cell array for indices_measurement_sel
-            if ~iscell( indices_measurement_sel ) || all( cellfun( @( x ) ~iscell( x ), indices_measurement_sel ) )
-                indices_measurement_sel = { indices_measurement_sel };
-            end
-
-            % ensure nonempty options_tgc
-            if nargin >= 4 && ~isempty( varargin{ 3 } )
-                options_tgc = varargin{ 3 };
-            else
-                options_tgc = cell( size( operators_born ) );
-                for index_operator = 1:numel( operators_born )
-                    options_tgc{ index_operator } = { optimization.options.tgc_off };
-                end
-            end
-
-            % ensure cell array for options_tgc
-            if ~iscell( options_tgc ) || all( cellfun( @( x ) ~iscell( x ), options_tgc ) )
-                options_tgc = { options_tgc };
-            end
-
-            % multiple operators_born / single LTs
-            if ~isscalar( operators_born ) && isscalar( LTs )
-                LTs = repmat( LTs, size( operators_born ) );
-            end
-
-            % multiple operators_born / single indices_measurement_sel
-            if ~isscalar( operators_born ) && isscalar( indices_measurement_sel )
-                indices_measurement_sel = repmat( indices_measurement_sel, size( operators_born ) );
-            end
-
-            % multiple operators_born / single options_tgc
-            if ~isscalar( operators_born ) && isscalar( options_tgc )
-                options_tgc = repmat( options_tgc, size( operators_born ) );
+            % single operators_born / multiple options
+            if isscalar( operators_born ) && ~isscalar( options )
+                operators_born = repmat( operators_born, size( options ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, LTs, indices_measurement_sel, options_tgc );
+            auxiliary.mustBeEqualSize( operators_born, options );
 
             %--------------------------------------------------------------
             % 2.) compute received energies
@@ -897,152 +661,117 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure cell array for LTs{ index_operator }
-                if ~iscell( LTs{ index_operator } )
-                    LTs{ index_operator } = num2cell( LTs{ index_operator } );
+                % ensure class regularization.options.common
+                if ~isa( options{ index_operator }, 'regularization.options.common' )
+                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
+                    errorStruct.identifier = 'energy_rx:NoCommonOptions';
+                    error( errorStruct );
                 end
-
-                % ensure cell array for indices_measurement_sel{ index_operator }
-                if ~iscell( indices_measurement_sel{ index_operator } ) || all( cellfun( @( x ) ~iscell( x ), indices_measurement_sel{ index_operator } ) )
-                    indices_measurement_sel{ index_operator } = indices_measurement_sel( index_operator );
-                end
-
-                % ensure cell array for options_tgc{ index_operator }
-                if ~iscell( options_tgc{ index_operator } ) || all( cellfun( @( x ) ~iscell( x ), options_tgc{ index_operator } ) )
-                    options_tgc{ index_operator } = options_tgc( index_operator );
-                end
-
-                % multiple LTs{ index_operator } / single indices_measurement_sel{ index_operator }
-                if ~isscalar( LTs{ index_operator } ) && isscalar( indices_measurement_sel{ index_operator } )
-                    indices_measurement_sel{ index_operator } = repmat( indices_measurement_sel{ index_operator }, size( LTs{ index_operator } ) );
-                end
-
-                % multiple LTs{ index_operator } / single options_tgc{ index_operator }
-                if ~isscalar( LTs{ index_operator } ) && isscalar( options_tgc{ index_operator } )
-                    options_tgc{ index_operator } = repmat( options_tgc{ index_operator }, size( LTs{ index_operator } ) );
-                end
-
-                % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( LTs{ index_operator }, indices_measurement_sel{ index_operator }, options_tgc{ index_operator } );
 
                 %----------------------------------------------------------
-                % b) compute received energies
+                % b) process options
                 %----------------------------------------------------------
                 % specify cell array for E_M{ index_operator }
-                E_M{ index_operator } = cell( size( LTs{ index_operator } ) );
+                E_M{ index_operator } = cell( size( options{ index_operator } ) );
 
-                % iterate linear transforms
-                for index_transform = 1:numel( LTs{ index_operator } )
-
-                    %------------------------------------------------------
-                    % i.) check arguments
-                    %------------------------------------------------------
-                    % ensure cell array for indices_measurement_sel{ index_operator }{ index_transform }
-                    if ~iscell( indices_measurement_sel{ index_operator }{ index_transform } )
-                        indices_measurement_sel{ index_operator }{ index_transform } = indices_measurement_sel{ index_operator }( index_transform );
-                    end
+                % iterate options
+                for index_options = 1:numel( options{ index_operator } )
 
                     %------------------------------------------------------
-                    % ii.) compute unique received energies
+                    % i.) set momentary scattering operator options
+                    %------------------------------------------------------
+                    operator_born_act = set_properties_momentary( operators_born( index_operator ), options{ index_operator }( index_options ).momentary.sequence, options{ index_operator }( index_options ).momentary.anti_aliasing, options{ index_operator }( index_options ).momentary.gpu, options{ index_operator }( index_options ).momentary.algorithm );
+
+                    %------------------------------------------------------
+                    % ii.) time gain compensation (TGC)
+                    %------------------------------------------------------
+                    [ LT_tgc, LTs_tgc_measurement ] = get_LTs_tgc( operator_born_act, options{ index_operator }( index_options ).tgc );
+
+                    %------------------------------------------------------
+                    % iii.) create dictionary
+                    %------------------------------------------------------
+                    [ LT_act, LTs_unique ] = get_LTs( operator_born_act, options{ index_operator }( index_options ).dictionary );
+
+                    %------------------------------------------------------
+                    % iv.) compute unique received energies
                     %------------------------------------------------------
                     % unique indices of selected sequential pulse-echo measurements
-                    [ indices_measurement_sel_unique, ~, indices_config ] = unique( cat( 1, indices_measurement_sel{ index_operator }{ index_transform }{ : } ) );
-                    indices_config = mat2cell( indices_config, cellfun( @numel, indices_measurement_sel{ index_operator }{ index_transform } ) );
+                    indices_measurement_sel = operator_born_act.indices_measurement_sel;
 
 % TODO: check unique transforms if they are concatenated!
 
                     % create common format string for filename
-                    str_format_common = sprintf( 'data/%s/setup_%%s/E_M_settings_%%s_TGC_%%s', operators_born( index_operator ).sequence.setup.str_name );
+                    str_format_common = sprintf( 'data/%s/setup_%%s/E_M_settings_%%s_TGC_%%s_options_aliasing_%%s', operators_born( index_operator ).sequence.setup.str_name );
 
-                    % check linear transform
-                    if ~isa( LTs{ index_operator }{ index_transform }, 'linear_transforms.identity' )
+                    % initialize unique received energies w/ zeros
+                    E_M_unique = physical_values.squarevolt( zeros( LT_act.N_coefficients, numel( indices_measurement_sel ) ) );
+
+                    % check dictionary
+                    if ~isa( options{ index_operator }( index_options ).dictionary, 'regularization.options.dictionary_identity' )
 
                         %--------------------------------------------------
                         % i.) arbitrary linear transform
                         %--------------------------------------------------
-                        % initialize unique received energies w/ zeros
-                        E_M_unique = physical_values.squarevolt( zeros( LTs{ index_operator }{ index_transform }.N_coefficients, numel( indices_measurement_sel_unique ) ) );
-
                         % create format string for filename
-                        str_format = sprintf( '%s_transform_%%s_options_aliasing_%%s.mat', str_format_common );
+                        str_format = sprintf( '%s_transform_%%s.mat', str_format_common );
 
                         % iterate unique selected sequential pulse-echo measurements
-                        for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
+                        for index_measurement_sel = 1:numel( indices_measurement_sel )
 
                             % index of sequential pulse-echo measurement
-                            index_measurement = indices_measurement_sel_unique( index_measurement_sel );
+                            index_measurement = indices_measurement_sel( index_measurement_sel );
 
                             % set momentary scattering operator options
-                            operators_born( index_operator ) = set_properties_momentary( operators_born( index_operator ), varargin{ 4:end }, scattering.options.sequence_selected( index_measurement ) );
-
-                            % get TGC
-                            LT_tgc = get_LTs_tgc( operators_born( index_operator ), options_tgc{ index_operator }{ index_transform } );
+                            operator_born_act = set_properties_momentary( operator_born_act, scattering.options.sequence_selected( index_measurement ) );
 
                             % load or compute received energies (arbitrary linear transform)
                             E_M_unique( :, index_measurement_sel ) ...
-                            = auxiliary.compute_or_load_hash( str_format, @energy_rx_arbitrary, [ 4, 5, 6, 2, 7 ], [ 1, 2, 3 ], ...
-                                operators_born( index_operator ), LTs{ index_operator }{ index_transform }, LT_tgc, ...
-                                { operators_born( index_operator ).sequence.setup.xdc_array.aperture, operators_born( index_operator ).sequence.setup.homogeneous_fluid, operators_born( index_operator ).sequence.setup.FOV, operators_born( index_operator ).sequence.setup.str_name }, ...
-                                operators_born( index_operator ).sequence.settings( index_measurement ), ...
-                                options_tgc{ index_operator }{ index_transform }, ...
-                                operators_born( index_operator ).options.momentary.anti_aliasing );
+                            = auxiliary.compute_or_load_hash( str_format, @energy_rx_arbitrary, [ 4, 5, 3, 6, 2 ], [ 1, 2, 3 ], ...
+                                operator_born_act, LT_act, LTs_tgc_measurement( index_measurement_sel ), ...
+                                { operator_born_act.sequence.setup.xdc_array.aperture, operator_born_act.sequence.setup.homogeneous_fluid, operator_born_act.sequence.setup.FOV, operator_born_act.sequence.setup.str_name }, ...
+                                operator_born_act.sequence.settings( index_measurement ), ...
+                                operator_born_act.options.momentary.anti_aliasing );
 
-                        end % for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
+                        end % for index_measurement_sel = 1:numel( indices_measurement_sel )
 
                     else
 
                         %--------------------------------------------------
                         % ii.) canonical basis
                         %--------------------------------------------------
-                        % initialize unique received energies w/ zeros
-                        E_M_unique = physical_values.squarevolt( zeros( operators_born( index_operator ).sequence.setup.FOV.shape.grid.N_points, numel( indices_measurement_sel_unique ) ) );
-
                         % create format string for filename
-                        str_format = sprintf( '%s_options_aliasing_%%s.mat', str_format_common );
+                        str_format = sprintf( '%s.mat', str_format_common );
 
                         % iterate unique selected sequential pulse-echo measurements
-                        for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
+                        for index_measurement_sel = 1:numel( indices_measurement_sel )
 
                             % index of sequential pulse-echo measurement
-                            index_measurement = indices_measurement_sel_unique( index_measurement_sel );
+                            index_measurement = indices_measurement_sel( index_measurement_sel );
 
                             % set momentary scattering operator options
-                            operators_born( index_operator ) = set_properties_momentary( operators_born( index_operator ), varargin{ 4:end }, scattering.options.sequence_selected( index_measurement ) );
-
-                            % get TGC
-                            LT_tgc = get_LTs_tgc( operators_born( index_operator ), options_tgc{ index_operator }{ index_transform }{ 1 } );
+                            operator_born_act = set_properties_momentary( operator_born_act, scattering.options.sequence_selected( index_measurement ) );
 
                             % load or compute received energies (canonical basis)
                             E_M_unique( :, index_measurement_sel ) ...
-                            = auxiliary.compute_or_load_hash( str_format, @energy_rx_canonical, [ 3, 4, 5, 6 ], [ 1, 2 ], ...
-                                operators_born( index_operator ), LT_tgc, ...
-                                { operators_born( index_operator ).sequence.setup.xdc_array.aperture, operators_born( index_operator ).sequence.setup.homogeneous_fluid, operators_born( index_operator ).sequence.setup.FOV, operators_born( index_operator ).sequence.setup.str_name }, ...
-                                operators_born( index_operator ).sequence.settings( index_measurement ), ...
-                                options_tgc{ index_operator }{ index_transform }, ...
-                                operators_born( index_operator ).options.momentary.anti_aliasing );
+                            = auxiliary.compute_or_load_hash( str_format, @energy_rx_canonical, [ 3, 4, 2, 5 ], [ 1, 2 ], ...
+                                operator_born_act, LTs_tgc_measurement( index_measurement_sel ), ...
+                                { operator_born_act.sequence.setup.xdc_array.aperture, operator_born_act.sequence.setup.homogeneous_fluid, operator_born_act.sequence.setup.FOV, operator_born_act.sequence.setup.str_name }, ...
+                                operator_born_act.sequence.settings( index_measurement ), ...
+                                operator_born_act.options.momentary.anti_aliasing );
 
-                        end % for index_measurement_sel = 1:numel( indices_measurement_sel_unique )
+                        end % for index_measurement_sel = 1:numel( indices_measurement_sel )
 
-                    end % if ~isempty( LTs{ index_operator }{ index_transform } )
+                    end % if ~isa( options{ index_operator }( index_options ).dictionary, 'regularization.options.dictionary_identity' )
 
                     %------------------------------------------------------
                     % iii.) sum unique received energies according to config
                     %------------------------------------------------------
-                    % initialize received energies w/ zeros
-                    E_M{ index_operator }{ index_transform } = physical_values.squarevolt( zeros( operators_born( index_operator ).sequence.setup.FOV.shape.grid.N_points, numel( indices_config ) ) );
+                    E_M{ index_operator }{ index_options } = sum( E_M_unique, 2 );
 
-                    % sum received energies according to indices_config
-                    for index_config = 1:numel( indices_config )
+                end % for index_options = 1:numel( options{ index_operator } )
 
-                        % sum received energies
-                        E_M{ index_operator }{ index_transform }( :, index_config ) = sum( E_M_unique( :, indices_config{ index_config } ), 2 );
-
-                    end % for index_config = 1:numel( indices_config )
-                
-                end % for index_transform = 1:numel( LTs{ index_operator } )
-
-                % avoid cell array for single LTs{ index_operator }
-                if isscalar( LTs{ index_operator } )
+                % avoid cell array for single options{ index_operator }
+                if isscalar( options{ index_operator } )
                     E_M{ index_operator } = E_M{ index_operator }{ 1 };
                 end
 
@@ -1053,7 +782,7 @@ classdef operator_born < scattering.operator
                 E_M = E_M{ 1 };
             end
 
-        end % function E_M = energy_rx( operators_born, varargin )
+        end % function E_M = energy_rx( operators_born, options )
 
         %------------------------------------------------------------------
         % matrix multiplication (overload mtimes method)
@@ -1061,7 +790,7 @@ classdef operator_born < scattering.operator
         function u_M = mtimes( operator_born, fluctuations )
 
             %--------------------------------------------------------------
-            % 1.) call forward scattering
+            % 1.) quick forward scattering
             %--------------------------------------------------------------
             u_M = forward_quick( operator_born, fluctuations );
 
@@ -1189,7 +918,7 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % create TGC transforms
         %------------------------------------------------------------------
-        function LTs_tgc = get_LTs_tgc( operators_born, options_tgc )
+        function [ LTs_tgc, LTs_tgc_measurement ] = get_LTs_tgc( operators_born, options_tgc )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -1201,12 +930,14 @@ classdef operator_born < scattering.operator
                 error( errorStruct );
             end
 
-            % ensure class optimization.options.tgc
-            if ~isa( options_tgc, 'optimization.options.tgc' )
-                errorStruct.message = 'options_tgc must be optimization.options.tgc!';
+            % ensure class regularization.options.tgc
+            if ~isa( options_tgc, 'regularization.options.tgc' )
+                errorStruct.message = 'options_tgc must be regularization.options.tgc!';
                 errorStruct.identifier = 'get_LTs_tgc:NoOptionsTGC';
                 error( errorStruct );
             end
+
+% TODO: options_tgc must be compatible with operators_born
 
             % multiple operators_born / single options_tgc
             if ~isscalar( operators_born ) && isscalar( options_tgc )
@@ -1224,8 +955,9 @@ classdef operator_born < scattering.operator
             %--------------------------------------------------------------
             % 2.) create TGC transforms
             %--------------------------------------------------------------
-            % specify cell array for LTs_tgc
+            % specify cell arrays
             LTs_tgc = cell( size( operators_born ) );
+            LTs_tgc_measurement = cell( size( operators_born ) );
 
             % iterate scattering operators
             for index_object = 1:numel( operators_born )
@@ -1266,20 +998,30 @@ classdef operator_born < scattering.operator
                 %----------------------------------------------------------
                 % b) create individual TGC curve for each mix
                 %----------------------------------------------------------
-                if isa( options_tgc( index_object ), 'optimization.options.tgc_off' )
+                % number of mixed voltage signals for each sequential pulse-echo measurement
+                N_mixes_measurement = cellfun( @numel, { operators_born( index_object ).sequence.settings( operators_born( index_object ).indices_measurement_sel ).rx } );
+
+                % indices for each mix
+                indices = mat2cell( 1:sum( N_mixes_measurement ), 1, N_mixes_measurement );
+
+                LTs_tgc_measurement{ index_object } = cell( numel( operators_born( index_object ).indices_measurement_sel ), 1 );
+                if isa( options_tgc( index_object ), 'regularization.options.tgc_off' )
 
                     %------------------------------------------------------
                     % a) inactive TGC
                     %------------------------------------------------------
+                    for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
+                        LTs_tgc_measurement{ index_object }{ index_measurement_sel } = linear_transforms.identity( sum( N_observations( indices{ index_measurement_sel } ) ) );
+                    end
                     LTs_tgc{ index_object } = linear_transforms.identity( sum( N_observations ) );
                     continue;
 
-                elseif isa( options_tgc( index_object ), 'optimization.options.tgc_exponential' )
+                elseif isa( options_tgc( index_object ), 'regularization.options.tgc_exponential' )
 
                     %------------------------------------------------------
                     % b) exponential TGC curves
                     %------------------------------------------------------
-                    TGC_curves = tgc.exponential( intervals_t, options_tgc( index_object ).exponents );
+                    TGC_curves = regularization.tgc.exponential( intervals_t, options_tgc( index_object ).exponents );
 
                 else
 
@@ -1290,10 +1032,10 @@ classdef operator_born < scattering.operator
                     errorStruct.identifier = 'get_LTs_tgc:UnknownOptionsClass';
                     error( errorStruct );
 
-                end % if isa( options_tgc( index_object ), 'optimization.options.tgc_exponential' )
+                end % if isa( options_tgc( index_object ), 'regularization.options.tgc_off' )
 
                 %----------------------------------------------------------
-                % c) discretize TGC curves
+                % c) create discrete convolutions by discretizing TGC curves
                 %----------------------------------------------------------
                 % time intervals for discretization
                 Ts_ref = reshape( 1 ./ [ axes_f_mix.delta ], size( axes_f_mix ) );
@@ -1309,21 +1051,167 @@ classdef operator_born < scattering.operator
 
                 end % for index_mix = 1:numel( signal_matrices )
 
-                % create TGC operator
+                % create discrete convolution for each mix
                 LTs_conv = num2cell( linear_transforms.convolution( kernels, N_observations ) );
+
+                %----------------------------------------------------------
+                % d) concatenate discrete convolutions diagonally
+                %----------------------------------------------------------
+                % create TGC operator for each selected sequential pulse-echo measurement
+                for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
+                    LTs_tgc_measurement{ index_object }{ index_measurement_sel } = linear_transforms.concatenate_diagonal( LTs_conv{ indices{ index_measurement_sel } } );
+                end
+
+                % create TGC operator for all selected sequential pulse-echo measurement
                 LTs_tgc{ index_object } = linear_transforms.concatenate_diagonal( LTs_conv{ : } );
+
+                % concatenate vertically
+                LTs_tgc_measurement{ index_object } = cat( 1, LTs_tgc_measurement{ index_object }{ : } );
 
             end % for index_object = 1:numel( operators_born )
 
             % concatenate vertically
             LTs_tgc = reshape( cat( 1, LTs_tgc{ : } ), size( operators_born ) );
 
-        end % function LTs_tgc = get_LTs_tgc( operators_born, options_tgc )
+            % avoid cell array for single operators_born
+            if isscalar( operators_born )
+                LTs_tgc_measurement = LTs_tgc_measurement{ 1 };
+            end
+
+        end % function [ LTs_tgc, LTs_tgc_measurement ] = get_LTs_tgc( operators_born, options_tgc )
 
         %------------------------------------------------------------------
-        % create linear transforms
+        % create dictionary transforms
         %------------------------------------------------------------------
-        
+        function [ LTs, LTs_unique ] = get_LTs( operators_born, options_dictionary )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.operator_born
+            if ~isa( operators_born, 'scattering.operator_born' )
+                errorStruct.message = 'operators_born must be scattering.operator_born!';
+                errorStruct.identifier = 'get_LTs:NoOperatorsBorn';
+                error( errorStruct );
+            end
+
+            % ensure class regularization.options.dictionary
+            if ~isa( options_dictionary, 'regularization.options.dictionary' )
+                errorStruct.message = 'options_dictionary must be regularization.options.dictionary!';
+                errorStruct.identifier = 'get_LTs:NoOptionsLT';
+                error( errorStruct );
+            end
+
+            % multiple operators_born / single options_dictionary
+            if ~isscalar( operators_born ) && isscalar( options_dictionary )
+                options_dictionary = repmat( options_dictionary, size( operators_born ) );
+            end
+
+            % single operators_born / multiple options_dictionary
+            if isscalar( operators_born ) && ~isscalar( options_dictionary )
+                operators_born = repmat( operators_born, size( options_dictionary ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( operators_born, options_dictionary );
+
+            %--------------------------------------------------------------
+            % 2.) create dictionary transforms
+            %--------------------------------------------------------------
+% TODO: return unique transforms in concatenation
+
+            % specify cell arrays
+            LTs = cell( size( operators_born ) );
+            LTs_unique = cell( size( operators_born ) );
+
+            % iterate scattering operators
+            for index_object = 1:numel( operators_born )
+
+                if isa( options_dictionary( index_object ), 'regularization.options.dictionary_identity' )
+
+                    %------------------------------------------------------
+                    % a) identity
+                    %------------------------------------------------------
+                    LTs{ index_object } = linear_transforms.identity( operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points );
+
+                elseif isa( options_dictionary( index_object ), 'regularization.options.dictionary_fourier' )
+
+                    %------------------------------------------------------
+                    % b) Fourier
+                    %------------------------------------------------------
+                    LTs{ index_object } = linear_transforms.fourier( operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points_axis );
+
+                elseif isa( options_dictionary( index_object ), 'regularization.options.dictionary_wavelet' )
+
+                    %------------------------------------------------------
+                    % c) wavelet
+                    %------------------------------------------------------
+                    LTs{ index_object } = linear_transforms.wavelet( operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points_axis );
+
+                else
+
+                    %------------------------------------------------------
+                    % d) unknown dictionary settings
+                    %------------------------------------------------------
+                    errorStruct.message = sprintf( 'Class of options_dictionary( %d ) is unknown!', index_object );
+                    errorStruct.identifier = 'get_LTs:UnknownOptionsClass';
+                    error( errorStruct );
+
+                end % if isa( options_dictionary( index_object ), 'regularization.options.transform_identity' )
+
+            end % for index_object = 1:numel( operators_born )
+
+            % concatenate vertically
+            LTs = reshape( cat( 1, LTs{ : } ), size( operators_born ) );
+
+        end % function LTs = get_LTs( operators_born, options_dictionary )
+
+        %------------------------------------------------------------------
+        % create configurations
+        %------------------------------------------------------------------
+        function [ operators_born, LTs_tgc, LTs ] = get_configs( operators_born, options )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % functions ensure
+
+            %--------------------------------------------------------------
+            % i.) set momentary scattering operator options
+            %--------------------------------------------------------------
+            operators_born = set_properties_momentary( operators_born, options.momentary.sequence, options.momentary.anti_aliasing, options.momentary.gpu, options.momentary.algorithm );
+
+            %--------------------------------------------------------------
+            % ii.) time gain compensation (TGC)
+            %--------------------------------------------------------------
+            LTs_tgc = get_LTs_tgc( operators_born, options.tgc );
+
+            %--------------------------------------------------------------
+            % iii.) create dictionary
+            %--------------------------------------------------------------
+            LTs = get_LTs( operators_born, options.dictionary );
+
+            % normalize sensing matrix
+            if ~isa( options.normalization, 'regularization.options.normalization_off' )
+
+                % compute received energies
+                E_M = energy_rx( operators_born, options );
+
+                % create weighting matrix
+                LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
+
+                % composition with non-canonical linear transform
+% TODO: neglect identity in composition
+                if ~isa( LTs, 'linear_transforms.identity' )
+                    LT_weighting_inv = linear_transforms.composition( LT_weighting_inv, LTs );
+                end
+
+                % apply normalization settings
+                LTs = normalize( LT_weighting_inv, options.normalization );
+
+            end % if ~isa( options.normalization, 'regularization.options.normalization_off' )
+
+        end % function [ operators_born, LTs_tgc, LTs ] = get_configs( operators_born, options )
 
 	end % methods
 
@@ -1758,7 +1646,7 @@ classdef operator_born < scattering.operator
             if nargin >= 2 && ~isempty( varargin{ 1 } )
                 LT_tgc = varargin{ 1 };
             else
-                LT_tgc = linear_transforms.identity( operator_born );
+                LT_tgc = linear_transforms.identity( operator_born.sequence.setup.FOV.shape.grid.N_points );
             end % if nargin >= 2 && ~isempty( varargin{ 1 } )
 
             % ensure class linear_transforms.concatenate_diagonal (scalar)

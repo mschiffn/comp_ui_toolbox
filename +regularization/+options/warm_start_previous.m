@@ -1,21 +1,21 @@
 %
-% superclass for all inactive normalization options
+% superclass for all previous warm start options
 %
 % author: Martin F. Schiffner
-% date: 2019-08-10
-% modified: 2019-09-22
+% date: 2019-09-24
+% modified: 2020-01-03
 %
-classdef normalization_off < optimization.options.normalization
+classdef warm_start_previous < regularization.options.warm_start
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods
+    methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = normalization_off( varargin )
+        function objects = warm_start_previous( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -31,13 +31,13 @@ classdef normalization_off < optimization.options.normalization
             % superclass ensures nonempty positive integers
 
             %--------------------------------------------------------------
-            % 2.) create inactive normalization options
+            % 2.) create previous warm start options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@optimization.options.normalization( size );
+            objects@regularization.options.warm_start( size );
 
-        end % function objects = normalization_off( varargin )
+        end % function objects = warm_start_previous( size )
 
 	end % methods
 
-end % classdef normalization_off < optimization.options.normalization
+end % classdef warm_start_previous < regularization.options.warm_start

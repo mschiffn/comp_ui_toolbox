@@ -8,7 +8,7 @@ function [ theta_recon, y_m_res, info ] = cosamp( op_A, y_m, options )
 %
 % author: Martin F. Schiffner
 % date: 2013-05-13
-% modified: 2019-09-23
+% modified: 2020-01-03
 %
 
 	% internal constant
@@ -37,9 +37,9 @@ function [ theta_recon, y_m_res, info ] = cosamp( op_A, y_m, options )
     y_m = y_m( : );
     y_m_norm = norm( y_m, 2 );
 
-    % ensure class optimization.options.algorithm_cosamp
-    if ~isa( options, 'optimization.options.algorithm_cosamp' )
-        errorStruct.message = 'options must be optimization.options.algorithm_cosamp!';
+    % ensure class regularization.options.algorithm_cosamp
+    if ~isa( options, 'regularization.options.algorithm_cosamp' )
+        errorStruct.message = 'options must be regularization.options.algorithm_cosamp!';
         errorStruct.identifier = 'omp:NoOptionsAlgorithmCoSaMP';
         error( errorStruct );
     end

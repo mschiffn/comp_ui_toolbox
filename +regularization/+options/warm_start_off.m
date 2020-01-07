@@ -1,11 +1,11 @@
 %
-% superclass for all previous warm start options
+% superclass for all inactive warm start options
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2019-09-24
+% modified: 2020-01-03
 %
-classdef warm_start_previous < optimization.options.warm_start
+classdef warm_start_off < regularization.options.warm_start
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef warm_start_previous < optimization.options.warm_start
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = warm_start_previous( varargin )
+        function objects = warm_start_off( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -31,13 +31,13 @@ classdef warm_start_previous < optimization.options.warm_start
             % superclass ensures nonempty positive integers
 
             %--------------------------------------------------------------
-            % 2.) create previous warm start options
+            % 2.) create inactive warm start options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@optimization.options.warm_start( size );
+            objects@regularization.options.warm_start( size );
 
-        end % function objects = warm_start_previous( size )
+        end % function objects = warm_start_off( size )
 
 	end % methods
 
-end % classdef warm_start_previous < optimization.options.warm_start
+end % classdef warm_start_off < regularization.options.warm_start

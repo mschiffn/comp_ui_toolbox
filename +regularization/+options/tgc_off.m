@@ -1,11 +1,11 @@
 %
-% superclass for all inactive reweighting options
+% superclass for all inactive time gain compensation (TGC) options
 %
 % author: Martin F. Schiffner
-% date: 2019-09-17
-% modified: 2019-09-22
+% date: 2019-12-15
+% modified: 2020-01-03
 %
-classdef reweighting_off < optimization.options.reweighting
+classdef tgc_off < regularization.options.tgc
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef reweighting_off < optimization.options.reweighting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = reweighting_off( varargin )
+        function objects = tgc_off( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -31,13 +31,13 @@ classdef reweighting_off < optimization.options.reweighting
             % superclass ensures nonempty positive integers
 
             %--------------------------------------------------------------
-            % 2.) create inactive normalization options
+            % 2.) create inactive TGC options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@optimization.options.reweighting( size );
+            objects@regularization.options.tgc( size );
 
-        end % function objects = reweighting_off( varargin )
+        end % function objects = tgc_off( varargin )
 
 	end % methods
 
-end % classdef reweighting_off < optimization.options.reweighting
+end % classdef tgc_off < regularization.options.tgc
