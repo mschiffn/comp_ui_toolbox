@@ -8,14 +8,14 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point( 
 %
 % author: Martin F. Schiffner
 % date: 2019-06-13
-% modified: 2019-11-05
+% modified: 2020-01-10
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
 	%----------------------------------------------------------------------
-	% ensure class discretizations.signal_matrix
-    if ~isa( u_rx_tilde_qpw, 'discretizations.signal_matrix' )
-        errorStruct.message = 'u_rx_tilde_qpw must be discretizations.signal_matrix!';
+	% ensure class processing.signal_matrix
+    if ~isa( u_rx_tilde_qpw, 'processing.signal_matrix' )
+        errorStruct.message = 'u_rx_tilde_qpw must be processing.signal_matrix!';
         errorStruct.identifier = 'estimate_PER_point:NoSignalMatrices';
         error( errorStruct );
     end
@@ -205,15 +205,15 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point( 
             end % for index_selected = 1:numel( options{ index_data }( index_target ).indices_elements )
 
             % Fourier synthesis
-            e_B = discretizations.signal_matrix( u_rx_qpw_window.axis, e_B_samples );
+            e_B = processing.signal_matrix( u_rx_qpw_window.axis, e_B_samples );
             e_B_tilde{ index_data }{ index_target } = signal( e_B, 0, u_rx_tilde_qpw( index_data ).axis.delta );
 
             % apply windows (use original time window)
             e_B_tilde{ index_data }{ index_target } = cut_out( e_B_tilde{ index_data }{ index_target }, options{ index_data }( index_target ).interval_window_t.lb, options{ index_data }( index_target ).interval_window_t.ub, [], options{ index_data }( index_target ).setting_window );
 
             % compute mean and standard deviation
-            e_B_tilde_mean{ index_data }{ index_target } = discretizations.signal( e_B_tilde{ index_data }{ index_target }.axis, mean( e_B_tilde{ index_data }{ index_target }.samples, 2 ) );
-            e_B_tilde_std_dev{ index_data }{ index_target } = discretizations.signal( e_B_tilde{ index_data }{ index_target }.axis, sqrt( var( e_B_tilde{ index_data }{ index_target }.samples, [], 2 ) ) );
+            e_B_tilde_mean{ index_data }{ index_target } = processing.signal( e_B_tilde{ index_data }{ index_target }.axis, mean( e_B_tilde{ index_data }{ index_target }.samples, 2 ) );
+            e_B_tilde_std_dev{ index_data }{ index_target } = processing.signal( e_B_tilde{ index_data }{ index_target }.axis, sqrt( var( e_B_tilde{ index_data }{ index_target }.samples, [], 2 ) ) );
 
             %--------------------------------------------------------------
             % f) illustrate results

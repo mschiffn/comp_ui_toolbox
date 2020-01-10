@@ -10,7 +10,7 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
 %
 % author: Martin F. Schiffner
 % date: 2019-10-24
-% modified: 2019-11-26
+% modified: 2020-01-10
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
@@ -73,9 +73,9 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
         %------------------------------------------------------------------
         % a) check arguments
         %------------------------------------------------------------------
-        % ensure class discretizations.signal_matrix
-        if ~isa( u_SA_tilde{ index_data }, 'discretizations.signal_matrix' )
-            errorStruct.message = sprintf( 'u_SA_tilde{ %d } must be discretizations.signal_matrix!', index_data );
+        % ensure class processing.signal_matrix
+        if ~isa( u_SA_tilde{ index_data }, 'processing.signal_matrix' )
+            errorStruct.message = sprintf( 'u_SA_tilde{ %d } must be processing.signal_matrix!', index_data );
             errorStruct.identifier = 'estimate_PER_point_qsw:NoSignalMatrices';
             error( errorStruct );
         end
@@ -255,19 +255,19 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
             end % for index_selected_tx = 1:numel( options{ index_data }( index_target ).indices_elements_tx )
 
             % Fourier synthesis
-            e_B = discretizations.signal_matrix( u_SA_window.axis, e_B_samples );
+            e_B = processing.signal_matrix( u_SA_window.axis, e_B_samples );
             e_B_tilde{ index_data }{ index_target } = signal( e_B, 0, u_SA_tilde{ index_data }( 1 ).axis.delta );
 
             % apply windows (use original time window)
             e_B_tilde{ index_data }{ index_target } = cut_out( e_B_tilde{ index_data }{ index_target }, options{ index_data }( index_target ).interval_window_t.lb, options{ index_data }( index_target ).interval_window_t.ub, [], options{ index_data }( index_target ).setting_window );
 
             % compute mean and standard deviation
-            e_B_tilde_mean{ index_data }{ index_target } = discretizations.signal( e_B_tilde{ index_data }{ index_target }.axis, mean( e_B_tilde{ index_data }{ index_target }.samples, 2 ) );
-            e_B_tilde_std_dev{ index_data }{ index_target } = discretizations.signal( e_B_tilde{ index_data }{ index_target }.axis, sqrt( var( e_B_tilde{ index_data }{ index_target }.samples, [], 2 ) ) );
+            e_B_tilde_mean{ index_data }{ index_target } = processing.signal( e_B_tilde{ index_data }{ index_target }.axis, mean( e_B_tilde{ index_data }{ index_target }.samples, 2 ) );
+            e_B_tilde_std_dev{ index_data }{ index_target } = processing.signal( e_B_tilde{ index_data }{ index_target }.axis, sqrt( var( e_B_tilde{ index_data }{ index_target }.samples, [], 2 ) ) );
 
             % reference pulse-echo response
             index_ref = ( options{ index_data }( index_target ).index_selected_tx_ref - 1 ) * numel( options{ index_data }( index_target ).indices_elements_rx ) + options{ index_data }( index_target ).index_selected_rx_ref;
-            e_B_tilde_ref{ index_data }{ index_target } = discretizations.signal( e_B_tilde{ index_data }{ index_target }.axis, e_B_tilde{ index_data }{ index_target }.samples( :, index_ref ) );
+            e_B_tilde_ref{ index_data }{ index_target } = processing.signal( e_B_tilde{ index_data }{ index_target }.axis, e_B_tilde{ index_data }{ index_target }.samples( :, index_ref ) );
 
             %--------------------------------------------------------------
             % f) estimate calibration factors
@@ -282,7 +282,7 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
             cal_tx_samples = squeeze( mean( e_B_samples .* conj( filter ) ./ ( filter_abs_squared + options{ index_data }( index_target ).epsilon_squared_cal * filter_abs_squared_max ), 2 ) );
 
             % Fourier synthesis
-            cal_tx = discretizations.signal_matrix( e_B.axis, cal_tx_samples );
+            cal_tx = processing.signal_matrix( e_B.axis, cal_tx_samples );
             cal_tx_tilde{ index_data }{ index_target } = inverse_fourier_transform( cal_tx, - round( 0.5 * abs( interval_t_tof_quantized ) / u_SA_tilde{ index_data }( 1 ).axis.delta ), u_SA_tilde{ index_data }( 1 ).axis.delta );
 
             % apply windows (use original time window)
@@ -295,7 +295,7 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
             cal_rx_samples = mean( e_B_samples .* conj( filter ) ./ ( filter_abs_squared + options{ index_data }( index_target ).epsilon_squared_cal * filter_abs_squared_max ), 3 );
 
             % Fourier synthesis
-            cal_rx = discretizations.signal_matrix( e_B.axis, cal_rx_samples );
+            cal_rx = processing.signal_matrix( e_B.axis, cal_rx_samples );
             cal_rx_tilde{ index_data }{ index_target } = inverse_fourier_transform( cal_rx, - round( 0.5 * abs( interval_t_tof_quantized ) / u_SA_tilde{ index_data }( 1 ).axis.delta ), u_SA_tilde{ index_data }( 1 ).axis.delta );
 
             % apply windows (use original time window)

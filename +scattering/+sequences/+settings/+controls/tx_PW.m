@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2019-11-28
+% modified: 2020-01-10
 %
 classdef tx_PW < scattering.sequences.settings.controls.tx_QPW
 
@@ -34,9 +34,9 @@ classdef tx_PW < scattering.sequences.settings.controls.tx_QPW
             % superclass ensures class scattering.sequences.setups.setup (scalar)
             % superclass ensures class scattering.sequences.setups.transducers.array_planar_regular_orthogonal
 
-            % ensure class discretizations.signal
-            if ~isa( u_tx_tilde, 'discretizations.signal' )
-                errorStruct.message = 'u_tx_tilde must be discretizations.signal!';
+            % ensure class processing.signal
+            if ~isa( u_tx_tilde, 'processing.signal' )
+                errorStruct.message = 'u_tx_tilde must be processing.signal!';
                 errorStruct.identifier = 'tx_PW:NoRegularOrthogonalTransducerArray';
                 error( errorStruct );
             end

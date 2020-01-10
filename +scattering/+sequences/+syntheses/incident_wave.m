@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-04-06
-% modified: 2019-11-28
+% modified: 2020-01-10
 %
 classdef incident_wave
 
@@ -13,8 +13,8 @@ classdef incident_wave
 	properties (SetAccess = private)
 
         % independent properties
-        p_incident %( 1, 1 ) discretizations.field      % incident acoustic pressure field
-        p_incident_grad ( 1, : ) discretizations.field	% spatial gradient of the incident acoustic pressure field
+        p_incident %( 1, 1 ) processing.field      % incident acoustic pressure field
+        p_incident_grad ( 1, : ) processing.field	% spatial gradient of the incident acoustic pressure field
 
 	end % properties
 
@@ -117,7 +117,7 @@ classdef incident_wave
             p_incident = physical_values.pascal( p_incident );
 
             % create field
-            incident_wave.p_incident = discretizations.field( v_d_unique.axis, setup.FOV.shape.grid, p_incident );
+            incident_wave.p_incident = processing.field( v_d_unique.axis, setup.FOV.shape.grid, p_incident );
 
         end % function incident_wave = compute_p_in_pw( incident_wave, setup, settings_tx_pw )
 

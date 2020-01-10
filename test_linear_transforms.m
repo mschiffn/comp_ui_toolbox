@@ -1,7 +1,8 @@
 % test classes for linear transform
 % author: Martin Schiffner
 % date: 2016-08-13
-%
+% modified: 2020-01-10
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -169,7 +170,7 @@ f_0 = physical_values.hertz( 3e6 );
 % 1.) create bandpass signal
 %--------------------------------------------------------------------------
 samples_BP_tilde = sin( 2 * pi * f_0 * ( axis_t.members - N_samples_shift * T_s ) );
-signal_BP_tilde = discretizations.signal_matrix( axis_t, repmat( samples_BP_tilde, [ 1, N_signals ] ) );
+signal_BP_tilde = processing.signal_matrix( axis_t, repmat( samples_BP_tilde, [ 1, N_signals ] ) );
 
 %--------------------------------------------------------------------------
 % 2.) create time-dependent variable gain
@@ -178,7 +179,7 @@ TGC_curve = regularization.tgc.exponential( math.interval_quantized( axis_t.q_lb
 
 % sample TGC curve
 samples_gain_tilde = sample_curve( TGC_curve, axis_t );
-signal_gain_tilde = discretizations.signal( axis_t, samples_gain_tilde );
+signal_gain_tilde = processing.signal( axis_t, samples_gain_tilde );
 
 %--------------------------------------------------------------------------
 % 3.) apply TGC in the time domain
@@ -214,7 +215,7 @@ rel_RMSE_fwd = norm( samples_BP_tgc_conv_dft( : ) - samples_BP_tgc_conv_mat( : )
 rel_RMSE_adj = norm( samples_BP_tgc_conv_adj_dft( : ) - samples_BP_tgc_conv_adj_mat( : ) ) / norm( samples_BP_tgc_conv_adj_mat( : ) );
 
 % create signal matrix
-signal_BP_tgc_conv_dft = discretizations.signal_matrix( signal_BP.axis, samples_BP_tgc_conv_dft );
+signal_BP_tgc_conv_dft = processing.signal_matrix( signal_BP.axis, samples_BP_tgc_conv_dft );
 
 % time-domain signals
 signal_BP_tgc_conv_dft_tilde = signal( signal_BP_tgc_conv_dft, N_samples_shift, T_s );

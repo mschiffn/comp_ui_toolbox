@@ -412,9 +412,9 @@ classdef operator_born < scattering.operator
                     error( errorStruct );
                 end
 
-                % ensure class discretizations.signal_matrix
-                if ~isa( u_M{ index_operator }, 'discretizations.signal_matrix' )
-                    errorStruct.message = sprintf( 'u_M{ %d } must be discretizations.signal_matrix!', index_operator );
+                % ensure class processing.signal_matrix
+                if ~isa( u_M{ index_operator }, 'processing.signal_matrix' )
+                    errorStruct.message = sprintf( 'u_M{ %d } must be processing.signal_matrix!', index_operator );
                     errorStruct.identifier = 'adjoint:NoSignalMatrices';
                     error( errorStruct );
                 end
@@ -472,7 +472,7 @@ classdef operator_born < scattering.operator
                 % c) create images
                 %----------------------------------------------------------
                 theta_hat{ index_operator } ...
-                = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
+                = processing.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
                                          theta_hat{ index_operator } );
 
             end % for index_operator = 1:numel( operators_born )
@@ -597,7 +597,7 @@ classdef operator_born < scattering.operator
                 % c) create images
                 %----------------------------------------------------------
                 theta_tpsf{ index_operator } ...
-                = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
+                = processing.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, ...
                                          theta_tpsf{ index_operator } );
 
             end % for index_operator = 1:numel( operators_born )
@@ -881,7 +881,7 @@ classdef operator_born < scattering.operator
                     for index_column = 1:N_columns
 
                         % create mixed voltage signals
-                        signals{ index_column } = discretizations.signal( axes_f_mix, u_M{ index_object }{ index_measurement_sel }( :, index_column ) );
+                        signals{ index_column } = processing.signal( axes_f_mix, u_M{ index_object }{ index_measurement_sel }( :, index_column ) );
 
                         % try to merge mixed voltage signals
                         try
@@ -895,14 +895,14 @@ classdef operator_born < scattering.operator
                     u_M{ index_object }{ index_measurement_sel } = signals;
 
                     % create array of signal matrices
-                    if all( cellfun( @( x ) strcmp( class( x ), 'discretizations.signal_matrix' ), u_M{ index_object }{ index_measurement_sel } ) )
+                    if all( cellfun( @( x ) strcmp( class( x ), 'processing.signal_matrix' ), u_M{ index_object }{ index_measurement_sel } ) )
                         u_M{ index_object }{ index_measurement_sel } = cat( 2, u_M{ index_object }{ index_measurement_sel }{ : } );
                     end
 
                 end % for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
 
                 % create array of signal matrices
-                if all( cellfun( @( x ) strcmp( class( x ), 'discretizations.signal_matrix' ), u_M{ index_object } ) )
+                if all( cellfun( @( x ) strcmp( class( x ), 'processing.signal_matrix' ), u_M{ index_object } ) )
                     u_M{ index_object } = cat( 1, u_M{ index_object }{ : } );
                 end
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-11-28
+% modified: 2020-01-10
 %
 classdef rx_identity < scattering.sequences.settings.controls.rx
 
@@ -51,7 +51,7 @@ classdef rx_identity < scattering.sequences.settings.controls.rx
             if nargin < 5 || isempty( impulse_responses )
                 % impulse responses are identities
                 weight = physical_values.volt_per_newton * physical_values.meter^( 3 - setup.FOV.shape.N_dimensions );
-                impulse_responses = repmat( { discretizations.delta_matrix( 0, setup.T_clk, weight ) }, [ 1, setup.xdc_array.N_elements ] );
+                impulse_responses = repmat( { processing.delta_matrix( 0, setup.T_clk, weight ) }, [ 1, setup.xdc_array.N_elements ] );
             end
 
             % ensure cell array for impulse_responses
@@ -59,7 +59,7 @@ classdef rx_identity < scattering.sequences.settings.controls.rx
                 impulse_responses = num2cell( impulse_responses );
             end
 
-            % superclass ensures class discretizations.signal_matrix for impulse_responses
+            % superclass ensures class processing.signal_matrix for impulse_responses
 
             % multiple indices_active / single intervals_f
             if ~isscalar( indices_active ) && isscalar( intervals_f )
@@ -95,7 +95,7 @@ classdef rx_identity < scattering.sequences.settings.controls.rx
                     index_element_tx = setting_tx.indices_active( index_active_tx );
 
                     % support of excitation_voltages
-                    if isa( setting_tx.excitation_voltages, 'discretizations.signal' )
+                    if isa( setting_tx.excitation_voltages, 'processing.signal' )
                         t_lb_tx_act = setting_tx.excitation_voltages( index_active_tx ).axis.members( 1 );
                         t_ub_tx_act = setting_tx.excitation_voltages( index_active_tx ).axis.members( end );
                     else
@@ -106,7 +106,7 @@ classdef rx_identity < scattering.sequences.settings.controls.rx
                     end
 
                     % support of impulse responses
-                    if isa( setting_tx.impulse_responses, 'discretizations.signal' )
+                    if isa( setting_tx.impulse_responses, 'processing.signal' )
                         t_lb_tx_act = t_lb_tx_act + setting_tx.impulse_responses( index_active_tx ).axis.members( 1 );
                         t_ub_tx_act = t_ub_tx_act + setting_tx.impulse_responses( index_active_tx ).axis.members( end );
                     else

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-07
-% modified: 2020-01-06
+% modified: 2020-01-10
 %
 classdef exponential < regularization.tgc.curve
 
@@ -228,7 +228,7 @@ classdef exponential < regularization.tgc.curve
             end % for index_object = 1:numel( curves )
 
             % create signal matrices
-            signal_matrices = discretizations.signal_matrix( axes_f, samples );
+            signal_matrices = processing.signal_matrix( axes_f, samples );
 
         end % function signal_matrices = fourier_coefficients( curves, varargin )
 

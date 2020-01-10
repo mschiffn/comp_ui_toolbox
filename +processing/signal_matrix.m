@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2020-01-06
+% modified: 2020-01-10
 %
 classdef signal_matrix
 
@@ -118,9 +118,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'DFT:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -308,9 +308,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'signal:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -412,7 +412,7 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 3.) create signal matrices
             %--------------------------------------------------------------
-            signal_matrices = discretizations.signal_matrix( axes_t, samples_td );
+            signal_matrices = processing.signal_matrix( axes_t, samples_td );
 
         end % function [ signal_matrices, N_samples_t ] = signal( signal_matrices, varargin )
 
@@ -447,9 +447,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'interpolate:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -511,9 +511,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix for signal_matrices
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix for signal_matrices
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'apply_tgc:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -570,9 +570,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix for signal_matrices
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix for signal_matrices
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'estimate_decay:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -621,9 +621,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix for signal_matrices
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix for signal_matrices
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'estimate_decay:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -744,7 +744,7 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 3.) create signal matrix
             %--------------------------------------------------------------
-            signal_matrix = discretizations.signal_matrix( axis_mgd, samples_mgd );
+            signal_matrix = processing.signal_matrix( axis_mgd, samples_mgd );
 
         end % function signal_matrix = merge( signal_matrices )
 
@@ -756,9 +756,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure classes discretizations.signal_matrix
-            if ~( isa( args_1, 'discretizations.signal_matrix' ) && isa( args_2, 'discretizations.signal_matrix' ) )
-                errorStruct.message = 'args_1 and args_2 must be discretizations.signal_matrix!';
+            % ensure classes processing.signal_matrix
+            if ~( isa( args_1, 'processing.signal_matrix' ) && isa( args_2, 'processing.signal_matrix' ) )
+                errorStruct.message = 'args_1 and args_2 must be processing.signal_matrix!';
                 errorStruct.identifier = 'times:NoSignalArrays';
                 error( errorStruct );
             end
@@ -809,9 +809,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~( isa( args_1, 'discretizations.signal_matrix' ) && isa( args_2, 'discretizations.signal_matrix' ) )
-                errorStruct.message = 'args_1 and args_2 must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~( isa( args_1, 'processing.signal_matrix' ) && isa( args_2, 'processing.signal_matrix' ) )
+                errorStruct.message = 'args_1 and args_2 must be processing.signal_matrix!';
                 errorStruct.identifier = 'plus:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -860,9 +860,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~( isa( args_1, 'discretizations.signal_matrix' ) && isa( args_2, 'discretizations.signal_matrix' ) )
-                errorStruct.message = 'args_1 and args_2 must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~( isa( args_1, 'processing.signal_matrix' ) && isa( args_2, 'processing.signal_matrix' ) )
+                errorStruct.message = 'args_1 and args_2 must be processing.signal_matrix!';
                 errorStruct.identifier = 'minus:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -911,9 +911,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'sum:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -959,9 +959,9 @@ classdef signal_matrix
                 return;
             end
 
-            % ensure class discretizations.signal_matrix
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'subsample:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -1046,9 +1046,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'cut_out:NoSignalMatrices';
                 error( errorStruct );
             end
@@ -1132,9 +1132,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
-                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~isa( signal_matrices, 'processing.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
                 errorStruct.identifier = 'return_vector:NoSignalMatrices';
                 error( errorStruct );
             end

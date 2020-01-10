@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-10
-% modified: 2020-01-08
+% modified: 2020-01-10
 %
 classdef image
 
@@ -96,9 +96,9 @@ classdef image
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.image
-            if ~isa( images, 'discretizations.image' )
-                errorStruct.message = 'images must be discretizations.image!';
+            % ensure class processing.image
+            if ~isa( images, 'processing.image' )
+                errorStruct.message = 'images must be processing.image!';
                 errorStruct.identifier = 'peaks:NoImages';
                 error( errorStruct );
             end
@@ -140,9 +140,9 @@ classdef image
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.image
-            if ~isa( images, 'discretizations.image' )
-                errorStruct.message = 'images must be discretizations.image!';
+            % ensure class processing.image
+            if ~isa( images, 'processing.image' )
+                errorStruct.message = 'images must be processing.image!';
                 errorStruct.identifier = 'profile:NoImages';
                 error( errorStruct );
             end
@@ -184,9 +184,9 @@ classdef image
                     error( errorStruct );
                 end
 
-                % ensure class discretizations.options.profile
-                if ~isa( options{ index_image }, 'discretizations.options.profile' )
-                    errorStruct.message = sprintf( 'options{ %d } must be discretizations.options.profile!', index_image );
+                % ensure class processing.options.profile
+                if ~isa( options{ index_image }, 'processing.options.profile' )
+                    errorStruct.message = sprintf( 'options{ %d } must be processing.options.profile!', index_image );
                     errorStruct.identifier = 'profile:NoOptions';
                     error( errorStruct );
                 end
@@ -239,9 +239,9 @@ classdef image
 
                     indicator = N_points_axis_act > 1;
                     if images( index_image ).N_images == 1
-                        profiles{ index_image }{ index_options } = discretizations.signal( axes( indicator ), profiles{ index_image }{ index_options } );
+                        profiles{ index_image }{ index_options } = processing.signal( axes( indicator ), profiles{ index_image }{ index_options } );
                     else
-                        profiles{ index_image }{ index_options } = discretizations.signal_matrix( axes( indicator ), profiles{ index_image }{ index_options } );
+                        profiles{ index_image }{ index_options } = processing.signal_matrix( axes( indicator ), profiles{ index_image }{ index_options } );
                     end
 
                     %------------------------------------------------------
@@ -272,9 +272,9 @@ classdef image
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.image
-            if ~isa( images, 'discretizations.image' )
-                errorStruct.message = 'images must be discretizations.image!';
+            % ensure class processing.image
+            if ~isa( images, 'processing.image' )
+                errorStruct.message = 'images must be processing.image!';
                 errorStruct.identifier = 'profile:NoImages';
                 error( errorStruct );
             end
@@ -314,9 +314,9 @@ classdef image
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure class discretizations.options.region
-                if ~isa( options{ index_image }, 'discretizations.options.region' )
-                    errorStruct.message = sprintf( 'options{ %d } must be discretizations.options.region!', index_image );
+                % ensure class processing.options.region
+                if ~isa( options{ index_image }, 'processing.options.region' )
+                    errorStruct.message = sprintf( 'options{ %d } must be processing.options.region!', index_image );
                     errorStruct.identifier = 'region_boundary:NoOptions';
                     error( errorStruct );
                 end

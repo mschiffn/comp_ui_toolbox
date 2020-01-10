@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2019-11-28
+% modified: 2020-01-10
 %
 classdef setting
 
@@ -22,7 +22,7 @@ classdef setting
 
         % discretization
         tx_unique ( :, : ) scattering.sequences.settings.controls.tx	% synthesis settings (unique frequencies)
-        v_d_unique ( :, 1 ) discretizations.signal_matrix       % normal velocities (unique frequencies)
+        v_d_unique ( :, 1 ) processing.signal_matrix            % normal velocities (unique frequencies)
         indices_f_to_unique                                     % cell array mapping frequencies of each mixed voltage signal to unique frequencies of current pulse-echo measurement
         indices_active_rx_unique ( 1, : ) double
         indices_active_rx_to_unique

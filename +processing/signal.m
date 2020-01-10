@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-12-06
+% modified: 2020-01-10
 %
-classdef signal < discretizations.signal_matrix
+classdef signal < processing.signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -36,10 +36,10 @@ classdef signal < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 2.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.signal_matrix( axes, samples );
+            objects@processing.signal_matrix( axes, samples );
 
         end % function objects = signal( axes, samples )
 
     end % methods
 
-end % classdef signal < discretizations.signal_matrix
+end % classdef signal < processing.signal_matrix

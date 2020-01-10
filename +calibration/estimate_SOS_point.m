@@ -11,14 +11,14 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 %
 % author: Martin F. Schiffner
 % date: 2014-09-20
-% modified: 2019-11-14
+% modified: 2020-01-10
 
     %----------------------------------------------------------------------
 	% 1.) check arguments
 	%----------------------------------------------------------------------
-	% ensure class discretizations.signal_matrix
-	if ~isa( u_rx_tilde_qpw, 'discretizations.signal_matrix' )
-        errorStruct.message = 'u_rx_tilde_qpw must be discretizations.signal_matrix!';
+	% ensure class processing.signal_matrix
+	if ~isa( u_rx_tilde_qpw, 'processing.signal_matrix' )
+        errorStruct.message = 'u_rx_tilde_qpw must be processing.signal_matrix!';
         errorStruct.identifier = 'estimate_SOS_point:NoSignalMatrices';
         error( errorStruct );
     end

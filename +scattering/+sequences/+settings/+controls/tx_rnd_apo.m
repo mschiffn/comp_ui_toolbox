@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-26
-% modified: 2019-11-28
+% modified: 2020-01-10
 %
 classdef tx_rnd_apo < scattering.sequences.settings.controls.tx
 
@@ -81,7 +81,7 @@ classdef tx_rnd_apo < scattering.sequences.settings.controls.tx
                 apodization_weights_act( ~indicator ) = -1;
 
                 % specify impulse responses
-                impulse_responses{ index_object } = discretizations.delta_matrix( zeros( setup.xdc_array.N_elements, 1 ), setup.T_clk, physical_values.meter_per_volt_second( apodization_weights_act ) );
+                impulse_responses{ index_object } = processing.delta_matrix( zeros( setup.xdc_array.N_elements, 1 ), setup.T_clk, physical_values.meter_per_volt_second( apodization_weights_act ) );
 
                 %----------------------------------------------------------
                 % c) identical excitation voltages for all array elements

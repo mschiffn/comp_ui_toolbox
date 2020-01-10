@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-21
-% modified: 2019-05-27
+% modified: 2020-01-10
 %
-classdef delta_matrix < discretizations.signal_matrix
+classdef delta_matrix < processing.signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -82,10 +82,10 @@ classdef delta_matrix < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 3.) constructor of superclass
             %--------------------------------------------------------------
-            objects@discretizations.signal_matrix( axes, samples );
+            objects@processing.signal_matrix( axes, samples );
 
         end % function objects = delta_matrix( indices_q, deltas, varargin )
 
     end % methods
 
-end % classdef delta_matrix < discretizations.signal_matrix
+end % classdef delta_matrix < processing.signal_matrix

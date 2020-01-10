@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-11-28
+% modified: 2020-01-10
 %
 classdef tx < scattering.sequences.settings.controls.common
 
@@ -13,7 +13,7 @@ classdef tx < scattering.sequences.settings.controls.common
 	properties (SetAccess = private)
 
         % independent properties
-        excitation_voltages ( 1, : ) discretizations.signal_matrix	% voltages exciting the active channels
+        excitation_voltages ( 1, : ) processing.signal_matrix	% voltages exciting the active channels
 
     end % properties
 
@@ -32,8 +32,8 @@ classdef tx < scattering.sequences.settings.controls.common
             %--------------------------------------------------------------
             if nargin == 0
                 indices_active = 1;
-                impulse_responses = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
-                excitation_voltages = discretizations.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.volt );
+                impulse_responses = processing.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
+                excitation_voltages = processing.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.volt );
             end
 
             % ensure cell array for indices_active
@@ -62,7 +62,7 @@ classdef tx < scattering.sequences.settings.controls.common
 
                 switch class( excitation_voltages{ index_object } )
 
-                    case 'discretizations.signal'
+                    case 'processing.signal'
 
                         % multiple indices_active{ index_object } / single excitation_voltages{ index_object }
                         if ~isscalar( indices_active{ index_object } ) && isscalar( excitation_voltages{ index_object } )
@@ -78,7 +78,7 @@ classdef tx < scattering.sequences.settings.controls.common
                         catch
                         end
 
-                    case 'discretizations.signal_matrix'
+                    case 'processing.signal_matrix'
 
                         % ensure single signal matrix of correct size
                         if ~isscalar( excitation_voltages{ index_object } ) || ( numel( indices_active{ index_object } ) ~= excitation_voltages{ index_object }.N_signals )
@@ -213,8 +213,8 @@ classdef tx < scattering.sequences.settings.controls.common
 
             % create transfer functions and excitation voltages
             indices_active_unique = settings_tx_in( 1 ).indices_active;
-            impulse_responses_unique = discretizations.signal_matrix( axis_f_unique, samples_tf );
-            excitation_voltages_unique = discretizations.signal_matrix( axis_f_unique, samples_u_tx );
+            impulse_responses_unique = processing.signal_matrix( axis_f_unique, samples_tf );
+            excitation_voltages_unique = processing.signal_matrix( axis_f_unique, samples_u_tx );
 
             %--------------------------------------------------------------
             % 3.) create objects
@@ -270,9 +270,9 @@ classdef tx < scattering.sequences.settings.controls.common
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.signal_matrix
-            if ~( isa( [ settings_tx.excitation_voltages ], 'discretizations.signal_matrix' ) && isa( [ settings_tx.impulse_responses ], 'discretizations.signal_matrix' ) )
-                errorStruct.message = 'excitation_voltages and impulse_responses must be discretizations.signal_matrix!';
+            % ensure class processing.signal_matrix
+            if ~( isa( [ settings_tx.excitation_voltages ], 'processing.signal_matrix' ) && isa( [ settings_tx.impulse_responses ], 'processing.signal_matrix' ) )
+                errorStruct.message = 'excitation_voltages and impulse_responses must be processing.signal_matrix!';
                 errorStruct.identifier = 'compute_normal_velocities:NoSignalMatrices';
                 error( errorStruct );
             end

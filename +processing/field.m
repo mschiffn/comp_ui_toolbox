@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2019-06-15
+% modified: 2020-01-10
 %
-classdef field < discretizations.signal_matrix
+classdef field < processing.signal_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -49,7 +49,7 @@ classdef field < discretizations.signal_matrix
             % 2.) create fields
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@discretizations.signal_matrix( axes, samples );
+            objects@processing.signal_matrix( axes, samples );
 
             % iterate fields
             for index_object = 1:numel( objects )
@@ -156,7 +156,7 @@ classdef field < discretizations.signal_matrix
             % 1.) use subsampling method of superclass
             %--------------------------------------------------------------
 % TODO: do not use superclass method for efficiency
-            fields = subsample@discretizations.signal_matrix( fields, indices_axes );
+            fields = subsample@processing.signal_matrix( fields, indices_axes );
 
             %--------------------------------------------------------------
             % 2.) check arguments
@@ -203,9 +203,9 @@ classdef field < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.field
-            if ~( isa( fields_1, 'discretizations.field' ) && isa( fields_2, 'discretizations.field' ) )
-                errorStruct.message = 'fields_1 and fields_2 must be discretizations.field!';
+            % ensure class processing.field
+            if ~( isa( fields_1, 'processing.field' ) && isa( fields_2, 'processing.field' ) )
+                errorStruct.message = 'fields_1 and fields_2 must be processing.field!';
                 errorStruct.identifier = 'plus:NoFields';
                 error( errorStruct );
             end
@@ -220,7 +220,7 @@ classdef field < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 2.) call plus method in superclass
             %--------------------------------------------------------------
-            fields_1 = plus@discretizations.signal_matrix( fields_1, fields_2 );
+            fields_1 = plus@processing.signal_matrix( fields_1, fields_2 );
 
         end % function fields_1 = plus( fields_1, fields_2 )
 
@@ -232,9 +232,9 @@ classdef field < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.field
-            if ~isa( fields, 'discretizations.field' )
-                errorStruct.message = 'fields must be discretizations.field!';
+            % ensure class processing.field
+            if ~isa( fields, 'processing.field' )
+                errorStruct.message = 'fields must be processing.field!';
                 errorStruct.identifier = 'sum:NoFields';
                 error( errorStruct );
             end
@@ -249,7 +249,7 @@ classdef field < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 2.) call sum method in superclass
             %--------------------------------------------------------------
-            fields = sum@discretizations.signal_matrix( fields, varargin );
+            fields = sum@processing.signal_matrix( fields, varargin );
 
         end % function fields = sum( fields, varargin )
 
@@ -280,7 +280,7 @@ classdef field < discretizations.signal_matrix
 
                 % ensure class math.grid_regular
                 if ~isa( fields( index_object ).grid_FOV, 'math.grid_regular' )
-                    show@discretizations.signal_matrix( fields( index_object ) );
+                    show@processing.signal_matrix( fields( index_object ) );
                     continue;
                 end
 
@@ -361,9 +361,9 @@ classdef field < discretizations.signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class discretizations.field
-            if ~isa( fields, 'discretizations.field' )
-                errorStruct.message = 'fields must be discretizations.field!';
+            % ensure class processing.field
+            if ~isa( fields, 'processing.field' )
+                errorStruct.message = 'fields must be processing.field!';
                 errorStruct.identifier = 'show_movie:NoFields';
                 error( errorStruct );
             end
@@ -409,4 +409,4 @@ classdef field < discretizations.signal_matrix
 
 	end % methods
 
-end % classdef field < discretizations.signal_matrix
+end % classdef field < processing.signal_matrix

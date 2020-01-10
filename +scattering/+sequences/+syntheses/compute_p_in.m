@@ -4,7 +4,7 @@ function fields = compute_p_in( sequence, varargin )
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2019-08-28
+% modified: 2020-01-10
 %
 % TODO: move to class sequence
 
@@ -133,7 +133,7 @@ function fields = compute_p_in( sequence, varargin )
 	%----------------------------------------------------------------------
 	% 3.) create field objects
 	%----------------------------------------------------------------------
-	fields = discretizations.field( axes_f_unique, repmat( sequence.setup.FOV.shape.grid, size( indices_incident ) ), p_incident );
+	fields = processing.field( axes_f_unique, repmat( sequence.setup.FOV.shape.grid, size( indices_incident ) ), p_incident );
 
 	% infer and print elapsed time
 	time_elapsed = toc( time_start );

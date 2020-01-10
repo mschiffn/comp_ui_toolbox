@@ -4,7 +4,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 %
 % author: Martin F. Schiffner
 % date: 2015-06-01
-% modified: 2020-01-07
+% modified: 2020-01-10
 %
 
 	% print status
@@ -72,9 +72,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
             error( errorStruct );
         end
 
-        % ensure class discretizations.signal_matrix
-        if ~isa( u_M{ index_operator }, 'discretizations.signal_matrix' )
-            errorStruct.message = sprintf( 'u_M{ %d } must be discretizations.signal_matrix!', index_operator );
+        % ensure class processing.signal_matrix
+        if ~isa( u_M{ index_operator }, 'processing.signal_matrix' )
+            errorStruct.message = sprintf( 'u_M{ %d } must be processing.signal_matrix!', index_operator );
             errorStruct.identifier = 'lq_minimization:NoSignalMatrices';
             error( errorStruct );
         end
@@ -332,9 +332,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
         % c) create images and signal matrices
         %------------------------------------------------------------------
         gamma_recon{ index_operator } ...
-        = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, gamma_recon{ index_operator } );
+        = processing.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, gamma_recon{ index_operator } );
         theta_recon_normed{ index_operator } ...
-        = discretizations.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, theta_recon_normed{ index_operator } );
+        = processing.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, theta_recon_normed{ index_operator } );
 
         % avoid cell arrays for single options{ index_operator }
         if isscalar( options{ index_operator } )

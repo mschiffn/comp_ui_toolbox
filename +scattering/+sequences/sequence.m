@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2019-08-23
+% modified: 2020-01-10
 %
 classdef sequence
 
@@ -27,9 +27,9 @@ classdef sequence
         size ( 1, : ) double                            % size of the discretization
 
         % optional properties
-        h_ref ( :, 1 ) discretizations.field            % reference spatial transfer function (unique frequencies)
-        h_ref_aa ( :, 1 ) discretizations.field         % reference spatial transfer function (unique frequencies)
-        h_ref_grad ( :, 1 ) discretizations.field       % spatial gradient of the reference spatial transfer function (unique frequencies)
+        h_ref ( :, 1 ) processing.field            % reference spatial transfer function (unique frequencies)
+        h_ref_aa ( :, 1 ) processing.field         % reference spatial transfer function (unique frequencies)
+        h_ref_grad ( :, 1 ) processing.field       % spatial gradient of the reference spatial transfer function (unique frequencies)
 
     end % properties
 
@@ -116,7 +116,7 @@ classdef sequence
             end
 
             % ensure cell array for u_M_tilde
-            if ~iscell( u_M_tilde ) || all( cellfun( @( x ) isa( x, 'discretizations.signal_matrix' ), u_M_tilde ) )
+            if ~iscell( u_M_tilde ) || all( cellfun( @( x ) isa( x, 'processing.signal_matrix' ), u_M_tilde ) )
                 u_M_tilde = { u_M_tilde };
             end
 
@@ -167,7 +167,7 @@ classdef sequence
             for index_sequence = 1:numel( sequences )
 
                 % convert array of signal matrices into cell array
-                if isa( u_M_tilde{ index_sequence }, 'discretizations.signal_matrix' )
+                if isa( u_M_tilde{ index_sequence }, 'processing.signal_matrix' )
                     u_M_tilde{ index_sequence } = num2cell( u_M_tilde{ index_sequence } );
                 end
 
@@ -199,7 +199,7 @@ classdef sequence
                         ubs = reshape( [ intervals_t.ub ], size( intervals_t ) );
 
                         % check data structure
-                        if isa( u_M_tilde{ index_sequence }{ index_measurement }, 'discretizations.signal' )
+                        if isa( u_M_tilde{ index_sequence }{ index_measurement }, 'processing.signal' )
 
                             %----------------------------------------------
                             % a) single signals
@@ -230,9 +230,9 @@ classdef sequence
                             end % for index_mix = 1:numel( sequences( index_sequence ).settings( index_measurement ).rx )
 
                             % create signals
-                            u_M_tilde{ index_measurement } = discretizations.signal( axes, samples_win );
+                            u_M_tilde{ index_measurement } = processing.signal( axes, samples_win );
 
-                        elseif isa( u_M_tilde{ index_sequence }{ index_measurement }, 'discretizations.signal_matrix' )
+                        elseif isa( u_M_tilde{ index_sequence }{ index_measurement }, 'processing.signal_matrix' )
 
                             %----------------------------------------------
                             % b) signal matrix
@@ -275,7 +275,7 @@ classdef sequence
                             samples = samples( 1:( end - 1 ), : );
 
                             % create signal matrix
-                            u_M_tilde_window{ index_sequence }{ index_config }{ index_measurement_sel } = discretizations.signal_matrix( axis, samples );
+                            u_M_tilde_window{ index_sequence }{ index_config }{ index_measurement_sel } = processing.signal_matrix( axis, samples );
 
                         else
 
@@ -286,12 +286,12 @@ classdef sequence
                             errorStruct.identifier = 'apply_windows:UnknownSignalClass';
                             error( errorStruct );
 
-                        end % if isa( u_M_tilde{ index_sequence }{ index_measurement }, 'discretizations.signal' )
+                        end % if isa( u_M_tilde{ index_sequence }{ index_measurement }, 'processing.signal' )
 
                     end % for index_measurement_sel = 1:numel( indices_measurement{ index_sequence }{ index_config } )
 
-                    % convert cell array into array of discretizations.signal_matrix
-                    indicator = cellfun( @( x ) ~isa( x, 'discretizations.signal' ), u_M_tilde_window{ index_sequence }{ index_config } );
+                    % convert cell array into array of processing.signal_matrix
+                    indicator = cellfun( @( x ) ~isa( x, 'processing.signal' ), u_M_tilde_window{ index_sequence }{ index_config } );
                     if all( indicator(:) )
                         u_M_tilde_window{ index_sequence }{ index_config } = cat( 1, u_M_tilde_window{ index_sequence }{ index_config }{ : } );
                     end
@@ -355,9 +355,9 @@ classdef sequence
             % iterate sequential pulse-echo measurements
             for index_object = 1:numel( sequences )
 
-                % ensure class discretizations.signal_matrix
-                if ~isa( u_SA_tilde{ index_object }, 'discretizations.signal_matrix' )
-                    errorStruct.message = sprintf( 'u_SA_tilde{ %d } must be discretizations.signal_matrix!', index_object );
+                % ensure class processing.signal_matrix
+                if ~isa( u_SA_tilde{ index_object }, 'processing.signal_matrix' )
+                    errorStruct.message = sprintf( 'u_SA_tilde{ %d } must be processing.signal_matrix!', index_object );
                     errorStruct.identifier = 'synthesize_voltage_signals:NoSignalMatrices';
                     error( errorStruct );
                 end
@@ -405,9 +405,9 @@ classdef sequence
                     % print progress in percent
                     fprintf( '%5.1f %%', ( index_measurement - 1 ) / numel( sequences( index_object ).settings ) * 1e2 );
 
-                    % ensure class discretizations.delta_matrix
-                    if ~isa( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, 'discretizations.delta_matrix' )
-                        errorStruct.message = 'u_SA_tilde must be discretizations.delta_matrix!';
+                    % ensure class processing.delta_matrix
+                    if ~isa( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, 'processing.delta_matrix' )
+                        errorStruct.message = 'u_SA_tilde must be processing.delta_matrix!';
                         errorStruct.identifier = 'synthesize_voltage_signals:NoDeltaMatrix';
                         error( errorStruct );
                     end
@@ -439,7 +439,7 @@ classdef sequence
                 end % for index_measurement = 1:numel( sequences( index_object ).settings )
 
                 % create signal matrices
-                u_M{ index_object } = discretizations.signal_matrix( u_SA( 1 ).axis, samples );
+                u_M{ index_object } = processing.signal_matrix( u_SA( 1 ).axis, samples );
 
                 % compute samples in time domain
                 u_M_tilde{ index_object } = signal( u_M{ index_object }, 0, u_SA_tilde{ index_object }( 1 ).axis.delta );

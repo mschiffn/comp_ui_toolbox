@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2019-10-21
+% modified: 2020-01-10
 %
 classdef setup
 
@@ -503,7 +503,7 @@ classdef setup
             %--------------------------------------------------------------
             % 3.) create signal matrices
             %--------------------------------------------------------------
-            prefactors = discretizations.signal_matrix( axes_f, samples );
+            prefactors = processing.signal_matrix( axes_f, samples );
 
         end % function prefactors = compute_prefactors( setups, axes_f )
 
@@ -644,7 +644,7 @@ classdef setup
                         fprintf( '%5.1f %%', ( index_batch - 1 ) / N_batches * 1e2 );
 
                         % compute Green's functions for specified pairs of grids and specified grid points
-                        temp = discretizations.greens_function( face_act.shape.grid, setups( index_grid ).FOV.shape.grid, axis_k_tilde, indices{ index_batch } );
+                        temp = processing.greens_function( face_act.shape.grid, setups( index_grid ).FOV.shape.grid, axis_k_tilde, indices{ index_batch } );
 
                         % apply complex-valued apodization weights
                         temp = weights( indices{ index_batch }, :, : ) .* temp;
@@ -662,7 +662,7 @@ classdef setup
                 %----------------------------------------------------------
                 % d) create fields
                 %----------------------------------------------------------
-                h_transfer{ index_grid } = discretizations.field( repmat( axes_f( index_grid ), size( h_samples ) ), repmat( setups( index_grid ).FOV.shape.grid, size( h_samples ) ), h_samples );
+                h_transfer{ index_grid } = processing.field( repmat( axes_f( index_grid ), size( h_samples ) ), repmat( setups( index_grid ).FOV.shape.grid, size( h_samples ) ), h_samples );
 
             end % for index_grid = 1:numel( setups )
 
@@ -702,9 +702,9 @@ classdef setup
                 error( errorStruct );
             end
 
-            % ensure class discretizations.field
-            if ~isa( h_transfer, 'discretizations.field' )
-                errorStruct.message = 'h_transfer must be discretizations.field!';
+            % ensure class processing.field
+            if ~isa( h_transfer, 'processing.field' )
+                errorStruct.message = 'h_transfer must be processing.field!';
                 errorStruct.identifier = 'anti_aliasing_filter:NoFields';
                 error( errorStruct );
             end
@@ -831,7 +831,7 @@ classdef setup
             %--------------------------------------------------------------
             % 3.) create fields
             %--------------------------------------------------------------
-            h_transfer_aa = discretizations.field( [ h_transfer.axis ], [ h_transfer.grid_FOV ], h_samples_aa );
+            h_transfer_aa = processing.field( [ h_transfer.axis ], [ h_transfer.grid_FOV ], h_samples_aa );
 
         end % function h_transfer_aa = anti_aliasing_filter( setups, h_transfer, options_anti_aliasing, varargin )
 

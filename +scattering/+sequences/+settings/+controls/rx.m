@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2019-11-28
+% modified: 2020-01-10
 %
 classdef rx < scattering.sequences.settings.controls.common
 
@@ -45,7 +45,7 @@ classdef rx < scattering.sequences.settings.controls.common
 
             % superclass ensures finite positive integers for indices_active
 
-            % superclass ensures class discretizations.signal_matrix for impulse_responses
+            % superclass ensures class processing.signal_matrix for impulse_responses
 
             % ensure class math.interval for intervals_t
             if ~( isa( intervals_t, 'math.interval' ) && isa( intervals_f, 'math.interval' ) )
@@ -246,10 +246,10 @@ classdef rx < scattering.sequences.settings.controls.common
             % extract impulse responses
             impulse_responses = { settings_rx.impulse_responses };
 
-            % ensure class discretizations.signal_matrix
+            % ensure class processing.signal_matrix
             N_signal_matrices = cellfun( @numel, impulse_responses );
             if any( N_signal_matrices ~= 1 )
-                errorStruct.message = 'excitation_voltages and impulse_responses must be discretizations.signal_matrix!';
+                errorStruct.message = 'excitation_voltages and impulse_responses must be processing.signal_matrix!';
                 errorStruct.identifier = 'compute_normal_velocities:NoSignalMatrices';
                 error( errorStruct );
             end

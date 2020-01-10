@@ -21,7 +21,7 @@ classdef (Abstract) operator
         indices_measurement_sel ( :, 1 ) double { mustBePositive, mustBeInteger } % indices of selected sequential pulse-echo measurements
 
         % optional properties
-        h_ref_aa ( 1, : ) discretizations.field                     % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
+        h_ref_aa ( 1, : ) processing.field                     % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
 
 	end % properties
 

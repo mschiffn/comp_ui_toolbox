@@ -11,7 +11,7 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
 %
 % author: Martin F. Schiffner
 % date: 2014-09-20
-% modified: 2019-11-25
+% modified: 2020-01-10
 
     %----------------------------------------------------------------------
 	% 1.) check arguments
@@ -68,9 +68,9 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
         %------------------------------------------------------------------
         % a) check arguments
         %------------------------------------------------------------------
-        % ensure class discretizations.signal_matrix
-        if ~isa( u_rx_tilde_qsw{ index_data }, 'discretizations.signal_matrix' )
-            errorStruct.message = 'u_rx_tilde_qsw must be discretizations.signal_matrix!';
+        % ensure class processing.signal_matrix
+        if ~isa( u_rx_tilde_qsw{ index_data }, 'processing.signal_matrix' )
+            errorStruct.message = 'u_rx_tilde_qsw must be processing.signal_matrix!';
             errorStruct.identifier = 'estimate_SOS_point_qsw:NoSignalMatrices';
             error( errorStruct );
         end

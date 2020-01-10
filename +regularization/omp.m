@@ -9,7 +9,7 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
 %
 % author: Martin F. Schiffner
 % date: 2011-06-15
-% modified: 2020-01-07
+% modified: 2020-01-10
 %
 
 	% print status
@@ -118,9 +118,9 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
         % graphical illustration
         %------------------------------------------------------------------
         axis = math.sequence_increasing_regular( 188, 563, physical_values.hertz( 11986.814504045551075250841677188873291015625 ) );
-        y_m_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
-        y_approx_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
-        y_m_res_tilde = signal( discretizations.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        y_m_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        y_approx_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
+        y_m_res_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
         y_m_tilde_max = max( abs( y_m_tilde.samples(:) ) );
 
         figure( k_iter );

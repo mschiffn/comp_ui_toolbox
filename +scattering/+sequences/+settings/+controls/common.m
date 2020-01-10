@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2019-11-28
+% modified: 2020-01-10
 %
 classdef (Abstract) common
 
@@ -14,7 +14,7 @@ classdef (Abstract) common
 
         % independent properties
         indices_active ( 1, : ) double { mustBePositive, mustBeInteger, mustBeFinite }	% indices of active array elements (1)
-        impulse_responses ( 1, : ) discretizations.signal_matrix                        % impulse responses of active channels
+        impulse_responses ( 1, : ) processing.signal_matrix                        % impulse responses of active channels
 
     end % properties
 
@@ -48,7 +48,7 @@ classdef (Abstract) common
                 impulse_responses = { impulse_responses };
             end
 
-            % property validation function ensures class discretizations.signal_matrix for impulse_responses
+            % property validation function ensures class processing.signal_matrix for impulse_responses
 
             % ensure equal number of dimensions and sizes of cell arrays
             auxiliary.mustBeEqualSize( indices_active, impulse_responses );
@@ -64,7 +64,7 @@ classdef (Abstract) common
 
                 switch class( impulse_responses{ index_object } )
 
-                    case 'discretizations.signal'
+                    case 'processing.signal'
 
                         % multiple indices_active{ index_object } / single impulse_responses{ index_object }
                         if ~isscalar( indices_active{ index_object } ) && isscalar( impulse_responses{ index_object } )
@@ -80,7 +80,7 @@ classdef (Abstract) common
                         catch
                         end
 
-                    case 'discretizations.signal_matrix'
+                    case 'processing.signal_matrix'
 
                         % ensure single signal matrix of correct size
                         if ~isscalar( impulse_responses{ index_object } ) || ( numel( indices_active{ index_object } ) ~= impulse_responses{ index_object }.N_signals )
@@ -154,7 +154,7 @@ classdef (Abstract) common
                 % compute Fourier transform samples
                 settings( index_object ).impulse_responses = fourier_transform( settings( index_object ).impulse_responses, Ts_ref( index_object ), intervals_f( index_object ) );
 
-                % merge transforms to ensure class discretizations.signal_matrix
+                % merge transforms to ensure class processing.signal_matrix
                 settings( index_object ).impulse_responses = merge( settings( index_object ).impulse_responses );
 
             end % for index_object = 1:numel( settings )
