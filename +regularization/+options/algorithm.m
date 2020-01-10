@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2019-09-22
+% modified: 2020-01-10
 %
 classdef (Abstract) algorithm
 
@@ -60,5 +60,17 @@ classdef (Abstract) algorithm
         end % function objects = algorithm( rel_RMSE, N_iterations_max )
 
 	end % methods
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (Abstract)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract)
+
+        %------------------------------------------------------------------
+        % display algorithm options
+        %------------------------------------------------------------------
+        str_out = show( algorithms )
+
+    end % methods (Abstract)
 
 end % classdef (Abstract) algorithm

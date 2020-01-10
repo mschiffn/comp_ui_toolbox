@@ -207,7 +207,7 @@ classdef signal_matrix
             N_dft = round( T_ref ./ deltas );
             if any( abs( T_ref ./ deltas - N_dft ) > eps( N_dft ) )
                 errorStruct.message = sprintf( 'T_ref must be integer multiples of deltas!' );
-                errorStruct.identifier = 'DFT:InvalidTRec';
+                errorStruct.identifier = 'DFT:InvalidTRef';
                 error( errorStruct );
             end
 
@@ -612,6 +612,103 @@ classdef signal_matrix
             end
 
         end % function [ exponents, factors ] = estimate_decay( signal_matrices )
+
+        %------------------------------------------------------------------
+        % find widths of peaks
+        %------------------------------------------------------------------
+        function widths_out = widths( signal_matrices, thresholds_dB )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class discretizations.signal_matrix for signal_matrices
+            if ~isa( signal_matrices, 'discretizations.signal_matrix' )
+                errorStruct.message = 'signal_matrices must be discretizations.signal_matrix!';
+                errorStruct.identifier = 'estimate_decay:NoSignalMatrices';
+                error( errorStruct );
+            end
+
+            % ensure nonempty negative thresholds_dB
+            mustBeNegative( thresholds_dB );
+            mustBeNonempty( thresholds_dB );
+
+            % multiple signal_matrices / single thresholds_dB
+            if ~isscalar( signal_matrices ) && isscalar( thresholds_dB )
+                thresholds_dB = repmat( thresholds_dB, size( signal_matrices ) );
+            end
+
+            % single signal_matrices / multiple thresholds_dB
+            if isscalar( signal_matrices ) && ~isscalar( thresholds_dB )
+                signal_matrices = repmat( signal_matrices, size( thresholds_dB ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( signal_matrices, thresholds_dB );
+
+            %--------------------------------------------------------------
+            % 2.) compute widths
+            %--------------------------------------------------------------
+            % specify cell array for widths_out
+            widths_out = cell( size( signal_matrices ) );
+
+            % iterate signal matrices
+            for index_object = 1:numel( signal_matrices )
+
+                % specify cell array for widths_out{ index_object }
+                widths_out{ index_object } = cell( 1, signal_matrices( index_object ).N_signals );
+
+                % iterate signals
+                for index_signal = 1:signal_matrices( index_object ).N_signals
+
+                    %
+                    samples_dB = illustration.dB( signal_matrices( index_object ).samples( :, index_signal ), 20 );
+                    [ peaks, peaks_indices ] = findpeaks( samples_dB, 'MINPEAKHEIGHT', thresholds_dB( index_object ) / 3 );
+                    N_peaks = numel( peaks_indices );
+
+                    % initialize peak widths w/ zeros
+                    delta = signal_matrices( index_object ).axis.members( 2 ) - signal_matrices( index_object ).axis.members( 1 );
+                    widths_out{ index_object }{ index_signal } = repmat( delta, size( peaks ) );
+
+                    % find width of peaks
+                    for index_peak = 1:N_peaks
+
+                        index_lb = peaks_indices( index_peak );
+                        index_ub = peaks_indices( index_peak );
+
+                        % lower bound
+                        while samples_dB( index_lb ) >= peaks( index_peak ) + thresholds_dB( index_object )
+
+                            index_lb = index_lb - 1;
+                        end
+                        index_lb = index_lb + 1;
+    
+                        % upper bound
+                        while samples_dB( index_ub ) >= peaks( index_peak ) + thresholds_dB( index_object )
+
+                            index_ub = index_ub + 1;
+                        end
+                        index_ub = index_ub - 1;
+
+                        % compute extent of peak
+                        widths_out{ index_object }{ index_signal }( index_peak ) = ( index_ub - index_lb + 1 ) * delta;
+
+                    end %for index_peak = 1:N_peaks
+
+                end % for index_signal = 1:signal_matrices( index_object ).N_signals
+
+                % avoid cell array for single signal
+                if signal_matrices( index_object ).N_signals == 1
+                    widths_out{ index_object } = widths_out{ index_object }{ 1 };
+                end
+
+            end % for index_object = 1:numel( signal_matrices )
+
+            % avoid cell array for single signal_matrices
+            if isscalar( signal_matrices )
+                widths_out = widths_out{ 1 };
+            end
+
+        end % function widths_out = widths( signal_matrices, thresholds_dB )
 
         %------------------------------------------------------------------
         % merge compatible signal matrices

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2019-09-24
+% modified: 2020-01-10
 %
 classdef (Abstract) reweighting
 
@@ -41,5 +41,17 @@ classdef (Abstract) reweighting
         end % function objects = reweighting( size )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (Abstract)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract)
+
+        %------------------------------------------------------------------
+        % display reweighting options
+        %------------------------------------------------------------------
+        str_out = show( reweightings )
+
+    end % methods (Abstract)
 
 end % classdef (Abstract) reweighting

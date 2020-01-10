@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2020-01-03
+% modified: 2020-01-07
 %
 classdef warm_start_previous < regularization.options.warm_start
 
@@ -37,6 +37,34 @@ classdef warm_start_previous < regularization.options.warm_start
             objects@regularization.options.warm_start( size );
 
         end % function objects = warm_start_previous( size )
+
+        %------------------------------------------------------------------
+        % display warm start options
+        %------------------------------------------------------------------
+        function str_out = show( warm_starts_previous )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.warm_start_previous
+            if ~isa( warm_starts_previous, 'regularization.options.warm_start_previous' )
+                errorStruct.message = 'warm_starts_previous must be regularization.options.warm_start_previous!';
+                errorStruct.identifier = 'show:NoOptionsWarmStartPrevious';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display options
+            %--------------------------------------------------------------
+            % specify cell array for str_out
+            str_out = repmat( { 'previous' }, size( warm_starts_previous ) );
+
+            % avoid cell array for single warm_starts_previous
+            if isscalar( warm_starts_previous )
+                str_out = str_out{ 1 };
+            end
+
+        end % function str_out = show( warm_starts_previous )
 
 	end % methods
 

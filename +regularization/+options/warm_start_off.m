@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2020-01-03
+% modified: 2020-01-07
 %
 classdef warm_start_off < regularization.options.warm_start
 
@@ -37,6 +37,34 @@ classdef warm_start_off < regularization.options.warm_start
             objects@regularization.options.warm_start( size );
 
         end % function objects = warm_start_off( size )
+
+        %------------------------------------------------------------------
+        % display warm start options
+        %------------------------------------------------------------------
+        function str_out = show( warm_starts_off )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.warm_start_off
+            if ~isa( warm_starts_off, 'regularization.options.warm_start_off' )
+                errorStruct.message = 'warm_starts_off must be regularization.options.warm_start_off!';
+                errorStruct.identifier = 'show:NoOptionsWarmStartOff';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display options
+            %--------------------------------------------------------------
+            % specify cell array for str_out
+            str_out = repmat( { 'off' }, size( warm_starts_off ) );
+
+            % avoid cell array for single warm_starts_off
+            if isscalar( warm_starts_off )
+                str_out = str_out{ 1 };
+            end
+
+        end % function str_out = show( warm_starts_off )
 
 	end % methods
 

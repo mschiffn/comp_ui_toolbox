@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-10
-% modified: 2019-10-03
+% modified: 2020-01-08
 %
 classdef image
 
@@ -135,7 +135,7 @@ classdef image
         %------------------------------------------------------------------
         % projected profile
         %------------------------------------------------------------------
-        function profiles = profile( images, dim, varargin )
+        function profiles = profile( images, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -147,75 +147,26 @@ classdef image
                 error( errorStruct );
             end
 
-            % ensure nonempty positive integers
-            mustBeNonempty( dim );
-            mustBePositive( dim );
-            mustBeInteger( dim );
-
-            % ensure nonempty intervals_pos
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                intervals_pos = varargin{ 1 };
-            else
-                intervals_pos = physical_values.meter( zeros( size( images ) ) );
-                for index_image = 1:numel( images )
-                    images( index_image ).grid.positions;
-                end
+            % ensure cell array for options
+            if ~iscell( options )
+                options = { options };
             end
 
-            % ensure class math.interval
-            if ~isa( intervals_pos, 'math.interval' )
-                errorStruct.message = 'intervals_pos must be math.interval!';
-                errorStruct.identifier = 'profile:NoIntervals';
-                error( errorStruct );
+            % multiple images / single options
+            if ~isscalar( images ) && isscalar( options )
+                options = repmat( options, size( images ) );
             end
 
-            %
-            auxiliary.mustBeEqualSubclasses( 'physical_values.length', intervals_pos.lb );
-
-            % ensure nonempty N_zeros_add
-            if nargin >= 4 && ~isempty( varargin{ 2 } )
-                N_zeros_add = varargin{ 2 };
-            else
-                N_zeros_add = 50;
-            end
-
-            % ensure nonempty factor_interp
-            if nargin >= 5 && ~isempty( varargin{ 3 } )
-                factor_interp = varargin{ 3 };
-            else
-                factor_interp = 10;
-            end
-
-            % single images / multiple intervals_pos
-            if isscalar( images ) && ~isscalar( intervals_pos )
-                images = repmat( images, size( intervals_pos ) );
-            end
-
-            % multiple images / single dim
-            if ~isscalar( images ) && isscalar( dim )
-                dim = repmat( dim, size( images ) );
-            end
-
-            % multiple images / single intervals_pos
-            if ~isscalar( images ) && isscalar( intervals_pos )
-                intervals_pos = repmat( intervals_pos, size( images ) );
-            end
-
-            % multiple images / single N_zeros_add
-            if ~isscalar( images ) && isscalar( N_zeros_add )
-                N_zeros_add = repmat( N_zeros_add, size( images ) );
-            end
-
-            % multiple images / single factor_interp
-            if ~isscalar( images ) && isscalar( factor_interp )
-                factor_interp = repmat( factor_interp, size( images ) );
+            % single images / multiple options
+            if isscalar( images ) && ~isscalar( options )
+                images = repmat( images, size( options ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( images, dim, intervals_pos, N_zeros_add, factor_interp );
+            auxiliary.mustBeEqualSize( images, options );
 
             %--------------------------------------------------------------
-            % 2.) compute profiles
+            % 2.) compute projected profiles
             %--------------------------------------------------------------
             % specify cell array for profiles
             profiles = cell( size( images ) );
@@ -233,59 +184,76 @@ classdef image
                     error( errorStruct );
                 end
 
-                %
-                mustBeLessThanOrEqual( dim( index_image ), images( index_image ).grid.N_dimensions );
+                % ensure class discretizations.options.profile
+                if ~isa( options{ index_image }, 'discretizations.options.profile' )
+                    errorStruct.message = sprintf( 'options{ %d } must be discretizations.options.profile!', index_image );
+                    errorStruct.identifier = 'profile:NoOptions';
+                    error( errorStruct );
+                end
 
                 %----------------------------------------------------------
                 % b) compute profiles in specified window
                 %----------------------------------------------------------
+                % extract axes and number of points
+% TODO: maintain regularity of axis!
                 axes = get_axes( images( index_image ).grid );
                 N_points_axis_act = images( index_image ).grid.N_points_axis;
 
-                % cut out axis
-                [ ~, indicator ] = cut_out( axes( dim( index_image ) ), intervals_pos( index_image ).lb, intervals_pos( index_image ).ub );
-
-                %
-                str_selector = repmat( { ':' }, [ 1, images( index_image ).grid.N_dimensions ] );
-                str_selector{ dim( index_image ) } = indicator;
-
                 % specify cell array for profiles
-                profiles{ index_image } = cell( 1, images( index_image ).N_images );
+                profiles{ index_image } = cell( size( options{ index_image } ) );
 
-                % iterate images
-                for index_col = 1:images( index_image ).N_images
+                % iterate options
+                for index_options = 1:numel( options{ index_image } )
 
-                    samples_act = reshape( images( index_image ).samples( :, index_col ), images( index_image ).grid.N_points_axis );
-                    profiles{ index_image }{ index_col } = squeeze( vecnorm( samples_act( str_selector{ : } ), 2, dim( index_image ) ) ) * sqrt( images( index_image ).grid.cell_ref.edge_lengths( dim( index_image ) ) );
+                    %------------------------------------------------------
+                    % i.) project image pixels
+                    %------------------------------------------------------
+                    mustBeLessThanOrEqual( options{ index_image }( index_options ).dim, images( index_image ).grid.N_dimensions );
 
-                end % for index_col = 1:images( index_image ).N_images
+                    % cut out axis
+                    [ ~, indicator ] = cut_out( axes( options{ index_image }( index_options ).dim ), options{ index_image }( index_options ).interval.lb, options{ index_image }( index_options ).interval.ub );
 
-%                 indicator = ( images( index_image ).grid.positions( :, dim( index_image ) ) >= intervals_pos( index_image ).lb ) & ( images( index_image ).grid.positions( :, dim( index_image ) ) <= intervals_pos( index_image ).ub );
-%                 N_points_axis_act( dim( index_image ) ) = sum( indicator ) * N_points_axis_act( dim( index_image ) ) / images( index_image ).grid.N_points;
+                    %
+                    str_selector = repmat( { ':' }, [ 1, images( index_image ).grid.N_dimensions ] );
+                    str_selector{ options{ index_image }( index_options ).dim } = indicator;
 
-                %----------------------------------------------------------
-                % c) create signal matrices
-                %----------------------------------------------------------
-% TODO: check number of dimensions
-                
-                N_points_axis_act( dim( index_image ) ) = 1;
+                    % specify cell array for profiles
+                    profiles{ index_image }{ index_options } = cell( 1, images( index_image ).N_images );
 
-                indicator = N_points_axis_act > 1;
-                if images( index_image ).N_images == 1
-                    profiles{ index_image } = discretizations.signal( axes( indicator ), profiles{ index_image } );
-                else
-                    profiles{ index_image } = discretizations.signal_matrix( axes( indicator ), profiles{ index_image } );
-                end
+                    % iterate images
+                    for index_col = 1:images( index_image ).N_images
 
-                %----------------------------------------------------------
-                % d) interpolate signals
-                %----------------------------------------------------------
-%                 profiles{ index_image } = interpolate( profiles{ index_image }, factor_interp( index_image ) );
+                        samples_act = reshape( images( index_image ).samples( :, index_col ), images( index_image ).grid.N_points_axis );
+                        profiles{ index_image }{ index_options }{ index_col } = squeeze( vecnorm( samples_act( str_selector{ : } ), 2, options{ index_image }( index_options ).dim ) ) * sqrt( images( index_image ).grid.cell_ref.edge_lengths( options{ index_image }( index_options ).dim ) );
 
-                % apply window function to smooth boundaries before DFT-based interpolation
-%                 profile_window = profile(:) .* tukeywin(N_samples, 0.1);
+                    end % for index_col = 1:images( index_image ).N_images
 
-                % add zeros and interpolate
+%                     indicator = ( images( index_image ).grid.positions( :, options{ index_image }( index_options ).dim ) >= intervals_pos( index_image ).lb ) & ( images( index_image ).grid.positions( :, options{ index_image }( index_options ).dim ) <= intervals_pos( index_image ).ub );
+%                     N_points_axis_act( options{ index_image }( index_options ).dim ) = sum( indicator ) * N_points_axis_act( options{ index_image }( index_options ).dim ) / images( index_image ).grid.N_points;
+
+                    %------------------------------------------------------
+                    % ii.) create signal matrices
+                    %------------------------------------------------------
+                    % TODO: check number of dimensions
+                    N_points_axis_act( options{ index_image }( index_options ).dim ) = 1;
+
+                    indicator = N_points_axis_act > 1;
+                    if images( index_image ).N_images == 1
+                        profiles{ index_image }{ index_options } = discretizations.signal( axes( indicator ), profiles{ index_image }{ index_options } );
+                    else
+                        profiles{ index_image }{ index_options } = discretizations.signal_matrix( axes( indicator ), profiles{ index_image }{ index_options } );
+                    end
+
+                    %------------------------------------------------------
+                    % iii.) interpolate signals
+                    %------------------------------------------------------
+                    % TODO: add zeros and interpolate
+%                     profiles{ index_image }{ index_options } = interpolate( profiles{ index_image }{ index_options }, options{ index_image }( index_options ).factor_interp );
+
+                    % apply window function to smooth boundaries before DFT-based interpolation
+    %                 profile_window = profile(:) .* tukeywin(N_samples, 0.1);
+
+                end % for index_options = 1:numel( options{ index_image } )
 
             end % for index_image = 1:numel( images )
 
@@ -294,12 +262,12 @@ classdef image
                 profiles = profiles{ 1 };
             end
 
-        end % function profiles = profile( images, dim, varargin )
+        end % function profiles = profile( images, options )
 
         %------------------------------------------------------------------
-        % region
+        % region extents
         %------------------------------------------------------------------
-        function RBs = region_boundary( images, boundaries_dB, varargin )
+        function RBs = region_boundary( images, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -314,44 +282,23 @@ classdef image
             % ensure equal subclasses of math.grid_regular_orthogonal
             auxiliary.mustBeEqualSubclasses( 'math.grid_regular_orthogonal', images.grid );
 
-            % ensure nonempty ROIs
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                ROIs = varargin{ 1 };
-            else
-                ROIs = cell( numel( images ), 1 );
-                for index_image = 1:numel( images )
-                    lbs = images( index_image ).grid.offset_axis - 0.5 .* images( index_image ).grid.cell_ref.edge_lengths;
-                    ubs = images( index_image ).grid.offset_axis + ( images( index_image ).grid.N_points_axis - 0.5 ) .* images( index_image ).grid.cell_ref.edge_lengths;
-                    intervals = num2cell( math.interval( lbs, ubs ) );
-                    ROIs{ index_image } = math.orthotope( intervals{ : } );
-                end
-                ROIs = reshape( cat( 1, ROIs{ : } ), size( images ) );
+            % ensure cell array for options
+            if ~iscell( options )
+                options = { options };
             end
 
-            % ensure class math.orthotope
-            if ~isa( ROIs, 'math.orthotope' )
-                errorStruct.message = 'ROIs must be math.orthotope!';
-                errorStruct.identifier = 'region_boundary:NoOrthotopes';
-                error( errorStruct );
+            % multiple images / single options
+            if ~isscalar( images ) && isscalar( options )
+                options = repmat( options, size( images ) );
             end
 
-            % single images / multiple ROIs
-            if isscalar( images ) && ~isscalar( ROIs )
-                images = repmat( images, size( ROIs ) );
-            end
-
-            % multiple images / single boundaries_dB
-            if ~isscalar( images ) && isscalar( boundaries_dB )
-                boundaries_dB = repmat( boundaries_dB, size( images ) );
-            end
-
-            % multiple images / single ROIs
-            if ~isscalar( images ) && isscalar( ROIs )
-                ROIs = repmat( ROIs, size( images ) );
+            % single images / multiple options
+            if isscalar( images ) && ~isscalar( options )
+                images = repmat( images, size( options ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( images, boundaries_dB, ROIs );
+            auxiliary.mustBeEqualSize( images, options );
 
             %--------------------------------------------------------------
             % 2.) compute regions
@@ -359,6 +306,7 @@ classdef image
             % specify cell arrays
             N_samples = cell( size( images ) );
             volumes = cell( size( images ) );
+            RBs = cell( size( images ) );
 
             % iterate image matrices
             for index_image = 1:numel( images )
@@ -366,52 +314,69 @@ classdef image
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure class math.grid_regular_orthogonal
-                if ~isa( images( index_image ).grid, 'math.grid_regular_orthogonal' )
-                    errorStruct.message = sprintf( 'images( %d ).grid must be math.grid_regular_orthogonal!', index_image );
-                    errorStruct.identifier = 'region_boundary:NoOrthogonalRegularGrid';
-                    error( errorStruct );
-                end
-
-                % ensure valid numbers of dimensions
-                if ROIs( index_image ).N_dimensions ~= images( index_image ).grid.N_dimensions
-                    errorStruct.message = sprintf( 'Numbers of dimensions in ROIs( %d ) and images( %d ).grid must equal!', index_image, index_image );
-                    errorStruct.identifier = 'region_boundary:DimensionMismatch';
+                % ensure class discretizations.options.region
+                if ~isa( options{ index_image }, 'discretizations.options.region' )
+                    errorStruct.message = sprintf( 'options{ %d } must be discretizations.options.region!', index_image );
+                    errorStruct.identifier = 'region_boundary:NoOptions';
                     error( errorStruct );
                 end
 
                 %----------------------------------------------------------
-                % b)
+                % b) compute regions
                 %----------------------------------------------------------
-                % cut out axes
+                % extract axes
                 axes = get_axes( images( index_image ).grid );
-                [ ~, indicators ] = cut_out( axes, [ ROIs( index_image ).intervals.lb ]', [ ROIs( index_image ).intervals.ub ]' );
 
-                N_samples{ index_image } = zeros( 1, images( index_image ).N_images );
-                volumes{ index_image } = zeros( 1, images( index_image ).N_images );
+                % specify cell arrays
+                N_samples{ index_image } = cell( size( options{ index_image } ) );
+                volumes{ index_image } = cell( size( options{ index_image } ) );
 
-                % iterate images
-                for index_col = 1:images( index_image ).N_images
+                % iterate options
+                for index_options = 1:numel( options{ index_image } )
 
-                    % subsampling
-                    samples = reshape( images( index_image ).samples( :, index_col ), images( index_image ).grid.N_points_axis );
-                    samples = samples( indicators{ : } );
+                    % ensure valid numbers of dimensions
+                    if options{ index_image }( index_options ).ROI.N_dimensions ~= images( index_image ).grid.N_dimensions
+                        errorStruct.message = sprintf( 'Numbers of dimensions in options{ %d }( %d ).ROI and images( %d ).grid must equal!', index_image, index_options, index_image );
+                        errorStruct.identifier = 'region_boundary:DimensionMismatch';
+                        error( errorStruct );
+                    end
 
-                    % logarithmic compression
-                    samples_dB = illustration.dB( samples, 20 );
-                    indicator = ( samples_dB >= boundaries_dB( index_image ) );
+                    % cut out axis
+                    [ ~, indicators ] = cut_out( axes, [ options{ index_image }( index_options ).ROI.intervals.lb ]', [ options{ index_image }( index_options ).ROI.intervals.ub ]' );
 
-                    N_samples{ index_image }( index_col ) = sum( indicator( : ) );
-                    volumes{ index_image }( index_col ) = N_samples{ index_image }( index_col ) * images( index_image ).grid.cell_ref.volume;
+                    % initialize results w/ zeros
+                    N_samples{ index_image }{ index_options } = zeros( 1, images( index_image ).N_images );
+                    volumes{ index_image }{ index_options } = zeros( 1, images( index_image ).N_images );
 
-                end % for index_col = 1:images( index_image ).N_images
+                    % iterate images
+                    for index_col = 1:images( index_image ).N_images
+
+                        % subsampling
+                        samples = reshape( images( index_image ).samples( :, index_col ), images( index_image ).grid.N_points_axis );
+                        samples = samples( indicators{ : } );
+
+                        % logarithmic compression
+                        samples_dB = illustration.dB( samples, 20 );
+                        indicator = ( samples_dB >= options{ index_image }( index_options ).boundary_dB );
+
+                        N_samples{ index_image }{ index_options }( index_col ) = sum( indicator( : ) );
+                        volumes{ index_image }{ index_options }( index_col ) = N_samples{ index_image }{ index_options }( index_col ) * images( index_image ).grid.cell_ref.volume;
+
+                    end % for index_col = 1:images( index_image ).N_images
+
+                end % for index_options = 1:numel( options{ index_image } )
+
+                % create structure
+                RBs{ index_image } = struct( 'N_samples', N_samples{ index_image }, 'volume', volumes{ index_image } );
 
             end % for index_image = 1:numel( images )
 
-            % create structure
-            RBs = struct( 'N_samples', N_samples, 'volume', volumes );
+            % avoid cell array for single images
+            if isscalar( images )
+                RBs = RBs{ 1 };
+            end
 
-        end % function RBs = region_boundary( images, boundaries_dB, varargin )
+        end % function RBs = region_boundary( images, options )
 
     end % methods
 

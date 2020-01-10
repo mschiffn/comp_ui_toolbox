@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2020-01-03
+% modified: 2020-01-10
 %
 classdef operator_born < scattering.operator
 
@@ -262,8 +262,8 @@ classdef operator_born < scattering.operator
             end
 
             % ensure nonempty options
-            if isempty( options )
-                options = repmat( { regularization.options.common }, size( operators_born ) );
+            if nargin <= 2 || isempty( options )
+                options = regularization.options.common;
             end
 
             % ensure cell array for options
@@ -370,8 +370,8 @@ classdef operator_born < scattering.operator
             end
 
             % ensure nonempty options
-            if isempty( options )
-                options = repmat( { regularization.options.common }, size( operators_born ) );
+            if nargin <= 2 || isempty( options )
+                options = regularization.options.common;
             end
 
             % ensure cell array for options
@@ -501,8 +501,8 @@ classdef operator_born < scattering.operator
             end
 
             % ensure nonempty options
-            if isempty( options )
-                options = repmat( { regularization.options.tpsf }, size( operators_born ) );
+            if nargin <= 1 || isempty( options )
+                options = regularization.options.tpsf;
             end
 
             % ensure cell array for options
@@ -627,8 +627,8 @@ classdef operator_born < scattering.operator
             end
 
             % ensure nonempty options
-            if isempty( options )
-                options = repmat( { regularization.options.common }, size( operators_born ) );
+            if nargin <= 1 || isempty( options )
+                options = regularization.options.common;
             end
 
             % ensure cell array for options
@@ -918,7 +918,7 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % create TGC transforms
         %------------------------------------------------------------------
-        function [ LTs_tgc, LTs_tgc_measurement ] = get_LTs_tgc( operators_born, options_tgc )
+        function [ LTs_tgc, LTs_tgc_measurement ] = get_LTs_tgc( operators_born, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -931,26 +931,26 @@ classdef operator_born < scattering.operator
             end
 
             % ensure class regularization.options.tgc
-            if ~isa( options_tgc, 'regularization.options.tgc' )
-                errorStruct.message = 'options_tgc must be regularization.options.tgc!';
+            if ~isa( options, 'regularization.options.tgc' )
+                errorStruct.message = 'options must be regularization.options.tgc!';
                 errorStruct.identifier = 'get_LTs_tgc:NoOptionsTGC';
                 error( errorStruct );
             end
 
-% TODO: options_tgc must be compatible with operators_born
+% TODO: options must be compatible with operators_born
 
-            % multiple operators_born / single options_tgc
-            if ~isscalar( operators_born ) && isscalar( options_tgc )
-                options_tgc = repmat( options_tgc, size( operators_born ) );
+            % multiple operators_born / single options
+            if ~isscalar( operators_born ) && isscalar( options )
+                options = repmat( options, size( operators_born ) );
             end
 
-            % single operators_born / multiple options_tgc
-            if isscalar( operators_born ) && ~isscalar( options_tgc )
-                operators_born = repmat( operators_born, size( options_tgc ) );
+            % single operators_born / multiple options
+            if isscalar( operators_born ) && ~isscalar( options )
+                operators_born = repmat( operators_born, size( options ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, options_tgc );
+            auxiliary.mustBeEqualSize( operators_born, options );
 
             %--------------------------------------------------------------
             % 2.) create TGC transforms
@@ -1005,7 +1005,7 @@ classdef operator_born < scattering.operator
                 indices = mat2cell( 1:sum( N_mixes_measurement ), 1, N_mixes_measurement );
 
                 LTs_tgc_measurement{ index_object } = cell( numel( operators_born( index_object ).indices_measurement_sel ), 1 );
-                if isa( options_tgc( index_object ), 'regularization.options.tgc_off' )
+                if isa( options( index_object ), 'regularization.options.tgc_off' )
 
                     %------------------------------------------------------
                     % a) inactive TGC
@@ -1016,23 +1016,23 @@ classdef operator_born < scattering.operator
                     LTs_tgc{ index_object } = linear_transforms.identity( sum( N_observations ) );
                     continue;
 
-                elseif isa( options_tgc( index_object ), 'regularization.options.tgc_exponential' )
+                elseif isa( options( index_object ), 'regularization.options.tgc_exponential' )
 
                     %------------------------------------------------------
                     % b) exponential TGC curves
                     %------------------------------------------------------
-                    TGC_curves = regularization.tgc.exponential( intervals_t, options_tgc( index_object ).exponents );
+                    TGC_curves = regularization.tgc.exponential( intervals_t, options( index_object ).exponents );
 
                 else
 
                     %------------------------------------------------------
                     % c) unknown TGC settings
                     %------------------------------------------------------
-                    errorStruct.message = sprintf( 'Class of options_tgc( %d ) is unknown!', index_object );
+                    errorStruct.message = sprintf( 'Class of options( %d ) is unknown!', index_object );
                     errorStruct.identifier = 'get_LTs_tgc:UnknownOptionsClass';
                     error( errorStruct );
 
-                end % if isa( options_tgc( index_object ), 'regularization.options.tgc_off' )
+                end % if isa( options( index_object ), 'regularization.options.tgc_off' )
 
                 %----------------------------------------------------------
                 % c) create discrete convolutions by discretizing TGC curves
@@ -1041,7 +1041,7 @@ classdef operator_born < scattering.operator
                 Ts_ref = reshape( 1 ./ [ axes_f_mix.delta ], size( axes_f_mix ) );
 
                 % compute Fourier coefficients
-                signal_matrices = fourier_coefficients( TGC_curves, Ts_ref, options_tgc( index_object ).decays_dB );
+                signal_matrices = fourier_coefficients( TGC_curves, Ts_ref, options( index_object ).decays_dB );
 
                 % compute kernels for discrete convolutions
                 kernels = cell( size( signal_matrices ) );
@@ -1078,7 +1078,7 @@ classdef operator_born < scattering.operator
                 LTs_tgc_measurement = LTs_tgc_measurement{ 1 };
             end
 
-        end % function [ LTs_tgc, LTs_tgc_measurement ] = get_LTs_tgc( operators_born, options_tgc )
+        end % function [ LTs_tgc, LTs_tgc_measurement ] = get_LTs_tgc( operators_born, options )
 
         %------------------------------------------------------------------
         % create dictionary transforms

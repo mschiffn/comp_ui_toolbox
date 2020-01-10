@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2020-01-06
+% modified: 2020-01-07
 %
 classdef lq_minimization < regularization.options.common
 
@@ -33,14 +33,14 @@ classdef lq_minimization < regularization.options.common
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure nonempty options_common
-            if isempty( options_common )
+            if nargin <= 0 || isempty( options_common )
                 options_common = regularization.options.common;
             end
 
             % ensure class regularization.options.common
             if ~isa( options_common, 'regularization.options.common' )
                 errorStruct.message = 'options_common must be regularization.options.common!';
-                errorStruct.identifier = 'options_tpsf:NoCommonOptions';
+                errorStruct.identifier = 'lq_minimization:NoCommonOptions';
                 error( errorStruct );
             end
 
@@ -107,6 +107,49 @@ classdef lq_minimization < regularization.options.common
             end % for index_object = 1:numel( objects )
 
         end % function objects = lq_minimization( options_common, varargin )
+
+        %------------------------------------------------------------------
+        % display options
+        %------------------------------------------------------------------
+        function show( options )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure nonempty options_common
+            if nargin <= 0 || isempty( options )
+                options = regularization.options.lq_minimization;
+            end
+
+            % ensure class regularization.options.lq_minimization
+            if ~isa( options, 'regularization.options.lq_minimization' )
+                errorStruct.message = 'options must be regularization.options.lq_minimization!';
+                errorStruct.identifier = 'show:NoOptions';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display options
+            %--------------------------------------------------------------
+            % iterate lq-minimization options
+            for index_object = 1:numel( options )
+
+                %----------------------------------------------------------
+                % print header
+                %----------------------------------------------------------
+                str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+                fprintf( ' %s\n', repmat( '=', [ 1, 80 ] ) );
+                fprintf( ' %s (%s)\n', 'lq-minimization options', str_date_time );
+                fprintf( ' %s\n', repmat( '=', [ 1, 80 ] ) );
+
+                %----------------------------------------------------------
+                % print content
+                %----------------------------------------------------------
+                fprintf( ' %-12s: %-13s %4s %-12s: %-5s %4s %-12s: %-13s\n', 'algorithm', show( options( index_object ).algorithm ), '', 'reweighting', show( options( index_object ).reweighting ), '', 'warm start', show( options( index_object ).warm_start ) );
+
+            end % for index_object = 1:numel( options )
+
+        end % function show( options )
 
 	end % methods
 

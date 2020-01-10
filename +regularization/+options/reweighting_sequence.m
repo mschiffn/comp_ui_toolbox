@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-03
+% modified: 2020-01-10
 %
 classdef reweighting_sequence < regularization.options.reweighting
 
@@ -57,6 +57,41 @@ classdef reweighting_sequence < regularization.options.reweighting
             end % for index_object = 1:numel( objects )
 
         end % function objects = reweighting_sequence( epsilon_n )
+
+        %------------------------------------------------------------------
+        % display reweighting options
+        %------------------------------------------------------------------
+        function str_out = show( reweightings_sequence )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.reweighting_sequence
+            if ~isa( reweightings_sequence, 'regularization.options.reweighting_sequence' )
+                errorStruct.message = 'reweightings_sequence must be regularization.options.reweighting_sequence!';
+                errorStruct.identifier = 'show:NoOptionsReweightingSequence';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display options
+            %--------------------------------------------------------------
+            % specify cell array for str_out
+            str_out = cell( size( reweightings_sequence ) );
+
+            % iterate sequence reweighting options
+            for index_object = 1:numel( reweightings_sequence )
+
+                str_out{ index_object } = sprintf( '%s (q = %2.1f)', 'sequence', reweightings_sequence( index_object ).q );
+
+            end % for index_object = 1:numel( options )
+
+            % avoid cell array for single reweightings_sequence
+            if isscalar( reweightings_sequence )
+                str_out = str_out{ 1 };
+            end
+
+        end % function str_out = show( reweightings_sequence )
 
 	end % methods
 

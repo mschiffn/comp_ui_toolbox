@@ -4,7 +4,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 %
 % author: Martin F. Schiffner
 % date: 2015-06-01
-% modified: 2020-01-03
+% modified: 2020-01-07
 %
 
 	% print status
@@ -28,12 +28,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
     end
 
 	% ensure nonempty options
-	if isempty( options )
-        options = cell( size( operators_born ) );
-        for index_operator = 1:numel( operators_born )
-            options{ index_operator } = regularization.options.common;
-        end
-    end
+	if nargin <= 2 || isempty( options )
+        options = regularization.options.lq_minimization;
+	end
 
 	% ensure cell array for options
 	if ~iscell( options )
@@ -68,17 +65,17 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
         %------------------------------------------------------------------
         % a) check arguments
         %------------------------------------------------------------------
-        % ensure class regularization.options.common
-        if ~isa( options{ index_operator }, 'regularization.options.common' )
-            errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
-            errorStruct.identifier = 'adjoint:NoCommonOptions';
+        % ensure class regularization.options.lq_minimization
+        if ~isa( options{ index_operator }, 'regularization.options.lq_minimization' )
+            errorStruct.message = sprintf( 'options{ %d } must be regularization.options.lq_minimization!', index_operator );
+            errorStruct.identifier = 'lq_minimization:NoLqMinimizationOptions';
             error( errorStruct );
         end
 
         % ensure class discretizations.signal_matrix
         if ~isa( u_M{ index_operator }, 'discretizations.signal_matrix' )
             errorStruct.message = sprintf( 'u_M{ %d } must be discretizations.signal_matrix!', index_operator );
-            errorStruct.identifier = 'adjoint:NoSignalMatrices';
+            errorStruct.identifier = 'lq_minimization:NoSignalMatrices';
             error( errorStruct );
         end
 
@@ -109,6 +106,11 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
             %--------------------------------------------------------------
             % i.) create configuration
             %--------------------------------------------------------------
+            % display options
+% TODO: move to get_configs
+            show( options{ index_operator }( index_options ) );
+
+            % create configuration
             [ operator_born_act, LT_tgc, LT_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
 
             %--------------------------------------------------------------
@@ -251,7 +253,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                 theta_n( :, 1 ) = theta_recon_normed{ index_operator }{ index_options };
 % TODO: residual voltages
                 % statistics
-                info{ index_operator }{ index_transform }{ index_config }{ index_options }.info_reweighting = cell(1, N_iterations);
+                info{ index_operator }{ index_options }.info_reweighting = cell( 1, N_iterations );
 
                 % iterate reweighted problems
                 for index_iter = 1:N_iterations
@@ -266,25 +268,28 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                     % solve reweighted problem
                     if isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_spgl1' )
 
-                        [ temp, ~, ~, info_reweighting ] = spgl1( op_A_bar_n, u_M_vect_tgc_normed, [], options{ index_operator }( index_options ).algorithm.rel_RMSE, [], spgl_opts );
+                        % call SPGL1
+                        [ temp, ~, ~, info_reweighting ] = spgl1( op_A_bar_n, u_M_act_vect_tgc_normed, [], options{ index_operator }( index_options ).algorithm.rel_RMSE, [], spgl_opts );
 
                     elseif isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_omp' )
 
-                        [ temp, ~, info_reweighting ] = regularization.omp( op_A_bar_n, u_M_vect_tgc_normed, options{ index_operator }( index_options ).algorithm );
+                        % call OMP
+                        [ temp, ~, info_reweighting ] = regularization.omp( op_A_bar_n, u_M_act_vect_tgc_normed, options{ index_operator }( index_options ).algorithm );
 
                     else
 
-                        errorStruct.message = sprintf( 'Options{ %d }{ %d }{ %d }( %d ).algorithm is invalid for reweighting!', index_operator, index_transform, index_config, index_options );
+                        % unknown
+                        errorStruct.message = sprintf( 'options{ %d }( %d ).algorithm is invalid for reweighting!', index_operator, index_options );
                         errorStruct.identifier = 'lq_minimization:InvalidAlgorithmSetting';
                         error( errorStruct );
 
-                    end
+                    end % if isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_spgl1' )
 
                     % remove reweighting
                     theta_n( :, index_iter + 1 ) = temp .* weights_act;
 
                     % statistics for computational costs
-                    info{ index_operator }{ index_transform }{ index_config }{ index_options }.info_reweighting{ index_iter } = info_reweighting;
+                    info{ index_operator }{ index_options }.info_reweighting{ index_iter } = info_reweighting;
 
                 end % for index_iter = 1:N_iterations
 

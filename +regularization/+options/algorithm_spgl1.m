@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-03
+% modified: 2020-01-10
 %
 classdef algorithm_spgl1 < regularization.options.algorithm
 
@@ -57,6 +57,41 @@ classdef algorithm_spgl1 < regularization.options.algorithm
             end % for index_object = 1:numel( objects )
 
         end % function objects = algorithm_spgl1( rel_RMSE, N_iterations_max, q )
+
+        %------------------------------------------------------------------
+        % display SPGL1 options
+        %------------------------------------------------------------------
+        function str_out = show( algorithms_spgl1 )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.algorithm_spgl1
+            if ~isa( algorithms_spgl1, 'regularization.options.algorithm_spgl1' )
+                errorStruct.message = 'algorithms_spgl1 must be regularization.options.algorithm_spgl1!';
+                errorStruct.identifier = 'show:NoOptionsSPGL1';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display options
+            %--------------------------------------------------------------
+            % specify cell array for str_out
+            str_out = cell( size( algorithms_spgl1 ) );
+
+            % iterate SPGL1 options
+            for index_object = 1:numel( algorithms_spgl1 )
+
+                str_out{ index_object } = sprintf( '%s (q = %d)', 'SPGL1', algorithms_spgl1( index_object ).q );
+
+            end % for index_object = 1:numel( options )
+
+            % avoid cell array for single algorithms_spgl1
+            if isscalar( algorithms_spgl1 )
+                str_out = str_out{ 1 };
+            end
+
+        end % function str_out = show( algorithms_spgl1 )
 
 	end % methods
 

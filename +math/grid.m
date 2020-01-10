@@ -3,15 +3,15 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21
-% modified: 2019-05-14
+% modified: 2020-01-09
 %
 classdef grid
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	properties
-% TODO: access rights?
+	properties %(SetAccess = private)
+
         % independent properties
         positions ( :, : ) physical_values.length	% discrete positions of the grid points
 

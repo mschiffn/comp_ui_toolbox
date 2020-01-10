@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2019-09-24
+% modified: 2020-01-10
 %
 classdef (Abstract) warm_start
 
@@ -41,5 +41,17 @@ classdef (Abstract) warm_start
         end % function objects = warm_start( size )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (Abstract)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract)
+
+        %------------------------------------------------------------------
+        % display warm start options
+        %------------------------------------------------------------------
+        str_out = show( warm_starts )
+
+    end % methods (Abstract)
 
 end % classdef (Abstract) warm_start

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-22
-% modified: 2020-01-03
+% modified: 2020-01-10
 %
 classdef algorithm_cosamp < regularization.options.algorithm
 
@@ -54,6 +54,10 @@ classdef algorithm_cosamp < regularization.options.algorithm
             end % for index_object = 1:numel( objects )
 
         end % function objects = algorithm_cosamp( rel_RMSE, N_iterations_max )
+
+        %------------------------------------------------------------------
+        % TODO: display CoSaMP options
+        %------------------------------------------------------------------
 
 	end % methods
 
