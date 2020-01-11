@@ -106,12 +106,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
             %--------------------------------------------------------------
             % i.) create configuration
             %--------------------------------------------------------------
+            [ operator_born_act, LT_act, LT_tgc ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
             % display options
-% TODO: move to get_configs
             show( options{ index_operator }( index_options ) );
-
-            % create configuration
-            [ operator_born_act, LT_tgc, LT_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
 
             %--------------------------------------------------------------
             % ii.) create mixed voltage signals

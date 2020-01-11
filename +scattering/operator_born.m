@@ -7,9 +7,9 @@
 %
 classdef operator_born < scattering.operator
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
@@ -322,7 +322,7 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % i.) create configuration
                     %------------------------------------------------------
-                    [ operator_born_act, LT_tgc, LT_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
+                    [ operator_born_act, LT_act, LT_tgc ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
 
                     %------------------------------------------------------
                     % ii.) quick forward scattering
@@ -393,7 +393,15 @@ classdef operator_born < scattering.operator
             auxiliary.mustBeEqualSize( operators_born, u_M, options );
 
             %--------------------------------------------------------------
-            % 2.) compute adjoint scattering
+            % 2.) create configurations
+            %--------------------------------------------------------------
+            % method get_configs ensures class scattering.operator_born for operators_born
+            % method get_configs ensures cell array for options
+%             [ operators_born_config, LTs, LTs_tgc ] = get_configs( operators_born, options );
+%             [ operators_born_config, LTs, LTs_tgc ] = get_configs( operators_born, options );
+
+            %--------------------------------------------------------------
+            % 3.) compute adjoint scattering
             %--------------------------------------------------------------
             % specify cell arrays
             theta_hat = cell( size( operators_born ) );
@@ -432,7 +440,10 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % i.) create configuration
                     %------------------------------------------------------
-                    [ operator_born_act, LT_tgc, LT_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
+                    [ operator_born_act, LT_act, LT_tgc ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
+
+            % display options
+            show( options{ index_operator }( index_options ) );
 
                     %------------------------------------------------------
                     % ii.) create mixed voltage signals
@@ -558,7 +569,7 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % i.) create configuration
                     %------------------------------------------------------
-                    [ operator_born_act, LT_tgc, LT_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
+                    [ operator_born_act, LT_act, LT_tgc ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
 
                     %------------------------------------------------------
                     % ii.) create coefficient vectors
@@ -962,108 +973,125 @@ classdef operator_born < scattering.operator
             % iterate scattering operators
             for index_object = 1:numel( operators_born )
 
-                %----------------------------------------------------------
-                % a) extract frequency axes, time intervals, and numbers observations
-                %----------------------------------------------------------
-                % specify cell arrays
-                axes_f_mix = cell( numel( operators_born( index_object ).indices_measurement_sel ), 1 );
-                intervals_t = cell( numel( operators_born( index_object ).indices_measurement_sel ), 1 );
-                N_observations = cell( numel( operators_born( index_object ).indices_measurement_sel ), 1 );
+                % numbers of observations for all sequential pulse-echo measurements
+                N_observations_mix = { operators_born( index_object ).sequence.settings( operators_born( index_object ).indices_measurement_sel ).N_observations };
+                N_observations_measurement = cellfun( @( x ) sum( x( : ) ), N_observations_mix );
 
-                % iterate selected sequential pulse-echo measurements
-                for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
-
-                    % index of sequential pulse-echo measurement
-                    index_measurement = operators_born( index_object ).indices_measurement_sel( index_measurement_sel );
-
-                    % subsample global unique frequencies to get unique frequencies of pulse-echo measurement
-                    axis_f_measurement_unique = subsample( operators_born( index_object ).sequence.axis_f_unique, operators_born( index_object ).sequence.indices_f_to_unique( index_measurement ) );
-
-                    % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
-                    indices_f_mix_to_measurement = operators_born( index_object ).sequence.settings( index_measurement ).indices_f_to_unique;
-
-                    % subsample unique frequencies of pulse-echo measurement to get frequencies of mixed voltage signals
-                    axes_f_mix{ index_measurement_sel } = subsample( axis_f_measurement_unique, indices_f_mix_to_measurement );
-
-                    intervals_t{ index_measurement_sel } = [ operators_born( index_object ).sequence.settings( index_measurement ).rx.interval_t ].';
-                    N_observations{ index_measurement_sel } = operators_born( index_object ).sequence.settings( index_measurement ).N_observations;
-
-                end % for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
-
-                % concatenate vertically
-                axes_f_mix = cat( 1, axes_f_mix{ : } );
-                intervals_t = cat( 1, intervals_t{ : } );
-                N_observations = cat( 1, N_observations{ : } );
-
-                %----------------------------------------------------------
-                % b) create individual TGC curve for each mix
-                %----------------------------------------------------------
                 % number of mixed voltage signals for each sequential pulse-echo measurement
-                N_mixes_measurement = cellfun( @numel, { operators_born( index_object ).sequence.settings( operators_born( index_object ).indices_measurement_sel ).rx } );
+                N_mixes_measurement = cellfun( @numel, N_observations_mix );
 
-                % indices for each mix
-                indices = mat2cell( 1:sum( N_mixes_measurement ), 1, N_mixes_measurement );
-
+                % specify cell array for LTs_tgc_measurement{ index_object }
                 LTs_tgc_measurement{ index_object } = cell( numel( operators_born( index_object ).indices_measurement_sel ), 1 );
+
+                % check TGC status
                 if isa( options( index_object ), 'regularization.options.tgc_off' )
 
                     %------------------------------------------------------
-                    % a) inactive TGC
+                    % i.) inactive TGC
                     %------------------------------------------------------
+                    % iterate selected sequential pulse-echo measurements
                     for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
-                        LTs_tgc_measurement{ index_object }{ index_measurement_sel } = linear_transforms.identity( sum( N_observations( indices{ index_measurement_sel } ) ) );
+
+                        % create identity for the selected sequential pulse-echo measurement
+                        LTs_tgc_measurement{ index_object }{ index_measurement_sel } = linear_transforms.identity( N_observations_measurement( index_measurement_sel ) );
+
                     end
-                    LTs_tgc{ index_object } = linear_transforms.identity( sum( N_observations ) );
-                    continue;
 
-                elseif isa( options( index_object ), 'regularization.options.tgc_exponential' )
-
-                    %------------------------------------------------------
-                    % b) exponential TGC curves
-                    %------------------------------------------------------
-                    TGC_curves = regularization.tgc.exponential( intervals_t, options( index_object ).exponents );
+                    % create identity for all selected sequential pulse-echo measurements
+                    LTs_tgc{ index_object } = linear_transforms.identity( sum( N_observations_measurement( : ) ) );
 
                 else
 
                     %------------------------------------------------------
-                    % c) unknown TGC settings
+                    % ii.) active TGC
                     %------------------------------------------------------
-                    errorStruct.message = sprintf( 'Class of options( %d ) is unknown!', index_object );
-                    errorStruct.identifier = 'get_LTs_tgc:UnknownOptionsClass';
-                    error( errorStruct );
+                    % indices for each mix
+                    indices = mat2cell( 1:sum( N_mixes_measurement ), 1, N_mixes_measurement );
+
+                    %------------------------------------------------------
+                    % a) extract frequency axes, time intervals, and numbers observations
+                    %------------------------------------------------------
+                    % specify cell arrays
+                    axes_f_mix = cell( numel( operators_born( index_object ).indices_measurement_sel ), 1 );
+                    intervals_t = cell( numel( operators_born( index_object ).indices_measurement_sel ), 1 );
+
+                    % iterate selected sequential pulse-echo measurements
+                    for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
+
+                        % index of sequential pulse-echo measurement
+                        index_measurement = operators_born( index_object ).indices_measurement_sel( index_measurement_sel );
+
+                        % subsample global unique frequencies to get unique frequencies of pulse-echo measurement
+                        axis_f_measurement_unique = subsample( operators_born( index_object ).sequence.axis_f_unique, operators_born( index_object ).sequence.indices_f_to_unique( index_measurement ) );
+
+                        % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
+                        indices_f_mix_to_measurement = operators_born( index_object ).sequence.settings( index_measurement ).indices_f_to_unique;
+
+                        % subsample unique frequencies of pulse-echo measurement to get frequencies of mixed voltage signals
+                        axes_f_mix{ index_measurement_sel } = subsample( axis_f_measurement_unique, indices_f_mix_to_measurement );
+
+                        intervals_t{ index_measurement_sel } = [ operators_born( index_object ).sequence.settings( index_measurement ).rx.interval_t ].';
+
+                    end % for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
+
+                    % concatenate vertically
+                    axes_f_mix = cat( 1, axes_f_mix{ : } );
+                    intervals_t = cat( 1, intervals_t{ : } );
+
+                    %------------------------------------------------------
+                    % b) create individual TGC curve for each mix
+                    %------------------------------------------------------
+                    % check type of TGC
+                    if isa( options( index_object ), 'regularization.options.tgc_exponential' )
+
+                        %--------------------------------------------------
+                        % A) exponential TGC curves
+                        %------------------------------------------------------
+                        TGC_curves = regularization.tgc.exponential( intervals_t, options( index_object ).exponents );
+
+                    else
+
+                        %--------------------------------------------------
+                        % B) unknown TGC settings
+                        %--------------------------------------------------
+                        errorStruct.message = sprintf( 'Class of options( %d ) is unknown!', index_object );
+                        errorStruct.identifier = 'get_LTs_tgc:UnknownOptionsClass';
+                        error( errorStruct );
+
+                    end % if isa( options( index_object ), 'regularization.options.tgc_exponential' )
+
+                    %------------------------------------------------------
+                    % c) create discrete convolutions by discretizing TGC curves
+                    %------------------------------------------------------
+                    % time intervals for discretization
+                    Ts_ref = reshape( 1 ./ [ axes_f_mix.delta ], size( axes_f_mix ) );
+
+                    % compute Fourier coefficients
+                    signal_matrices = fourier_coefficients( TGC_curves, Ts_ref, options( index_object ).decays_dB );
+
+                    % compute kernels for discrete convolutions
+                    kernels = cell( size( signal_matrices ) );
+                    for index_mix = 1:numel( signal_matrices )
+
+                        kernels{ index_mix } = [ conj( signal_matrices( index_mix ).samples( end:-1:2 ) ); signal_matrices( index_mix ).samples ];
+
+                    end % for index_mix = 1:numel( signal_matrices )
+
+                    % create discrete convolution for each mix
+                    LTs_conv = num2cell( linear_transforms.convolution( kernels, cat( 1, N_observations_mix{ : } ) ) );
+
+                    %------------------------------------------------------
+                    % d) concatenate discrete convolutions diagonally
+                    %------------------------------------------------------
+                    % create TGC operator for each selected sequential pulse-echo measurement
+                    for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
+                        LTs_tgc_measurement{ index_object }{ index_measurement_sel } = linear_transforms.concatenate_diagonal( LTs_conv{ indices{ index_measurement_sel } } );
+                    end
+
+                    % create TGC operator for all selected sequential pulse-echo measurement
+                    LTs_tgc{ index_object } = linear_transforms.concatenate_diagonal( LTs_conv{ : } );
 
                 end % if isa( options( index_object ), 'regularization.options.tgc_off' )
-
-                %----------------------------------------------------------
-                % c) create discrete convolutions by discretizing TGC curves
-                %----------------------------------------------------------
-                % time intervals for discretization
-                Ts_ref = reshape( 1 ./ [ axes_f_mix.delta ], size( axes_f_mix ) );
-
-                % compute Fourier coefficients
-                signal_matrices = fourier_coefficients( TGC_curves, Ts_ref, options( index_object ).decays_dB );
-
-                % compute kernels for discrete convolutions
-                kernels = cell( size( signal_matrices ) );
-                for index_mix = 1:numel( signal_matrices )
-
-                    kernels{ index_mix } = [ conj( signal_matrices( index_mix ).samples( end:-1:2 ) ); signal_matrices( index_mix ).samples ];
-
-                end % for index_mix = 1:numel( signal_matrices )
-
-                % create discrete convolution for each mix
-                LTs_conv = num2cell( linear_transforms.convolution( kernels, N_observations ) );
-
-                %----------------------------------------------------------
-                % d) concatenate discrete convolutions diagonally
-                %----------------------------------------------------------
-                % create TGC operator for each selected sequential pulse-echo measurement
-                for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
-                    LTs_tgc_measurement{ index_object }{ index_measurement_sel } = linear_transforms.concatenate_diagonal( LTs_conv{ indices{ index_measurement_sel } } );
-                end
-
-                % create TGC operator for all selected sequential pulse-echo measurement
-                LTs_tgc{ index_object } = linear_transforms.concatenate_diagonal( LTs_conv{ : } );
 
                 % concatenate vertically
                 LTs_tgc_measurement{ index_object } = cat( 1, LTs_tgc_measurement{ index_object }{ : } );
@@ -1083,7 +1111,7 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % create dictionary transforms
         %------------------------------------------------------------------
-        function [ LTs, LTs_unique ] = get_LTs( operators_born, options_dictionary )
+        function [ LTs, LTs_unique ] = get_LTs( operators_born, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -1096,24 +1124,24 @@ classdef operator_born < scattering.operator
             end
 
             % ensure class regularization.options.dictionary
-            if ~isa( options_dictionary, 'regularization.options.dictionary' )
-                errorStruct.message = 'options_dictionary must be regularization.options.dictionary!';
+            if ~isa( options, 'regularization.options.dictionary' )
+                errorStruct.message = 'options must be regularization.options.dictionary!';
                 errorStruct.identifier = 'get_LTs:NoOptionsLT';
                 error( errorStruct );
             end
 
-            % multiple operators_born / single options_dictionary
-            if ~isscalar( operators_born ) && isscalar( options_dictionary )
-                options_dictionary = repmat( options_dictionary, size( operators_born ) );
+            % multiple operators_born / single options
+            if ~isscalar( operators_born ) && isscalar( options )
+                options = repmat( options, size( operators_born ) );
             end
 
-            % single operators_born / multiple options_dictionary
-            if isscalar( operators_born ) && ~isscalar( options_dictionary )
-                operators_born = repmat( operators_born, size( options_dictionary ) );
+            % single operators_born / multiple options
+            if isscalar( operators_born ) && ~isscalar( options )
+                operators_born = repmat( operators_born, size( options ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, options_dictionary );
+            auxiliary.mustBeEqualSize( operators_born, options );
 
             %--------------------------------------------------------------
             % 2.) create dictionary transforms
@@ -1127,21 +1155,21 @@ classdef operator_born < scattering.operator
             % iterate scattering operators
             for index_object = 1:numel( operators_born )
 
-                if isa( options_dictionary( index_object ), 'regularization.options.dictionary_identity' )
+                if isa( options( index_object ), 'regularization.options.dictionary_identity' )
 
                     %------------------------------------------------------
                     % a) identity
                     %------------------------------------------------------
                     LTs{ index_object } = linear_transforms.identity( operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points );
 
-                elseif isa( options_dictionary( index_object ), 'regularization.options.dictionary_fourier' )
+                elseif isa( options( index_object ), 'regularization.options.dictionary_fourier' )
 
                     %------------------------------------------------------
                     % b) Fourier
                     %------------------------------------------------------
                     LTs{ index_object } = linear_transforms.fourier( operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points_axis );
 
-                elseif isa( options_dictionary( index_object ), 'regularization.options.dictionary_wavelet' )
+                elseif isa( options( index_object ), 'regularization.options.dictionary_wavelet' )
 
                     %------------------------------------------------------
                     % c) wavelet
@@ -1153,65 +1181,145 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % d) unknown dictionary settings
                     %------------------------------------------------------
-                    errorStruct.message = sprintf( 'Class of options_dictionary( %d ) is unknown!', index_object );
+                    errorStruct.message = sprintf( 'Class of options( %d ) is unknown!', index_object );
                     errorStruct.identifier = 'get_LTs:UnknownOptionsClass';
                     error( errorStruct );
 
-                end % if isa( options_dictionary( index_object ), 'regularization.options.transform_identity' )
+                end % if isa( options( index_object ), 'regularization.options.transform_identity' )
 
             end % for index_object = 1:numel( operators_born )
 
             % concatenate vertically
             LTs = reshape( cat( 1, LTs{ : } ), size( operators_born ) );
 
-        end % function LTs = get_LTs( operators_born, options_dictionary )
+        end % function [ LTs, LTs_unique ] = get_LTs( operators_born, options )
 
         %------------------------------------------------------------------
         % create configurations
         %------------------------------------------------------------------
-        function [ operators_born, LTs_tgc, LTs ] = get_configs( operators_born, options )
+        function [ operators_born_out, LTs, LTs_tgc ] = get_configs( operators_born, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % functions ensure
+            % ensure class scattering.operator_born
+            if ~isa( operators_born, 'scattering.operator_born' )
+                errorStruct.message = 'operators_born must be scattering.operator_born!';
+                errorStruct.identifier = 'get_configs:NoOperatorsBorn';
+                error( errorStruct );
+            end
+
+            % ensure nonempty options
+            if nargin <= 2 || isempty( options )
+                options = regularization.options.common;
+            end
+
+            % ensure cell array for options
+            if ~iscell( options )
+                options = { options };
+            end
+
+            % multiple operators_born / single options
+            if ~isscalar( operators_born ) && isscalar( options )
+                options = repmat( options, size( operators_born ) );
+            end
+
+            % single operators_born / multiple options
+            if isscalar( operators_born ) && ~isscalar( options )
+                operators_born = repmat( operators_born, size( options ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( operators_born, options );
 
             %--------------------------------------------------------------
-            % i.) set momentary scattering operator options
+            % 2.) create configurations
             %--------------------------------------------------------------
-            operators_born = set_properties_momentary( operators_born, options.momentary.sequence, options.momentary.anti_aliasing, options.momentary.gpu, options.momentary.algorithm );
+            % specify cell arrays
+            operators_born_out = cell( size( operators_born ) );
+            LTs = cell( size( operators_born ) );
+            LTs_tgc = cell( size( operators_born ) );
 
-            %--------------------------------------------------------------
-            % ii.) time gain compensation (TGC)
-            %--------------------------------------------------------------
-            LTs_tgc = get_LTs_tgc( operators_born, options.tgc );
+            % iterate scattering operators
+            for index_operator = 1:numel( operators_born )
 
-            %--------------------------------------------------------------
-            % iii.) create dictionary
-            %--------------------------------------------------------------
-            LTs = get_LTs( operators_born, options.dictionary );
-
-            % normalize sensing matrix
-            if ~isa( options.normalization, 'regularization.options.normalization_off' )
-
-                % compute received energies
-                E_M = energy_rx( operators_born, options );
-
-                % create weighting matrix
-                LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
-
-                % composition with non-canonical linear transform
-% TODO: neglect identity in composition
-                if ~isa( LTs, 'linear_transforms.identity' )
-                    LT_weighting_inv = linear_transforms.composition( LT_weighting_inv, LTs );
+                %----------------------------------------------------------
+                % a) check arguments
+                %----------------------------------------------------------
+                % ensure class regularization.options.common
+                if ~isa( options{ index_operator }, 'regularization.options.common' )
+                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
+                    errorStruct.identifier = 'get_configs:NoCommonOptions';
+                    error( errorStruct );
                 end
 
-                % apply normalization settings
-                LTs = normalize( LT_weighting_inv, options.normalization );
+                %----------------------------------------------------------
+                % b) process options
+                %----------------------------------------------------------
+                % specify cell arrays
+                operators_born_out{ index_operator } = cell( size( options{ index_operator } ) );
+                LTs{ index_operator } = cell( size( options{ index_operator } ) );
+                LTs_tgc{ index_operator } = cell( size( options{ index_operator } ) );
 
-            end % if ~isa( options.normalization, 'regularization.options.normalization_off' )
+                % iterate options
+                for index_options = 1:numel( options{ index_operator } )
 
-        end % function [ operators_born, LTs_tgc, LTs ] = get_configs( operators_born, options )
+                    %------------------------------------------------------
+                    % i.) set momentary scattering operator options
+                    %------------------------------------------------------
+                    operators_born_out{ index_operator }{ index_options } = set_properties_momentary( operators_born( index_operator ), options{ index_operator }( index_options ).momentary.sequence, options{ index_operator }( index_options ).momentary.anti_aliasing, options{ index_operator }( index_options ).momentary.gpu, options{ index_operator }( index_options ).momentary.algorithm );
+
+                    %------------------------------------------------------
+                    % ii.) time gain compensation (TGC)
+                    %------------------------------------------------------
+                    LTs_tgc{ index_operator }{ index_options } = get_LTs_tgc( operators_born_out{ index_operator }{ index_options }, options{ index_operator }( index_options ).tgc );
+
+                    %------------------------------------------------------
+                    % iii.) create dictionary
+                    %------------------------------------------------------
+                    LTs{ index_operator }{ index_options } = get_LTs( operators_born_out{ index_operator }{ index_options }, options{ index_operator }( index_options ).dictionary );
+
+                    % normalize sensing matrix
+                    if ~isa( options{ index_operator }( index_options ).normalization, 'regularization.options.normalization_off' )
+
+                        % compute received energies
+                        E_M = energy_rx( operators_born_out{ index_operator }{ index_options }, options{ index_operator }( index_options ) );
+
+                        % create weighting matrix
+                        LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
+
+                        % composition with non-canonical linear transform
+% TODO: neglect identity in composition
+                        if ~isa( LTs{ index_operator }{ index_options }, 'linear_transforms.identity' )
+                            LT_weighting_inv = linear_transforms.composition( LT_weighting_inv, LTs{ index_operator }{ index_options } );
+                        end
+
+                        % apply normalization settings
+                        LTs{ index_operator }{ index_options } = normalize( LT_weighting_inv, options{ index_operator }( index_options ).normalization );
+
+                    end % if ~isa( options{ index_operator }( index_options ).normalization, 'regularization.options.normalization_off' )
+
+                end % for index_options = 1:numel( options{ index_operator } )
+
+                % convert cell arrays to arrays
+                operators_born_out{ index_operator } = reshape( cat( 1, operators_born_out{ index_operator }{ : } ), size( options{ index_operator } ) );
+                LTs_tgc{ index_operator } = reshape( cat( 1, LTs_tgc{ index_operator }{ : } ), size( options{ index_operator } ) );
+
+                % avoid cell array for single options{ index_operator }
+                if isscalar( options{ index_operator } )
+                    LTs{ index_operator } = LTs{ index_operator }{ 1 };
+                end
+
+            end % for index_operator = 1:numel( operators_born )
+
+            % avoid cell arrays for single operators_born
+            if isscalar( operators_born )
+                operators_born_out = operators_born_out{ 1 };
+                LTs_tgc = LTs_tgc{ 1 };
+                LTs = LTs{ 1 };
+            end
+
+        end % function [ operators_born_out, LTs, LTs_tgc ] = get_configs( operators_born, options )
 
 	end % methods
 
