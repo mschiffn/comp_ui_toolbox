@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-06-26
+% modified: 2020-01-11
 %
 classdef sequence_increasing
 
@@ -118,7 +118,7 @@ classdef sequence_increasing
                 % create regular increasing sequence
                 q_lb = round( members_unique( 1 ) / deltas( 1 ) );
                 q_ub = round( members_unique( end ) / deltas( 1 ) );
-                sequence_out = math.sequence_increasing_regular( q_lb, q_ub, deltas( 1 ) );
+                sequence_out = math.sequence_increasing_regular_quantized( q_lb, q_ub, deltas( 1 ) );
             else
                 % create increasing sequence
                 sequence_out = math.sequence_increasing( members_unique );
@@ -228,7 +228,7 @@ classdef sequence_increasing
                     % convert to strictly monotonically increasing sequence with regular spacing
                     q_lb = round( sequences( index_object ).members( 1 ) / deltas( 1 ) );
                     q_ub = round( sequences( index_object ).members( end ) / deltas( 1 ) );
-                    sequences_out{ index_object } = math.sequence_increasing_regular( q_lb, q_ub, deltas( 1 ) );
+                    sequences_out{ index_object } = math.sequence_increasing_regular_quantized( q_lb, q_ub, deltas( 1 ) );
                 else
                     % maintain current sequence
                     sequences_out{ index_object } = sequences( index_object );
@@ -237,7 +237,7 @@ classdef sequence_increasing
             end % for index_object = 1:numel( sequences )
 
             %
-            if all( cellfun( @( x ) strcmp( class( x( : ) ), 'math.sequence_increasing' ), sequences_out ) ) || all( cellfun( @( x ) strcmp( class( x( : ) ), 'math.sequence_increasing_regular' ), sequences_out ) )
+            if all( cellfun( @( x ) strcmp( class( x( : ) ), 'math.sequence_increasing' ), sequences_out ) ) || all( cellfun( @( x ) strcmp( class( x( : ) ), 'math.sequence_increasing_regular_quantized' ), sequences_out ) )
                 sequences_out = reshape( [ sequences_out{ : } ], size( sequences ) );
             end
 

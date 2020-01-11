@@ -163,7 +163,7 @@ N_signals = 128;
 T_s = physical_values.second( 1 / 40e6 );
 N_samples = 3200;
 N_samples_shift = 78;
-axis_t = math.sequence_increasing_regular( N_samples_shift, N_samples_shift + N_samples - 1, T_s );
+axis_t = math.sequence_increasing_regular_quantized( N_samples_shift, N_samples_shift + N_samples - 1, T_s );
 f_0 = physical_values.hertz( 3e6 );
 
 %--------------------------------------------------------------------------

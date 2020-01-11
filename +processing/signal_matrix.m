@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2020-01-10
+% modified: 2020-01-11
 %
 classdef signal_matrix
 
@@ -133,8 +133,8 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % ensure equal subclasses of math.sequence_increasing_regular
-            auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', signal_matrices.axis );
+            % ensure equal subclasses of math.sequence_increasing_regular_quantized
+            auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular_quantized', signal_matrices.axis );
 
             % extract regular axes
             axes_t = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
@@ -315,8 +315,8 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % ensure equal subclasses of math.sequence_increasing_regular
-            auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', signal_matrices.axis );
+            % ensure equal subclasses of math.sequence_increasing_regular_quantized
+            auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular_quantized', signal_matrices.axis );
 
             % extract regular axes
             axes_f = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
@@ -378,7 +378,7 @@ classdef signal_matrix
 % % 1 ./ ( 2 * deltas * ( N_samples_f - 1 ) ) >= delta
             T_rec = 1 ./ deltas;
             N_samples_t = floor( T_rec ./ delta );
-            axes_t = math.sequence_increasing_regular( lbs_q, lbs_q + N_samples_t - 1, delta );
+            axes_t = math.sequence_increasing_regular_quantized( lbs_q, lbs_q + N_samples_t - 1, delta );
             N_samples_f_max = floor( N_samples_t / 2 ) + 1;
 
             % numbers of zeros to pad
@@ -455,7 +455,7 @@ classdef signal_matrix
             end
 
             % ensure regular samples
-            if any( cellfun( @( x ) ~strcmp( class( x ), 'math.sequence_increasing_regular' ), { signal_matrices.axis } ) )
+            if any( cellfun( @( x ) ~strcmp( class( x ), 'math.sequence_increasing_regular_quantized' ), { signal_matrices.axis } ) )
                 errorStruct.message = 'signal_matrices.axis must be regular!';
                 errorStruct.identifier = 'interpolate:IrregularAxes';
                 error( errorStruct );
@@ -490,7 +490,7 @@ classdef signal_matrix
             lbs_q_int = double( lbs_q ) .* factors_interp;
             ubs_q_int = double( ubs_q + 1 ) .* factors_interp - 1;
             deltas_int = deltas ./ factors_interp;
-            axes_int = math.sequence_increasing_regular( lbs_q_int, ubs_q_int, deltas_int );
+            axes_int = math.sequence_increasing_regular_quantized( lbs_q_int, ubs_q_int, deltas_int );
 
             % iterate signal matrices
             for index_object = 1:numel( signal_matrices )

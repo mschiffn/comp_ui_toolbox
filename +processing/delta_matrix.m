@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-21
-% modified: 2020-01-10
+% modified: 2020-01-11
 %
 classdef delta_matrix < processing.signal_matrix
 
@@ -25,7 +25,7 @@ classdef delta_matrix < processing.signal_matrix
                 indices_q = { indices_q };
             end
 
-            % class math.sequence_increasing_regular ensures class physical_values.physical_quantity for deltas
+            % class math.sequence_increasing_regular_quantized ensures class physical_values.physical_quantity for deltas
 
             % ensure nonempty weights
             if nargin >= 3 && ~isempty( varargin{ 1 } )
@@ -53,7 +53,7 @@ classdef delta_matrix < processing.signal_matrix
             ubs_q = cellfun( @( x ) max( x( : ) ), indices_q );
 
             % specify regular axis
-            axes = math.sequence_increasing_regular( lbs_q, ubs_q, deltas );
+            axes = math.sequence_increasing_regular_quantized( lbs_q, ubs_q, deltas );
             N_samples = abs( axes );
 
             % determine numbers of signals

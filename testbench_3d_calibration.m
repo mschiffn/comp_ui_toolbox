@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-11-16
-% modified: 2020-01-10
+% modified: 2020-01-11
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -83,7 +83,7 @@ T_s = physical_values.second( 1 / 20e6 );
 tc = gauspuls( 'cutoff', double( f_tx ), frac_bw, frac_bw_ref, -60 );     % calculate cutoff time
 t = (-tc:double(T_s):tc);
 pulse = gauspuls( t, double( f_tx ), frac_bw, frac_bw_ref );
-axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
+axis_t = math.sequence_increasing_regular_quantized( 0, numel( t ) - 1, T_s );
 u_tx_tilde = processing.signal( axis_t, physical_values.volt( pulse.' ) );
 
 %--------------------------------------------------------------------------
@@ -373,9 +373,9 @@ for index_setup = 1:numel( setups )
         [ rho_e_B_tilde_mean{ index_setup }( index_target ), index_max_mean ] = max( corr_vals_mean );
 
         % shift PE responses
-        axis_shifted = math.sequence_increasing_regular( e_B_tilde_int.axis.q_lb - corr_lags( index_max ), e_B_tilde_int.axis.q_ub - corr_lags( index_max ), e_B_tilde_int.axis.delta );
+        axis_shifted = math.sequence_increasing_regular_quantized( e_B_tilde_int.axis.q_lb - corr_lags( index_max ), e_B_tilde_int.axis.q_ub - corr_lags( index_max ), e_B_tilde_int.axis.delta );
         e_B_tilde_int_shifted = processing.signal_matrix( axis_shifted, e_B_tilde_int.samples );
-        axis_shifted = math.sequence_increasing_regular( e_B_tilde_mean_int.axis.q_lb - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.q_ub - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.delta );
+        axis_shifted = math.sequence_increasing_regular_quantized( e_B_tilde_mean_int.axis.q_lb - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.q_ub - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.delta );
         e_B_tilde_mean_int_shifted = processing.signal_matrix( axis_shifted, e_B_tilde_mean_int.samples );
 
         % common time axis
@@ -550,9 +550,9 @@ for index_setup = 1:numel( setups )
         [ rho_e_B_tilde_mean_sa{ index_setup }( index_target ), index_max_mean ] = max( corr_vals_mean );
 
         % shift PE responses
-        axis_shifted = math.sequence_increasing_regular( e_B_tilde_int.axis.q_lb - corr_lags( index_max ), e_B_tilde_int.axis.q_ub - corr_lags( index_max ), e_B_tilde_int.axis.delta );
+        axis_shifted = math.sequence_increasing_regular_quantized( e_B_tilde_int.axis.q_lb - corr_lags( index_max ), e_B_tilde_int.axis.q_ub - corr_lags( index_max ), e_B_tilde_int.axis.delta );
         e_B_tilde_int_shifted = processing.signal_matrix( axis_shifted, e_B_tilde_int.samples );
-        axis_shifted = math.sequence_increasing_regular( e_B_tilde_mean_int.axis.q_lb - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.q_ub - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.delta );
+        axis_shifted = math.sequence_increasing_regular_quantized( e_B_tilde_mean_int.axis.q_lb - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.q_ub - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.delta );
         e_B_tilde_mean_int_shifted = processing.signal_matrix( axis_shifted, e_B_tilde_mean_int.samples );
 
         % common time axis

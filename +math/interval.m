@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2019-09-05
+% modified: 2020-01-11
 %
 classdef interval
 
@@ -242,7 +242,7 @@ classdef interval
             %--------------------------------------------------------------
             % 3.) create strictly monotonically increasing sequences
             %--------------------------------------------------------------
-            objects_out = math.sequence_increasing_regular( lbs_q, ubs_q, deltas );
+            objects_out = math.sequence_increasing_regular_quantized( lbs_q, ubs_q, deltas );
 
         end % function objects_out = discretize( intervals, deltas )
 

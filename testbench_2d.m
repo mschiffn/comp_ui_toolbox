@@ -77,7 +77,7 @@ setup = scattering.sequences.setups.setup( xdc_array, FOV_cs, absorption_model, 
 tc = gauspuls( 'cutoff', double( f_tx ), frac_bw, frac_bw_ref, -60 );     % calculate cutoff time
 t = (-tc:double(T_s):tc);
 pulse = gauspuls( t, double( f_tx ), frac_bw, frac_bw_ref );
-axis_t = math.sequence_increasing_regular( 0, numel( t ) - 1, T_s );
+axis_t = math.sequence_increasing_regular_quantized( 0, numel( t ) - 1, T_s );
 u_tx_tilde = processing.signal( axis_t, physical_values.volt( pulse ) );
 
 % create pulse-echo measurement sequence

@@ -1,12 +1,12 @@
 %
 % superclass for all strictly monotonically increasing sequences with
-% regular spacing
+% regular spacing and quantized bounds
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2019-06-08
+% modified: 2020-01-11
 %
-classdef sequence_increasing_regular < math.sequence_increasing
+classdef sequence_increasing_regular_quantized < math.sequence_increasing
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -28,7 +28,7 @@ classdef sequence_increasing_regular < math.sequence_increasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = sequence_increasing_regular( lbs_q, ubs_q, deltas )
+        function objects = sequence_increasing_regular_quantized( lbs_q, ubs_q, deltas )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -72,7 +72,7 @@ classdef sequence_increasing_regular < math.sequence_increasing
                 objects( index_object ).delta = deltas( index_object );
             end
 
-        end % function objects = sequence_increasing_regular( lbs_q, ubs_q, deltas )
+        end % function objects = sequence_increasing_regular_quantized( lbs_q, ubs_q, deltas )
 
         %------------------------------------------------------------------
         % cut out subsequence
@@ -142,4 +142,4 @@ classdef sequence_increasing_regular < math.sequence_increasing
 
     end % methods
 
-end % classdef sequence_increasing_regular < math.sequence_increasing
+end % classdef sequence_increasing_regular_quantized < math.sequence_increasing

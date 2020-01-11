@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2020-01-10
+% modified: 2020-01-11
 %
 classdef tx < scattering.sequences.settings.controls.common
 
@@ -32,8 +32,8 @@ classdef tx < scattering.sequences.settings.controls.common
             %--------------------------------------------------------------
             if nargin == 0
                 indices_active = 1;
-                impulse_responses = processing.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), 1 );
-                excitation_voltages = processing.signal_matrix( math.sequence_increasing_regular( 0, 0, physical_values.second ), physical_values.volt );
+                impulse_responses = processing.signal_matrix( math.sequence_increasing_regular_quantized( 0, 0, physical_values.second ), 1 );
+                excitation_voltages = processing.signal_matrix( math.sequence_increasing_regular_quantized( 0, 0, physical_values.second ), physical_values.volt );
             end
 
             % ensure cell array for indices_active
@@ -240,8 +240,8 @@ classdef tx < scattering.sequences.settings.controls.common
             % iterate transducer control settings
             for index_setting = 1:numel( settings_tx )
 
-                % ensure equal subclasses of math.sequence_increasing_regular
-                auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', excitation_voltages{ index_setting }.axis );
+                % ensure equal subclasses of math.sequence_increasing_regular_quantized
+                auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular_quantized', excitation_voltages{ index_setting }.axis );
 
                 % extract regular axes
                 axes = reshape( [ excitation_voltages{ index_setting }.axis ], size( excitation_voltages{ index_setting } ) );

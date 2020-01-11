@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-07
-% modified: 2020-01-10
+% modified: 2020-01-11
 %
 classdef exponential < regularization.tgc.curve
 
@@ -211,7 +211,7 @@ classdef exponential < regularization.tgc.curve
             end
 
             % create frequency axes
-            axes_f = math.sequence_increasing_regular( zeros( size( curves ) ), ceil( ubs_f .* T_ref ), 1 ./ T_ref );
+            axes_f = math.sequence_increasing_regular_quantized( zeros( size( curves ) ), ceil( ubs_f .* T_ref ), 1 ./ T_ref );
 
             % specify cell array for samples
             samples = cell( size( curves ) );
@@ -271,7 +271,7 @@ classdef exponential < regularization.tgc.curve
             ubs_f = [ curves.exponent ] .* sqrt( ( ( 1 + exp( - [ curves.exponent ] .* [ curves.T ] ) ) .* 10.^( - decays_dB / 20 ) ./ ( 1 - exp( - [ curves.exponent ] .* [ curves.T ] ) ) ).^2 - 1 ) / ( 2 * pi );
 
             % create axes
-            axes_f = math.sequence_increasing_regular( zeros( size( curves ) ), ceil( ubs_f .* reshape( [ curves.T ], size( curves ) ) ), 1 ./ reshape( [ curves.T ], size( curves ) ) );
+            axes_f = math.sequence_increasing_regular_quantized( zeros( size( curves ) ), ceil( ubs_f .* reshape( [ curves.T ], size( curves ) ) ), 1 ./ reshape( [ curves.T ], size( curves ) ) );
 
         end % function axes_f = get_axes( curves, decays_dB )
 
