@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-06-06
+% modified: 2020-01-12
 %
 classdef grid_regular < math.grid
 
@@ -100,59 +100,6 @@ classdef grid_regular < math.grid
         end % function objects = grid_regular( offset_axis, cells_ref, N_points_axis )
 
         %------------------------------------------------------------------
-        % compute discrete positions of the grid points along each axis
-        %------------------------------------------------------------------
-        function axes = get_axes( grids_regular )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class math.grid_regular
-            if ~isa( grids_regular, 'math.grid_regular' )
-                errorStruct.message = 'grids_regular must be math.grid_regular!';
-                errorStruct.identifier = 'get_axes:NoRegularGrids';
-                error( errorStruct );
-            end
-
-            %--------------------------------------------------------------
-            % 2.) extract axes
-            %--------------------------------------------------------------
-            % specify cell array for axes
-            axes = cell( size( grids_regular ) );
-
-            % iterate regular grids
-            for index_object = 1:numel( grids_regular )
-
-                % specify cell array for axes{ index_object }
-                axes{ index_object } = cell( grids_regular( index_object ).N_dimensions, 1 );
-
-                % iterate dimensions
-                for index_dim = 1:grids_regular( index_object ).N_dimensions
-
-                    % extract positions
-                    if index_dim > 1
-                        N_points_skip = prod( grids_regular( index_object ).N_points_axis( 1:(index_dim - 1) ) );
-                        axes{ index_object }{ index_dim } = grids_regular( index_object ).positions( 1:N_points_skip:grids_regular( index_object ).N_points_axis( index_dim ) * N_points_skip, index_dim );
-                    else
-                        N_points_skip = 1;
-                        axes{ index_object }{ index_dim } = grids_regular( index_object ).positions( 1:grids_regular( index_object ).N_points_axis( 1 ), index_dim );
-                    end
-
-                end % for index_dim = 1:grids_regular( index_object ).N_dimensions
-
-                % create increasing sequences
-                axes{ index_object } = math.sequence_increasing( axes{ index_object } );
-
-            end % for index_object = 1:numel( grids_regular )
-
-            % avoid cell array for single grids_regular
-            if isscalar( grids_regular )
-                axes = axes{ 1 };
-            end
-
-        end % function axes = get_axes( grids_regular )
-
-        %------------------------------------------------------------------
         % compute discrete spatial frequencies along each axis
         %------------------------------------------------------------------
         function frequencies_axis = compute_frequencies_axis( grids_regular )
@@ -211,6 +158,13 @@ classdef grid_regular < math.grid
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure class math.grid_regular
+            if ~isa( grids_regular, 'math.grid_regular' )
+                errorStruct.message = 'grids_regular must be math.grid_regular!';
+                errorStruct.identifier = 'forward_index_transform:NoRegularGrids';
+                error( errorStruct );
+            end
+
             % ensure cell array for indices_axis
             if ~iscell( indices_axis )
                 indices_axis = { indices_axis };
@@ -248,6 +202,13 @@ classdef grid_regular < math.grid
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure class math.grid_regular
+            if ~isa( grids_regular, 'math.grid_regular' )
+                errorStruct.message = 'grids_regular must be math.grid_regular!';
+                errorStruct.identifier = 'inverse_index_transform:NoRegularGrids';
+                error( errorStruct );
+            end
+
             % ensure cell array for indices_linear
             if ~iscell( indices_linear )
                 indices_linear = { indices_linear };

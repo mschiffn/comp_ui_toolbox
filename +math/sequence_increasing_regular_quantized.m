@@ -1,12 +1,12 @@
 %
-% superclass for all strictly monotonically increasing sequences with
+% superclass for all strictly monotonically increasing sequences w/
 % regular spacing and quantized bounds
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
 % modified: 2020-01-11
 %
-classdef sequence_increasing_regular_quantized < math.sequence_increasing
+classdef sequence_increasing_regular_quantized < math.sequence_increasing_regular
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -16,7 +16,6 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing
         % independent properties
         q_lb ( 1, 1 ) int64     % lower integer bound
         q_ub ( 1, 1 ) int64     % upper integer bound
-        delta ( 1, 1 ) physical_values.physical_quantity       % step size
 
     end % properties
 
@@ -52,25 +51,23 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing
             %--------------------------------------------------------------
             % 2.) compute strictly monotonically increasing members
             %--------------------------------------------------------------
-            members = cell( size( lbs_q ) );
-            for index_object = 1:numel( lbs_q )
-                % use double function to prevent zeros caused by int64
-                members{ index_object } = double( lbs_q( index_object ):ubs_q( index_object ) )' * deltas( index_object );
-            end
+            % compute offsets
+            offsets = double( lbs_q ) .* deltas;
 
-            %--------------------------------------------------------------
-            % 3.) constructor of superclass
-            %--------------------------------------------------------------
-            objects@math.sequence_increasing( members );
+            % compute numbers of members
+            N_members = double( ubs_q - lbs_q + 1 );
 
-            %--------------------------------------------------------------
-            % 4.) set independent properties
-            %--------------------------------------------------------------
+            % constructor of superclass
+            objects@math.sequence_increasing_regular( offsets, deltas, N_members );
+
+            % iterate sequences
             for index_object = 1:numel( objects )
+
+                % set independent properties
                 objects( index_object ).q_lb = int64( lbs_q( index_object ) );
                 objects( index_object ).q_ub = int64( ubs_q( index_object ) );
-                objects( index_object ).delta = deltas( index_object );
-            end
+
+            end % for index_object = 1:numel( objects )
 
         end % function objects = sequence_increasing_regular_quantized( lbs_q, ubs_q, deltas )
 
@@ -142,4 +139,4 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing
 
     end % methods
 
-end % classdef sequence_increasing_regular_quantized < math.sequence_increasing
+end % classdef sequence_increasing_regular_quantized < math.sequence_increasing_regular
