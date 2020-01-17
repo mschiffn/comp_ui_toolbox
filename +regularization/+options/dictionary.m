@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-01-15
+% modified: 2020-01-17
 %
-classdef (Abstract) dictionary
+classdef (Abstract) dictionary < regularization.options.template
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -20,38 +20,17 @@ classdef (Abstract) dictionary
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure row vector for size
-            if ~isrow( size )
-                errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'dictionary:NoRowVector';
-                error( errorStruct );
-            end
-
-            % ensure nonempty positive integers
-            mustBePositive( size );
-            mustBeInteger( size );
-            mustBeNonempty( size );
+            % superclass ensures row vector for size
+            % superclass ensures nonempty positive integers for size
 
             %--------------------------------------------------------------
             % 2.) create dictionary options
             %--------------------------------------------------------------
-            % repeat default dictionary options
-            objects = repmat( objects, size );
+            % constructor of superclass
+            objects@regularization.options.template( size );
 
         end % function objects = dictionary( size )
 
 	end % methods
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% methods (Abstract)
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Abstract)
-
-        %------------------------------------------------------------------
-        % string array (overload string method)
-        %------------------------------------------------------------------
-        strs_out = string( dictionaries )
-
-	end % methods (Abstract)
-
-end % classdef (Abstract) dictionary
+end % classdef (Abstract) dictionary < regularization.options.template

@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-16
+% modified: 2020-01-17
 %
-classdef (Abstract) algorithm
+classdef (Abstract) algorithm < regularization.options.template
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -45,8 +45,8 @@ classdef (Abstract) algorithm
             %--------------------------------------------------------------
             % 2.) create algorithm options
             %--------------------------------------------------------------
-            % repeat default algorithm options
-            objects = repmat( objects, size( rel_RMSE ) );
+            % constructor of superclass
+            objects@regularization.options.template( size( rel_RMSE ) );
 
             % iterate algorithm options
             for index_object = 1:numel( objects )
@@ -61,16 +61,4 @@ classdef (Abstract) algorithm
 
 	end % methods
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% methods (Abstract)
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Abstract)
-
-        %------------------------------------------------------------------
-        % string array (overload string method)
-        %------------------------------------------------------------------
-        strs_out = string( algorithms )
-
-    end % methods (Abstract)
-
-end % classdef (Abstract) algorithm
+end % classdef (Abstract) algorithm < regularization.options.template

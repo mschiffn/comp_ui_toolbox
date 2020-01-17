@@ -147,6 +147,12 @@ classdef lq_minimization < regularization.options.common
                 %----------------------------------------------------------
                 fprintf( ' %-12s: %-13s %4s %-12s: %-5s %4s %-12s: %-13s\n', 'algorithm', string( options( index_object ).algorithm ), '', 'reweighting', string( options( index_object ).reweighting ), '', 'warm start', string( options( index_object ).warm_start ) );
 
+                %----------------------------------------------------------
+                % print superclass
+                %----------------------------------------------------------
+                % call method show of superclass
+                show@regularization.options.common( options( index_object ) );
+
             end % for index_object = 1:numel( options )
 
         end % function show( options )

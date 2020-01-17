@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-10
+% modified: 2020-01-17
 %
-classdef (Abstract) reweighting
+classdef (Abstract) reweighting < regularization.options.template
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -20,38 +20,17 @@ classdef (Abstract) reweighting
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure row vector for size
-            if ~isrow( size )
-                errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'reweighting:NoRowVector';
-                error( errorStruct );
-            end
-
-            % ensure nonempty positive integers
-            mustBePositive( size );
-            mustBeInteger( size );
-            mustBeNonempty( size );
+            % superclass ensures row vector for size
+            % superclass ensures nonempty positive integers for size
 
             %--------------------------------------------------------------
             % 2.) create reweighting options
             %--------------------------------------------------------------
-            % repeat default reweighting options
-            objects = repmat( objects, size );
+            % constructor of superclass
+            objects@regularization.options.template( size );
 
         end % function objects = reweighting( size )
 
 	end % methods
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% methods (Abstract)
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Abstract)
-
-        %------------------------------------------------------------------
-        % string array (overload string method)
-        %------------------------------------------------------------------
-        strs_out = string( reweightings )
-
-    end % methods (Abstract)
-
-end % classdef (Abstract) reweighting
+end % classdef (Abstract) reweighting < regularization.options.template
