@@ -147,7 +147,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
                 end
 
                 % specify start vector
-                indicator_q = index_options > 1 && isequal( options{ index_operator }( index_options ).algorithm.q, options{ index_operator }( index_options - 1 ).algorithm.q );
+                indicator_q = index_options > 1 && isa( options{ index_operator }( index_options - 1 ).algorithm, 'regularization.options.algorithm_spgl1' ) && isequal( options{ index_operator }( index_options ).algorithm.q, options{ index_operator }( index_options - 1 ).algorithm.q );
                 indicator_rel_RMSE = index_options > 1 && options{ index_operator }( index_options ).algorithm.rel_RMSE < options{ index_operator }( index_options - 1 ).algorithm.rel_RMSE;
 
                 if ~indicator_q || ~indicator_rel_RMSE || isa( options{ index_operator }( index_options ).warm_start, 'regularization.options.warm_start_off' )

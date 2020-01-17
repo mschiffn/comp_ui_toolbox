@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-04-07
-% modified: 2019-04-08
+% modified: 2020-01-14
 %
 classdef unity_per_meter < physical_values.physical_quantity_derived
 
@@ -21,7 +21,7 @@ classdef unity_per_meter < physical_values.physical_quantity_derived
             % 1.) constructor of superclass
             %--------------------------------------------------------------
             exponents = zeros( 1, 8 );
-            exponents( 1 ) = -1;
+            exponents( 1 ) = -1; % length
             objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
 
         end

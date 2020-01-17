@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-10
+% modified: 2020-01-14
 %
 classdef reweighting_sequence < regularization.options.reweighting
 
@@ -59,9 +59,9 @@ classdef reweighting_sequence < regularization.options.reweighting
         end % function objects = reweighting_sequence( epsilon_n )
 
         %------------------------------------------------------------------
-        % display reweighting options
+        % string array (overload string method)
         %------------------------------------------------------------------
-        function str_out = show( reweightings_sequence )
+        function strs_out = string( reweightings_sequence )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -69,29 +69,24 @@ classdef reweighting_sequence < regularization.options.reweighting
             % ensure class regularization.options.reweighting_sequence
             if ~isa( reweightings_sequence, 'regularization.options.reweighting_sequence' )
                 errorStruct.message = 'reweightings_sequence must be regularization.options.reweighting_sequence!';
-                errorStruct.identifier = 'show:NoOptionsReweightingSequence';
+                errorStruct.identifier = 'string:NoOptionsReweightingSequence';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
-            % 2.) display options
+            % 2.) create string array
             %--------------------------------------------------------------
-            % specify cell array for str_out
-            str_out = cell( size( reweightings_sequence ) );
+            % initialize string array for strs_out
+            strs_out = repmat( "", size( reweightings_sequence ) );
 
             % iterate sequence reweighting options
             for index_object = 1:numel( reweightings_sequence )
 
-                str_out{ index_object } = sprintf( '%s (q = %2.1f)', 'sequence', reweightings_sequence( index_object ).q );
+                strs_out( index_object ) = sprintf( "%s (q = %2.1f, N = %d)", 'sequence', reweightings_sequence( index_object ).q, numel( reweightings_sequence( index_object ).epsilon_n ) );
 
-            end % for index_object = 1:numel( options )
+            end % for index_object = 1:numel( reweightings_sequence )
 
-            % avoid cell array for single reweightings_sequence
-            if isscalar( reweightings_sequence )
-                str_out = str_out{ 1 };
-            end
-
-        end % function str_out = show( reweightings_sequence )
+        end % function strs_out = string( reweightings_sequence )
 
 	end % methods
 

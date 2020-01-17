@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-10
+% modified: 2020-01-16
 %
 classdef algorithm_omp < regularization.options.algorithm
 
@@ -32,9 +32,9 @@ classdef algorithm_omp < regularization.options.algorithm
         end % function objects = algorithm_omp( rel_RMSE, N_iterations_max )
 
         %------------------------------------------------------------------
-        % display OMP options
+        % string array (overload string method)
         %------------------------------------------------------------------
-        function str_out = show( algorithms_omp )
+        function strs_out = string( algorithms_omp )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -42,22 +42,17 @@ classdef algorithm_omp < regularization.options.algorithm
             % ensure class regularization.options.algorithm_omp
             if ~isa( algorithms_omp, 'regularization.options.algorithm_omp' )
                 errorStruct.message = 'algorithms_omp must be regularization.options.algorithm_omp!';
-                errorStruct.identifier = 'show:NoOptionsOMP';
+                errorStruct.identifier = 'string:NoOptionsOMP';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
-            % 2.) display options
+            % 2.) create string array
             %--------------------------------------------------------------
-            % specify cell array for str_out
-            str_out = repmat( { 'OMP (q = 0)' }, size( algorithms_omp ) );
+            % repeat string "OMP (q = 0)"
+            strs_out = repmat( "OMP (q = 0)", size( algorithms_omp ) );
 
-            % avoid cell array for single algorithms_omp
-            if isscalar( algorithms_omp )
-                str_out = str_out{ 1 };
-            end
-
-        end % function str_out = show( algorithms_omp )
+        end % function strs_out = string( algorithms_omp )
 
 	end % methods
 

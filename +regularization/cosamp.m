@@ -1,10 +1,23 @@
 function [ theta_recon, y_m_res, info ] = cosamp( op_A, y_m, options )
 %
 % compressive sampling matching pursuit (CoSaMP) to recover a sparse coefficient vector
-% (cf. Algorithm 1 in [1])
+% (cf. [1, Algorithm 1])
 %
-% [1] D. Needell, J. A. Tropp, "CoSaMP: Iterative signal recovery from incomplete and inaccurate samples,"
-%     Appl. Comput. Harmon. A., 2009, vol. 26, no. 3, pp. 301-321, DOI: 10.1016/j.acha.2008.07.002
+% INPUT:
+%	op_A = linear dictionary operator (matrix or function handle)
+%	y_m = vector of observations
+%	options = regularization.options.algorithm_cosamp
+%
+% OUTPUT:
+%   theta_recon = recovered coefficients
+%   y_m_res = residual
+%   info = algorithm statistics (runtime)
+%
+% REFERENCES:
+%	[1] D. Needell, J. A. Tropp, "CoSaMP: Iterative signal recovery from incomplete and inaccurate samples,"
+%       Appl. Comput. Harmon. A., 2009, vol. 26, no. 3, pp. 301-321, DOI: 10.1016/j.acha.2008.07.002
+%
+% REMARKS:
 %
 % author: Martin F. Schiffner
 % date: 2013-05-13

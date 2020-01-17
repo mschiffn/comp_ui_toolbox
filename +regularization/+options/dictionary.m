@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2019-12-28
+% modified: 2020-01-15
 %
 classdef (Abstract) dictionary
 
@@ -41,5 +41,17 @@ classdef (Abstract) dictionary
         end % function objects = dictionary( size )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (Abstract)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract)
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        strs_out = string( dictionaries )
+
+	end % methods (Abstract)
 
 end % classdef (Abstract) dictionary

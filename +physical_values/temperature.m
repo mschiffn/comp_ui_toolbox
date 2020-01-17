@@ -1,11 +1,11 @@
 %
-% superclass for all velocities
+% superclass for all temperatures
 %
 % author: Martin F. Schiffner
-% date: 2019-03-26
+% date: 2020-01-14
 % modified: 2020-01-14
 %
-classdef velocity < physical_values.physical_quantity_derived
+classdef temperature < physical_values.physical_quantity_base
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% methods
@@ -15,18 +15,15 @@ classdef velocity < physical_values.physical_quantity_derived
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = velocity( varargin )
+        function objects = temperature( varargin )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
-            exponents = zeros( 1, 8 );
-            exponents( 1 ) = 1;     % length
-            exponents( 3 ) = -1;    % time
-            objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
+            objects@physical_values.physical_quantity_base( 5, varargin{ : } );
 
-        end
+        end % function objects = temperature( varargin )
 
 	end % methods
 
-end % classdef velocity < physical_values.physical_quantity_derived
+end % classdef temperature < physical_values.physical_quantity_base

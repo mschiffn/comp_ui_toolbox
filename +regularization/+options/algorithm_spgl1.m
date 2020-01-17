@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-10
+% modified: 2020-01-16
 %
 classdef algorithm_spgl1 < regularization.options.algorithm
 
@@ -59,9 +59,9 @@ classdef algorithm_spgl1 < regularization.options.algorithm
         end % function objects = algorithm_spgl1( rel_RMSE, N_iterations_max, q )
 
         %------------------------------------------------------------------
-        % display SPGL1 options
+        % string array (overload string method)
         %------------------------------------------------------------------
-        function str_out = show( algorithms_spgl1 )
+        function strs_out = string( algorithms_spgl1 )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -69,29 +69,24 @@ classdef algorithm_spgl1 < regularization.options.algorithm
             % ensure class regularization.options.algorithm_spgl1
             if ~isa( algorithms_spgl1, 'regularization.options.algorithm_spgl1' )
                 errorStruct.message = 'algorithms_spgl1 must be regularization.options.algorithm_spgl1!';
-                errorStruct.identifier = 'show:NoOptionsSPGL1';
+                errorStruct.identifier = 'string:NoOptionsSPGL1';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
-            % 2.) display options
+            % 2.) create string array
             %--------------------------------------------------------------
-            % specify cell array for str_out
-            str_out = cell( size( algorithms_spgl1 ) );
+            % initialize string array for strs_out
+            strs_out = repmat( "", size( algorithms_spgl1 ) );
 
             % iterate SPGL1 options
             for index_object = 1:numel( algorithms_spgl1 )
 
-                str_out{ index_object } = sprintf( '%s (q = %d)', 'SPGL1', algorithms_spgl1( index_object ).q );
+                strs_out( index_object ) = sprintf( "%s (q = %d)", 'SPGL1', algorithms_spgl1( index_object ).q );
 
-            end % for index_object = 1:numel( options )
+            end % for index_object = 1:numel( algorithms_spgl1 )
 
-            % avoid cell array for single algorithms_spgl1
-            if isscalar( algorithms_spgl1 )
-                str_out = str_out{ 1 };
-            end
-
-        end % function str_out = show( algorithms_spgl1 )
+        end % function strs_out = string( algorithms_spgl1 )
 
 	end % methods
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-15
-% modified: 2019-12-15
+% modified: 2020-01-15
 %
 classdef (Abstract) tgc
 
@@ -41,5 +41,17 @@ classdef (Abstract) tgc
         end % function objects = tgc( size )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (Abstract)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract)
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        strs_out = string( tgcs )
+
+	end % methods (Abstract)
 
 end % classdef (Abstract) tgc

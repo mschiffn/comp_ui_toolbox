@@ -195,7 +195,6 @@ classdef image
                 % b) compute profiles in specified window
                 %----------------------------------------------------------
                 % extract axes and number of points
-% TODO: maintain regularity of axis!
                 axes = get_axes( images( index_image ).grid );
                 N_points_axis_act = images( index_image ).grid.N_points_axis;
 
@@ -241,14 +240,14 @@ classdef image
                     if images( index_image ).N_images == 1
                         profiles{ index_image }{ index_options } = processing.signal( axes( indicator ), profiles{ index_image }{ index_options } );
                     else
-                        profiles{ index_image }{ index_options } = processing.signal_matrix( axes( indicator ), profiles{ index_image }{ index_options } );
+                        profiles{ index_image }{ index_options } = processing.signal_matrix( axes( indicator ), cat( 2, profiles{ index_image }{ index_options }{ : } ) );
                     end
 
                     %------------------------------------------------------
                     % iii.) interpolate signals
                     %------------------------------------------------------
-                    % TODO: add zeros and interpolate
-%                     profiles{ index_image }{ index_options } = interpolate( profiles{ index_image }{ index_options }, options{ index_image }( index_options ).factor_interp );
+                    % TODO: add zeros
+                    profiles{ index_image }{ index_options } = interpolate( profiles{ index_image }{ index_options }, options{ index_image }( index_options ).factor_interp );
 
                     % apply window function to smooth boundaries before DFT-based interpolation
     %                 profile_window = profile(:) .* tukeywin(N_samples, 0.1);
@@ -342,7 +341,7 @@ classdef image
                     end
 
                     % cut out axis
-                    [ ~, indicators ] = cut_out( axes, [ options{ index_image }( index_options ).ROI.intervals.lb ]', [ options{ index_image }( index_options ).ROI.intervals.ub ]' );
+                    [ ~, indicators ] = cut_out( axes, [ options{ index_image }( index_options ).ROI.intervals.lb ], [ options{ index_image }( index_options ).ROI.intervals.ub ] );
 
                     % initialize results w/ zeros
                     N_samples{ index_image }{ index_options } = zeros( 1, images( index_image ).N_images );

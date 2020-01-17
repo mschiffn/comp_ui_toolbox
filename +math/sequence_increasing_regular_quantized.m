@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2020-01-11
+% modified: 2020-01-16
 %
 classdef sequence_increasing_regular_quantized < math.sequence_increasing_regular
 
@@ -70,6 +70,59 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing_regula
             end % for index_object = 1:numel( objects )
 
         end % function objects = sequence_increasing_regular_quantized( lbs_q, ubs_q, deltas )
+
+        %------------------------------------------------------------------
+        % interpolate
+        %------------------------------------------------------------------
+        function sequences = interpolate( sequences, factors_interp )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.sequence_increasing_regular_quantized
+            if ~isa( sequences, 'math.sequence_increasing_regular_quantized' )
+                errorStruct.message = 'sequences must be math.sequence_increasing_regular_quantized!';
+                errorStruct.identifier = 'interpolate:NoRegularQuantizedSequence';
+                error( errorStruct );
+            end
+
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', sequences.delta );
+
+            % ensure positive integers
+            mustBePositive( factors_interp );
+            mustBeInteger( factors_interp );
+
+            % multiple sequences / single factors_interp
+            if ~isscalar( sequences ) && isscalar( factors_interp )
+                factors_interp = repmat( factors_interp, size( sequences ) );
+            end
+
+            % single sequences / multiple factors_interp
+            if isscalar( sequences ) && ~isscalar( factors_interp )
+                sequences = repmat( sequences, size( factors_interp ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, factors_interp );
+
+            %--------------------------------------------------------------
+            % 2.) interpolate sequences
+            %--------------------------------------------------------------
+            % numbers of samples and sampling parameters
+            lbs_q = reshape( [ axes.q_lb ], size( signal_matrices ) );
+            ubs_q = reshape( [ axes.q_ub ], size( signal_matrices ) );
+            deltas = reshape( [ axes.delta ], size( signal_matrices ) );
+
+            % create axes for interpolated signal matrices
+            lbs_q_int = double( lbs_q ) .* factors_interp;
+            ubs_q_int = double( ubs_q + 1 ) .* factors_interp - 1;
+            deltas_int = deltas ./ factors_interp;
+
+            % create interpolated sequences
+            sequences = math.sequence_increasing_regular_quantized( lbs_q_int, ubs_q_int, deltas_int );
+
+        end % function sequences = interpolate( sequences, factors_interp )
 
         %------------------------------------------------------------------
         % cut out subsequence

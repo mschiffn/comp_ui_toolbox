@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2020-01-10
+% modified: 2020-01-16
 %
 classdef operator_born < scattering.operator
 
@@ -15,15 +15,21 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function object = operator_born( sequence, options )
+        function object = operator_born( sequences, options )
 
             %--------------------------------------------------------------
-            % 1.) create scattering operators based on the Born approximation
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % superclass ensures class scattering.sequences.sequence for sequences
+            % superclass ensures class scattering.options for options
+
+            %--------------------------------------------------------------
+            % 2.) create scattering operators based on the Born approximation
             %--------------------------------------------------------------
             % constructor of superclass
-            object@scattering.operator( sequence, options );
+            object@scattering.operator( sequences, options );
 
-        end % function object = operator_born( sequence, options )
+        end % function object = operator_born( sequences, options )
 
         %------------------------------------------------------------------
         % quick forward scattering (wrapper)
@@ -443,7 +449,7 @@ classdef operator_born < scattering.operator
                     [ operator_born_act, LT_act, LT_tgc ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
 
             % display options
-            show( options{ index_operator }( index_options ) );
+%             show( options{ index_operator }( index_options ) );
 
                     %------------------------------------------------------
                     % ii.) create mixed voltage signals
@@ -1210,7 +1216,7 @@ classdef operator_born < scattering.operator
             end
 
             % ensure nonempty options
-            if nargin <= 2 || isempty( options )
+            if nargin <= 1 || isempty( options )
                 options = regularization.options.common;
             end
 
@@ -1315,8 +1321,8 @@ classdef operator_born < scattering.operator
             % avoid cell arrays for single operators_born
             if isscalar( operators_born )
                 operators_born_out = operators_born_out{ 1 };
-                LTs_tgc = LTs_tgc{ 1 };
                 LTs = LTs{ 1 };
+                LTs_tgc = LTs_tgc{ 1 };
             end
 
         end % function [ operators_born_out, LTs, LTs_tgc ] = get_configs( operators_born, options )

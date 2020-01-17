@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-10
+% modified: 2020-01-16
 %
 classdef reweighting_off < regularization.options.reweighting
 
@@ -39,9 +39,9 @@ classdef reweighting_off < regularization.options.reweighting
         end % function objects = reweighting_off( varargin )
 
         %------------------------------------------------------------------
-        % display reweighting options
+        % string array (overload string method)
         %------------------------------------------------------------------
-        function str_out = show( reweightings_off )
+        function strs_out = string( reweightings_off )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -49,22 +49,17 @@ classdef reweighting_off < regularization.options.reweighting
             % ensure class regularization.options.reweighting_off
             if ~isa( reweightings_off, 'regularization.options.reweighting_off' )
                 errorStruct.message = 'reweightings_off must be regularization.options.reweighting_off!';
-                errorStruct.identifier = 'show:NoOptionsReweightingOff';
+                errorStruct.identifier = 'string:NoOptionsReweightingOff';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
-            % 2.) display options
+            % 2.) create string array
             %--------------------------------------------------------------
-            % specify cell array for str_out
-            str_out = repmat( { 'off' }, size( reweightings_off ) );
+            % repeat string "off"
+            strs_out = repmat( "off", size( reweightings_off ) );
 
-            % avoid cell array for single reweightings_off
-            if isscalar( reweightings_off )
-                str_out = str_out{ 1 };
-            end
-
-        end % function str_out = show( reweightings_off )
+        end % function strs_out = string( reweightings_off )
 
 	end % methods
 

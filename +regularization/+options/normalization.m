@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-10
-% modified: 2019-09-22
+% modified: 2020-01-15
 %
 classdef (Abstract) normalization
 
@@ -41,5 +41,17 @@ classdef (Abstract) normalization
         end % function objects = normalization( size )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (Abstract)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract)
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        strs_out = string( normalizations )
+
+    end % methods (Abstract)
 
 end % classdef (Abstract) normalization

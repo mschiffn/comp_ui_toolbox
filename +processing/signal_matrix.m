@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2020-01-11
+% modified: 2020-01-16
 %
 classdef signal_matrix
 
@@ -454,12 +454,8 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % ensure regular samples
-            if any( cellfun( @( x ) ~strcmp( class( x ), 'math.sequence_increasing_regular_quantized' ), { signal_matrices.axis } ) )
-                errorStruct.message = 'signal_matrices.axis must be regular!';
-                errorStruct.identifier = 'interpolate:IrregularAxes';
-                error( errorStruct );
-            end
+            % ensure equal subclasses of math.sequence_increasing_regular
+            auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', signal_matrices.axis );
 
             % ensure positive integers
             mustBePositive( factors_interp );
@@ -470,32 +466,26 @@ classdef signal_matrix
                 factors_interp = repmat( factors_interp, size( signal_matrices ) );
             end
 
+            % single signal_matrices / multiple factors_interp
+            if isscalar( signal_matrices ) && ~isscalar( factors_interp )
+                signal_matrices = repmat( signal_matrices, size( factors_interp ) );
+            end
+
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( signal_matrices, factors_interp );
 
             %--------------------------------------------------------------
-            % 2.) interpolate signals
+            % 2.) interpolate signal matrices
             %--------------------------------------------------------------
-            % extract regular axes
-            axes = reshape( [ signal_matrices.axis ], size( signal_matrices ) );
+            % interpolate axes
+            axes_int = interpolate( reshape( [ signal_matrices.axis ], size( signal_matrices ) ), factors_interp );
 
-            % numbers of samples and sampling parameters
-            N_samples = abs( axes );
-            lbs_q = reshape( [ axes.q_lb ], size( signal_matrices ) );
-            ubs_q = reshape( [ axes.q_ub ], size( signal_matrices ) );
-            deltas = reshape( [ axes.delta ], size( signal_matrices ) );
-
-            % create axes for interpolated signal matrices
-            N_samples_int = N_samples .* factors_interp;
-            lbs_q_int = double( lbs_q ) .* factors_interp;
-            ubs_q_int = double( ubs_q + 1 ) .* factors_interp - 1;
-            deltas_int = deltas ./ factors_interp;
-            axes_int = math.sequence_increasing_regular_quantized( lbs_q_int, ubs_q_int, deltas_int );
+            % numbers of samples
+            N_samples_int = abs( axes_int );
 
             % iterate signal matrices
             for index_object = 1:numel( signal_matrices )
 
-                % interpolate samples and assign new axis
                 signal_matrices( index_object ).samples = interpft( signal_matrices( index_object ).samples, N_samples_int( index_object ), 1 );
                 signal_matrices( index_object ).axis = axes_int( index_object );
 
@@ -578,7 +568,7 @@ classdef signal_matrix
             end
 
             %--------------------------------------------------------------
-            % 2.) apply time gain compensation curves
+            % 2.) estimate exponential decays
             %--------------------------------------------------------------
             % specify cell arrays
             exponents = cell( size( signal_matrices ) );
@@ -591,10 +581,12 @@ classdef signal_matrix
                 X = [ ones( abs( signal_matrices( index_object ).axis ), 1 ), double( signal_matrices( index_object ).axis.members ) ];
 
                 % observations
-                Y = 20 * log10( double( abs( hilbert( signal_matrices( index_object ).samples ) ) ) );
+%                 Y = 20 * log10( double( abs( hilbert( signal_matrices( index_object ).samples ) ) ) );
+
+                Y = illustration.dB( sum( double( signal_matrices( index_object ).samples ).^2, 2 ), 10 );
 
                 % detect useful support
-                indicator = mean( Y, 2 ) >= 0;
+                indicator = Y >= -40;
 
                 % least-squares estimate
                 theta = X( indicator, : ) \ Y( indicator, : );
@@ -692,9 +684,14 @@ classdef signal_matrix
                         % compute extent of peak
                         widths_out{ index_object }{ index_signal }( index_peak ) = ( index_ub - index_lb + 1 ) * delta;
 
-                    end %for index_peak = 1:N_peaks
+                    end % for index_peak = 1:N_peaks
 
                 end % for index_signal = 1:signal_matrices( index_object ).N_signals
+
+%                 N_peaks_per_signal = cellfun( @numel, widths_out{ index_object } );
+%                 if all( N_peaks_per_signal == 1 )
+%                     widths_out{ index_object } = reshape( cat( 1, widths_out{ index_object }{ : } ), size( widths_out{ index_object } ) );
+%                 end
 
                 % avoid cell array for single signal
                 if signal_matrices( index_object ).N_signals == 1

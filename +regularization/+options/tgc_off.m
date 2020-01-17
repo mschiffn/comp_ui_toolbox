@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-15
-% modified: 2020-01-03
+% modified: 2020-01-15
 %
 classdef tgc_off < regularization.options.tgc
 
@@ -37,6 +37,29 @@ classdef tgc_off < regularization.options.tgc
             objects@regularization.options.tgc( size );
 
         end % function objects = tgc_off( varargin )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( tgcs_off )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.tgc_off
+            if ~isa( tgcs_off, 'regularization.options.tgc_off' )
+                errorStruct.message = 'tgcs_off must be regularization.options.tgc_off!';
+                errorStruct.identifier = 'string:NoOptionsTGCOff';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % repeat string "off"
+            strs_out = repmat( "off", size( tgcs_off ) );
+
+        end % function strs_out = string( tgcs_off )
 
 	end % methods
 

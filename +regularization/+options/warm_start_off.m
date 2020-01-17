@@ -39,9 +39,9 @@ classdef warm_start_off < regularization.options.warm_start
         end % function objects = warm_start_off( size )
 
         %------------------------------------------------------------------
-        % display warm start options
+        % string array (overload string method)
         %------------------------------------------------------------------
-        function str_out = show( warm_starts_off )
+        function strs_out = string( warm_starts_off )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -49,22 +49,17 @@ classdef warm_start_off < regularization.options.warm_start
             % ensure class regularization.options.warm_start_off
             if ~isa( warm_starts_off, 'regularization.options.warm_start_off' )
                 errorStruct.message = 'warm_starts_off must be regularization.options.warm_start_off!';
-                errorStruct.identifier = 'show:NoOptionsWarmStartOff';
+                errorStruct.identifier = 'string:NoOptionsWarmStartOff';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
-            % 2.) display options
+            % 2.) create string array
             %--------------------------------------------------------------
-            % specify cell array for str_out
-            str_out = repmat( { 'off' }, size( warm_starts_off ) );
+            % repeat string "off"
+            strs_out = repmat( "off", size( warm_starts_off ) );
 
-            % avoid cell array for single warm_starts_off
-            if isscalar( warm_starts_off )
-                str_out = str_out{ 1 };
-            end
-
-        end % function str_out = show( warm_starts_off )
+        end % function strs_out = string( warm_starts_off )
 
 	end % methods
 

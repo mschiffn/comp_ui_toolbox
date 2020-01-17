@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-01-03
+% modified: 2020-01-15
 %
 classdef dictionary_fourier < regularization.options.dictionary
 
@@ -37,6 +37,29 @@ classdef dictionary_fourier < regularization.options.dictionary
             objects@regularization.options.dictionary( size );
 
         end % function objects = dictionary_fourier( varargin )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( dictionaries_fourier )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.dictionary_identity
+            if ~isa( dictionaries_fourier, 'regularization.options.dictionary_identity' )
+                errorStruct.message = 'dictionaries_fourier must be regularization.options.dictionary_identity!';
+                errorStruct.identifier = 'string:NoOptionsDictionaryIdentity';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % repeat string "Fourier"
+            strs_out = repmat( "Fourier", size( dictionaries_fourier ) );
+
+        end % function strs_out = string( dictionaries_fourier )
 
 	end % methods
 

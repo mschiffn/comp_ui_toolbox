@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2020-01-10
+% modified: 2020-01-16
 %
 classdef (Abstract) warm_start
 
@@ -48,9 +48,9 @@ classdef (Abstract) warm_start
 	methods (Abstract)
 
         %------------------------------------------------------------------
-        % display warm start options
+        % string array (overload string method)
         %------------------------------------------------------------------
-        str_out = show( warm_starts )
+        str_out = string( warm_starts )
 
     end % methods (Abstract)
 

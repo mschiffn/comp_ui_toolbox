@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-10
-% modified: 2020-01-03
+% modified: 2020-01-16
 %
 classdef normalization_threshold < regularization.options.normalization
 
@@ -47,6 +47,36 @@ classdef normalization_threshold < regularization.options.normalization
             end % for index_object = 1:numel( objects )
 
         end % function objects = normalization_threshold( thresholds )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( normalizations_threshold )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.normalization_threshold
+            if ~isa( normalizations_threshold, 'regularization.options.normalization_threshold' )
+                errorStruct.message = 'normalizations_threshold must be regularization.options.normalization_threshold!';
+                errorStruct.identifier = 'string:NoOptionsNormalizationThreshold';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % initialize string array for strs_out
+            strs_out = repmat( "", size( normalizations_threshold ) );
+
+            % iterate threshold normalization options
+            for index_object = 1:numel( normalizations_threshold )
+
+                strs_out( index_object ) = sprintf( "%s (%6.4f)", 'threshold', normalizations_threshold( index_object ).threshold );
+
+            end % for index_object = 1:numel( normalizations_threshold )
+
+        end % function strs_out = string( normalizations_threshold )
 
 	end % methods
 

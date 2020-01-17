@@ -145,7 +145,7 @@ classdef lq_minimization < regularization.options.common
                 %----------------------------------------------------------
                 % print content
                 %----------------------------------------------------------
-                fprintf( ' %-12s: %-13s %4s %-12s: %-5s %4s %-12s: %-13s\n', 'algorithm', show( options( index_object ).algorithm ), '', 'reweighting', show( options( index_object ).reweighting ), '', 'warm start', show( options( index_object ).warm_start ) );
+                fprintf( ' %-12s: %-13s %4s %-12s: %-5s %4s %-12s: %-13s\n', 'algorithm', string( options( index_object ).algorithm ), '', 'reweighting', string( options( index_object ).reweighting ), '', 'warm start', string( options( index_object ).warm_start ) );
 
             end % for index_object = 1:numel( options )
 

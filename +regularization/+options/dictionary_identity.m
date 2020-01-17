@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-01-03
+% modified: 2020-01-15
 %
 classdef dictionary_identity < regularization.options.dictionary
 
@@ -37,6 +37,29 @@ classdef dictionary_identity < regularization.options.dictionary
             objects@regularization.options.dictionary( size );
 
         end % function objects = dictionary_identity( varargin )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( dictionaries_identity )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.dictionary_identity
+            if ~isa( dictionaries_identity, 'regularization.options.dictionary_identity' )
+                errorStruct.message = 'dictionaries_identity must be regularization.options.dictionary_identity!';
+                errorStruct.identifier = 'string:NoOptionsDictionaryIdentity';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % repeat string "identity"
+            strs_out = repmat( "identity", size( dictionaries_identity ) );
+
+        end % function strs_out = string( dictionaries_identity )
 
 	end % methods
 

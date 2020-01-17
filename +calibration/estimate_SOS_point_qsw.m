@@ -163,6 +163,7 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
             % iterate specified tx elements
             INDICES_TX = options{ index_data }( index_target ).indices_elements_tx; %([1, end])
             INDICES_RX = options{ index_data }( index_target ).indices_elements_rx; %([1, end])
+
             for index_selected_tx = 1:numel( INDICES_TX )
 
                 % index of the array element
@@ -178,10 +179,10 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
                 u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, [ intervals_t{ index_target }( index_selected_tx, : ).lb ], [ intervals_t{ index_target }( index_selected_tx, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements_rx ), options{ index_data }( index_target ).setting_window );
 
                 % illustrate cut out
-                figure(998);
-                imagesc( options{ index_data }( index_target ).indices_elements_rx, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, options{ index_data }( index_target ).indices_elements_rx ) ), 20 ), [ -60, 0 ] );
-                line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
-                line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+%                 figure(998);
+%                 imagesc( options{ index_data }( index_target ).indices_elements_rx, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, options{ index_data }( index_target ).indices_elements_rx ) ), 20 ), [ -60, 0 ] );
+%                 line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+%                 line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
 
                 %----------------------------------------------------------
                 % b) compute inter-element lags
@@ -189,6 +190,7 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
                 % initialize lags with zeros
                 lags_adjacent{ index_selected_tx } = physical_values.second( zeros( 1, numel( options{ index_data }( index_target ).indices_elements_rx ) ) );
                 corr_vals = zeros( 1, numel( options{ index_data }( index_target ).indices_elements_rx ) );
+
                 % iterate specified rx elements
                 for index_selected_rx = 2:numel( INDICES_RX )
 
@@ -209,6 +211,7 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
 %                     figure(999);
 %                     plot( u_rx_tilde_qsw_int_window_act.axis.members - lags_adjacent{ index_selected_tx }( index_selected_rx ), u_rx_tilde_qsw_int_window_act.samples / max( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.axis.members, u_rx_tilde_qsw_int_window_prev.samples / max( u_rx_tilde_qsw_int_window_prev.samples ) );
 %                     pause(0.1);
+
                 end % for index_selected_rx = 2:numel( INDICES_RX )
 
                 %----------------------------------------------------------

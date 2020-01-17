@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-19
-% modified: 2020-01-03
+% modified: 2020-01-15
 %
 classdef tgc_exponential < regularization.options.tgc
 
@@ -71,6 +71,36 @@ classdef tgc_exponential < regularization.options.tgc
             end % for index_object = 1:numel( objects )
 
         end % function objects = tgc_exponential( exponents, decays_dB )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( tgcs_exponential )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.tgc_exponential
+            if ~isa( tgcs_exponential, 'regularization.options.tgc_exponential' )
+                errorStruct.message = 'tgcs_exponential must be regularization.options.tgc_exponential!';
+                errorStruct.identifier = 'string:NoOptionsTGCExponential';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % initializse string array for strs_out
+            strs_out = repmat( "", size( tgcs_exponential ) );
+
+            % iterate exponential TGC options
+            for index_object = 1:numel( tgcs_exponential )
+
+                strs_out( index_object ) = sprintf( "%s", 'exponential' );
+
+            end % for index_object = 1:numel( tgcs_exponential )
+
+        end % function strs_out = string( tgcs_exponential )
 
 	end % methods
 

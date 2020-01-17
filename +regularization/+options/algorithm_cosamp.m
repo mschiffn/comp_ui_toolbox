@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-22
-% modified: 2020-01-10
+% modified: 2020-01-16
 %
 classdef algorithm_cosamp < regularization.options.algorithm
 
@@ -13,7 +13,7 @@ classdef algorithm_cosamp < regularization.options.algorithm
 	properties (SetAccess = private)
 
         % independent properties
-        sparsity ( 1, 1 ) double { mustBePositive, mustBeInteger } = 10	% relative root-mean squared error
+        sparsity ( 1, 1 ) double { mustBePositive, mustBeInteger } = 10	% sparsity level
 
 	end % properties
 
@@ -56,8 +56,34 @@ classdef algorithm_cosamp < regularization.options.algorithm
         end % function objects = algorithm_cosamp( rel_RMSE, N_iterations_max )
 
         %------------------------------------------------------------------
-        % TODO: display CoSaMP options
+        % string array (overload string method)
         %------------------------------------------------------------------
+        function strs_out = string( algorithms_cosamp )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.algorithm_cosamp
+            if ~isa( algorithms_cosamp, 'regularization.options.algorithm_cosamp' )
+                errorStruct.message = 'algorithms_cosamp must be regularization.options.algorithm_cosamp!';
+                errorStruct.identifier = 'string:NoOptionsCoSaMP';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % initialize string array for strs_out
+            strs_out = repmat( "", size( algorithms_cosamp ) );
+
+            % iterate SPGL1 options
+            for index_object = 1:numel( algorithms_cosamp )
+
+                strs_out( index_object ) = sprintf( "%s (s = %d)", 'CoSaMP', algorithms_cosamp( index_object ).sparsity );
+
+            end % for index_object = 1:numel( algorithms_cosamp )
+
+        end % function strs_out = string( algorithms_cosamp )
 
 	end % methods
 

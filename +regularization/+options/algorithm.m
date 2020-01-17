@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-10
+% modified: 2020-01-16
 %
 classdef (Abstract) algorithm
 
@@ -67,9 +67,9 @@ classdef (Abstract) algorithm
 	methods (Abstract)
 
         %------------------------------------------------------------------
-        % display algorithm options
+        % string array (overload string method)
         %------------------------------------------------------------------
-        str_out = show( algorithms )
+        strs_out = string( algorithms )
 
     end % methods (Abstract)
 

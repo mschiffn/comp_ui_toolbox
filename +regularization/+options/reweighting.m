@@ -48,9 +48,9 @@ classdef (Abstract) reweighting
 	methods (Abstract)
 
         %------------------------------------------------------------------
-        % display reweighting options
+        % string array (overload string method)
         %------------------------------------------------------------------
-        str_out = show( reweightings )
+        strs_out = string( reweightings )
 
     end % methods (Abstract)
 

@@ -21,7 +21,7 @@ classdef squaremeter < physical_values.physical_quantity_derived
             % 1.) constructor of superclass
             %--------------------------------------------------------------
             exponents = zeros( 1, 8 );
-            exponents( 1 ) = 2;
+            exponents( 1 ) = 2; % length
             objects@physical_values.physical_quantity_derived( exponents, varargin{ : } );
 
         end % function objects = squaremeter( varargin )

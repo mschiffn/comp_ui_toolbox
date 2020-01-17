@@ -106,6 +106,49 @@ classdef common
 
         end % function objects = common( varargin )
 
+        %------------------------------------------------------------------
+        % display options
+        %------------------------------------------------------------------
+        function show( options )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure nonempty options
+            if nargin <= 0 || isempty( options )
+                options = regularization.options.common;
+            end
+
+            % ensure class regularization.options.common
+            if ~isa( options, 'regularization.options.common' )
+                errorStruct.message = 'options must be regularization.options.common!';
+                errorStruct.identifier = 'show:NoOptions';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display options
+            %--------------------------------------------------------------
+            % iterate common regularization options
+            for index_object = 1:numel( options )
+
+                %----------------------------------------------------------
+                % print header
+                %----------------------------------------------------------
+                str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+                fprintf( ' %s\n', repmat( '=', [ 1, 80 ] ) );
+                fprintf( ' %s (%s)\n', 'common regularization options', str_date_time );
+                fprintf( ' %s\n', repmat( '=', [ 1, 80 ] ) );
+
+                %----------------------------------------------------------
+                % print content
+                %----------------------------------------------------------
+                fprintf( ' %-12s: %-13s %4s %-12s: %-5s %4s %-12s: %-13s\n', 'algorithm', show( options( index_object ).algorithm ), '', 'reweighting', show( options( index_object ).reweighting ), '', 'warm start', show( options( index_object ).warm_start ) );
+
+            end % for index_object = 1:numel( options )
+
+        end % function show( options )
+
 	end % methods
 
 end % classdef common
