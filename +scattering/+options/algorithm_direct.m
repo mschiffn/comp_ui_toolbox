@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2019-08-03
+% modified: 2020-01-18
 %
 classdef algorithm_direct < scattering.options.algorithm
 
@@ -37,6 +37,29 @@ classdef algorithm_direct < scattering.options.algorithm
             objects@scattering.options.algorithm( size );
 
         end % function objects = algorithm_direct( varargin )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( algorithms_direct )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.options.algorithm_direct
+            if ~isa( algorithms_direct, 'scattering.options.algorithm_direct' )
+                errorStruct.message = 'algorithms_direct must be scattering.options.algorithm_direct!';
+                errorStruct.identifier = 'string:NoOptionsAlgorithmDirect';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % repeat string "direct"
+            strs_out = repmat( "direct", size( algorithms_direct ) );
+
+        end % function strs_out = string( algorithms_direct )
 
 	end % methods
 

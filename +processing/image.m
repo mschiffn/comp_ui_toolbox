@@ -254,6 +254,9 @@ classdef image
 
                 end % for index_options = 1:numel( options{ index_image } )
 
+                % create signal matrix array
+                profiles{ index_image } = reshape( cat( 1, profiles{ index_image }{ : } ), size( options{ index_image } ) );
+
             end % for index_image = 1:numel( images )
 
             % avoid cell array for single images

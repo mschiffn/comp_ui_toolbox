@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2019-08-03
+% modified: 2020-01-18
 %
-classdef (Abstract) sequence
+classdef (Abstract) sequence < scattering.options.template
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -20,26 +20,17 @@ classdef (Abstract) sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure row vector for size
-            if ~isrow( size )
-                errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'sequence:NoRowVector';
-                error( errorStruct );
-            end
-
-            % ensure positive integers
-            mustBePositive( size );
-            mustBeInteger( size );
-            mustBeNonempty( size );
+            % superclass ensures row vector for size
+            % superclass ensures nonempty positive integers for size
 
             %--------------------------------------------------------------
-            % 2.) create spatial anti-aliasing filter options
+            % 2.) create sequence options
             %--------------------------------------------------------------
-            % repeat spatial anti-aliasing filter options
-            objects = repmat( objects, size );
+            % constructor of superclass
+            objects@scattering.options.template( size );
 
         end % function objects = sequence( size )
 
 	end % methods
 
-end % classdef (Abstract) sequence
+end % classdef (Abstract) sequence < scattering.options.template

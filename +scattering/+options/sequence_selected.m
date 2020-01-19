@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2019-08-03
+% modified: 2020-01-18
 %
 classdef sequence_selected < scattering.options.sequence
 
@@ -52,6 +52,36 @@ classdef sequence_selected < scattering.options.sequence
             end % for index_object = 1:numel( objects )
 
         end % function objects = sequence_selected( indices )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( sequences_selected )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.options.sequence_selected
+            if ~isa( sequences_selected, 'scattering.options.sequence_selected' )
+                errorStruct.message = 'sequences_selected must be scattering.options.sequence_selected!';
+                errorStruct.identifier = 'string:NoOptionsSequenceSelected';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % repeat string "selected"
+            strs_out = repmat( "selected", size( sequences_selected ) );
+
+            % iterate selected sequence options
+            for index_objects = 1:numel( sequences_selected )
+
+                strs_out( index_objects ) = sprintf( "selected (%s)", strjoin( string( sequences_selected( index_objects ).indices ), ', ' ) );
+
+            end % for index_objects = 1:numel( sequences_selected )
+
+        end % function strs_out = string( sequences_selected )
 
 	end % methods
 

@@ -1,10 +1,11 @@
+%
 % abstract superclass for all algorithm options
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2019-08-03
+% modified: 2020-01-18
 %
-classdef (Abstract) algorithm
+classdef (Abstract) algorithm < scattering.options.template
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -19,26 +20,17 @@ classdef (Abstract) algorithm
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure row vector for size
-            if ~isrow( size )
-                errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'algorithm:NoRowVector';
-                error( errorStruct );
-            end
-
-            % ensure positive integers
-            mustBePositive( size );
-            mustBeInteger( size );
-            mustBeNonempty( size );
+            % superclass ensures row vector for size
+            % superclass ensures nonempty positive integers for size
 
             %--------------------------------------------------------------
             % 2.) create algorithm options
             %--------------------------------------------------------------
-            % repeat algorithm options
-            objects = repmat( objects, size );
+            % constructor of superclass
+            objects@scattering.options.template( size );
 
         end % function objects = algorithm( size )
 
 	end % methods
 
-end % classdef (Abstract) algorithm
+end % classdef (Abstract) algorithm < scattering.options.template

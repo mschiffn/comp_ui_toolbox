@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2019-08-03
+% modified: 2020-01-18
 %
 classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
 
@@ -48,6 +48,36 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
             end % for index_object = 1:numel( objects )
 
         end % function objects = anti_aliasing_raised_cosine( roll_off_factors )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( anti_aliasings_raised_cosine )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.options.anti_aliasing_raised_cosine
+            if ~isa( anti_aliasings_raised_cosine, 'scattering.options.anti_aliasing_raised_cosine' )
+                errorStruct.message = 'anti_aliasings_raised_cosine must be scattering.options.anti_aliasing_raised_cosine!';
+                errorStruct.identifier = 'string:NoOptionsAntiAliasingRaisedCosine';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % repeat string "off"
+            strs_out = repmat( "", size( anti_aliasings_raised_cosine ) );
+
+            % iterate raised-cosine spatial anti-aliasing filter options
+            for index_object = 1:numel( anti_aliasings_raised_cosine )
+
+                strs_out( index_object ) = sprintf( "raised-cosine (beta = %.2f)", anti_aliasings_raised_cosine( index_object ).roll_off_factor );
+
+            end % for index_object = 1:numel( anti_aliasings_raised_cosine )
+
+        end % function strs_out = string( anti_aliasings_raised_cosine )
 
 	end % methods
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2019-08-03
+% modified: 2020-01-18
 %
 classdef anti_aliasing_boxcar < scattering.options.anti_aliasing
 
@@ -37,6 +37,29 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing
             objects@scattering.options.anti_aliasing( size );
 
         end % function objects = anti_aliasing_boxcar( varargin )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( anti_aliasings_boxcar )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.options.anti_aliasing_boxcar
+            if ~isa( anti_aliasings_boxcar, 'scattering.options.anti_aliasing_boxcar' )
+                errorStruct.message = 'anti_aliasings_boxcar must be scattering.options.anti_aliasing_boxcar!';
+                errorStruct.identifier = 'string:NoOptionsAntiAliasingBoxcar';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % repeat string "boxcar"
+            strs_out = repmat( "boxcar", size( anti_aliasings_boxcar ) );
+
+        end % function strs_out = string( anti_aliasings_boxcar )
 
 	end % methods
 

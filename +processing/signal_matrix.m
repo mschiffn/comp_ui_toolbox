@@ -616,7 +616,7 @@ classdef signal_matrix
             % ensure class processing.signal_matrix for signal_matrices
             if ~isa( signal_matrices, 'processing.signal_matrix' )
                 errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
-                errorStruct.identifier = 'estimate_decay:NoSignalMatrices';
+                errorStruct.identifier = 'widths:NoSignalMatrices';
                 error( errorStruct );
             end
 
@@ -654,8 +654,15 @@ classdef signal_matrix
 
                     %
                     samples_dB = illustration.dB( signal_matrices( index_object ).samples( :, index_signal ), 20 );
-                    [ peaks, peaks_indices ] = findpeaks( samples_dB, 'MINPEAKHEIGHT', thresholds_dB( index_object ) / 3 );
+                    [ peaks, peaks_indices ] = findpeaks( samples_dB, 'MINPEAKHEIGHT', - eps( 0 ) );
                     N_peaks = numel( peaks_indices );
+
+                    % ensure single peak
+                    if N_peaks ~= 1
+                        errorStruct.message = sprintf( 'Signal %d in signal_matrices( %d ) does not have a single peak!', index_signal, index_object );
+                        errorStruct.identifier = 'widths:NoSinglePeak';
+                        error( errorStruct );
+                    end
 
                     % initialize peak widths w/ zeros
                     delta = signal_matrices( index_object ).axis.members( 2 ) - signal_matrices( index_object ).axis.members( 1 );
@@ -688,15 +695,8 @@ classdef signal_matrix
 
                 end % for index_signal = 1:signal_matrices( index_object ).N_signals
 
-%                 N_peaks_per_signal = cellfun( @numel, widths_out{ index_object } );
-%                 if all( N_peaks_per_signal == 1 )
-%                     widths_out{ index_object } = reshape( cat( 1, widths_out{ index_object }{ : } ), size( widths_out{ index_object } ) );
-%                 end
-
-                % avoid cell array for single signal
-                if signal_matrices( index_object ).N_signals == 1
-                    widths_out{ index_object } = widths_out{ index_object }{ 1 };
-                end
+                % concatenate horizontally
+                widths_out{ index_object } = cat( 2, widths_out{ index_object }{ : } );
 
             end % for index_object = 1:numel( signal_matrices )
 

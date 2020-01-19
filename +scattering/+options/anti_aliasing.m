@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-11
-% modified: 2019-08-03
+% modified: 2020-01-18
 %
-classdef (Abstract) anti_aliasing
+classdef (Abstract) anti_aliasing < scattering.options.template
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -20,26 +20,17 @@ classdef (Abstract) anti_aliasing
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure row vector for size
-            if ~isrow( size )
-                errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'anti_aliasing:NoRowVector';
-                error( errorStruct );
-            end
-
-            % ensure positive integers
-            mustBePositive( size );
-            mustBeInteger( size );
-            mustBeNonempty( size );
+            % superclass ensures row vector for size
+            % superclass ensures nonempty positive integers for size
 
             %--------------------------------------------------------------
             % 2.) create spatial anti-aliasing filter options
             %--------------------------------------------------------------
-            % repeat spatial anti-aliasing filter options
-            objects = repmat( objects, size );
+            % constructor of superclass
+            objects@scattering.options.template( size );
 
         end % function objects = anti_aliasing( size )
 
 	end % methods
 
-end % classdef (Abstract) anti_aliasing
+end % classdef (Abstract) anti_aliasing < scattering.options.template

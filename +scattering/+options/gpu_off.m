@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2019-08-03
+% modified: 2020-01-18
 %
 classdef gpu_off < scattering.options.gpu
 
@@ -37,6 +37,29 @@ classdef gpu_off < scattering.options.gpu
             objects@scattering.options.gpu( size );
 
         end % function objects = gpu_off( varargin )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( gpus_off )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.options.gpu_off
+            if ~isa( gpus_off, 'scattering.options.gpu_off' )
+                errorStruct.message = 'gpus_off must be scattering.options.gpu_off!';
+                errorStruct.identifier = 'string:NoOptionsGPUOff';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) create string array
+            %--------------------------------------------------------------
+            % repeat string "off"
+            strs_out = repmat( "off", size( gpus_off ) );
+
+        end % function strs_out = string( gpus_off )
 
 	end % methods
 
