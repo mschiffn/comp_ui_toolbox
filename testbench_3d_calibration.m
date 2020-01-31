@@ -1,9 +1,10 @@
-% testbench for three-dimensional space
+% testbench for the three-dimensional space
+%
 % material parameter: compressibility
 %
 % author: Martin F. Schiffner
 % date: 2019-11-16
-% modified: 2020-01-11
+% modified: 2020-01-23
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -122,9 +123,18 @@ for index_setup = 1:numel( setups )
     end
 
 	% quasi-plane wave sequence
-	sequences_QPW{ index_setup } = scattering.sequences.sequence_QPW( setups( index_setup ), repmat( u_tx_tilde, size( e_theta ) ), e_theta, interval_f );
+% 	sequences_QPW{ index_setup } = scattering.sequences.sequence_QPW( setups( index_setup ), repmat( u_tx_tilde, size( e_theta ) ), e_theta, interval_f );
+    settings_QPW_tx = scattering.sequences.settings.controls.tx_QPW( setups( index_setup ), repmat( u_tx_tilde, size( e_theta ) ), e_theta );
+	settings_QPW_rx = cell( size( settings_QPW_tx ) );
+	for index_object = 1:numel( settings_QPW_tx )
+        settings_QPW_rx{ index_object } = scattering.sequences.settings.controls.rx_identity( setups( index_setup ), settings_QPW_tx( index_object ), interval_f );
+    end
+	settings_QPW_custom = scattering.sequences.settings.setting( settings_QPW_tx, settings_QPW_rx );
+	sequences_QPW{ index_setup } = scattering.sequences.sequence( setups( index_setup ), settings_QPW_custom );
 
 end
+
+% TODO: sequence array instead of cell array
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% forward simulations
@@ -140,7 +150,7 @@ method_FOV = scattering.sequences.setups.discretizations.methods.grid_distances(
 options_disc_spatial = scattering.sequences.setups.discretizations.options( method_faces, method_FOV );
 
 %--------------------------------------------------------------------------
-% 3.) create scattering operators and linear transforms
+% 3.) create scattering operators
 %--------------------------------------------------------------------------
 % specify cell arrays
 u_M_qsw = cell( size( setups ) );
@@ -153,7 +163,7 @@ u_M_tilde_qpw = cell( size( setups ) );
 for index_setup = 1:numel( setups )
 
     %----------------------------------------------------------------------
-    % specify scattering operator options
+    % a) specify scattering operator options
     %----------------------------------------------------------------------
 	% spectral discretization options
     options_disc_spectral = scattering.sequences.settings.discretizations.sequence_custom( sequences_QPW{ index_setup }.interval_hull_t );
@@ -165,7 +175,7 @@ for index_setup = 1:numel( setups )
     options_static = scattering.options.static( options_disc );
 
     % create momentary scattering operator options
-    options_momentary = scattering.options.momentary( scattering.options.anti_aliasing_off );
+    options_momentary = scattering.options.momentary( scattering.options.anti_aliasing_off, scattering.options.gpu_off );
 
 	% scattering options
 	options = scattering.options( options_static, options_momentary );
@@ -174,7 +184,7 @@ for index_setup = 1:numel( setups )
 	interval_t = quantize( options_disc_spectral.interval_hull_t, T_s );
 
 	%----------------------------------------------------------------------
-	% QPW
+	% b) QPW
 	%----------------------------------------------------------------------
 	% a) create scattering operator (Born approximation)
 	operator_qpw = scattering.operator_born( sequences_QPW{ index_setup }, options );
@@ -190,13 +200,13 @@ for index_setup = 1:numel( setups )
     theta( indices_tpsf ) = 1;
 
     % c) pulse-echo measurement
-    u_M_qpw{ index_setup } = forward( operator_qpw, theta, [], scattering.options.gpu_off );
+    u_M_qpw{ index_setup } = forward( operator_qpw, theta );
 
 	% d) signals in time domain
     u_M_tilde_qpw{ index_setup } = signal( u_M_qpw{ index_setup }, double( interval_t.q_lb ), T_s );
 
     %----------------------------------------------------------------------
-    % SA
+    % c) SA
     %----------------------------------------------------------------------
 	% specify cell array for u_M_qsw{ index_setup }
 	u_M_qsw{ index_setup } = cell( N_ops, 1 );
@@ -208,7 +218,7 @@ for index_setup = 1:numel( setups )
         operator_qsw = scattering.operator_born( sequences_SA{ index_setup }{ index_sequence }, options );
 
         % pulse-echo measurement
-        u_M_qsw{ index_setup }{ index_sequence } = forward( operator_qsw, theta, [], scattering.options.gpu_off );
+        u_M_qsw{ index_setup }{ index_sequence } = forward( operator_qsw, theta );
 
     end
 
@@ -229,9 +239,15 @@ u_M_tilde_qpw = cat( 1, u_M_tilde_qpw{ : } );
 %--------------------------------------------------------------------------
 figure( 1 );
 subplot( 1, 2, 1 );
-imagesc( illustration.dB( abs( hilbert( double( u_M_tilde_qpw( 2 ).samples ) ) ), 20 ), [ -60, 0 ] );
+imagesc( illustration.dB( abs( hilbert( double( u_M_tilde_qpw( 1 ).samples ) ) ), 20 ), [ -60, 0 ] );
 subplot( 1, 2, 2 );
-imagesc( illustration.dB( abs( hilbert( double( u_M_tilde_qsw{ 2 }( 93 ).samples ) ) ), 20 ), [ -60, 0 ] );
+imagesc( illustration.dB( abs( hilbert( double( u_M_tilde_qsw{ 1 }( 93 ).samples ) ) ), 20 ), [ -60, 0 ] );
+
+%--------------------------------------------------------------------------
+% save data for later use
+%--------------------------------------------------------------------------
+str_filename = sprintf( '%s_data.mat', str_name );
+save( str_filename, 'u_M_qsw', 'u_M_qpw', 'u_M_tilde_qsw', 'u_M_tilde_qpw' );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% calibration (QPW data)
@@ -409,7 +425,7 @@ for index_setup = 1:numel( setups )
 end % for index_setup = 1:numel( setups )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% calibration (SAFT data)
+%% calibration (QSW data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %--------------------------------------------------------------------------
@@ -433,7 +449,7 @@ indices_t_sa = {...
 %     [ 59, 174, 291, 407, 524, 640, 755, 872, 987 ];...
 	[ 747, 863, 977 ] };
 
-c_avg_start_sa = c_ref - physical_values.meter_per_second( 5 );
+c_avg_start_sa = c_ref - physical_values.meter_per_second( 10 );
 
 % specify cell array for states_0
 states_0_sa = cell( size( setups ) );
@@ -452,7 +468,8 @@ end
 % 2.) options
 %--------------------------------------------------------------------------
 % create sound speed estimation options
-options_SoS_sa = calibration.options.SoS( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, (1:xdc_array.N_elements), 1, xdc_array.N_elements );
+options_sos_qsw = calibration.options.sos_qsw( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, (1:xdc_array.N_elements), 1, xdc_array.N_elements, 60, auxiliary.setting_window( @tukeywin, 0.1 ) );
+options_sos_focus = calibration.options.sos_focus( physical_values.second( 5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, 1, xdc_array.N_elements, interval_f, 60, 20, 1e-10, auxiliary.setting_window( @tukeywin, 0.1 ) );
 
 % create pulse-echo response estimation options
 handle_absorption_model_sa = @( x ) scattering.sequences.setups.materials.absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
@@ -462,18 +479,21 @@ options_PER_sa = calibration.options.PER( physical_values.second( 2.5e-6 ), (1:x
 % 3.) perform estimates
 %--------------------------------------------------------------------------
 % a) estimate speed of sound
-[ states_est_sa, rel_RMSE_sa ] = calibration.estimate_SOS_point_qsw( u_M_tilde_qsw, xdc_array, states_0_sa, options_SoS_sa );
+[ states_est_qsw, rel_RMSE_qsw ] = calibration.estimate_sos_point_qsw( u_M_tilde_qsw, xdc_array, states_0_sa, options_sos_qsw );
+[ states_est_focus, rel_RMSE_focus ] = calibration.estimate_sos_point_focus( u_M_tilde_qsw, xdc_array, states_0_sa, options_sos_focus );
+
+% ensure cell arrays
 
 % iterate pulse-echo measurement setups
-states_updated_sa = states_est_sa;
+states_updated_sa = states_est_qsw;
 for index_setup = 1:numel( setups )
 
 	% estimated positions
-	positions_est_sa = { states_est_sa{ index_setup }.position_target };
+	positions_est_sa = { states_est_qsw{ index_setup }.position_target };
 	positions_est_sa = cat( 1, positions_est_sa{ : } );
 
 	% estimated speed of sound
-	c_avg_mean_sa = mean( [ states_est_sa{ index_setup }.c_avg ] );
+	c_avg_mean_sa = mean( [ states_est_qsw{ index_setup }.c_avg ] );
 
 	% updated states
     states_updated_sa{ index_setup } = calibration.state( positions_est_sa, c_avg_mean_sa );
@@ -491,14 +511,18 @@ index_target_lb = 7;
 index_target_ub = 9;
 
 % specify cell arrays
-rel_RMSE_positions_sa = cell( size( setups ) );
-rel_RMSE_c_avg_sa = cell( size( setups ) );
-rel_RMSE_c_avg_mean_sa = zeros( size( setups ) );
+rel_RMSE_positions_qsw = cell( size( setups ) );
+rel_RMSE_c_avg_qsw = cell( size( setups ) );
+rel_RMSE_c_avg_mean_qsw = zeros( size( setups ) );
 
-rel_RMSE_e_B_tilde_sa = cell( size( setups ) );
-rel_RMSE_e_B_tilde_mean_sa = cell( size( setups ) );
-rho_e_B_tilde_sa = cell( size( setups ) );
-rho_e_B_tilde_mean_sa = cell( size( setups ) );
+rel_RMSE_positions_focus = cell( size( setups ) );
+rel_RMSE_c_avg_focus = cell( size( setups ) );
+rel_RMSE_c_avg_mean_focus = zeros( size( setups ) );
+
+rel_RMSE_e_B_tilde_qsw = cell( size( setups ) );
+rel_RMSE_e_B_tilde_mean_qsw = cell( size( setups ) );
+rho_e_B_tilde_qsw = cell( size( setups ) );
+rho_e_B_tilde_mean_qsw = cell( size( setups ) );
 
 % interpolate tx voltage for cross-correlation
 u_tx_tilde_int = interpolate( u_tx_tilde, 30 );
@@ -507,80 +531,104 @@ u_tx_tilde_int_normed = u_tx_tilde_int.samples ./ norm( u_tx_tilde_int.samples )
 % iterate pulse-echo measurement sequences
 for index_setup = 1:numel( setups )
 
-	% estimated positions
-	positions_est_sa = { states_est_sa{ index_setup }.position_target };
-	positions_est_sa = cat( 1, positions_est_sa{ : } );
-	error_pos = positions_est_sa - operator_qsw.sequence.setup.FOV.shape.grid.positions( indices_tpsf( index_target_lb:index_target_ub ), : );
-	rel_RMSE_positions_sa{ index_setup } = vecnorm( error_pos, 2, 2 ) ./ vecnorm( operator_qsw.sequence.setup.FOV.shape.grid.positions( indices_tpsf( index_target_lb:index_target_ub ), : ), 2, 2 );
+    %----------------------------------------------------------------------
+	% a) estimated positions
+    %----------------------------------------------------------------------
+    % a) QSW model
+	positions_est_qsw = { states_est_qsw{ index_setup }.position_target };
+	positions_est_qsw = cat( 1, positions_est_qsw{ : } );
+	error_pos = positions_est_qsw - operator_qsw.sequence.setup.FOV.shape.grid.positions( indices_tpsf( index_target_lb:index_target_ub ), : );
+	rel_RMSE_positions_qsw{ index_setup } = vecnorm( error_pos, 2, 2 ) ./ vecnorm( operator_qsw.sequence.setup.FOV.shape.grid.positions( indices_tpsf( index_target_lb:index_target_ub ), : ), 2, 2 );
 
-	% estimated SoS
-	error_c_avg = [ states_est_sa{ index_setup }.c_avg ]' - c_ref( index_setup );
-	rel_RMSE_c_avg_sa{ index_setup } = norm( error_c_avg ) / c_ref( index_setup );
+	% b) refocusing
+	positions_est_focus = { states_est_focus{ index_setup }.position_target };
+	positions_est_focus = cat( 1, positions_est_focus{ : } );
+	error_pos = positions_est_focus - operator_qsw.sequence.setup.FOV.shape.grid.positions( indices_tpsf( index_target_lb:index_target_ub ), : );
+	rel_RMSE_positions_focus{ index_setup } = vecnorm( error_pos, 2, 2 ) ./ vecnorm( operator_qsw.sequence.setup.FOV.shape.grid.positions( indices_tpsf( index_target_lb:index_target_ub ), : ), 2, 2 );
 
-	% weighted mean SoS
-	weights = 1 ./ rel_RMSE_sa{ index_setup };
+    %----------------------------------------------------------------------
+	% b) estimated SoS
+    %----------------------------------------------------------------------
+	% i.) QSW model
+	error_c_avg = [ states_est_qsw{ index_setup }.c_avg ]' - c_ref( index_setup );
+	rel_RMSE_c_avg_qsw{ index_setup } = norm( error_c_avg ) / c_ref( index_setup );
+
+    % ii.) QSW model (weighted)
+	weights = 1 ./ rel_RMSE_qsw{ index_setup };
 	weights = weights / sum( weights );
-	c_avg_mean_sa = [ states_est_sa{ index_setup }.c_avg ] * weights;
-	rel_RMSE_c_avg_mean_sa( index_setup ) = abs( c_avg_mean_sa - c_ref( index_setup ) ) / c_ref( index_setup );
+	c_avg_mean_qsw = [ states_est_qsw{ index_setup }.c_avg ] * weights;
+	rel_RMSE_c_avg_mean_qsw( index_setup ) = abs( c_avg_mean_qsw - c_ref( index_setup ) ) / c_ref( index_setup );
 
-	% pulse-echo responses
-	rel_RMSE_e_B_tilde_sa{ index_setup } = cell( size( states_est_sa{ index_setup } ) );
-	rel_RMSE_e_B_tilde_mean_sa{ index_setup } = zeros( size( states_est_sa{ index_setup } ) );
+	% iii.) refocusing
+	error_c_avg = [ states_est_focus{ index_setup }.c_avg ]' - c_ref( index_setup );
+	rel_RMSE_c_avg_focus{ index_setup } = norm( error_c_avg ) / c_ref( index_setup );
 
-	% iterate targets
-	for index_target = 1:numel( states_est_sa{ index_setup } )
+	% iv.) refocusing (weighted)
+	weights = 1 ./ rel_RMSE_focus{ index_setup };
+	weights = weights / sum( weights );
+	c_avg_mean_focus = [ states_est_focus{ index_setup }.c_avg ] * weights;
+	rel_RMSE_c_avg_mean_focus( index_setup ) = abs( c_avg_mean_focus - c_ref( index_setup ) ) / c_ref( index_setup );
 
-        % ensure identical sampling periods
-        if e_B_tilde_ref_sa{ index_setup }( index_target ).axis.delta ~= u_tx_tilde.axis.delta
-            errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
-            errorStruct.identifier = 'times_of_flight:NoSetups';
-            error( errorStruct );
-        end
-
-        % interpolate PE responses and normalize
-        e_B_tilde_int = interpolate( e_B_tilde_ref_sa{ index_setup }( index_target ), 30 );
-        e_B_tilde_int_normed = e_B_tilde_int.samples ./ vecnorm( e_B_tilde_int.samples, 2, 1 );
-        e_B_tilde_mean_int = interpolate( e_B_tilde_mean_sa{ index_setup }( index_target ), 30 );
-        e_B_tilde_mean_int_normed = e_B_tilde_mean_int.samples ./ vecnorm( e_B_tilde_mean_int.samples, 2, 1 );
-
-        % cross-correlation
-        [ corr_vals, corr_lags ] = xcorr( e_B_tilde_int_normed, u_tx_tilde_int_normed );
-        [ rho_e_B_tilde_sa{ index_setup }( index_target ), index_max ] = max( corr_vals );
-        [ corr_vals_mean, corr_lags_mean ] = xcorr( e_B_tilde_mean_int_normed, u_tx_tilde_int_normed );
-        [ rho_e_B_tilde_mean_sa{ index_setup }( index_target ), index_max_mean ] = max( corr_vals_mean );
-
-        % shift PE responses
-        axis_shifted = math.sequence_increasing_regular_quantized( e_B_tilde_int.axis.q_lb - corr_lags( index_max ), e_B_tilde_int.axis.q_ub - corr_lags( index_max ), e_B_tilde_int.axis.delta );
-        e_B_tilde_int_shifted = processing.signal_matrix( axis_shifted, e_B_tilde_int.samples );
-        axis_shifted = math.sequence_increasing_regular_quantized( e_B_tilde_mean_int.axis.q_lb - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.q_ub - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.delta );
-        e_B_tilde_mean_int_shifted = processing.signal_matrix( axis_shifted, e_B_tilde_mean_int.samples );
-
-        % common time axis
-%         q_lb = double( max( e_B_tilde_int.axis.q_lb - corr_lags( index_max ), u_tx_tilde_int.axis.q_lb ) );
-%         q_ub = double( min( e_B_tilde_int.axis.q_ub - corr_lags( index_max ), u_tx_tilde_int.axis.q_ub ) );
-%         indices_samples = (q_lb + 1):(q_ub + 1);
-%         axis_common = e_B_tilde_int.axis.members( indices_samples );
-
-        % relative RMSEs of estimated pulse-echo responses
-%         error_e_B_tilde = e_B_tilde_int_normed( indices_samples ) - u_tx_tilde_int_normed;
-%         rel_RMSE_e_B_tilde_sa{ index_setup }{ index_target } = vecnorm( error_e_B_tilde, 2, 1 ) / norm( u_tx_tilde_int_normed );
-
-        % relative RMSEs of mean estimated pulse-echo responses
-%         e_B_tilde_mean_normed = e_B_tilde_mean_sa{ index_setup }( index_target ).samples( indices_samples, : ) ./ max( e_B_tilde_mean_sa{ index_setup }( index_target ).samples( indices_samples, : ), [], 1 );
-%         error_e_B_tilde_mean = e_B_tilde_mean_normed - u_tx_tilde_int_normed;
-%         rel_RMSE_e_B_tilde_mean_sa{ index_setup }( index_target ) = norm( error_e_B_tilde_mean ) / norm( u_tx_tilde_int_normed );
-
-        % illustrate
-        figure( index_target );
-        subplot( 2, 1, 1 );
-        plot( e_B_tilde_int_shifted.axis.members, e_B_tilde_int_normed, ...
-              u_tx_tilde_int.axis.members, u_tx_tilde_int_normed );
-        subplot( 2, 1, 2 );
-        plot( e_B_tilde_mean_int_shifted.axis.members, e_B_tilde_mean_int_normed, ...
-              u_tx_tilde_int.axis.members, u_tx_tilde_int_normed );%, ...
-%               e_B_tilde_mean_sa{ index_setup }( index_target ).axis.members( indices_samples ), error_e_B_tilde_mean, '--' );
-%         title( sprintf( 'Mean (rel. RMSE: %.2f %%)', rel_RMSE_e_B_tilde_mean_sa{ index_setup }( index_target ) * 1e2 ) );
-
-    end % for index_target = 1:numel( states_est_sa{ index_setup } )
+    %----------------------------------------------------------------------
+	% c) pulse-echo responses
+    %----------------------------------------------------------------------
+% 	rel_RMSE_e_B_tilde_sa{ index_setup } = cell( size( states_est_qsw{ index_setup } ) );
+% 	rel_RMSE_e_B_tilde_mean_sa{ index_setup } = zeros( size( states_est_qsw{ index_setup } ) );
+% 
+% 	% iterate targets
+% 	for index_target = 1:numel( states_est_qsw{ index_setup } )
+% 
+%         % ensure identical sampling periods
+%         if e_B_tilde_ref_sa{ index_setup }( index_target ).axis.delta ~= u_tx_tilde.axis.delta
+%             errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
+%             errorStruct.identifier = 'times_of_flight:NoSetups';
+%             error( errorStruct );
+%         end
+% 
+%         % interpolate PE responses and normalize
+%         e_B_tilde_int = interpolate( e_B_tilde_ref_sa{ index_setup }( index_target ), 30 );
+%         e_B_tilde_int_normed = e_B_tilde_int.samples ./ vecnorm( e_B_tilde_int.samples, 2, 1 );
+%         e_B_tilde_mean_int = interpolate( e_B_tilde_mean_sa{ index_setup }( index_target ), 30 );
+%         e_B_tilde_mean_int_normed = e_B_tilde_mean_int.samples ./ vecnorm( e_B_tilde_mean_int.samples, 2, 1 );
+% 
+%         % cross-correlation
+%         [ corr_vals, corr_lags ] = xcorr( e_B_tilde_int_normed, u_tx_tilde_int_normed );
+%         [ rho_e_B_tilde_sa{ index_setup }( index_target ), index_max ] = max( corr_vals );
+%         [ corr_vals_mean, corr_lags_mean ] = xcorr( e_B_tilde_mean_int_normed, u_tx_tilde_int_normed );
+%         [ rho_e_B_tilde_mean_sa{ index_setup }( index_target ), index_max_mean ] = max( corr_vals_mean );
+% 
+%         % shift PE responses
+%         axis_shifted = math.sequence_increasing_regular_quantized( e_B_tilde_int.axis.q_lb - corr_lags( index_max ), e_B_tilde_int.axis.q_ub - corr_lags( index_max ), e_B_tilde_int.axis.delta );
+%         e_B_tilde_int_shifted = processing.signal_matrix( axis_shifted, e_B_tilde_int.samples );
+%         axis_shifted = math.sequence_increasing_regular_quantized( e_B_tilde_mean_int.axis.q_lb - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.q_ub - corr_lags_mean( index_max_mean ), e_B_tilde_mean_int.axis.delta );
+%         e_B_tilde_mean_int_shifted = processing.signal_matrix( axis_shifted, e_B_tilde_mean_int.samples );
+% 
+%         % common time axis
+% %         q_lb = double( max( e_B_tilde_int.axis.q_lb - corr_lags( index_max ), u_tx_tilde_int.axis.q_lb ) );
+% %         q_ub = double( min( e_B_tilde_int.axis.q_ub - corr_lags( index_max ), u_tx_tilde_int.axis.q_ub ) );
+% %         indices_samples = (q_lb + 1):(q_ub + 1);
+% %         axis_common = e_B_tilde_int.axis.members( indices_samples );
+% 
+%         % relative RMSEs of estimated pulse-echo responses
+% %         error_e_B_tilde = e_B_tilde_int_normed( indices_samples ) - u_tx_tilde_int_normed;
+% %         rel_RMSE_e_B_tilde_sa{ index_setup }{ index_target } = vecnorm( error_e_B_tilde, 2, 1 ) / norm( u_tx_tilde_int_normed );
+% 
+%         % relative RMSEs of mean estimated pulse-echo responses
+% %         e_B_tilde_mean_normed = e_B_tilde_mean_sa{ index_setup }( index_target ).samples( indices_samples, : ) ./ max( e_B_tilde_mean_sa{ index_setup }( index_target ).samples( indices_samples, : ), [], 1 );
+% %         error_e_B_tilde_mean = e_B_tilde_mean_normed - u_tx_tilde_int_normed;
+% %         rel_RMSE_e_B_tilde_mean_sa{ index_setup }( index_target ) = norm( error_e_B_tilde_mean ) / norm( u_tx_tilde_int_normed );
+% 
+%         % illustrate
+%         figure( index_target );
+%         subplot( 2, 1, 1 );
+%         plot( e_B_tilde_int_shifted.axis.members, e_B_tilde_int_normed, ...
+%               u_tx_tilde_int.axis.members, u_tx_tilde_int_normed );
+%         subplot( 2, 1, 2 );
+%         plot( e_B_tilde_mean_int_shifted.axis.members, e_B_tilde_mean_int_normed, ...
+%               u_tx_tilde_int.axis.members, u_tx_tilde_int_normed );%, ...
+% %               e_B_tilde_mean_sa{ index_setup }( index_target ).axis.members( indices_samples ), error_e_B_tilde_mean, '--' );
+% %         title( sprintf( 'Mean (rel. RMSE: %.2f %%)', rel_RMSE_e_B_tilde_mean_sa{ index_setup }( index_target ) * 1e2 ) );
+% 
+%     end % for index_target = 1:numel( states_est_qsw{ index_setup } )
 
 end % for index_setup = 1:numel( setups )

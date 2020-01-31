@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-01-17
+% modified: 2020-01-25
 %
 classdef common
 
@@ -13,7 +13,7 @@ classdef common
 	properties (SetAccess = private)
 
         % independent properties
-        momentary ( 1, 1 ) scattering.options.momentary { mustBeNonempty } = scattering.options.momentary                       % momentary scattering options
+        momentary ( 1, 1 ) scattering.options.momentary { mustBeNonempty } = scattering.options.momentary                           % momentary scattering options
         tgc ( 1, 1 ) regularization.options.tgc { mustBeNonempty } = regularization.options.tgc_off                                 % TGC options
         dictionary ( 1, 1 ) regularization.options.dictionary { mustBeNonempty } = regularization.options.dictionary_identity       % dictionary options
         normalization ( 1, 1 ) regularization.options.normalization { mustBeNonempty } = regularization.options.normalization_off	% normalization options

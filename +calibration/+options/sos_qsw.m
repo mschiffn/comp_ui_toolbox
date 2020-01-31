@@ -1,11 +1,11 @@
 %
-% superclass for all sound speed estimation options
+% superclass for all sound speed estimation options (QSW method)
 %
 % author: Martin F. Schiffner
 % date: 2019-11-26
-% modified: 2019-11-26
+% modified: 2019-01-23
 %
-classdef SoS < calibration.options.common
+classdef sos_qsw < calibration.options.common
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -14,8 +14,6 @@ classdef SoS < calibration.options.common
 
         % independent properties
         time_shift_ctr ( 1, 1 ) physical_values.time = physical_values.second( 19 / 40e6 )      % time shift to waveform center
-        index_element_lb ( 1, 1 ) { mustBeInteger, mustBePositive, mustBeNonempty } = 1         % lower bound on the element index
-        index_element_ub ( 1, 1 ) { mustBeInteger, mustBePositive, mustBeNonempty } = 128       % upper bound on the element index
         factor_interp ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 30    % interpolation factor
 
     end % properties
@@ -28,7 +26,7 @@ classdef SoS < calibration.options.common
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = SoS( durations_window_t, time_shifts_ctr, indices_elements_tx, indices_element_lb, indices_element_ub, varargin )
+        function objects = sos_qsw( durations_window_t, time_shifts_ctr, indices_elements_tx, indices_element_lb, indices_element_ub, factors_interp, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -50,12 +48,19 @@ classdef SoS < calibration.options.common
             % ensure strictly increasing bounds
             if any( indices_element_lb( : ) >= indices_element_ub( : ) )
                 errorStruct.message = 'indices_element_ub must exceed indices_element_lb!';
-                errorStruct.identifier = 'SoS:LowerBoundsExceedUpperBounds';
+                errorStruct.identifier = 'sos_qsw:LowerBoundsExceedUpperBounds';
                 error( errorStruct );
             end
 
+            % ensure nonempty factors_interp
+            if nargin < 6 || isempty( factors_interp )
+                factors_interp = repmat( 30, size( durations_window_t ) );
+            end
+
+            % property validation function ensures nonempty positive integers for factors_interp
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( durations_window_t, time_shifts_ctr, indices_element_lb, indices_element_ub );
+            auxiliary.mustBeEqualSize( durations_window_t, time_shifts_ctr, indices_element_lb, indices_element_ub, factors_interp );
 
             %--------------------------------------------------------------
             % 2.) create sound speed estimation options
@@ -74,13 +79,12 @@ classdef SoS < calibration.options.common
 
                 % set independent properties
                 objects( index_object ).time_shift_ctr = time_shifts_ctr( index_object );
-                objects( index_object ).index_element_lb = indices_element_lb( index_object );
-                objects( index_object ).index_element_ub = indices_element_ub( index_object );
+                objects( index_object ).factor_interp = factors_interp( index_object );
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = SoS( durations_window_t, time_shifts_ctr, indices_elements_tx, indices_element_lb, indices_element_ub, varargin )
+        end % function objects = sos_qsw( durations_window_t, time_shifts_ctr, indices_elements_tx, indices_element_lb, indices_element_ub, varargin )
 
 	end % methods
 
-end % classdef SoS < calibration.options.common
+end % classdef sos_qsw < calibration.options.common

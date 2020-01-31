@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-08-12
+% modified: 2020-01-30
 %
-classdef weighting < linear_transforms.invertible_linear_transform
+classdef weighting < linear_transforms.linear_transform_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -45,7 +45,7 @@ classdef weighting < linear_transforms.invertible_linear_transform
             N_weights = cellfun( @numel, weights );
 
             % constructor of superclass
-            objects@linear_transforms.invertible_linear_transform( N_weights );
+            objects@linear_transforms.linear_transform_matrix( N_weights, N_weights );
 
             % iterate diagonal weighting matrices
             for index_object = 1:numel( weights )
@@ -75,166 +75,157 @@ classdef weighting < linear_transforms.invertible_linear_transform
         end % function objects = weighting( weights )
 
         %------------------------------------------------------------------
-        % forward transform (overload forward_transform method)
+        % normalization
         %------------------------------------------------------------------
-        function y = forward_transform( LTs, x )
+        function LTs = normalize( LTs, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for x
-            if ~iscell( x )
-                x = { x };
+            % ensure class linear_transforms.weighting
+            if ~isa( LTs, 'linear_transforms.weighting' )
+                errorStruct.message = 'LTs must be linear_transforms.weighting!';
+                errorStruct.identifier = 'normalize:NoWeightings';
+                error( errorStruct );
             end
 
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                LTs = repmat( LTs, size( x ) );
+            % ensure class regularization.options.normalization
+            if ~isa( options, 'regularization.options.normalization' )
+                errorStruct.message = 'options must be regularization.options.normalization!';
+                errorStruct.identifier = 'normalize:NoNormalizationOptions';
+                error( errorStruct );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
+            auxiliary.mustBeEqualSize( LTs, options );
 
             %--------------------------------------------------------------
-            % 2.) apply diagonal weighting matrix
+            % 2.) apply normalization
             %--------------------------------------------------------------
-            % specify cell array for y
-            y = cell( size( LTs ) );
-
-            % iterate diagonal weighting matrices
+            % iterate linear transforms
             for index_object = 1:numel( LTs )
 
-                % ensure numeric matrix
-                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
-                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
-                    error( errorStruct );
-                end
+                % check type of normalization
+                if isa( options( index_object ), 'regularization.options.normalization_off' )
 
-                % element-wise multiplication
-                y{ index_object } = LTs( index_object ).weights .* x{ index_object };
+                    %------------------------------------------------------
+                    % a) no normalization
+                    %------------------------------------------------------
+                    % do not modify linear transform
+
+                elseif isa( options( index_object ), 'regularization.options.normalization_threshold' )
+
+                    %------------------------------------------------------
+                    % b) apply threshold to inverse weighting matrix
+                    %------------------------------------------------------
+                    [ LTs( index_object ), N_threshold ] = threshold( LTs( index_object ), options( index_object ).threshold );
+
+                else
+
+                    %------------------------------------------------------
+                    % c) unknown normalization settings
+                    %------------------------------------------------------
+                    errorStruct.message = sprintf( 'Class of options( %d ) is unknown!', index_object );
+                    errorStruct.identifier = 'normalize:UnknownOptionsClass';
+                    error( errorStruct );
+
+                end % if isa( options( index_object ), 'regularization.options.normalization_off' )
 
             end % for index_object = 1:numel( LTs )
 
-            % avoid cell array for single diagonal weighting matrix
-            if isscalar( LTs )
-                y = y{ 1 };
-            end
+        end % function LTs = normalize( LTs, options )
 
-        end % function y = forward_transform( LTs, x )
+	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected, hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
 
         %------------------------------------------------------------------
-        % adjoint transform (overload adjoint_transform method)
+        % forward transform (single matrix)
         %------------------------------------------------------------------
-        function y = adjoint_transform( LTs, x )
+        function y = forward_transform_matrix( LT, x )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for x
-            if ~iscell( x )
-                x = { x };
+            % ensure class linear_transforms.weighting (scalar)
+            if ~( isa( LT, 'linear_transforms.weighting' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.weighting!';
+                errorStruct.identifier = 'forward_transform_matrix:NoSingleDiagonalConcatenation';
+                error( errorStruct );
             end
 
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                LTs = repmat( LTs, size( x ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
+            % superclass ensures numeric matrix for x
+            % superclass ensures equal numbers of points for x
 
             %--------------------------------------------------------------
-            % 2.) apply adjoint diagonal weighting matrix
+            % 2.) compute forward diagonal weighting (single matrix)
             %--------------------------------------------------------------
-            % specify cell array for y
-            y = cell( size( LTs ) );
+            % element-wise multiplication
+            y = LT.weights .* x;
 
-            % iterate diagonal weighting matrices
-            for index_object = 1:numel( LTs )
-
-                % ensure numeric matrix
-                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
-                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
-                    error( errorStruct );
-                end
-
-                % element-wise multiplication
-                y{ index_object } = LTs( index_object ).weights_conj .* x{ index_object };
-
-            end % for index_object = 1:numel( LTs )
-
-            % avoid cell array for single diagonal weighting matrix
-            if isscalar( LTs )
-                y = y{ 1 };
-            end
-
-        end % function y = adjoint_transform( LTs, x )
+        end % function y = forward_transform_matrix( LT, x )
 
         %------------------------------------------------------------------
-        % inverse transform (overload inverse_transform method)
+        % adjoint transform (single matrix)
         %------------------------------------------------------------------
-        function y = inverse_transform( LTs, x )
+        function y = adjoint_transform_matrix( LT, x )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for x
-            if ~iscell( x )
-                x = { x };
+            % ensure class linear_transforms.weighting (scalar)
+            if ~( isa( LT, 'linear_transforms.weighting' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.weighting!';
+                errorStruct.identifier = 'adjoint_transform_matrix:NoSingleComposition';
+                error( errorStruct );
             end
 
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                LTs = repmat( LTs, size( x ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
+            % superclass ensures numeric matrix for x
+            % superclass ensures equal numbers of coefficients
 
             %--------------------------------------------------------------
-            % 2.) apply inverse diagonal weighting matrix
+            % 2.) compute adjoint diagonal weighting (single matrix)
             %--------------------------------------------------------------
-            % specify cell array for y
-            y = cell( size( LTs ) );
+            % element-wise multiplication
+            y = LT.weights_conj .* x;
 
-            % iterate diagonal weighting matrices
-            for index_object = 1:numel( LTs )
+        end % function y = adjoint_transform_matrix( LT, x )
 
-                % ensure numeric matrix
-                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
-                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
-                    error( errorStruct );
-                end
+        %------------------------------------------------------------------
+        % inverse transform (single matrix)
+        %------------------------------------------------------------------
+        function y = inverse_transform_matrix( LT, x )
 
-                % element-wise division
-                y{ index_object } = x{ index_object } ./ LTs( index_object ).weights;
-
-            end % for index_object = 1:numel( LTs )
-
-            % avoid cell array for single diagonal weighting matrix
-            if isscalar( LTs )
-                y = y{ 1 };
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.weighting (scalar)
+            if ~( isa( LT, 'linear_transforms.weighting' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.weighting!';
+                errorStruct.identifier = 'inverse_transform_matrix:NoSingleComposition';
+                error( errorStruct );
             end
 
-        end % function y = inverse_transform( LTs, x )
+            % superclass ensures numeric matrix for x
+            % superclass ensures equal numbers of coefficients
+
+            %--------------------------------------------------------------
+            % 2.) compute adjoint diagonal weighting (single matrix)
+            %--------------------------------------------------------------
+            % element-wise division
+            y = x ./ LT.weights;
+
+        end % function y = inverse_transform_matrix( LT, x )
+
+	end % methods (Access = protected, Hidden)
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (private, hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = private, Hidden)
 
         %------------------------------------------------------------------
         % threshold
@@ -292,6 +283,6 @@ classdef weighting < linear_transforms.invertible_linear_transform
 
         end % function [ LTs, N_threshold ] = threshold( LTs, xis )
 
-    end % methods
+	end % methods (Access = private, Hidden)
 
-end % classdef weighting < linear_transforms.invertible_linear_transform
+end % classdef weighting < linear_transforms.linear_transform_matrix

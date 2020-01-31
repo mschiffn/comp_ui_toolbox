@@ -780,7 +780,7 @@ classdef signal_matrix
             for index_object = 1:numel( args_1 )
 
                 % ensure identical axes
-% TODO: allow margin of error!
+% TODO: allow margin of error! eps( 0 )?
                 if any( abs( args_1( index_object ).axis.members - args_2( index_object ).axis.members ) >= 1e-10 * args_1( index_object ).axis.members )
 %                 if ~isequal( args_1( index_object ).axis.members, args_2( index_object ).axis.members )
                     errorStruct.message = sprintf( 'args_1( %d ) and args_2( %d ) must have identical members in their axes!', index_object, index_object );
@@ -914,7 +914,7 @@ classdef signal_matrix
                 errorStruct.identifier = 'sum:NoSignalMatrices';
                 error( errorStruct );
             end
-
+% TODO: identical units!
             % ensure equal axes
             if ~isequal( signal_matrices.axis )
                 errorStruct.message = 'signal_matrices must have equal properties axis!';

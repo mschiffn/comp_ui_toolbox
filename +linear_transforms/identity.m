@@ -3,14 +3,14 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-11-21
+% modified: 2020-01-30
 %
-classdef identity < linear_transforms.orthonormal_linear_transform
+classdef identity < linear_transforms.linear_transform_matrix
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -26,111 +26,62 @@ classdef identity < linear_transforms.orthonormal_linear_transform
             % 2.) create identity operators
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@linear_transforms.orthonormal_linear_transform( N_points );
+            objects@linear_transforms.linear_transform_matrix( N_points, N_points );
 
         end % function objects = identity( N_points )
 
+	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected, hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
         %------------------------------------------------------------------
-        % forward transform (overload forward_transform method)
+        % forward transform (single matrix)
         %------------------------------------------------------------------
-        function y = forward_transform( LTs, x )
+        function x = forward_transform_matrix( LT, x )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for x
-            if ~iscell( x )
-                x = { x };
-            end
-
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                x = repmat( LTs, size( x ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
-
-            %--------------------------------------------------------------
-            % 2.) compute identity operators
-            %--------------------------------------------------------------
-            % copy input cell array
-            y = x;
-
-            % iterate identity operators
-            for index_object = 1:numel( LTs )
-
-                % ensure numeric matrix
-                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
-                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
-                    error( errorStruct );
-                end
-
-            end % for index_object = 1:numel( LTs )
-
-            % avoid cell array for single LTs
-            if isscalar( LTs )
-                y = y{ 1 };
-            end
-
-        end % function y = forward_transform( LTs, x )
-
-        %------------------------------------------------------------------
-        % adjoint transform (overload adjoint_transform method)
-        %------------------------------------------------------------------
-        function y = adjoint_transform( LTs, x )
-
-            % adjoint transform equals forward transform
-            y = forward_transform( LTs, x );
-
-        end % function y = adjoint_transform( LTs, x )
-
-        %------------------------------------------------------------------
-        % threshold (TODO: inherit from weighting)
-        %------------------------------------------------------------------
-        function [ LTs, N_threshold ] = threshold( LTs, xis )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.identity
-            if ~isa( LTs, 'linear_transforms.identity' )
-                errorStruct.message = 'LTs must be linear_transforms.identity!';
-                errorStruct.identifier = 'threshold:NoIdentity';
+            % ensure class linear_transforms.identity (scalar)
+            if ~( isa( LT, 'linear_transforms.identity' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.identity!';
+                errorStruct.identifier = 'forward_transform_matrix:NoSingleIdentity';
                 error( errorStruct );
             end
 
-            % ensure valid xis ( 0; 1 ]
-            mustBePositive( xis );
-            mustBeLessThanOrEqual( xis, 1 );
-
-            % multiple LTs / single xis
-            if ~isscalar( LTs ) && isscalar( xis )
-                xis = repmat( xis, size( LTs ) );
-            end
-
-            % single LTs / multiple xis
-            if isscalar( LTs ) && ~isscalar( xis )
-                LTs = repmat( LTs, size( xis ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, xis );
+            % superclass ensures numeric matrix for x
+            % superclass ensures equal numbers of points for x
 
             %--------------------------------------------------------------
-            % 2.) apply thresholds to identity transforms
+            % 2.) compute forward identity (single matrix)
             %--------------------------------------------------------------
-            % initialize N_threshold with zeros
-            N_threshold = zeros( size( LTs ) );
+            % output x equals argument x
 
-        end % function [ LTs, N_threshold ] = threshold( LTs, xis )
+        end % function x = forward_transform_matrix( LT, x )
 
-    end % methods
+        %------------------------------------------------------------------
+        % adjoint transform (single matrix)
+        %------------------------------------------------------------------
+        function y = adjoint_transform_matrix( LT, x )
 
-end % classdef identity < linear_transforms.orthonormal_linear_transform
+            % adjoint transform equals forward transform
+            y = forward_transform_matrix( LT, x );
+
+        end % function y = adjoint_transform_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % inverse transform (single matrix)
+        %------------------------------------------------------------------
+        function y = inverse_transform_matrix( LT, x )
+
+            % inverse transform equals forward transform
+            y = forward_transform_matrix( LT, x );
+
+        end % function y = inverse_transform_matrix( LT, x )
+
+	end % methods (Access = protected, Hidden)
+
+end % classdef identity < linear_transforms.linear_transform_matrix

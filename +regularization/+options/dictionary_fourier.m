@@ -1,9 +1,9 @@
 %
-% superclass for Fourier dictionary options
+% superclass for all Fourier dictionary options
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-01-15
+% modified: 2020-01-25
 %
 classdef dictionary_fourier < regularization.options.dictionary
 
@@ -28,10 +28,10 @@ classdef dictionary_fourier < regularization.options.dictionary
             end
 
             % superclass ensures row vector for size
-            % superclass ensures nonempty positive integers
+            % superclass ensures nonempty positive integers for size
 
             %--------------------------------------------------------------
-            % 2.) create identity dictionary options
+            % 2.) create Fourier dictionary options
             %--------------------------------------------------------------
             % constructor of superclass
             objects@regularization.options.dictionary( size );
@@ -46,10 +46,10 @@ classdef dictionary_fourier < regularization.options.dictionary
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.dictionary_identity
-            if ~isa( dictionaries_fourier, 'regularization.options.dictionary_identity' )
-                errorStruct.message = 'dictionaries_fourier must be regularization.options.dictionary_identity!';
-                errorStruct.identifier = 'string:NoOptionsDictionaryIdentity';
+            % ensure class regularization.options.dictionary_fourier
+            if ~isa( dictionaries_fourier, 'regularization.options.dictionary_fourier' )
+                errorStruct.message = 'dictionaries_fourier must be regularization.options.dictionary_fourier!';
+                errorStruct.identifier = 'string:NoOptionsDictionaryFourier';
                 error( errorStruct );
             end
 

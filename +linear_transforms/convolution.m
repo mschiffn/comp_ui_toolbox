@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-08
-% modified: 2019-12-27
+% modified: 2020-01-29
 %
-classdef convolution < linear_transforms.linear_transform
+classdef convolution < linear_transforms.linear_transform_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% properties
@@ -112,7 +112,7 @@ classdef convolution < linear_transforms.linear_transform
             N_coefficients = ~cut_off .* ( cellfun( @numel, kernels ) - 1 ) + N_points;
 
             % constructor of superclass
-            objects@linear_transforms.linear_transform( N_coefficients, N_points );
+            objects@linear_transforms.linear_transform_matrix( N_coefficients, N_points );
 
             % iterate convolutions
             for index_object = 1:numel( objects )
@@ -137,134 +137,80 @@ classdef convolution < linear_transforms.linear_transform
 
         end % function objects = convolution( kernels, N_points, varargin )
 
-        %------------------------------------------------------------------
-        % forward transform (overload forward_transform method)
-        %------------------------------------------------------------------
-        function [ y_dft, y_mat ] = forward_transform( LTs, x )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure cell array for x
-            if ~iscell( x )
-                x = { x };
-            end
-
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                x = repmat( LTs, size( x ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
-
-            %--------------------------------------------------------------
-            % 2.) compute forward convolutions
-            %--------------------------------------------------------------
-% TODO: choose computation method automatically
-            % specify cell array for y
-            y_dft = cell( size( LTs ) );
-            y_mat = cell( size( LTs ) );
-
-            % iterate convolutions
-            for index_object = 1:numel( LTs )
-
-                % ensure numeric matrix
-                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
-                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
-                    error( errorStruct );
-                end
-
-                % apply forward transform using DFT
-                y_dft{ index_object } = ifft( LTs( index_object ).kernel_dft .* fft( x{ index_object }, LTs( index_object ).N_dft ) );
-                if LTs( index_object ).cut_off
-                    y_dft{ index_object } = y_dft{ index_object }( ( LTs( index_object ).M_kernel + 1 ):( end - LTs( index_object ).M_kernel ), : );
-                end
-
-                % apply forward transform using matrix
-                if nargout > 1
-                    y_mat{ index_object } = LTs( index_object ).matrix * x{ index_object };
-                end
-
-            end % for index_object = 1:numel( LTs )
-
-            % avoid cell array for single LTs
-            if isscalar( LTs )
-                y_dft = y_dft{ 1 };
-                y_mat = y_mat{ 1 };
-            end
-
-        end % function [ y_dft, y_mat ] = forward_transform( LTs, x )
-
-        %------------------------------------------------------------------
-        % adjoint transform (overload adjoint_transform method)
-        %------------------------------------------------------------------
-        function [ y_dft, y_mat ] = adjoint_transform( LTs, x )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure cell array for x
-            if ~iscell( x )
-                x = { x };
-            end
-
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                x = repmat( LTs, size( x ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
-
-            %--------------------------------------------------------------
-            % 2.) compute adjoint convolutions
-            %--------------------------------------------------------------
-            % specify cell array for y
-            y_dft = cell( size( LTs ) );
-            y_mat = cell( size( LTs ) );
-
-            % iterate convolutions
-            for index_object = 1:numel( LTs )
-
-                % ensure numeric matrix
-                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
-                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'adjoint_transform:NoNumericMatrix';
-                    error( errorStruct );
-                end
-
-                % apply adjoint transform using matrix
-                if nargout > 1
-                    y_mat{ index_object } = LTs( index_object ).matrix_adj * x{ index_object };
-                end
-
-                % apply adjoint transform using DFT
-                x{ index_object } = [ zeros( LTs( index_object ).M_kernel, size( x{ index_object }, 2 ) ); x{ index_object }; zeros( LTs( index_object ).M_kernel, size( x{ index_object }, 2 ) ) ];
-                y_dft{ index_object } = ifft( LTs( index_object ).kernel_dft_conj .* fft( x{ index_object }, LTs( index_object ).N_dft ) );
-                y_dft{ index_object } = y_dft{ index_object }( 1:LTs( index_object ).N_points, : );
-
-            end % for index_object = 1:numel( LTs )
-
-            % avoid cell array for single LTs
-            if isscalar( LTs )
-                y_dft = y_dft{ 1 };
-                y_mat = y_mat{ 1 };
-            end
-
-        end % function [ y_dft, y_mat ] = adjoint_transform( LTs, x )
-
     end % methods
 
-end % classdef convolution < linear_transforms.linear_transform
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected, hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % forward transform (single matrix)
+        %------------------------------------------------------------------
+        function [ y_dft, y_mat ] = forward_transform_matrix( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.convolution (scalar)
+            if ~( isa( LT, 'linear_transforms.convolution' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.convolution!';
+                errorStruct.identifier = 'forward_transform_matrix:NoSingleConvolution';
+                error( errorStruct );
+            end
+
+            % superclass ensures numeric matrix for x
+            % superclass ensures equal numbers of points for x
+
+            %--------------------------------------------------------------
+            % 2.) compute forward convolutions (single matrix)
+            %--------------------------------------------------------------
+            % apply forward transform using DFT
+            y_dft = ifft( LT.kernel_dft .* fft( x, LT.N_dft ) );
+            if LT.cut_off
+                y_dft = y_dft( ( LT.M_kernel + 1 ):( end - LT.M_kernel ), : );
+            end
+
+            % apply forward transform using matrix
+            if nargout > 1
+                y_mat = LT.matrix * x;
+            end
+
+        end % function [ y_dft, y_mat ] = forward_transform_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % adjoint transform (single matrix)
+        %------------------------------------------------------------------
+        function [ y_dft, y_mat ] = adjoint_transform_matrix( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.convolution (scalar)
+            if ~( isa( LT, 'linear_transforms.convolution' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.convolution!';
+                errorStruct.identifier = 'adjoint_transform_matrix:NoSingleConvolution';
+                error( errorStruct );
+            end
+
+            % superclass ensures numeric matrix for x
+            % superclass ensures equal numbers of coefficients
+
+            %--------------------------------------------------------------
+            % 2.) compute adjoint convolutions (single matrix)
+            %--------------------------------------------------------------
+            % apply adjoint transform using matrix
+            if nargout > 1
+                y_mat = LT.matrix_adj * x;
+            end
+
+            % apply adjoint transform using DFT
+            x = [ zeros( LT.M_kernel, size( x, 2 ) ); x; zeros( LT.M_kernel, size( x, 2 ) ) ];
+            y_dft = ifft( LT.kernel_dft_conj .* fft( x, LT.N_dft ) );
+            y_dft = y_dft( 1:LT.N_points, : );
+
+        end % function [ y_dft, y_mat ] = adjoint_transform_matrix( LT, x )
+
+	end % methods (Access = protected, Hidden)
+
+end % classdef convolution < linear_transforms.linear_transform_matrix

@@ -1,23 +1,28 @@
 %
 % compute two-dimensional discrete curvelet transform for various options
-% author: Martin Schiffner
-% date: 2016-08-13
 %
-classdef curvelet < linear_transforms.linear_transform
+% author: Martin F. Schiffner
+% date: 2016-08-13
+% modified: 2020-01-31
+%
+classdef curvelet < linear_transforms.linear_transform_vector
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
+    %% properties
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
+
+        % independent properties
         N_lattice_axis
         N_scales
         N_angles_scale
+
     end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -56,7 +61,7 @@ classdef curvelet < linear_transforms.linear_transform
             N_coefficients = size(y, 1);
 
             % constructor of superclass
-            LT_curvelet@linear_transforms.linear_transform( N_coefficients, N_lattice, 'curvelet' );
+            LT_curvelet@linear_transforms.linear_transform_vector( N_coefficients, N_lattice );
 
             % internal properties
             LT_curvelet.N_lattice_axis	= N_lattice_axis;
@@ -65,11 +70,34 @@ classdef curvelet < linear_transforms.linear_transform
 
         end
 
-        %------------------------------------------------------------------
-        % overload method: forward transform (forward DWAT)
-        %------------------------------------------------------------------
-        function y = forward_transform( LT_curvelet, x )
+	end % methods
 
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % forward transform (single vector)
+        %------------------------------------------------------------------
+        function y = forward_transform_vector( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.fourier (scalar)
+            if ~( isa( LT, 'linear_transforms.fourier' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.fourier!';
+                errorStruct.identifier = 'forward_transform_vector:NoSingleFourierTransform';
+                error( errorStruct );
+            end
+
+            % superclass ensures numeric column vector for x
+            % superclass ensures equal numbers of points for x
+
+            %--------------------------------------------------------------
+            % 2.) compute forward curvelet transform (single vector)
+            %--------------------------------------------------------------
             x = reshape( x, [LT_curvelet.N_lattice_axis(2), LT_curvelet.N_lattice_axis(1)] );
             C = fdct_wrapping( x );
 
@@ -87,13 +115,29 @@ classdef curvelet < linear_transforms.linear_transform
             % finest scale
             y = [y; C{1, LT_curvelet.N_scales}{1, 1}(:)];
 
-        end
+        end % function y = forward_transform_vector( LT, x )
 
         %------------------------------------------------------------------
-        % overload method: adjoint transform (inverse DWAT)
+        % adjoint transform (single vector)
         %------------------------------------------------------------------
-        function y = adjoint_transform( LT_curvelet, x )
+        function y = adjoint_transform_vector( LT, x )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.fourier (scalar)
+            if ~( isa( LT, 'linear_transforms.fourier' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.fourier!';
+                errorStruct.identifier = 'adjoint_transform_vector:NoSingleFourierTransform';
+                error( errorStruct );
+            end
+
+            % superclass ensures numeric column vector for x
+            % superclass ensures equal numbers of coefficients
+
+            %--------------------------------------------------------------
+            % 2.) compute adjoint curvelet transform (single vector)
+            %--------------------------------------------------------------
             % create dummy data structure to check number of elements
             C = fdct_wrapping(zeros(LT_curvelet.N_lattice_axis(2), LT_curvelet.N_lattice_axis(1)), 0, 2);
 
@@ -121,8 +165,9 @@ classdef curvelet < linear_transforms.linear_transform
 
             y = ifdct_wrapping(C, 0, LT_curvelet.N_lattice_axis(2), LT_curvelet.N_lattice_axis(1));
             y = y(:);
-        end
 
-    end % methods
+        end % function y = adjoint_transform_vector( LT, x )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef curvelet < linear_transforms.linear_transform

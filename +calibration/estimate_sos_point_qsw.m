@@ -1,4 +1,4 @@
-function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )
+function [ states, rel_RMSE ] = estimate_sos_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )
 %
 % estimate the average speed of sound using
 % the inter-element cross-correlations for
@@ -24,7 +24,7 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
 	% ensure class scattering.sequences.setups.transducers.array_planar_regular
 	if ~isa( xdc_array, 'scattering.sequences.setups.transducers.array_planar_regular' )
         errorStruct.message = 'xdc_array must be scattering.sequences.setups.transducers.array_planar_regular!';
-        errorStruct.identifier = 'estimate_SOS_point_qsw:NoRegularPlanarArray';
+        errorStruct.identifier = 'estimate_sos_point_qsw:NoRegularPlanarArray';
         error( errorStruct );
     end
 
@@ -71,35 +71,35 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
         % ensure class processing.signal_matrix
         if ~isa( u_rx_tilde_qsw{ index_data }, 'processing.signal_matrix' )
             errorStruct.message = 'u_rx_tilde_qsw must be processing.signal_matrix!';
-            errorStruct.identifier = 'estimate_SOS_point_qsw:NoSignalMatrices';
+            errorStruct.identifier = 'estimate_sos_point_qsw:NoSignalMatrices';
             error( errorStruct );
         end
 
         % ensure valid number of signal matrices
         if numel( u_rx_tilde_qsw{ index_data } ) ~= xdc_array( index_data ).N_elements
             errorStruct.message = sprintf( 'The number of elements in u_rx_tilde_qsw{ %d } must equal the number of elements in xdc_array( %d )!', index_data, index_data );
-            errorStruct.identifier = 'estimate_SOS_point_qsw:InvalidNumberOfSignalMatrices';
+            errorStruct.identifier = 'estimate_sos_point_qsw:InvalidNumberOfSignalMatrices';
             error( errorStruct );
         end
 
         % ensure valid numbers of signals
         if any( [ u_rx_tilde_qsw{ index_data }.N_signals ] ~= xdc_array( index_data ).N_elements )
             errorStruct.message = sprintf( 'The number of signals in u_rx_tilde_qsw( %d ) must equal the number of elements in xdc_array( %d )!', index_data, index_data );
-            errorStruct.identifier = 'estimate_SOS_point_qsw:InvalidNumberOfSignals';
+            errorStruct.identifier = 'estimate_sos_point_qsw:InvalidNumberOfSignals';
             error( errorStruct );
         end
 
         % ensure class calibration.state
         if ~isa( states{ index_data }, 'calibration.state' )
             errorStruct.message = sprintf( 'states{ %d } must be calibration.state!', index_data );
-            errorStruct.identifier = 'estimate_SOS_point_qsw:NoStates';
+            errorStruct.identifier = 'estimate_sos_point_qsw:NoStates';
             error( errorStruct );
         end
 
-        % ensure class calibration.options.SoS
-        if ~isa( options{ index_data }, 'calibration.options.SoS' )
-            errorStruct.message = sprintf( 'options{ %d } must be calibration.options.SoS!', index_data );
-            errorStruct.identifier = 'estimate_SOS_point_qsw:NoOptionsSoS';
+        % ensure class calibration.options.sos_qsw
+        if ~isa( options{ index_data }, 'calibration.options.sos_qsw' )
+            errorStruct.message = sprintf( 'options{ %d } must be calibration.options.sos_qsw!', index_data );
+            errorStruct.identifier = 'estimate_sos_point_qsw:NoOptionsSoSQSW';
             error( errorStruct );
         end
 
@@ -146,8 +146,12 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
             %--------------------------------------------------------------
             % a) compute time intervals based on predicted TOFs and waveform center
             %--------------------------------------------------------------
+            % indices of tx / rx elements
+            INDICES_TX = options{ index_data }( index_target ).indices_elements_tx;
+            INDICES_RX = options{ index_data }( index_target ).indices_elements_rx;
+
             % predict waveform centers using TOFs
-            tof_ctr{ index_target } = times_of_flight_init{ index_target }( options{ index_data }( index_target ).indices_elements_tx, options{ index_data }( index_target ).indices_elements_rx ) + options{ index_data }( index_target ).time_shift_ctr;
+            tof_ctr{ index_target } = times_of_flight_init{ index_target }( INDICES_TX, INDICES_RX ) + options{ index_data }( index_target ).time_shift_ctr;
 
             % create time intervals
             intervals_t{ index_target } = move( options{ index_data }( index_target ).interval_window_t, tof_ctr{ index_target } );
@@ -156,14 +160,11 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
             % b) compute inter-element correlation coefficients and lags
             %--------------------------------------------------------------
             % specify cell array for times_of_flight_est
-            lags_adjacent = cell( size( options{ index_data }( index_target ).indices_elements_tx ) );
-            lags_adjacent_cs = cell( size( options{ index_data }( index_target ).indices_elements_tx ) );
-            times_of_flight_est{ index_target } = cell( size( options{ index_data }( index_target ).indices_elements_tx ) );
+            lags_adjacent = cell( size( INDICES_TX ) );
+            lags_adjacent_cs = cell( size( INDICES_TX ) );
+            times_of_flight_est{ index_target } = cell( size( INDICES_TX ) );
 
             % iterate specified tx elements
-            INDICES_TX = options{ index_data }( index_target ).indices_elements_tx; %([1, end])
-            INDICES_RX = options{ index_data }( index_target ).indices_elements_rx; %([1, end])
-
             for index_selected_tx = 1:numel( INDICES_TX )
 
                 % index of the array element
@@ -176,20 +177,20 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
                 u_rx_tilde_qsw_int = interpolate( u_rx_tilde_qsw{ index_data }( index_element_tx ), options{ index_data }( index_target ).factor_interp );
 
                 % cut out waveforms (apply windows)
-                u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, [ intervals_t{ index_target }( index_selected_tx, : ).lb ], [ intervals_t{ index_target }( index_selected_tx, : ).ub ], num2cell( options{ index_data }( index_target ).indices_elements_rx ), options{ index_data }( index_target ).setting_window );
+                u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, cat( 1, intervals_t{ index_target }( index_selected_tx, : ).lb ), cat( 1, intervals_t{ index_target }( index_selected_tx, : ).ub ), num2cell( INDICES_RX ), options{ index_data }( index_target ).setting_window );
 
                 % illustrate cut out
-%                 figure(998);
-%                 imagesc( options{ index_data }( index_target ).indices_elements_rx, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, options{ index_data }( index_target ).indices_elements_rx ) ), 20 ), [ -60, 0 ] );
-%                 line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
-%                 line( options{ index_data }( index_target ).indices_elements_rx, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+                figure(998);
+                imagesc( INDICES_RX, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, INDICES_RX ) ), 20 ), [ -60, 0 ] );
+                line( INDICES_RX, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+                line( INDICES_RX, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
 
                 %----------------------------------------------------------
                 % b) compute inter-element lags
                 %----------------------------------------------------------
                 % initialize lags with zeros
-                lags_adjacent{ index_selected_tx } = physical_values.second( zeros( 1, numel( options{ index_data }( index_target ).indices_elements_rx ) ) );
-                corr_vals = zeros( 1, numel( options{ index_data }( index_target ).indices_elements_rx ) );
+                lags_adjacent{ index_selected_tx } = physical_values.second( zeros( 1, numel( INDICES_RX ) ) );
+                corr_vals = zeros( 1, numel( INDICES_RX ) );
 
                 % iterate specified rx elements
                 for index_selected_rx = 2:numel( INDICES_RX )
@@ -207,7 +208,7 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
                     % estimate relative time delays
                     lags_adjacent{ index_selected_tx }( index_selected_rx ) = data_pw_int_cut_corr_lags( index_max ) * u_rx_tilde_qsw_int_window_act.axis.delta + u_rx_tilde_qsw_int_window_act.axis.members( 1 ) - u_rx_tilde_qsw_int_window_prev.axis.members( 1 );
 
-                    % illustrate result
+                    % illustrate inter-element lag
 %                     figure(999);
 %                     plot( u_rx_tilde_qsw_int_window_act.axis.members - lags_adjacent{ index_selected_tx }( index_selected_rx ), u_rx_tilde_qsw_int_window_act.samples / max( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.axis.members, u_rx_tilde_qsw_int_window_prev.samples / max( u_rx_tilde_qsw_int_window_prev.samples ) );
 %                     pause(0.1);
@@ -254,8 +255,6 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
             options_optimization = optimoptions( 'lsqcurvefit', 'Algorithm', 'trust-region-reflective', 'FunValCheck', 'on', 'Diagnostics', 'on', 'Display', 'iter-detailed', 'FunctionTolerance', 1e-10, 'OptimalityTolerance', 1e-10, 'StepTolerance', 1e-10, 'SpecifyObjectiveGradient', true, 'CheckGradients', false, 'FiniteDifferenceType', 'central', 'FiniteDifferenceStepSize', 1e-10, 'MaxFunctionEvaluations', 5e3, 'MaxIterations', 5e3 );
 
             % find solutions to nonlinear least squares problems
-%             [ theta_lags, resnorm, residual, exitflag, output ] = lsqcurvefit( @lags_us, theta_0, double( xdc_array( index_data ).positions_ctr ), double( lags_adjacent( :, 2:end ) ) * 1e6, theta_lbs, theta_ubs, options_optimization );
-%             [ theta_lags_cs, resnorm, residual, exitflag, output ] = lsqcurvefit( @lags_cs_us, theta_0, double( xdc_array( index_data ).positions_ctr ), double( lags_adjacent_cs ) * 1e6, theta_lbs, theta_ubs, options_optimization );
             [ theta_tof, resnorm, residual, exitflag, output ] = lsqcurvefit( @tof_us, theta_0, double( xdc_array( index_data ).positions_ctr ), double( times_of_flight_est{ index_target } ) * 1e6, theta_lbs, theta_ubs, options_optimization );
 
             % extract target position and speed of sound
@@ -301,67 +300,9 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
         rel_RMSE = rel_RMSE{ 1 };
     end
 
-	% compute differences of TOFs for adjacent elements
-	function [ y, J ] = lags_us( theta, positions )
-
-        % compute distances
-        vect_r0_r = [ positions, zeros( size( positions, 1 ), 1 ) ] - theta( 1:( end - 1 ) );
-        dist = vecnorm( vect_r0_r, 2, 2 );
-
-        % compute differences of TOFs
-        y = repmat( 1e6 * diff( dist' ) / theta( end ), [ numel( INDICES_TX ), 1 ] );
-
-        % check if Jacobian is required
-        if nargout > 1
-
-            % compute Jacobian
-            J = zeros( numel( y ), numel( theta ) );
-
-            % partial derivatives w/ respect to position
-            for index_dim = 1:( numel( theta ) - 1 )
-                temp = - vect_r0_r( :, index_dim ) ./ dist;
-                temp = repmat( diff( temp' ), [ numel( INDICES_TX ), 1 ] );
-                J( :, index_dim ) = 1e6 * temp( : ) / theta( end );
-            end
-
-            % partial derivative w/ respect to SoS
-            J( :, end ) = - y( : ) / theta( end );
-
-        end
-
-	end % function [ y, J ] = lags_us( theta, positions )
-
-    % compute differences of TOFs w/ respect to first element
-	function [ y, J ] = lags_cs_us( theta, positions )
-
-        % compute distances
-        vect_r0_r = [ positions, zeros( size( positions, 1 ), 1 ) ] - theta( 1:( end - 1 ) );
-        dist = vecnorm( vect_r0_r, 2, 2 );
-
-        % compute differences of TOFs
-        y = repmat( 1e6 * ( dist' - dist( 1 ) ) / theta( end ), [ numel( INDICES_TX ), 1 ] );
-
-        % check if Jacobian is required
-        if nargout > 1
-
-            % compute Jacobian
-            J = zeros( numel( y ), numel( theta ) );
-
-            % partial derivatives w/ respect to position
-            for index_dim = 1:( numel( theta ) - 1 )
-                temp = - vect_r0_r( :, index_dim ) ./ dist;
-                temp = repmat( temp' - temp( 1 ), [ numel( INDICES_TX ), 1 ] );
-                J( :, index_dim ) = 1e6 * temp( : ) / theta( end );
-            end
-
-            % partial derivative w/ respect to SoS
-            J( :, end ) = - y( : ) / theta( end );
-
-        end
-
-	end % function [ y, J ] = lags_cs_us( theta, positions )
-
-	% compute TOFs
+	%----------------------------------------------------------------------
+	% compute TOFs (microseconds)
+	%----------------------------------------------------------------------
 	function [ y, J ] = tof_us( theta, positions )
 
         % compute distances
@@ -390,6 +331,6 @@ function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_arra
 
         end % if nargout > 1
 
-    end % function y = tof( theta, positions )
+	end % function [ y, J ] = tof_us( theta, positions )
 
-end % function [ states, rel_RMSE ] = estimate_SOS_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )
+end % function [ states, rel_RMSE ] = estimate_sos_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )

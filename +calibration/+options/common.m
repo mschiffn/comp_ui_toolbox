@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-11-26
-% modified: 2019-11-26
+% modified: 2020-01-22
 %
 classdef (Abstract) common
 
@@ -13,13 +13,14 @@ classdef (Abstract) common
 	properties (SetAccess = private)
 
         % independent properties
-        duration_window_t ( 1, 1 ) physical_values.time { mustBeNonempty } = physical_values.second( 2.5e-6 )	% time duration of window
-        indices_elements_tx ( 1, : ) double { mustBePositive, mustBeInteger, mustBeNonempty } = (1:128)         % indices of tx elements
-        indices_elements_rx ( 1, : ) double { mustBePositive, mustBeInteger, mustBeNonempty } = (1:128)         % indices of rx elements
+% remove duration_window_t ?
+        duration_window_t ( 1, 1 ) physical_values.time { mustBeNonempty } = physical_values.second( 2.5e-6 )	% time duration of the correlation window
+        indices_elements_tx ( :, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = (1:128)         % indices of tx elements
+        indices_elements_rx ( :, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = (1:128)         % indices of rx elements
         setting_window ( 1, 1 ) auxiliary.setting_window { mustBeNonempty } = auxiliary.setting_window          % window settings
 
         % dependent properties
-        interval_window_t ( 1, 1 ) math.interval = math.interval( physical_values.second( 0 ), physical_values.second( 2.5e-6 ) );
+        interval_window_t ( 1, 1 ) math.interval = math.interval( physical_values.second( 0 ), physical_values.second( 2.5e-6 ) ); % correlation window
 
 	end % properties
 
@@ -31,7 +32,7 @@ classdef (Abstract) common
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = common( durations_window_t, indices_elements_tx, indices_elements_rx, varargin )
+        function objects = common( durations_window_t, indices_elements_tx, indices_elements_rx, settings_window )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -48,19 +49,17 @@ classdef (Abstract) common
                 indices_elements_tx = { indices_elements_tx };
             end
 
-            % property validation function ensures positive integers for indices_elements_tx
+            % property validation function ensures nonempty positive integers for indices_elements_tx
 
             % ensure cell array for indices_elements_rx
             if ~iscell( indices_elements_rx )
                 indices_elements_rx = { indices_elements_rx };
             end
 
-            % property validation function ensures positive integers for indices_elements_rx
+            % property validation function ensures nonempty positive integers for indices_elements_rx
 
             % ensure nonempty settings_window
-            if nargin >= 4 && ~isempty( varargin{ 1 } )
-                settings_window = varargin{ 1 };
-            else
+            if nargin <= 3 || isempty( settings_window )
                 settings_window = repmat( auxiliary.setting_window, size( durations_window_t ) );
             end
 
@@ -89,7 +88,7 @@ classdef (Abstract) common
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = common( durations_window_t, indices_elements_tx, indices_elements_rx, varargin )
+        end % function objects = common( durations_window_t, indices_elements_tx, indices_elements_rx, settings_window )
 
 	end % methods
 

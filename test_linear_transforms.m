@@ -1,7 +1,9 @@
+%
 % test classes for linear transform
-% author: Martin Schiffner
+%
+% author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-01-10
+% modified: 2020-01-30
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -10,43 +12,65 @@ close all;
 clear;
 clc;
 
+addpath( genpath( sprintf( '/opt/matlab/R2013b/toolbox/WaveAtom-1.1.1/' ) ) );
+addpath( genpath( sprintf( '/opt/matlab/R2013b/toolbox/Wavelab850/' ) ) );
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% independent
+N_dimensions = 2;
+scale_finest = 9;
+scale_coarsest = 2;
 N_cases = 25;
-N_points = 512;
-N_lattice_axis = [N_points, N_points];
-weights = ones( N_points^2, 1 ) + 1j * ones( N_points^2, 1 );
+
+% dependent
+N_points_axis = repmat( 2.^scale_finest, [ 1, N_dimensions ] );
+N_points = prod( N_points_axis );
+
+weights = randn( N_points, 1 ) + 1j * randn( N_points, 1 );
 
 %--------------------------------------------------------------------------
 % define transforms
 %--------------------------------------------------------------------------
 % orthonormal transforms
-LT_identity                 = linear_transforms.identity( N_lattice_axis );
-LT_fourier                  = linear_transforms.fourier( N_lattice_axis );
-LT_fourier_block            = linear_transforms.fourier_block( N_lattice_axis, [32, 32] );
-LT_wavelet_haar             = linear_transforms.wavelet( 'Haar', 0, N_points, 0 );
-LT_wavelet_db4              = linear_transforms.wavelet( 'Daubechies', 4, N_points, 0 );
-LT_wavelet_db10             = linear_transforms.wavelet( 'Daubechies', 10, N_points, 0 );
-LT_wavelet_db20             = linear_transforms.wavelet( 'Daubechies', 20, N_points, 0 );
+LT_identity = linear_transforms.identity( N_points );
+LT_fourier = linear_transforms.fourier( N_points_axis );
+% LT_fourier_blk = linear_transforms.fourier_block( N_points_axis, [32, 32] );
 
+% wavelets
+LT_wavelet_battle	= linear_transforms.wavelet( linear_transforms.wavelets.battle( 5 ), N_dimensions, scale_finest, scale_coarsest );
+LT_wavelet_beylkin	= linear_transforms.wavelet( linear_transforms.wavelets.beylkin, N_dimensions, scale_finest, scale_coarsest );
+LT_wavelet_coiflet	= linear_transforms.wavelet( linear_transforms.wavelets.coiflet( 5 ), N_dimensions, scale_finest, scale_coarsest );
+LT_wavelet_db4          = linear_transforms.wavelet( linear_transforms.wavelets.daubechies( 4 ), N_dimensions, scale_finest, scale_coarsest );
+LT_wavelet_db10         = linear_transforms.wavelet( linear_transforms.wavelets.daubechies( 10 ), N_dimensions, scale_finest, scale_coarsest );
+LT_wavelet_db20         = linear_transforms.wavelet( linear_transforms.wavelets.daubechies( 20 ), N_dimensions, scale_finest, scale_coarsest );
+LT_wavelet_haar         = linear_transforms.wavelet( linear_transforms.wavelets.haar, N_dimensions, scale_finest, scale_coarsest );
+LT_wavelet_symmlet      = linear_transforms.wavelet( linear_transforms.wavelets.symmlet( 10 ), N_dimensions, scale_finest, scale_coarsest );
+LT_wavelet_vaidyanathan	= linear_transforms.wavelet( linear_transforms.wavelets.vaidyanathan, N_dimensions, scale_finest, scale_coarsest );
+
+LT_wavelets = { LT_wavelet_battle; LT_wavelet_beylkin; LT_wavelet_coiflet; LT_wavelet_db4; LT_wavelet_db10; LT_wavelet_db20; LT_wavelet_haar; LT_wavelet_symmlet; LT_wavelet_vaidyanathan };
+% wave atoms
+
+%
 options.qmf = MakeONFilter( 'Daubechies', 4 );
 options.scale_coarsest = 0;
-op_psi = @(x, mode) psi_wavelet( N_lattice_axis, x, mode, options );
+op_psi = @(x, mode) psi_wavelet( N_points_axis, x, mode, options );
 
 % invertible transforms
-LT_weighting_1              = linear_transforms.weighting( weights );
+LT_weighting_1 = linear_transforms.weighting( weights );
 
 % linear transforms
-LT_wave_atom_ortho          = linear_transforms.wave_atom( N_lattice_axis, 'ortho' );
-LT_wave_atom_directional	= linear_transforms.wave_atom( N_lattice_axis, 'directional' );
-LT_wave_atom_complex        = linear_transforms.wave_atom( N_lattice_axis, 'complex' );
-LT_curvelet                 = linear_transforms.curvelet( N_lattice_axis );
+LTs_wave_atom = linear_transforms.wave_atom( N_points_axis, [ "ortho", "directional", "complex" ] );
+LT_wave_atom_ortho = LTs_wave_atom( 1 );
+LT_wave_atom_directional = LTs_wave_atom( 2 );
+LT_wave_atom_complex = LTs_wave_atom( 3 );
+LT_curvelet = linear_transforms.curvelet( N_points_axis );
 
 % concatenated transforms
-LT_concatenate_vertical     = linear_transforms.concatenate_vertical( LT_identity, LT_weighting_1, LT_fourier, LT_wavelet_db10 );
-LT_concatenate_diagonal     = linear_transforms.concatenate_diagonal( LT_identity, LT_weighting_1, LT_fourier, LT_wavelet_db10 );
+LT_concatenate_vertical = linear_transforms.concatenations.vertical( LT_identity, LT_weighting_1, LT_fourier, LT_wavelet_db10 );
+LT_concatenate_diagonal = linear_transforms.concatenations.diagonal( LT_identity, LT_weighting_1, LT_fourier, LT_wavelet_db10 );
 
 % composite transforms
 size_transform = LT_concatenate_vertical.size_transform;
@@ -58,93 +82,100 @@ LT_composite            = linear_transforms.composition( LT_weighting_2, LT_conc
 %--------------------------------------------------------------------------
 % setup test
 %--------------------------------------------------------------------------
-transforms = { LT_identity, LT_fourier, LT_fourier_block, LT_wavelet_haar, LT_wavelet_db4, LT_wavelet_db10, LT_wavelet_db20, LT_weighting_1, LT_wave_atom_ortho, LT_wave_atom_directional, LT_wave_atom_complex, LT_curvelet, LT_concatenate_vertical, LT_concatenate_diagonal, LT_composite };
+% transforms = { LT_identity, LT_fourier, LT_fourier_block, LT_wavelet_haar, LT_wavelet_db4, LT_wavelet_db10, LT_wavelet_db20, LT_weighting_1, LT_wave_atom_ortho, LT_wave_atom_directional, LT_wave_atom_complex, LT_curvelet, LT_concatenate_vertical, LT_concatenate_diagonal, LT_composite };
+transforms = { LT_identity, LT_fourier, LT_wavelets{ : } };
 N_transforms = numel( transforms );
 
-error_fwd_inv	= zeros( N_transforms, N_cases );
-error_inv_fwd	= zeros( N_transforms, N_cases );
-error_adj       = zeros( N_transforms, N_cases );
-norms_cols      = zeros( N_transforms, N_cases );
+error_fwd_inv = zeros( N_transforms, N_cases );
+error_inv_fwd = zeros( N_transforms, N_cases );
+error_adj = zeros( N_transforms, N_cases );
+norms_cols = zeros( N_transforms, N_cases );
 
 for index_transform = 1:N_transforms
     
 	% print status information
-    fprintf( 'index_transform = %d of %d (%s):', index_transform, N_transforms, transforms{ index_transform }.str_name );
+    fprintf( 'index_transform = %d of %d (%s):', index_transform, N_transforms, class( transforms{ index_transform } ) );
 
     % get size of transform
-    size_transform	= transforms{ index_transform }.operator_transform( [], 0 );
-    N_coefficients	= size_transform(1);
-    N_lattice       = size_transform(2);
-    indices_rand	= randperm( N_coefficients );
+	size_transform = operator_transform( transforms{ index_transform }, [], 0 );
+	N_coefficients_act = size_transform( 1 );
+	N_points_act = size_transform( 2 );
+	indices_rand = randperm( N_coefficients_act );
 
-    % iterate over random cases
-    for index_case = 1:N_cases
+	% iterate over random cases
+	for index_case = 1:N_cases
 
         % print case index
         fprintf( ' %d', index_case );
 
         %------------------------------------------------------------------
-        % forward and inverse transforms
+        % a) forward and inverse transforms
         %------------------------------------------------------------------
         % generate random test vector
-        test_lat = randn(N_lattice, 1) + 1j * randn(N_lattice, 1);
-        test_lat_norm = norm( test_lat(:), 2 );
+        test_lat = randn( N_points_act, 1 ) + 1j * randn( N_points_act, 1 );
+        test_lat_norm = norm( test_lat( : ), 2 );
 
         % compute forward transform
-        test_lat_fwd = transforms{ index_transform }.operator_transform( test_lat, 1 );
+        test_lat_fwd = forward_transform( transforms{ index_transform }, test_lat );
 %         test_lat_fwd_old = op_psi( test_lat, 1 );
 
-        if isa( transforms{ index_transform }, 'linear_transforms.invertible_linear_transform' )
+        if isa( transforms{ index_transform }, 'linear_transforms.attributes.invertible' )
 
             % compute inverse transform
-            test_lat_inv = transforms{ index_transform }.inverse_transform( test_lat_fwd );
+            test_lat_inv = inverse_transform( transforms{ index_transform }, test_lat_fwd );
 %             test_lat_inv_old = op_psi( test_lat_fwd, 2 );
 
             % compute rel. RMSEs
-            error_fwd_inv( index_transform, index_case ) = norm( test_lat_inv(:) - test_lat(:) ) / test_lat_norm;
-        end
+            error_fwd_inv( index_transform, index_case ) = norm( test_lat_inv( : ) - test_lat( : ) ) / test_lat_norm;
+
+        end % if isa( transforms{ index_transform }, 'linear_transforms.attributes.invertible' )
 
         %------------------------------------------------------------------
-        % adjoint and inverse transforms
+        % b) adjoint and inverse transforms
         %------------------------------------------------------------------
         % generate random test vector
-        test_coef = randn(N_coefficients , 1) + 1j * randn(N_coefficients, 1);
-        test_coef_norm = norm( test_coef(:), 2 );
+        test_coef = randn( N_coefficients_act, 1 ) + 1j * randn( N_coefficients_act, 1 );
+        test_coef_norm = norm( test_coef( : ), 2 );
 
         % compute adjoint transform
-        test_coef_adj = transforms{ index_transform }.operator_transform( test_coef, 2 );
-        
-        if isa( transforms{ index_transform }, 'linear_transforms.invertible_linear_transform' )
+        test_coef_adj = adjoint_transform( transforms{ index_transform }, test_coef );
+
+        if isa( transforms{ index_transform }, 'linear_transforms.attributes.invertible' )
 
             % compute inverse transform
-            test_coef_inv = transforms{ index_transform }.inverse_transform( test_coef );
+            test_coef_inv = inverse_transform( transforms{ index_transform }, test_coef );
 
             % compute forward transform
-            test_coef_fwd = transforms{ index_transform }.operator_transform( test_coef_inv, 1 );
+            test_coef_fwd = operator_transform( transforms{ index_transform }, test_coef_inv, 1 );
 
             % compute rel. RMSEs
-            error_inv_fwd( index_transform, index_case ) = norm( test_coef_fwd(:) - test_coef(:) ) / test_coef_norm;
-        end
+            error_inv_fwd( index_transform, index_case ) = norm( test_coef_fwd( : ) - test_coef( : ) ) / test_coef_norm;
+
+        end % if isa( transforms{ index_transform }, 'linear_transforms.attributes.invertible' )
 
         %------------------------------------------------------------------
-        % adjoint test
+        % c) adjointness test
         %------------------------------------------------------------------
-        error_adj( index_transform, index_case ) = test_lat_fwd.' * conj( test_coef(:) ) - test_lat.' * conj( test_coef_adj(:) );
+        error_adj( index_transform, index_case ) = test_lat_fwd.' * conj( test_coef( : ) ) - test_lat.' * conj( test_coef_adj( : ) );
 
         %------------------------------------------------------------------
-        % column norms
+        % d) column norms
         %------------------------------------------------------------------
-        test_coef = zeros( N_coefficients, 1 );
-        test_coef( indices_rand(index_case) ) = 1;
-        
+        test_coef = zeros( N_coefficients_act, 1 );
+        test_coef( indices_rand( index_case ) ) = 1;
+
         % compute adjoint transform
-        test_coef_adj = transforms{ index_transform }.operator_transform( test_coef, 2 );
-        
-        norms_cols( index_transform, index_case ) = norm( test_coef_adj(:) );
-    end
-    
+        test_coef_adj = adjoint_transform( transforms{ index_transform }, test_coef );
+
+        % compute norm
+        norms_cols( index_transform, index_case ) = norm( test_coef_adj( : ) );
+
+	end % for index_case = 1:N_cases
+
+    % print status
     fprintf( '\n');
-end
+
+end % for index_transform = 1:N_transforms
 
 % statistics of results
 error_fwd_inv_mean	= mean( error_fwd_inv, 2 ) * 1e2;
@@ -194,7 +225,7 @@ signal_BP = fourier_coefficients( signal_BP_tilde );
 signal_gain = fourier_coefficients( signal_gain_tilde );
 
 % Fourier coefficients (analytic)
-TGC_curve_coef = fourier_coefficients( TGC_curve, 10 * abs( axis_t ) * T_s, -60 );
+TGC_curve_coef = fourier_coefficients( TGC_curve, abs( axis_t ) * T_s, -40 );
 M_kernel = abs( TGC_curve_coef.axis ) - 1;
 
 % error
@@ -205,10 +236,12 @@ kernel = [ conj( TGC_curve_coef.samples( end:-1:2 ) ); TGC_curve_coef.samples ];
 LT_convolution = linear_transforms.convolution( kernel, abs( signal_BP.axis ) );
 
 % apply convolution
-[ samples_BP_tgc_conv_dft, samples_BP_tgc_conv_mat ] = forward_transform( LT_convolution, signal_BP.samples );
+samples_BP_tgc_conv_dft = forward_transform( LT_convolution, signal_BP.samples );
+% [ samples_BP_tgc_conv_dft, samples_BP_tgc_conv_mat ] = forward_transform( LT_convolution, signal_BP.samples );
 
 % apply adjoint convolution
-[ samples_BP_tgc_conv_adj_dft, samples_BP_tgc_conv_adj_mat ] = adjoint_transform( LT_convolution, samples_BP_tgc_conv_dft );
+samples_BP_tgc_conv_adj_dft = adjoint_transform( LT_convolution, samples_BP_tgc_conv_dft );
+% [ samples_BP_tgc_conv_adj_dft, samples_BP_tgc_conv_adj_mat ] = adjoint_transform( LT_convolution, samples_BP_tgc_conv_dft );
 
 % errors
 rel_RMSE_fwd = norm( samples_BP_tgc_conv_dft( : ) - samples_BP_tgc_conv_mat( : ) ) / norm( samples_BP_tgc_conv_mat( : ) );

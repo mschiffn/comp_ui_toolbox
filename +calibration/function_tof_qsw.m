@@ -1,4 +1,4 @@
-function tof = function_tof_qsw( positions_lateral, states )
+function [ tof, tof_sc ] = function_tof_qsw( positions_lateral, states )
 %
 % compute round-trip times-of-flight for a quasi-spherical wave
 %
@@ -8,7 +8,7 @@ function tof = function_tof_qsw( positions_lateral, states )
 %
 % author: Martin F. Schiffner
 % date: 2019-06-12
-% modified: 2019-11-08
+% modified: 2020-01-21
 
     %----------------------------------------------------------------------
     % 1.) check arguments
@@ -43,6 +43,7 @@ function tof = function_tof_qsw( positions_lateral, states )
 	%----------------------------------------------------------------------
 	% specify cell array for tof
 	tof = cell( size( positions_lateral ) );
+    tof_sc = cell( size( positions_lateral ) );
 
 	% iterate states
 	for index_state = 1:numel( positions_lateral )
@@ -50,14 +51,18 @@ function tof = function_tof_qsw( positions_lateral, states )
         % compute distances
         dist = vecnorm( [ positions_lateral{ index_state }, zeros( size( positions_lateral{ index_state }, 1 ), 1 ) ] - states( index_state ).position_target, 2, 2 );
 
+        % compute scattered times-of-flight
+        tof_sc{ index_state } = dist / states( index_state ).c_avg;
+
         % compute round-trip times-of-flight
-        tof{ index_state } = ( dist + dist' ) / states( index_state ).c_avg;
+        tof{ index_state } = tof_sc{ index_state } + tof_sc{ index_state }';
 
     end % for index_state = 1:numel( positions_lateral )
 
     % avoid cell array for single positions_lateral
 	if isscalar( positions_lateral )
         tof = tof{ 1 };
+        tof_sc = tof_sc{ 1 };
     end
 
 end % function tof = function_tof_qsw( positions_lateral, states )

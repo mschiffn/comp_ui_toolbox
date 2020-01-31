@@ -6,9 +6,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2019-08-06
+% modified: 2020-01-30
 %
-classdef wavelet < linear_transforms.orthonormal_linear_transform
+classdef wavelet < linear_transforms.linear_transform_vector
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -16,17 +16,16 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
 	properties (SetAccess = private)
 
         % independent properties
-        type ( 1, 1 ) linear_transforms.wavelet_type = linear_transforms.wavelet_type.Daubechies	% type of wavelet
-        parameter ( 1, 1 ) { mustBeInteger } = 20                           % type-dependent parameter related to the support and vanishing moments of the wavelets
-        N_dimensions ( 1, 1 ) { mustBePositive, mustBeInteger } = 2         % number of dimensions
-        scale_finest ( 1, 1 ) { mustBeNonnegative, mustBeInteger } = 9      % finest scale ( fine level )
-        scale_coarsest ( 1, 1 ) { mustBeNonnegative, mustBeInteger } = 0	% coarsest scale ( coarse level )
+        type ( 1, 1 ) linear_transforms.wavelets.type { mustBeNonempty } = linear_transforms.wavelets.haar	% type of wavelet
+        N_dimensions ( 1, 1 ) { mustBePositive, mustBeInteger, mustBeNonempty } = 2         % number of dimensions
+        scale_finest ( 1, 1 ) { mustBeNonnegative, mustBeInteger, mustBeNonempty } = 9      % finest scale ( fine level )
+        scale_coarsest ( 1, 1 ) { mustBeNonnegative, mustBeInteger, mustBeNonempty } = 0	% coarsest scale ( coarse level )
 
         % dependent properties
-        N_points_axis ( 1, : ) { mustBePositive, mustBeInteger }	% number of points along each axis ( dyadic )
+        N_points_axis ( 1, : ) { mustBePositive, mustBeInteger, mustBeNonempty } = [ 512, 512 ]	% number of points along each axis ( dyadic )
         qmf ( 1, : ) double                                         % quadrature mirror filter
-        handle_fwd ( 1, 1 ) function_handle = @( x ) x              % function handle to forward transform
-        handle_inv ( 1, 1 ) function_handle = @( x ) x              % function handle to inverse transform
+        handle_fwd ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) x	% function handle to forward transform
+        handle_inv ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) x	% function handle to inverse transform
 
     end % properties
 
@@ -38,25 +37,27 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = wavelet( strs_type, parameters, N_dimensions, scales_finest, scales_coarsest )
+        function objects = wavelet( types, N_dimensions, scales_finest, scales_coarsest )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for strs_type
-            if ~iscell( strs_type )
-                strs_type = { strs_type };
+            % ensure class linear_transforms.wavelets.type
+            if ~isa( types, 'linear_transforms.wavelets.type' )
+                errorStruct.message = 'types must be linear_transforms.wavelets.type!';
+                errorStruct.identifier = 'wavelet:NoWaveletTypes';
+                error( errorStruct );
             end
 
-            % ensure positive integers
+            % ensure positive integers for N_dimensions
             mustBeInteger( N_dimensions );
             mustBePositive( N_dimensions );
 
-            % ensure positive integers
+            % ensure positive integers for scales_finest
             mustBeInteger( scales_finest );
             mustBePositive( scales_finest );
 
-            % ensure nonnegative integers
+            % ensure nonnegative integers for scales_coarsest
             mustBeInteger( scales_coarsest );
             mustBeNonnegative( scales_coarsest );
 
@@ -68,19 +69,24 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( strs_type, parameters, N_dimensions, scales_finest, scales_coarsest );
+            auxiliary.mustBeEqualSize( types, N_dimensions, scales_finest, scales_coarsest );
 
             %--------------------------------------------------------------
             % 2.) create discrete wavelet transforms
             %--------------------------------------------------------------
+            % compute quadrature mirror filters (QMF)
+            QMFs = MakeONFilter( types );
+
+            % ensure cell array for QMFs
+            if ~iscell( QMFs )
+                QMFs = { QMFs };
+            end
+
             % total number of grid points
             N_points = ( 2.^scales_finest ).^N_dimensions;
 
             % constructor of superclass
-            objects@linear_transforms.orthonormal_linear_transform( N_points );
-
-            % convert strings to enumeration types
-            types = linear_transforms.wavelet_type( strs_type );
+            objects@linear_transforms.linear_transform_vector( N_points, N_points );
 
             % iterate discrete wavelet transforms
             for index_object = 1:numel( objects )
@@ -89,7 +95,6 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                 % a) set independent properties
                 %----------------------------------------------------------
                 objects( index_object ).type = types( index_object );
-                objects( index_object ).parameter = parameters( index_object );
                 objects( index_object ).N_dimensions = N_dimensions( index_object );
                 objects( index_object ).scale_finest = scales_finest( index_object );
                 objects( index_object ).scale_coarsest = scales_coarsest( index_object );
@@ -100,8 +105,8 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                 % number of points along each axis
                 objects( index_object ).N_points_axis = repmat( 2.^objects( index_object ).scale_finest, [ 1, objects( index_object ).N_dimensions ] );
 
-                % compute quadrature mirror filter (QMF)
-                objects( index_object ).qmf = MakeONFilter( objects( index_object ).type, objects( index_object ).parameter );
+                % quadrature mirror filter (QMF)
+                objects( index_object ).qmf = QMFs{ index_object };
 
                 % specify transform functions
                 switch objects( index_object ).N_dimensions
@@ -109,7 +114,7 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                     case 1
 
                         %--------------------------------------------------
-                        % one-dimensional transform
+                        % i.) one-dimensional transform
                         %--------------------------------------------------
                         objects( index_object ).handle_fwd = @FWT_PO;
                         objects( index_object ).handle_inv = @IWT_PO;
@@ -117,7 +122,7 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                     case 2
 
                         %--------------------------------------------------
-                        % two-dimensional transforms
+                        % ii.) two-dimensional transforms
                         %--------------------------------------------------
                         objects( index_object ).handle_fwd = @FWT2_PO;
                         objects( index_object ).handle_inv = @IWT2_PO;
@@ -125,7 +130,7 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
                     otherwise
 
                         %--------------------------------------------------
-                        % invalid number of dimensions
+                        % iii.) invalid number of dimensions
                         %--------------------------------------------------
                         errorStruct.message = sprintf( 'objects( %d ).N_dimensions must equal 1 or 2!', index_object );
                         errorStruct.identifier = 'wavelet:InvalidNumberDimensions';
@@ -135,152 +140,85 @@ classdef wavelet < linear_transforms.orthonormal_linear_transform
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = wavelet( strs_type, parameters, N_dimensions, scales_finest, scales_coarsest )
-
-        %------------------------------------------------------------------
-        % forward transform (overload forward_transform method)
-        %------------------------------------------------------------------
-        function y = forward_transform( LTs, x )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure cell array for x
-            if ~iscell( x )
-                x = { x };
-            end
-
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                x = repmat( LTs, size( x ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
-
-            %--------------------------------------------------------------
-            % 2.) compute forward wavelet transforms
-            %--------------------------------------------------------------
-            % specify cell array for y
-            y = cell( size( LTs ) );
-
-            % iterate discrete wavelet transforms
-            for index_object = 1:numel( LTs )
-
-                % ensure numeric matrix
-                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
-                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
-                    error( errorStruct );
-                end
-
-                % number of vectors to transform
-                N_signals = size( x{ index_object }, 2 );
-
-                % initialize results with zeros
-                y{ index_object } = zeros( size( x{ index_object } ) );
-
-                % iterate signals
-                for index_signal = 1:N_signals
-
-                    % prepare shape of matrix
-                    x_act = reshape( x{ index_object }( :, index_signal ), LTs( index_object ).N_points_axis );
-
-                    % apply forward transform
-                    y_act = LTs( index_object ).handle_fwd( real( x_act ), LTs( index_object ).scale_coarsest, LTs( index_object ).qmf );
-                    y_act = y_act + 1j * LTs( index_object ).handle_fwd( imag( x_act ), LTs( index_object ).scale_coarsest, LTs( index_object ).qmf );
-
-                    % save result as column vector
-                    y{ index_object }( :, index_signal ) = y_act( : );
-
-                end % for index_signal = 1:N_signals
-
-            end % for index_object = 1:numel( LTs )
-
-            % avoid cell array for single diagonal weighting matrix
-            if isscalar( LTs )
-                y = y{ 1 };
-            end
-
-        end % function y = forward_transform( LTs, x )
-
-        %------------------------------------------------------------------
-        % adjoint transform (overload adjoint_transform method)
-        %------------------------------------------------------------------
-        function y = adjoint_transform( LTs, x )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure cell array for x
-            if ~iscell( x )
-                x = { x };
-            end
-
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                x = repmat( LTs, size( x ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
-
-            %--------------------------------------------------------------
-            % 2.) compute adjoint wavelet transforms
-            %--------------------------------------------------------------
-            % specify cell array for y
-            y = cell( size( LTs ) );
-
-            % iterate discrete wavelet transforms
-            for index_object = 1:numel( LTs )
-
-                % ensure numeric matrix
-                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
-                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
-                    errorStruct.identifier = 'forward_transform:NoNumericMatrix';
-                    error( errorStruct );
-                end
-
-                % number of vectors to transform
-                N_signals = size( x{ index_object }, 2 );
-
-                % initialize results with zeros
-                y{ index_object } = zeros( size( x{ index_object } ) );
-
-                % iterate signals
-                for index_signal = 1:N_signals
-
-                    % prepare shape of matrix
-                    x_act = reshape( x{ index_object }( :, index_signal ), LTs( index_object ).N_points_axis );
-
-                    % apply inverse transform
-                    y_act = LTs( index_object ).handle_inv( real( x_act ), LTs( index_object ).scale_coarsest, LTs( index_object ).qmf );
-                    y_act = y_act + 1j * LTs( index_object ).handle_inv( imag( x_act ), LTs( index_object ).scale_coarsest, LTs( index_object ).qmf );
-
-                    % save result as column vector
-                    y{ index_object }( :, index_signal ) = y_act( : );
-
-                end % for index_signal = 1:N_signals
-
-            end % for index_object = 1:numel( LTs )
-
-            % avoid cell array for single diagonal weighting matrix
-            if isscalar( LTs )
-                y = y{ 1 };
-            end
-
-        end % function y = adjoint_transform( LTs, x )
+        end % function objects = wavelet( types, N_dimensions, scales_finest, scales_coarsest )
 
     end % methods
 
-end % classdef wavelet < linear_transforms.orthonormal_linear_transform
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % forward transform (single vector)
+        %------------------------------------------------------------------
+        function y = forward_transform_vector( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.wavelet (scalar)
+            if ~( isa( LT, 'linear_transforms.wavelet' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.wavelet!';
+                errorStruct.identifier = 'forward_transform_vector:NoSingleWaveletTransform';
+                error( errorStruct );
+            end
+
+            % superclass ensures numeric column vector for x
+            % superclass ensures equal numbers of points for x
+
+            %--------------------------------------------------------------
+            % 2.) compute forward wavelet transform (single vector)
+            %--------------------------------------------------------------
+            % prepare shape of vector
+            if LT.N_dimensions >= 2
+                x = reshape( x, LT.N_points_axis );
+            end
+
+            % apply forward transform
+            y_act = LT.handle_fwd( real( x ), LT.scale_coarsest, LT.qmf );
+            y_act = y_act + 1j * LT.handle_fwd( imag( x ), LT.scale_coarsest, LT.qmf );
+
+            % return result as column vector
+            y = y_act( : );
+
+        end % function y = forward_transform_vector( LT, x )
+
+        %------------------------------------------------------------------
+        % adjoint transform (single vector)
+        %------------------------------------------------------------------
+        function y = adjoint_transform_vector( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.wavelet (scalar)
+            if ~( isa( LT, 'linear_transforms.wavelet' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.wavelet!';
+                errorStruct.identifier = 'adjoint_transform_vector:NoSingleWaveletTransform';
+                error( errorStruct );
+            end
+
+            % superclass ensures numeric column vector for x
+            % superclass ensures equal numbers of coefficients
+
+            %--------------------------------------------------------------
+            % 2.) compute adjoint wavelet transform (single vector)
+            %--------------------------------------------------------------
+            % prepare shape of vector
+            if LT.N_dimensions >= 2
+                x = reshape( x, LT.N_points_axis );
+            end
+
+            % apply inverse transform
+            y_act = LT.handle_inv( real( x ), LT.scale_coarsest, LT.qmf );
+            y_act = y_act + 1j * LT.handle_inv( imag( x ), LT.scale_coarsest, LT.qmf );
+
+            % return result as column vector
+            y = y_act( : );
+
+        end % function y = adjoint_transform_vector( LT, x )
+
+	end % methods (Access = private, Hidden)
+
+end % classdef wavelet < linear_transforms.linear_transform_vector

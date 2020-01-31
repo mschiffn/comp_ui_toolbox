@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2020-01-03
+% modified: 2020-01-30
 %
 classdef (Abstract) linear_transform
 
@@ -121,76 +121,9 @@ classdef (Abstract) linear_transform
 
         end % function y = operator_transform( LTs, x, mode )
 
-        %------------------------------------------------------------------
-        % normalization
-        %------------------------------------------------------------------
-        function LTs = normalize( LTs, options )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.linear_transform
-            if ~isa( LTs, 'linear_transforms.linear_transform' )
-                errorStruct.message = 'LTs must be linear_transforms.linear_transform!';
-                errorStruct.identifier = 'normalize:NoLinearTransforms';
-                error( errorStruct );
-            end
-
-            % ensure class regularization.options.normalization
-            if ~isa( options, 'regularization.options.normalization' )
-                errorStruct.message = 'options must be regularization.options.normalization!';
-                errorStruct.identifier = 'normalize:NoNormalizationOptions';
-                error( errorStruct );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, options );
-
-            %--------------------------------------------------------------
-            % 2.) apply normalization
-            %--------------------------------------------------------------
-% TODO: vectorize
-            % iterate linear transforms
-            for index_object = 1:numel( LTs )
-
-                if isa( options( index_object ), 'regularization.options.normalization_off' )
-
-                    %------------------------------------------------------
-                    % a) no normalization
-                    %------------------------------------------------------
-                    % do not modify linear transform
-
-                elseif isa( options( index_object ), 'regularization.options.normalization_threshold' )
-
-                    %------------------------------------------------------
-                    % b) apply threshold to inverse weighting matrix
-                    %------------------------------------------------------
-                    try
-                        LTs( index_object ) = threshold( LTs( index_object ), options( index_object ).threshold );
-                    catch
-                        errorStruct.message = sprintf( 'Could not apply threshold to LTs( %d )!', index_object );
-                        errorStruct.identifier = 'normalize:ThresholdError';
-                        error( errorStruct );
-                    end
-
-                else
-
-                    %------------------------------------------------------
-                    % c) unknown normalization settings
-                    %------------------------------------------------------
-                    errorStruct.message = sprintf( 'Class of options( %d ) is unknown!', index_object );
-                    errorStruct.identifier = 'normalize:UnknownOptionsClass';
-                    error( errorStruct );
-
-                end % if isa( options( index_object ), 'regularization.options.normalization_off' )
-
-            end % for index_object = 1:numel( LTs )
-
-        end % function LTs = normalize( LTs, options )
-
     end % methods
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods (Abstract)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods (Abstract)
@@ -205,6 +138,6 @@ classdef (Abstract) linear_transform
         %------------------------------------------------------------------
         y = adjoint_transform( LTs, x )
 
-    end % methods (Abstract)
+	end % methods (Abstract)
 
 end % classdef (Abstract) linear_transform

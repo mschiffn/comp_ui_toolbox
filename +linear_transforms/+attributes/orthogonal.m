@@ -1,38 +1,40 @@
 %
-% superclass for all invertible linear transforms
+% superclass for all orthonormal linear transforms
 %
 % author: Martin F. Schiffner
-% date: 2016-08-12
+% date: 2016-08-13
 % modified: 2019-12-16
 %
-classdef (Abstract) invertible_linear_transform < linear_transforms.linear_transform
+classdef (Abstract) orthogonal < linear_transforms.attributes.invertible
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = invertible_linear_transform( N_points )
+        function objects = orthogonal( N_points )
 
             %--------------------------------------------------------------
             % 1.) constructor of superclass
             %--------------------------------------------------------------
-            % construct square-shaped linear transforms
-            objects@linear_transforms.linear_transform( N_points, N_points );
+            % construct invertible linear transforms
+            objects@linear_transforms.attributes.invertible( N_points );
 
-        end % function objects = invertible_linear_transform( N_points )
+        end % function objects = orthogonal( N_points )
 
         %------------------------------------------------------------------
-        % inverse transform
+        % inverse transform (overload inverse_transform method)
         %------------------------------------------------------------------
-% TODO: make method abstract
         function y = inverse_transform( LTs, x )
+
+            % orthonormal transform : inverse transform is adjoint transform
+            y = adjoint_transform( LTs, x );
 
         end % function y = inverse_transform( LTs, x )
 
     end % methods
 
-end % classdef (Abstract) invertible_linear_transform < linear_transforms.linear_transform
+end % classdef (Abstract) orthogonal < linear_transforms.attributes.invertible

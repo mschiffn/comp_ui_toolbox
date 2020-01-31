@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2020-01-16
+% modified: 2020-01-30
 %
 classdef operator_born < scattering.operator
 
@@ -310,8 +310,8 @@ classdef operator_born < scattering.operator
                 end
 
                 % ensure numeric matrix
-                if ~( isnumeric( fluctuations{ index_object } ) && ismatrix( fluctuations{ index_object } ) )
-                    errorStruct.message = sprintf( 'fluctuations{ %d } must be a numeric matrix!', index_object );
+                if ~( isnumeric( fluctuations{ index_operator } ) && ismatrix( fluctuations{ index_operator } ) )
+                    errorStruct.message = sprintf( 'fluctuations{ %d } must be a numeric matrix!', index_operator );
                     errorStruct.identifier = 'forward:NoNumericMatrix';
                     error( errorStruct );
                 end
@@ -334,7 +334,7 @@ classdef operator_born < scattering.operator
                     % ii.) quick forward scattering
                     %------------------------------------------------------
                     u_M{ index_operator }{ index_options } = forward_quick( operator_born_act, fluctuations{ index_operator }, LT_act, LT_tgc );
-                    u_M{ index_object } = physical_values.volt( u_M{ index_object } );
+                    u_M{ index_operator }{ index_options } = physical_values.volt( u_M{ index_operator }{ index_options } );
 
                     % create signals or signal matrices
                     u_M{ index_operator }{ index_options } = format_voltages( operator_born_act, u_M{ index_operator }{ index_options } );
@@ -447,9 +447,6 @@ classdef operator_born < scattering.operator
                     % i.) create configuration
                     %------------------------------------------------------
                     [ operator_born_act, LT_act, LT_tgc ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
-
-            % display options
-%             show( options{ index_operator }( index_options ) );
 
                     %------------------------------------------------------
                     % ii.) create mixed voltage signals
@@ -693,7 +690,7 @@ classdef operator_born < scattering.operator
 
                 % iterate options
                 for index_options = 1:numel( options{ index_operator } )
-
+% TODO: get_config!
                     %------------------------------------------------------
                     % i.) set momentary scattering operator options
                     %------------------------------------------------------
@@ -1091,11 +1088,11 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % create TGC operator for each selected sequential pulse-echo measurement
                     for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
-                        LTs_tgc_measurement{ index_object }{ index_measurement_sel } = linear_transforms.concatenate_diagonal( LTs_conv{ indices{ index_measurement_sel } } );
+                        LTs_tgc_measurement{ index_object }{ index_measurement_sel } = linear_transforms.concatenations.diagonal( LTs_conv{ indices{ index_measurement_sel } } );
                     end
 
                     % create TGC operator for all selected sequential pulse-echo measurement
-                    LTs_tgc{ index_object } = linear_transforms.concatenate_diagonal( LTs_conv{ : } );
+                    LTs_tgc{ index_object } = linear_transforms.concatenations.diagonal( LTs_conv{ : } );
 
                 end % if isa( options( index_object ), 'regularization.options.tgc_off' )
 
@@ -1180,12 +1177,28 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % c) wavelet
                     %------------------------------------------------------
-                    LTs{ index_object } = linear_transforms.wavelet( operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points_axis );
+                    indicator_dimensions = operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points_axis > 1;
+                    N_dimensions = sum( indicator_dimensions );
+                    scales_finest = log2( operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points_axis( indicator_dimensions ) );
+                    scales_coarsest = scales_finest - options( index_object ).levels;
+
+                    LTs{ index_object } = linear_transforms.wavelet( options( index_object ).type, N_dimensions, scales_finest( 1 ), scales_coarsest( 1 ) );
+
+                elseif isa( options( index_object ), 'regularization.options.dictionary_wave_atoms' )
+
+                    %------------------------------------------------------
+                    % d) wave atoms
+                    %------------------------------------------------------
+                    indicator_dimensions = operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points_axis > 1;
+                    N_dimensions = sum( indicator_dimensions );
+                    scales_finest = log2( operators_born( index_object ).sequence.setup.FOV.shape.grid.N_points_axis( indicator_dimensions ) );
+
+                    LTs{ index_object } = linear_transforms.wave_atom( options( index_object ).type, N_dimensions, scales_finest( 1 ) );
 
                 else
 
                     %------------------------------------------------------
-                    % d) unknown dictionary settings
+                    % e) unknown dictionary settings
                     %------------------------------------------------------
                     errorStruct.message = sprintf( 'Class of options( %d ) is unknown!', index_object );
                     errorStruct.identifier = 'get_LTs:UnknownOptionsClass';
@@ -1203,7 +1216,7 @@ classdef operator_born < scattering.operator
         %------------------------------------------------------------------
         % create configurations
         %------------------------------------------------------------------
-        function [ operators_born_out, LTs, LTs_tgc ] = get_configs( operators_born, options )
+        function [ operators_born_out, LTs, LTs_tgc, LTs_tgc_measurement ] = get_configs( operators_born, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -1245,6 +1258,7 @@ classdef operator_born < scattering.operator
             operators_born_out = cell( size( operators_born ) );
             LTs = cell( size( operators_born ) );
             LTs_tgc = cell( size( operators_born ) );
+            LTs_tgc_measurement = cell( size( operators_born ) );
 
             % iterate scattering operators
             for index_operator = 1:numel( operators_born )
@@ -1266,9 +1280,13 @@ classdef operator_born < scattering.operator
                 operators_born_out{ index_operator } = cell( size( options{ index_operator } ) );
                 LTs{ index_operator } = cell( size( options{ index_operator } ) );
                 LTs_tgc{ index_operator } = cell( size( options{ index_operator } ) );
+                LTs_tgc_measurement{ index_operator } = cell( size( options{ index_operator } ) );
 
                 % iterate options
                 for index_options = 1:numel( options{ index_operator } )
+
+					% display options
+					show( options{ index_operator }( index_options ) );
 
                     %------------------------------------------------------
                     % i.) set momentary scattering operator options
@@ -1278,7 +1296,7 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % ii.) time gain compensation (TGC)
                     %------------------------------------------------------
-                    LTs_tgc{ index_operator }{ index_options } = get_LTs_tgc( operators_born_out{ index_operator }{ index_options }, options{ index_operator }( index_options ).tgc );
+                    [ LTs_tgc{ index_operator }{ index_options }, LTs_tgc_measurement{ index_operator }{ index_options } ] = get_LTs_tgc( operators_born_out{ index_operator }{ index_options }, options{ index_operator }( index_options ).tgc );
 
                     %------------------------------------------------------
                     % iii.) create dictionary
@@ -1294,14 +1312,17 @@ classdef operator_born < scattering.operator
                         % create weighting matrix
                         LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
 
+                        % apply normalization settings
+                        LT_weighting_inv = normalize( LT_weighting_inv, options{ index_operator }( index_options ).normalization );
+
                         % composition with non-canonical linear transform
 % TODO: neglect identity in composition
                         if ~isa( LTs{ index_operator }{ index_options }, 'linear_transforms.identity' )
                             LT_weighting_inv = linear_transforms.composition( LT_weighting_inv, LTs{ index_operator }{ index_options } );
                         end
 
-                        % apply normalization settings
-                        LTs{ index_operator }{ index_options } = normalize( LT_weighting_inv, options{ index_operator }( index_options ).normalization );
+                        % update dictionary
+                        LTs{ index_operator }{ index_options } = LT_weighting_inv;
 
                     end % if ~isa( options{ index_operator }( index_options ).normalization, 'regularization.options.normalization_off' )
 
@@ -1314,6 +1335,7 @@ classdef operator_born < scattering.operator
                 % avoid cell array for single options{ index_operator }
                 if isscalar( options{ index_operator } )
                     LTs{ index_operator } = LTs{ index_operator }{ 1 };
+                    LTs_tgc_measurement{ index_operator } = LTs_tgc_measurement{ index_operator }{ 1 };
                 end
 
             end % for index_operator = 1:numel( operators_born )
@@ -1323,9 +1345,10 @@ classdef operator_born < scattering.operator
                 operators_born_out = operators_born_out{ 1 };
                 LTs = LTs{ 1 };
                 LTs_tgc = LTs_tgc{ 1 };
+                LTs_tgc_measurement = LTs_tgc_measurement{ 1 };
             end
 
-        end % function [ operators_born_out, LTs, LTs_tgc ] = get_configs( operators_born, options )
+        end % function [ operators_born_out, LTs, LTs_tgc, LTs_tgc_measurement ] = get_configs( operators_born, options )
 
 	end % methods
 
@@ -1696,11 +1719,11 @@ classdef operator_born < scattering.operator
                 % b) quick forward scattering and received energies
                 %----------------------------------------------------------
                 % quick forward scattering
-                profile on
+%                 profile on
                 time_batch_start = tic;
                 u_M = forward_quick( operator_born, theta_kappa, LT, varargin{ : } );
                 seconds_per_batch( index_batch ) = toc( time_batch_start );
-                profile viewer
+%                 profile viewer
 
                 % compute received energy
                 E_M( indices_coeff{ index_batch } ) = vecnorm( u_M, 2, 1 ).^2;
@@ -1763,9 +1786,9 @@ classdef operator_born < scattering.operator
                 LT_tgc = linear_transforms.identity( operator_born.sequence.setup.FOV.shape.grid.N_points );
             end % if nargin >= 2 && ~isempty( varargin{ 1 } )
 
-            % ensure class linear_transforms.concatenate_diagonal (scalar)
-            if ~( ( isa( LT_tgc, 'linear_transforms.identity' ) || isa( LT_tgc, 'linear_transforms.concatenate_diagonal' ) ) && isscalar( LT_tgc ) )
-                errorStruct.message = 'Nonempty varargin{ 1 } must be a single linear_transforms.identity or linear_transforms.concatenate_diagonal!';
+            % ensure class linear_transforms.concatenations.diagonal (scalar)
+            if ~( ( isa( LT_tgc, 'linear_transforms.identity' ) || isa( LT_tgc, 'linear_transforms.concatenations.diagonal' ) ) && isscalar( LT_tgc ) )
+                errorStruct.message = 'Nonempty varargin{ 1 } must be a single linear_transforms.identity or linear_transforms.concatenations.diagonal!';
                 errorStruct.identifier = 'energy_rx_canonical:NoSingleDiagonalConcatenation';
                 error( errorStruct );
             end

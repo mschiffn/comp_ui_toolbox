@@ -1,78 +1,204 @@
 %
-% compute two-dimensional discrete wave atom transform for various options
-% author: Martin Schiffner
-% date: 2016-08-13
+% superclass for all discrete wave atom transforms
 %
-classdef wave_atom < linear_transforms.linear_transform
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% requires: WaveAtoms (http://www-stat.stanford.edu/~wavelab)
+%
+% author: Martin F. Schiffner
+% date: 2016-08-13
+% modified: 2020-01-30
+%
+classdef wave_atom < linear_transforms.linear_transform_vector
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
-        N_lattice_axis
-        transform_type
-        N_layers
-    end % properties
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+
+        % independent properties
+        type ( 1, 1 ) linear_transforms.wave_atoms.type { mustBeNonempty } = linear_transforms.wave_atoms.orthogonal
+        N_dimensions ( 1, 1 ) { mustBePositive, mustBeInteger, mustBeNonempty } = 2         % number of dimensions
+        scale_finest ( 1, 1 ) { mustBeNonnegative, mustBeInteger, mustBeNonempty } = 9      % finest scale ( fine level )
+
+        % dependent properties
+        N_points_axis ( 1, : ) double { mustBePositive, mustBeInteger, mustBeNonempty } = [ 512, 512 ]
+        handle_fwd ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) x	% function handle to forward transform
+        handle_inv ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) x	% function handle to inverse transform
+
+	end % properties
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function LT_wave_atom = wave_atom( N_lattice_axis, transform_type )
+        function objects = wave_atom( types, N_dimensions, scales_finest )
 
-            % total number of lattice points
-            N_lattice = N_lattice_axis(1) * N_lattice_axis(2);
-
-            % number of layers
-            if strcmp( transform_type, 'ortho' )
-                % orthobasis
-                N_layers_temp = 1;
-            elseif strcmp( transform_type, 'directional' )
-                % real-valued frame with single oscillation direction
-                N_layers_temp = 2;
-            elseif strcmp( transform_type, 'complex' )
-                % complex-valued frame
-                N_layers_temp = 4;
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure string array for types
+            if ~isa( types, 'linear_transforms.wave_atoms.type' )
+                errorStruct.message = 'types must be linear_transforms.wave_atoms.type!';
+                errorStruct.identifier = 'wave_atom:NoWaveAtomTypes';
+                error( errorStruct );
             end
 
-            % number of transform coefficients
-            N_coefficients = N_layers_temp * N_lattice;
+            % property validation function ensures nonempty positive integers for N_dimensions
 
-            % create name string
-            str_name = sprintf('%s_%s', 'wave_atom', transform_type);
+            % property validation function ensures nonempty positive integers for scales_finest
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( types, N_dimensions, scales_finest );
+
+            %--------------------------------------------------------------
+            % 2.) create discrete wave atom transforms
+            %--------------------------------------------------------------
+            % compute numbers of grid points
+            N_points = ( 2.^scales_finest ).^N_dimensions;
+
+            % extract numbers of layers
+            N_layers = reshape( [ types.N_layers ], size( types ) );
+
+            % compute numbers of transform coefficients
+            N_coefficients = N_layers .* N_points;
 
             % constructor of superclass
-            LT_wave_atom@linear_transforms.linear_transform( N_coefficients, N_lattice, str_name );
+            objects@linear_transforms.linear_transform_vector( N_coefficients, N_points );
 
-            % internal properties
-            LT_wave_atom.N_lattice_axis = N_lattice_axis;
-            LT_wave_atom.transform_type = transform_type;
-            LT_wave_atom.N_layers       = N_layers_temp;
+            % iterate discrete wave atom transforms
+            for index_object = 1:numel( objects )
 
-        end
+                %----------------------------------------------------------
+                % a) set independent properties
+                %----------------------------------------------------------
+                objects( index_object ).type = types( index_object );
+                objects( index_object ).N_dimensions = N_dimensions( index_object );
+                objects( index_object ).scale_finest = scales_finest( index_object );
+
+                %----------------------------------------------------------
+                % b) set dependent properties
+                %----------------------------------------------------------
+                % number of points along each axis
+                objects( index_object ).N_points_axis = repmat( 2.^objects( index_object ).scale_finest, [ 1, objects( index_object ).N_dimensions ] );
+
+                % specify transform functions
+                switch objects( index_object ).N_dimensions
+
+                    case 1
+
+                        %--------------------------------------------------
+                        % i.) one-dimensional transform
+                        %--------------------------------------------------
+                        objects( index_object ).handle_fwd = @fwa1sym;
+                        objects( index_object ).handle_inv = @iwa1sym;
+
+                    case 2
+
+                        %--------------------------------------------------
+                        % ii.) two-dimensional transform
+                        %--------------------------------------------------
+                        objects( index_object ).handle_fwd = @fwa2sym;
+                        objects( index_object ).handle_inv = @iwa2sym;
+
+                    case 3
+
+                        %--------------------------------------------------
+                        % iii.) three-dimensional transform
+                        %--------------------------------------------------
+                        objects( index_object ).handle_fwd = @fwa3sym;
+                        objects( index_object ).handle_inv = @iwa3sym;
+
+                    otherwise
+
+                        %--------------------------------------------------
+                        % iv.) invalid number of dimensions
+                        %--------------------------------------------------
+                        errorStruct.message = sprintf( 'objects( %d ).N_dimensions must equal 1 or 2!', index_object );
+                        errorStruct.identifier = 'wavelet:InvalidNumberDimensions';
+                        error( errorStruct );
+
+                end % switch objects( index_object ).N_dimensions
+
+            end % for index_object = 1:numel( objects )
+
+        end % function objects = wave_atom( types, N_dimensions, scales_finest )
+
+	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
 
         %------------------------------------------------------------------
-        % overload method: forward transform (forward DWAT)
+        % forward transform (single vector)
         %------------------------------------------------------------------
-        function y = forward_transform( LT_wave_atom, x )
+        function y = forward_transform_vector( LT, x )
 
-            x = reshape( x, [LT_wave_atom.N_lattice_axis(2), LT_wave_atom.N_lattice_axis(1)] );
-            y = fwa2sym( x, 'q', LT_wave_atom.transform_type );
-        end
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.wave_atom
+            if ~( isa( LT, 'linear_transforms.wave_atom' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.wave_atom!';
+                errorStruct.identifier = 'forward_transform_single:NoSingleWaveAtomTransform';
+                error( errorStruct );
+            end
+
+            % superclass ensures numeric column vector for x
+            % superclass ensures equal numbers of points for x
+
+            %--------------------------------------------------------------
+            % 2.) compute forward wave atom transform (single vector)
+            %--------------------------------------------------------------
+            % prepare shape of vector
+            if LT.N_dimensions >= 2
+                x = reshape( x, LT.N_points_axis );
+            end
+
+            % apply forward transform
+            y_act = LT.handle_fwd( x, 'p', 'ortho' );
+
+            % return result as column vector
+            y = y_act( : );
+
+        end % function y = forward_transform_vector( LT, x )
 
         %------------------------------------------------------------------
-        % overload method: adjoint transform (inverse DWAT)
+        % adjoint transform (single vector)
         %------------------------------------------------------------------
-        function y = adjoint_transform( LT_wave_atom, x )
+        function y = adjoint_transform_vector( LT, x )
 
-            x = reshape( x, [LT_wave_atom.N_lattice_axis(2), LT_wave_atom.N_lattice_axis(1), LT_wave_atom.N_layers] );
-            y = iwa2sym( x, 'q', LT_wave_atom.transform_type );
-        end
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.wave_atom
+            if ~( isa( LT, 'linear_transforms.wave_atom' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.wave_atom!';
+                errorStruct.identifier = 'adjoint_transform_single:NoSingleWaveAtomTransform';
+                error( errorStruct );
+            end
 
-    end % methods
+            % superclass ensures numeric column vector for x
+            % superclass ensures equal numbers of coefficients
 
-end % classdef wave_atom
+            %--------------------------------------------------------------
+            % 2.) compute adjoint wave atom transform (single vector)
+            %--------------------------------------------------------------
+            % prepare shape of vector
+            x_act = reshape( x, [ LT.N_points_axis, LT.type.N_layers ] );
+
+            % apply adjoint transform
+            y_act = LT.handle_inv( x_act, 'p', 'ortho' );
+
+            % return result as column vector
+            y = y_act( : );
+
+        end % function y = adjoint_transform_vector( LT, x )
+
+	end % methods (Access = protected, Hidden)
+
+end % classdef wave_atom < linear_transforms.linear_transform_vector

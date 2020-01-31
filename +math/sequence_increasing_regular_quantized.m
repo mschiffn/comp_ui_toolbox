@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2020-01-16
+% modified: 2020-01-21
 %
 classdef sequence_increasing_regular_quantized < math.sequence_increasing_regular
 
@@ -110,9 +110,9 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing_regula
             % 2.) interpolate sequences
             %--------------------------------------------------------------
             % numbers of samples and sampling parameters
-            lbs_q = reshape( [ axes.q_lb ], size( signal_matrices ) );
-            ubs_q = reshape( [ axes.q_ub ], size( signal_matrices ) );
-            deltas = reshape( [ axes.delta ], size( signal_matrices ) );
+            lbs_q = reshape( [ sequences.q_lb ], size( sequences ) );
+            ubs_q = reshape( [ sequences.q_ub ], size( sequences ) );
+            deltas = reshape( [ sequences.delta ], size( sequences ) );
 
             % create axes for interpolated signal matrices
             lbs_q_int = double( lbs_q ) .* factors_interp;

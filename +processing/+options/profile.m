@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-08
-% modified: 2020-01-08
+% modified: 2020-01-19
 %
 classdef profile
 
@@ -13,10 +13,11 @@ classdef profile
 	properties (SetAccess = private)
 
         % independent properties
-        dim ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 1   % projection dimension
-        interval ( 1, 1 ) math.interval { mustBeNonempty } = math.interval          % projection interval
-        N_zeros_add ( 1, 1 ) double { mustBeNonnegative, mustBeInteger, mustBeNonempty } = 50	% dimension
-        factor_interp ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 10	% dimension
+        dim ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 1                       % projection dimension
+        interval ( 1, 1 ) math.interval { mustBeNonempty } = math.interval                              % projection interval
+        N_zeros_add ( 1, 1 ) double { mustBeNonnegative, mustBeInteger, mustBeNonempty } = 50           % number of padded zeros
+        factor_interp ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 20            % interpolation factor
+        setting_window ( 1, 1 ) auxiliary.setting_window { mustBeNonempty } = auxiliary.setting_window	% window settings
 
     end % properties
 
