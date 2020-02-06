@@ -149,8 +149,12 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 2.) compute forward Fourier transform (single vector)
             %--------------------------------------------------------------
+            % create size matrix
+            size_matrix = [ LT.N_points_block_axis; LT.N_blocks_axis ];
+
             % block partitioning
-            x = reshape( x, LT.N_blocks_axis)
+            x = reshape( x, size_matrix( : )' );
+            
             % prepare shape of vector
             if LT.N_dimensions >= 2
                 x = reshape( x, LT.N_points_axis );

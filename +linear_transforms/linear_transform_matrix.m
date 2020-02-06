@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-29
-% modified: 2020-01-30
+% modified: 2020-02-06
 %
 classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
 
@@ -87,7 +87,7 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
                 end
 
                 % ensure equal numbers of points
-                if LTs( index_object ).N_points ~= size( x{ index_object }, 1 )
+                if size( x{ index_object }, 1 ) ~= LTs( index_object ).N_points
                     errorStruct.message = sprintf( 'x{ %d } must have %d rows!', index_object, LTs( index_object ).N_points );
                     errorStruct.identifier = 'forward_transform:InvalidNumberOfRows';
                     error( errorStruct );
@@ -161,7 +161,7 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
                 end
 
                 % ensure equal numbers of coefficients
-                if LTs( index_object ).N_coefficients ~= size( x{ index_object }, 1 )
+                if size( x{ index_object }, 1 ) ~= LTs( index_object ).N_coefficients
                     errorStruct.message = sprintf( 'x{ %d } must have %d rows!', index_object, LTs( index_object ).N_coefficients );
                     errorStruct.identifier = 'adjoint_transform:InvalidNumberOfRows';
                     error( errorStruct );

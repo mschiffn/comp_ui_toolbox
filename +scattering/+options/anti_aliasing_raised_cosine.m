@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2020-01-18
+% modified: 2020-02-01
 %
 classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
 
@@ -48,6 +48,69 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
             end % for index_object = 1:numel( objects )
 
         end % function objects = anti_aliasing_raised_cosine( roll_off_factors )
+
+        %------------------------------------------------------------------
+        % compute spatial anti-aliasing filters
+        %------------------------------------------------------------------
+        function filters = compute_filter( options_anti_aliasing, flags )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.options.anti_aliasing_raised_cosine
+            if ~isa( options_anti_aliasing, 'scattering.options.anti_aliasing_raised_cosine' )
+                errorStruct.message = 'options_anti_aliasing must be scattering.options.anti_aliasing_raised_cosine!';
+                errorStruct.identifier = 'compute_filter:NoOptionsAntiAliasingRaisedCosine';
+                error( errorStruct );
+            end
+
+            % ensure cell array for flags
+            if ~iscell( flags )
+                flags = { flags };
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( options_anti_aliasing, flags );
+
+            %--------------------------------------------------------------
+            % 2.) compute spatial anti-aliasing filters
+            %--------------------------------------------------------------
+            % specify cell array for filters
+            filters = cell( size( options_anti_aliasing ) );
+
+            % iterate spatial anti-aliasing filter options
+            for index_filter = 1:numel( options_anti_aliasing )
+
+                %----------------------------------------------------------
+                % ii.) raised-cosine spatial anti-aliasing filter
+                %----------------------------------------------------------
+% TODO: small value of options_anti_aliasing( index_filter ).roll_off_factor causes NaN
+% TODO: why more conservative aliasing
+                % compute lower and upper bounds
+                flag_lb = pi * ( 1 - options_anti_aliasing( index_filter ).roll_off_factor );
+                flag_ub = pi; %pi * ( 1 + options_anti_aliasing( index_filter ).roll_off_factor );
+                flag_delta = flag_ub - flag_lb;
+
+                % detect tapered grid points
+                indicator_on = flags{ index_filter } <= flag_lb;
+                indicator_taper = ( flags{ index_filter } > flag_lb ) & ( flags{ index_filter } < flag_ub );
+                indicator_off = flags{ index_filter } >= flag_ub;
+
+                % compute raised-cosine function
+                flags{ index_filter }( indicator_on ) = 1;
+                flags{ index_filter }( indicator_taper ) = 0.5 * ( 1 + cos( pi * ( flags{ index_filter }( indicator_taper ) - flag_lb ) / flag_delta ) );
+                flags{ index_filter }( indicator_off ) = 0;
+
+                filters{ index_filter } = prod( flags{ index_filter }, 3 );
+
+            end % for index_filter = 1:numel( options_anti_aliasing )
+
+            % avoid cell array for single options_anti_aliasing
+            if isscalar( options_anti_aliasing )
+                filters = filters{ 1 };
+            end
+
+        end % function filters = compute_filter( options_anti_aliasing, flags )
 
         %------------------------------------------------------------------
         % string array (overload string method)

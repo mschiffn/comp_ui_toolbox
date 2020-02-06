@@ -239,7 +239,7 @@ classdef tx < scattering.sequences.settings.controls.common
 
             % iterate transducer control settings
             for index_setting = 1:numel( settings_tx )
-
+% TODO: math.sequence_increasing_regular sufficient?
                 % ensure equal subclasses of math.sequence_increasing_regular_quantized
                 auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular_quantized', excitation_voltages{ index_setting }.axis );
 

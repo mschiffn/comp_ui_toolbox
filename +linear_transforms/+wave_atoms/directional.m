@@ -1,0 +1,81 @@
+%
+% superclass for all directional discrete wave atoms
+%
+% requires: WaveAtom Toolbox (http://www.waveatom.org/)
+%
+% author: Martin F. Schiffner
+% date: 2020-01-30
+% modified: 2020-02-04
+%
+classdef directional < linear_transforms.wave_atoms.type
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods
+
+        %------------------------------------------------------------------
+        % constructor
+        %------------------------------------------------------------------
+        function objects = directional( size )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure nonempty size
+            if nargin < 1 || isempty( size )
+                size = 1;
+            end
+
+            % ensure row vector for size
+            if ~isrow( size )
+                errorStruct.message = 'size must be a row vector!';
+                errorStruct.identifier = 'orthogonal:InvalidSize';
+                error( errorStruct );
+            end
+
+            % ensure positive integers for size
+            mustBePositive( size );
+            mustBeInteger( size );
+
+            %--------------------------------------------------------------
+            % 2.) create discrete wave atom transforms
+            %--------------------------------------------------------------
+            % constructor of superclass
+            objects@linear_transforms.wave_atoms.type( repmat( 2, size ) );
+
+        end % function objects = directional( size )
+
+        %------------------------------------------------------------------
+        % string array (overload string method)
+        %------------------------------------------------------------------
+        function strs_out = string( directionals )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.wave_atoms.directional
+            if ~isa( directionals, 'linear_transforms.wave_atoms.directional' )
+                errorStruct.message = 'directionals must be linear_transforms.wave_atoms.directional!';
+                errorStruct.identifier = 'string:NoDirectionalWaveAtoms';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) string array
+            %--------------------------------------------------------------
+            % initialize string array
+            strs_out = repmat( "", size( directionals ) );
+
+            % iterate directional discrete wave atoms
+            for index_object = 1:numel( directionals )
+
+                strs_out( index_object ) = sprintf( "directional-%d", directionals( index_object ).N_layers );
+
+            end % for index_object = 1:numel( directionals )
+
+        end % function strs_out = string( directionals )
+
+	end % methods
+
+end % classdef directional < linear_transforms.wave_atoms.type

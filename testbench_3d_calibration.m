@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-11-16
-% modified: 2020-01-23
+% modified: 2020-02-03
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -247,7 +247,7 @@ imagesc( illustration.dB( abs( hilbert( double( u_M_tilde_qsw{ 1 }( 93 ).samples
 % save data for later use
 %--------------------------------------------------------------------------
 str_filename = sprintf( '%s_data.mat', str_name );
-save( str_filename, 'u_M_qsw', 'u_M_qpw', 'u_M_tilde_qsw', 'u_M_tilde_qpw' );
+save( str_filename, 'u_M_qsw', 'u_M_qpw', 'u_M_tilde_qsw', 'u_M_tilde_qpw', 'indices_tpsf' );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% calibration (QPW data)
@@ -297,7 +297,7 @@ options_SoS = calibration.options.SoS( physical_values.second( 2.5e-6 ), ( numel
 
 % create pulse-echo response estimation options
 handle_absorption_model = @( x ) scattering.sequences.setups.materials.absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
-options_PER = calibration.options.PER( physical_values.second( 2.5e-6 ), (1:xdc_array.N_elements), (1:xdc_array.N_elements), interval_f, handle_absorption_model );
+options_PER = calibration.options.per_qsw( physical_values.second( 2.5e-6 ), (1:xdc_array.N_elements), (1:xdc_array.N_elements), interval_f, handle_absorption_model );
 
 %--------------------------------------------------------------------------
 % 3.) perform estimates
@@ -469,11 +469,11 @@ end
 %--------------------------------------------------------------------------
 % create sound speed estimation options
 options_sos_qsw = calibration.options.sos_qsw( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, (1:xdc_array.N_elements), 1, xdc_array.N_elements, 60, auxiliary.setting_window( @tukeywin, 0.1 ) );
-options_sos_focus = calibration.options.sos_focus( physical_values.second( 5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, 1, xdc_array.N_elements, interval_f, 60, 20, 1e-10, auxiliary.setting_window( @tukeywin, 0.1 ) );
+options_sos_focus = calibration.options.sos_focus( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, interval_f, scattering.options.anti_aliasing_raised_cosine( 0.25 ), 0.4, 60, 20, 1e-3 );
 
 % create pulse-echo response estimation options
 handle_absorption_model_sa = @( x ) scattering.sequences.setups.materials.absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
-options_PER_sa = calibration.options.PER( physical_values.second( 2.5e-6 ), (1:xdc_array.N_elements), (1:xdc_array.N_elements), interval_f, handle_absorption_model_sa );
+options_PER_sa = calibration.options.per_qsw( physical_values.second( 2.5e-6 ), (1:xdc_array.N_elements), (1:xdc_array.N_elements), interval_f, handle_absorption_model_sa );
 
 %--------------------------------------------------------------------------
 % 3.) perform estimates

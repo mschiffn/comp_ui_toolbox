@@ -1,17 +1,38 @@
 function [ states, rel_RMSE ] = estimate_sos_point_qsw( u_rx_tilde_qsw, xdc_array, states, options )
 %
-% estimate the average speed of sound using
-% the inter-element cross-correlations for
-% multiple point-like targets (cf. [1])
+% Estimates the average speed of sound and the positions of
+% multiple point-like reflectors.
 %
-% [1] S. W. Flax and M. O'Donnell, "Phase-Aberration Correction Using Signals From Point Reflectors and Diffuse Scatterers: Basic Principles",
-%     IEEE TUFFC, Vol. 35, No. 6, Nov. 1988, pp. 758-767
+% The function analyzes
+% the times-of-flight of
+% the induced echoes using
+% the inter-element cross-correlations
+% (see [1], [2]).
 %
-% requires: optimization toolbox
+% INPUT:
+%   u_rx_tilde_qsw = RF voltage signals obtained by complete SA sequence
+%   xdc_array = transducer array
+%   states = initial values of the average speed of sound and position of the ROI
+%   options = calibration.options.sos_qsw
+%
+% OUTPUT:
+%   states = corrected input states
+%   rel_RMSE = relative root mean-squared fitting error
+%
+% REQUIREMENTS:
+%	- MATLAB Optimization Toolbox
+%
+% REFERENCES:
+%	[1] S. W. Flax and M. O'Donnell, "Phase-Aberration Correction Using Signals From Point Reflectors and Diffuse Scatterers: Basic Principles",
+%       IEEE TUFFC, Vol. 35, No. 6, Nov. 1988, pp. 758-767
+%       DOI: 10.1109/58.9333
+%	[2] M. E. Anderson and G. E. Trahey, "The direct estimation of sound speed using pulse–echo ultrasound",
+%       J. Acoust. Soc. Am., Vol. 104, No. 5, Nov. 1998, pp. 3099-3106
+%       DOI: 10.1121/1.423889
 %
 % author: Martin F. Schiffner
 % date: 2014-09-20
-% modified: 2020-01-10
+% modified: 2020-02-04
 
     %----------------------------------------------------------------------
 	% 1.) check arguments
@@ -180,47 +201,27 @@ function [ states, rel_RMSE ] = estimate_sos_point_qsw( u_rx_tilde_qsw, xdc_arra
                 u_rx_tilde_qsw_int_window = cut_out( u_rx_tilde_qsw_int, cat( 1, intervals_t{ index_target }( index_selected_tx, : ).lb ), cat( 1, intervals_t{ index_target }( index_selected_tx, : ).ub ), num2cell( INDICES_RX ), options{ index_data }( index_target ).setting_window );
 
                 % illustrate cut out
-                figure(998);
-                imagesc( INDICES_RX, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, INDICES_RX ) ), 20 ), [ -60, 0 ] );
-                line( INDICES_RX, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
-                line( INDICES_RX, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+                if options{ index_data }( index_target ).display
+
+                    figure( 998 );
+                    imagesc( INDICES_RX, double( u_rx_tilde_qsw_int.axis.members ), illustration.dB( hilbert( u_rx_tilde_qsw_int.samples( :, INDICES_RX ) ), 20 ), [ -60, 0 ] );
+                    line( INDICES_RX, double( [ intervals_t{ index_target }( index_selected_tx, : ).lb ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+                    line( INDICES_RX, double( [ intervals_t{ index_target }( index_selected_tx, : ).ub ] ), 'Color', [1,1,0.99], 'LineWidth', 2, 'LineStyle', ':' );
+
+                end % if options{ index_data }( index_target ).display
 
                 %----------------------------------------------------------
                 % b) compute inter-element lags
                 %----------------------------------------------------------
-                % initialize lags with zeros
-                lags_adjacent{ index_selected_tx } = physical_values.second( zeros( 1, numel( INDICES_RX ) ) );
-                corr_vals = zeros( 1, numel( INDICES_RX ) );
-
-                % iterate specified rx elements
-                for index_selected_rx = 2:numel( INDICES_RX )
-
-                    % extract RF data of adjacent channels
-                    u_rx_tilde_qsw_int_window_act = u_rx_tilde_qsw_int_window( index_selected_rx );
-                    u_rx_tilde_qsw_int_window_prev = u_rx_tilde_qsw_int_window( index_selected_rx - 1 );
-
-                    % compute inter-element correlation coefficients
-                    [ data_pw_int_cut_corr, data_pw_int_cut_corr_lags ] = xcorr( u_rx_tilde_qsw_int_window_act.samples / norm( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.samples / norm( u_rx_tilde_qsw_int_window_prev.samples ) );
-
-                    % detect and save maximum of cross-correlation
-                    [ corr_vals( index_selected_rx ), index_max ] = max( data_pw_int_cut_corr );
-
-                    % estimate relative time delays
-                    lags_adjacent{ index_selected_tx }( index_selected_rx ) = data_pw_int_cut_corr_lags( index_max ) * u_rx_tilde_qsw_int_window_act.axis.delta + u_rx_tilde_qsw_int_window_act.axis.members( 1 ) - u_rx_tilde_qsw_int_window_prev.axis.members( 1 );
-
-                    % illustrate inter-element lag
-%                     figure(999);
-%                     plot( u_rx_tilde_qsw_int_window_act.axis.members - lags_adjacent{ index_selected_tx }( index_selected_rx ), u_rx_tilde_qsw_int_window_act.samples / max( u_rx_tilde_qsw_int_window_act.samples ), u_rx_tilde_qsw_int_window_prev.axis.members, u_rx_tilde_qsw_int_window_prev.samples / max( u_rx_tilde_qsw_int_window_prev.samples ) );
-%                     pause(0.1);
-
-                end % for index_selected_rx = 2:numel( INDICES_RX )
+                u_rx_tilde_qsw_int_window = processing.signal( cat( 1, u_rx_tilde_qsw_int_window.axis ), { u_rx_tilde_qsw_int_window.samples }' );
+                [ ~, lags_adjacent{ index_selected_tx } ] = xcorr_max( u_rx_tilde_qsw_int_window );
 
                 %----------------------------------------------------------
                 % c) estimate TOFs
                 %----------------------------------------------------------
                 % integrate inter-element delays and find lateral position of minimum
-                lags_adjacent_cs{ index_selected_tx } = cumsum( lags_adjacent{ index_selected_tx }, 2 );
-                [ lags_adjacent_cs_min, index_min ] = min( lags_adjacent_cs{ index_selected_tx }, [], 2 );
+                lags_adjacent_cs{ index_selected_tx } = cumsum( lags_adjacent{ index_selected_tx }, 1 );
+                [ lags_adjacent_cs_min, index_min ] = min( lags_adjacent_cs{ index_selected_tx }, [], 1 );
                 lags_adjacent_cs{ index_selected_tx } = lags_adjacent_cs{ index_selected_tx } - lags_adjacent_cs_min;
 
                 % find maximum of envelope of interpolated RF data
@@ -232,7 +233,7 @@ function [ states, rel_RMSE ] = estimate_sos_point_qsw( u_rx_tilde_qsw, xdc_arra
                 tof_min = time_max - options{ index_data }( index_target ).time_shift_ctr;
 
                 % estimate TOFs for all rx elements
-                times_of_flight_est{ index_target }{ index_selected_tx } = tof_min + lags_adjacent_cs{ index_selected_tx };
+                times_of_flight_est{ index_target }{ index_selected_tx } = tof_min + lags_adjacent_cs{ index_selected_tx }';
 
             end % for index_selected_tx = 1:numel( INDICES_TX )
 

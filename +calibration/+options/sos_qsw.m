@@ -5,7 +5,7 @@
 % date: 2019-11-26
 % modified: 2019-01-23
 %
-classdef sos_qsw < calibration.options.common
+classdef sos_qsw < calibration.options.common_qsw
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -72,7 +72,7 @@ classdef sos_qsw < calibration.options.common
             end
 
             % constructor of superclass
-            objects@calibration.options.common( durations_window_t, indices_elements_tx, indices_elements_rx, varargin{ : } );
+            objects@calibration.options.common_qsw( durations_window_t, indices_elements_tx, indices_elements_rx, varargin{ : } );
 
             % iterate sound speed estimation options
             for index_object = 1:numel( objects )
@@ -87,4 +87,4 @@ classdef sos_qsw < calibration.options.common
 
 	end % methods
 
-end % classdef sos_qsw < calibration.options.common
+end % classdef sos_qsw < calibration.options.common_qsw

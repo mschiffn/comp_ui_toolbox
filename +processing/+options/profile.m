@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-08
-% modified: 2020-01-19
+% modified: 2020-02-02
 %
 classdef profile
 
@@ -13,8 +13,8 @@ classdef profile
 	properties (SetAccess = private)
 
         % independent properties
-        dim ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 1                       % projection dimension
-        interval ( 1, 1 ) math.interval { mustBeNonempty } = math.interval                              % projection interval
+        ROI ( 1, 1 ) math.orthotope { mustBeNonempty } = math.orthotope                                 % region of interest
+        dim ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 1                       % profile dimension (projection along remaining dimensions)
         N_zeros_add ( 1, 1 ) double { mustBeNonnegative, mustBeInteger, mustBeNonempty } = 50           % number of padded zeros
         factor_interp ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 20            % interpolation factor
         setting_window ( 1, 1 ) auxiliary.setting_window { mustBeNonempty } = auxiliary.setting_window	% window settings
@@ -29,51 +29,57 @@ classdef profile
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = profile( dims, intervals )
+        function objects = profile( ROIs, dims )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % property validation functions ensure valid dims
-            % ensure class math.interval
-            if ~isa( intervals, 'math.interval' )
-                errorStruct.message = 'intervals must be math.interval!';
-                errorStruct.identifier = 'profile:NoIntervals';
+            % ensure class math.orthotope
+            if ~isa( ROIs, 'math.orthotope' )
+                errorStruct.message = 'ROIs must be math.orthotope!';
+                errorStruct.identifier = 'profile:NoOrthotopes';
                 error( errorStruct );
             end
 
-            % ensure equal subclasses of physical_values.length
-            auxiliary.mustBeEqualSubclasses( 'physical_values.length', intervals.lb );
-
-            % multiple dims / single intervals
-            if ~isscalar( dims ) && isscalar( intervals )
-                intervals = repmat( intervals, size( dims ) );
+            % multiple ROIs / single dims
+            if ~isscalar( ROIs ) && isscalar( dims )
+                dims = repmat( dims, size( ROIs ) );
             end
 
-            % single dims / multiple intervals
-            if isscalar( dims ) && ~isscalar( intervals )
-                dims = repmat( dims, size( intervals ) );
+            % single ROIs / multiple dims
+            if isscalar( ROIs ) && ~isscalar( dims )
+                ROIs = repmat( ROIs, size( dims ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( dims, intervals );
+            auxiliary.mustBeEqualSize( ROIs, dims );
 
             %--------------------------------------------------------------
             % 2.) create profile options
             %--------------------------------------------------------------
             % repeat default profile options
-            objects = repmat( objects, size( dims ) );
+            objects = repmat( objects, size( ROIs ) );
 
             % iterate profile options
             for index_object = 1:numel( objects )
 
+                % ensure equal subclasses of physical_values.length
+                auxiliary.mustBeEqualSubclasses( 'physical_values.length', ROIs( index_object ).intervals.lb );
+
+                % ensure valid profile dimension
+                if ~ismember( dims( index_object ), ( 1:ROIs( index_object ).N_dimensions ) )
+                    errorStruct.message = sprintf( 'dims( %d ) must be greater than or equal to 1 but smaller than or equalt to %d!', index_object, ROIs( index_object ).N_dimensions );
+                    errorStruct.identifier = 'profile:InvalidDims';
+                    error( errorStruct );
+                end
+
                 % set independent properties
+                objects( index_object ).ROI = ROIs( index_object );
                 objects( index_object ).dim = dims( index_object );
-                objects( index_object ).interval = intervals( index_object );
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = profile( dims, intervals )
+        end % function objects = profile( ROIs, dims )
 
 	end % methods
 

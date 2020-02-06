@@ -1,4 +1,4 @@
-function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point( u_rx_tilde_qpw, xdc_array, states, options )
+function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_per_point_qpw( u_rx_tilde_qpw, xdc_array, states, options )
 %
 % estimate the pulse-echo responses for multiple point-like targets
 % (cf. [1])
@@ -8,7 +8,7 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point( 
 %
 % author: Martin F. Schiffner
 % date: 2019-06-13
-% modified: 2020-01-10
+% modified: 2020-02-06
 
 	%----------------------------------------------------------------------
 	% 1.) check arguments
@@ -16,14 +16,14 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point( 
 	% ensure class processing.signal_matrix
     if ~isa( u_rx_tilde_qpw, 'processing.signal_matrix' )
         errorStruct.message = 'u_rx_tilde_qpw must be processing.signal_matrix!';
-        errorStruct.identifier = 'estimate_PER_point:NoSignalMatrices';
+        errorStruct.identifier = 'estimate_per_point_qpw:NoSignalMatrices';
         error( errorStruct );
     end
 
 	% ensure class scattering.sequences.setups.transducers.array_planar_regular
 	if ~isa( xdc_array, 'scattering.sequences.setups.transducers.array_planar_regular' )
         errorStruct.message = 'xdc_array must be scattering.sequences.setups.transducers.array_planar_regular!';
-        errorStruct.identifier = 'estimate_PER_point:NoRegularPlanarArray';
+        errorStruct.identifier = 'estimate_per_point_qpw:NoRegularPlanarArray';
         error( errorStruct );
 	end
 
@@ -72,21 +72,21 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point( 
         % ensure valid number of signals
         if u_rx_tilde_qpw( index_data ).N_signals ~= xdc_array( index_data ).N_elements
             errorStruct.message = sprintf( 'The number of signals in u_rx_tilde_qpw( %d ) must equal the number of elements in xdc_array( %d )!', index_data, index_data );
-            errorStruct.identifier = 'estimate_PER_point:InvalidNumberOfSignals';
+            errorStruct.identifier = 'estimate_per_point_qpw:InvalidNumberOfSignals';
             error( errorStruct );
         end
 
         % ensure class calibration.state
         if ~isa( states{ index_data }, 'calibration.state' )
             errorStruct.message = 'states{ index_data } must be calibration.state!';
-            errorStruct.identifier = 'estimate_PER_point:NoStates';
+            errorStruct.identifier = 'estimate_per_point_qpw:NoStates';
             error( errorStruct );
         end
 
         % ensure class calibration.options
         if ~isa( options{ index_data }, 'calibration.options' )
             errorStruct.message = 'options{ index_data } must be calibration.options!';
-            errorStruct.identifier = 'estimate_PER_point:NoOptions';
+            errorStruct.identifier = 'estimate_per_point_qpw:NoOptions';
             error( errorStruct );
         end
 
@@ -247,4 +247,4 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point( 
         e_B_tilde_std_dev = e_B_tilde_std_dev{ 1 };
     end
 
-end % function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_PER_point( u_rx_tilde_qpw, xdc_array, states, options )
+end % function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_per_point_qpw( u_rx_tilde_qpw, xdc_array, states, options )

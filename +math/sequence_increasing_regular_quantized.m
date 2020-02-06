@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2020-01-21
+% modified: 2020-02-03
 %
 classdef sequence_increasing_regular_quantized < math.sequence_increasing_regular
 
@@ -132,13 +132,21 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing_regula
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass method cut_out ensures correct arguments
+            % ensure class math.sequence_increasing_regular_quantized
+            if ~isa( sequences, 'math.sequence_increasing_regular_quantized' )
+                errorStruct.message = 'sequences must be math.sequence_increasing_regular_quantized!';
+                errorStruct.identifier = 'cut_out:NoQuantizedRegularIncreasingSequences';
+                error( errorStruct );
+            end
+
+            % method cut_out in superclass ensures equal subclasses of physical_values.physical_quantity for sequences.members, lbs, ubs
+            % method cut_out in superclass ensures equal number of dimensions and sizes
 
             %--------------------------------------------------------------
             % 2.) perform cut out
             %--------------------------------------------------------------
-            % call cut out method in superclass
-            [ sequences, indicators ] = cut_out@math.sequence_increasing( sequences, lbs, ubs );
+            % call cut_out method in superclass
+            [ sequences, indicators ] = cut_out@math.sequence_increasing_regular( sequences, lbs, ubs );
 
             % ensure cell array for indicators
             if ~iscell( indicators )
@@ -172,7 +180,14 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing_regula
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass method remove_last ensures correct arguments
+            % ensure class math.sequence_increasing_regular_quantized
+            if ~isa( sequences, 'math.sequence_increasing_regular_quantized' )
+                errorStruct.message = 'sequences must be math.sequence_increasing_regular_quantized!';
+                errorStruct.identifier = 'remove_last:NoQuantizedRegularIncreasingSequences';
+                error( errorStruct );
+            end
+
+            % method remove_last in superclass ensures correct arguments
 
             %--------------------------------------------------------------
             % 2.) remove last members

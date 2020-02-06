@@ -761,7 +761,7 @@ classdef setup
                     e_1_minus_2 = mutual_unit_vectors( math.grid( setups( index_object ).xdc_array.positions_ctr ), h_transfer( index_object ).grid_FOV, indices_element{ index_object } );
                     e_1_minus_2 = repmat( abs( e_1_minus_2( :, :, 1:(end - 1) ) ), [ N_samples_f( index_object ), 1 ] );
 
-                    % exclude dimensions with more than one element
+                    % exclude dimensions with less than two array elements
                     indicator_dimensions = setups( index_object ).xdc_array.N_elements_axis > 1;
                     N_dimensions_lateral_relevant = sum( indicator_dimensions );
                     e_1_minus_2 = e_1_minus_2( :, :, indicator_dimensions );

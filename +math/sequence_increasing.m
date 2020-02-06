@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2020-01-11
+% modified: 2020-02-03
 %
 classdef sequence_increasing
 
@@ -259,7 +259,7 @@ classdef sequence_increasing
             % ensure class math.sequence_increasing
             if ~isa( sequences, 'math.sequence_increasing' )
                 errorStruct.message = 'sequences must be math.sequence_increasing!';
-                errorStruct.identifier = 'cut_out:NoSequence';
+                errorStruct.identifier = 'cut_out:NoIncreasingSequences';
                 error( errorStruct );
             end
 
@@ -319,7 +319,7 @@ classdef sequence_increasing
             % ensure class math.sequence_increasing
             if ~isa( sequences, 'math.sequence_increasing' )
                 errorStruct.message = 'sequences must be math.sequence_increasing!';
-                errorStruct.identifier = 'remove_last:NoSequence';
+                errorStruct.identifier = 'remove_last:NoIncreasingSequences';
                 error( errorStruct );
             end
 

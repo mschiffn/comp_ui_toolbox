@@ -6,11 +6,11 @@
 %    1,2,3,4 or 5." (see [1])
 %
 % REFERENCES:
-%   [1] WaveLab Version 850 ()
+%	[1] Orthogonal/MakeONFilter in WaveLab 850 (http://www-stat.stanford.edu/~wavelab)
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-01-28
+% modified: 2020-02-04
 %
 classdef coiflet < linear_transforms.wavelets.type
 

@@ -1158,6 +1158,23 @@ classdef operator_born < scattering.operator
             % iterate scattering operators
             for index_object = 1:numel( operators_born )
 
+                if isa( options( index_object ), 'regularization.options.dictionary_concatenated' )
+
+                    % specify cell array for linear transforms
+                    LTs{ index_object } = cell( options( index_object ).N_dictionaries, 1 );
+
+                    % iterate dictionaries
+                    for index_dictionary = 1:options( index_object ).N_dictionaries
+
+                        %
+                        LTs{ index_object }{ index_dictionary } = get_LTs( operators_born( index_object ), options( index_object ).dictionaries{ index_dictionary } );
+
+                    end % for index_dictionary = 1:options( index_object ).N_dictionaries
+
+                    LTs{ index_object } = linear_transforms.concatenations.vertical( LTs{ index_object }{ : } );
+
+                end % if isa( options( index_object ), 'regularization.options.dictionary_concatenated' )
+
                 if isa( options( index_object ), 'regularization.options.dictionary_identity' )
 
                     %------------------------------------------------------
@@ -1301,6 +1318,7 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % iii.) create dictionary
                     %------------------------------------------------------
+% TODO: intercept concatenated dictionary!
                     LTs{ index_operator }{ index_options } = get_LTs( operators_born_out{ index_operator }{ index_options }, options{ index_operator }( index_options ).dictionary );
 
                     % normalize sensing matrix

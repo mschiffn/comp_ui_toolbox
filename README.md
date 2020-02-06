@@ -5,6 +5,9 @@ the development and evaluation of
 computational ultrasound imaging (UI) methods for
 freely programmable UI systems.
 
+It solves complex image recovery problems by
+only a few lines of code.
+
 ## Motivation
 
 Advances in
@@ -66,13 +69,14 @@ popular simulation tools, e.g.
 Although
 the initialization of
 a scattering operator is relatively costly,
-its application is extremely fast.
+its evaluation is extremely fast.
 
 Typical applications include
 
 - regularized structured insonification,
 - coded excitation,
-- compressed sensing / sparse recovery, and
+- compressed sensing / sparse recovery,
+- statistical methods (Bayesian), and
 - machine learning.
 
 Usability and simplicity were crucial design paradigms.
@@ -109,7 +113,7 @@ only a few lines of code.
 - pulse-echo mode, i.e. no transmission measurements
 - half-space with rigid (Neumann) boundary
 - symmetric grids (future releases might support the fast multipole method (FMM) and adaptive cross approximation (ACA))
-- developed and tested in MATLAB R2018b / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
+- developed and tested in MATLAB R2018b, R2019a / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
 
 ## References
 

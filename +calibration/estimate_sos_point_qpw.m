@@ -1,17 +1,38 @@
-function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_SOS_point( u_rx_tilde_qpw, xdc_array, states, options )
+function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_sos_point_qpw( u_rx_tilde_qpw, xdc_array, states, options )
 %
-% estimate the average speed of sound using
-% the inter-element cross-correlations for
-% multiple point-like targets (cf. [1], [2])
+% Estimates the average speed of sound and the positions of
+% multiple point-like reflectors.
 %
-% [1] M. E. Anderson and G. E. Trahey, "The direct estimation of sound speed using pulse–echo ultrasound",
-%	  J. Acoust. Soc. Am., Nov. 1998, Vol. 104, No. 5, pp. 3099-3106
-% [2] S. W. Flax and M. O'Donnell, "Phase-Aberration Correction Using Signals From Point Reflectors and Diffuse Scatterers: Basic Principles",
-%     IEEE TUFFC, Vol. 35, No. 6, Nov. 1988, pp. 758-767
+% The function analyzes
+% the times-of-flight of
+% the induced echoes using
+% the inter-element cross-correlations
+% (see [1], [2]).
+%
+% INPUT:
+%	u_rx_tilde_qpw = RF voltage signals obtained by a single QPW
+%   xdc_array = transducer array
+%   states = initial values of the average speed of sound and position of the ROI
+%   options = calibration.options.sos_qpw
+%
+% OUTPUT:
+%   states = corrected input states
+%   rel_RMSE = relative root mean-squared fitting error
+%
+% REQUIREMENTS:
+%	- MATLAB Optimization Toolbox
+%
+% REFERENCES:
+%	[1] S. W. Flax and M. O'Donnell, "Phase-Aberration Correction Using Signals From Point Reflectors and Diffuse Scatterers: Basic Principles",
+%       IEEE TUFFC, Vol. 35, No. 6, Nov. 1988, pp. 758-767
+%       DOI: 10.1109/58.9333
+%	[2] M. E. Anderson and G. E. Trahey, "The direct estimation of sound speed using pulse–echo ultrasound",
+%       J. Acoust. Soc. Am., Vol. 104, No. 5, Nov. 1998, pp. 3099-3106
+%       DOI: 10.1121/1.423889
 %
 % author: Martin F. Schiffner
 % date: 2014-09-20
-% modified: 2020-01-10
+% modified: 2020-02-04
 
     %----------------------------------------------------------------------
 	% 1.) check arguments
@@ -19,14 +40,14 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 	% ensure class processing.signal_matrix
 	if ~isa( u_rx_tilde_qpw, 'processing.signal_matrix' )
         errorStruct.message = 'u_rx_tilde_qpw must be processing.signal_matrix!';
-        errorStruct.identifier = 'estimate_SOS_point:NoSignalMatrices';
+        errorStruct.identifier = 'estimate_sos_point_qpw:NoSignalMatrices';
         error( errorStruct );
     end
 
     % ensure class scattering.sequences.setups.transducers.array_planar_regular
 	if ~isa( xdc_array, 'scattering.sequences.setups.transducers.array_planar_regular' )
         errorStruct.message = 'xdc_array must be scattering.sequences.setups.transducers.array_planar_regular!';
-        errorStruct.identifier = 'estimate_SOS_point:NoRegularPlanarArray';
+        errorStruct.identifier = 'estimate_sos_point_qpw:NoRegularPlanarArray';
         error( errorStruct );
     end
 
@@ -76,21 +97,21 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
         % ensure valid number of signals
         if u_rx_tilde_qpw( index_data ).N_signals ~= xdc_array( index_data ).N_elements
             errorStruct.message = sprintf( 'The number of signals in u_rx_tilde_qpw( %d ) must equal the number of elements in xdc_array( %d )!', index_data, index_data );
-            errorStruct.identifier = 'estimate_SOS_point:InvalidNumberOfSignals';
+            errorStruct.identifier = 'estimate_sos_point_qpw:InvalidNumberOfSignals';
             error( errorStruct );
         end
 
         % ensure class calibration.state
         if ~isa( states{ index_data }, 'calibration.state' )
             errorStruct.message = sprintf( 'states{ %d } must be calibration.state!', index_data );
-            errorStruct.identifier = 'estimate_SOS_point:NoStates';
+            errorStruct.identifier = 'estimate_sos_point_qpw:NoStates';
             error( errorStruct );
         end
 
         % ensure class calibration.options
         if ~isa( options{ index_data }, 'calibration.options' )
             errorStruct.message = sprintf( 'options{ %d } must be calibration.options!', index_data );
-            errorStruct.identifier = 'estimate_SOS_point:NoOptions';
+            errorStruct.identifier = 'estimate_sos_point_qpw:NoOptions';
             error( errorStruct );
         end
 
@@ -396,4 +417,4 @@ function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_
 
     end % function y = tof( theta, positions )
 
-end % function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_SOS_point( u_rx_tilde_qpw, xdc_array, states, options )
+end % function [ states, rel_RMSE, pulse_shape_mean, pulse_shape_std_dev ] = estimate_sos_point_qpw( u_rx_tilde_qpw, xdc_array, states, options )

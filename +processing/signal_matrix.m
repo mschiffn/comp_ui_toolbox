@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2020-01-16
+% modified: 2020-02-06
 %
 classdef signal_matrix
 
@@ -932,17 +932,6 @@ classdef signal_matrix
         end % function signal_matrices = sum( signal_matrices, varargin )
 
         %------------------------------------------------------------------
-% TODO: cross-correlation (overload xcorr method)
-        %------------------------------------------------------------------
-%         function varargout = xcorr( varargin )
-% 
-%             %--------------------------------------------------------------
-%             % 1.) check arguments
-%             %--------------------------------------------------------------
-%             
-%         end
-
-        %------------------------------------------------------------------
         % subsample
         %------------------------------------------------------------------
         function signal_matrices = subsample( signal_matrices, varargin )
@@ -1160,7 +1149,14 @@ classdef signal_matrix
         %------------------------------------------------------------------
         function energies = energy( signal_matrices )
 
-            % compute energy in samples
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % MATLAB ensures class processing.signal_matrix for signal_matrices
+
+            %--------------------------------------------------------------
+            % 2.) compute energy in samples
+            %--------------------------------------------------------------
             energies = reshape( cellfun( @( x ) norm( x( : ) )^2, { signal_matrices.samples } ), size( signal_matrices ) );
 
         end % function energies = energy( signal_matrices )
@@ -1170,13 +1166,24 @@ classdef signal_matrix
         %------------------------------------------------------------------
         function volumes = data_volume( signal_matrices )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % MATLAB ensures class processing.signal_matrix for signal_matrices
+
+            %--------------------------------------------------------------
+            % 2.) compute data volume
+            %--------------------------------------------------------------
             % initialize data volumes
             volumes = physical_values.byte( zeros( size( signal_matrices ) ) );
 
             % iterate signal matrices
             for index_object = 1:numel( signal_matrices )
 
+                % extract current samples
                 samples_act = signal_matrices( index_object ).samples;
+
+                % get information and extract date volume in bytes
                 S = whos( 'samples_act' );
                 volumes( index_object ) = physical_values.byte( S.bytes );
 

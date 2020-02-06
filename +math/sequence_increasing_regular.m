@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-11
-% modified: 2020-01-16
+% modified: 2020-02-03
 %
 classdef sequence_increasing_regular < math.sequence_increasing
 
@@ -118,6 +118,66 @@ classdef sequence_increasing_regular < math.sequence_increasing
             sequences = math.sequence_increasing_regular( offsets, deltas_int, N_members_int );
 
         end % function sequences = interpolate( sequences, factors_interp )
+
+        %------------------------------------------------------------------
+        % cut out subsequence
+        %------------------------------------------------------------------
+        function [ sequences, indicators ] = cut_out( sequences, lbs, ubs )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.sequence_increasing_regular
+            if ~isa( sequences, 'math.sequence_increasing_regular' )
+                errorStruct.message = 'sequences must be math.sequence_increasing_regular!';
+                errorStruct.identifier = 'cut_out:NoRegularIncreasingSequences';
+                error( errorStruct );
+            end
+
+            % method cut_out in superclass ensures equal subclasses of physical_values.physical_quantity for sequences.members, lbs, ubs
+            % method cut_out in superclass ensures equal number of dimensions and sizes
+
+            %--------------------------------------------------------------
+            % 2.) perform cut out
+            %--------------------------------------------------------------
+            % call cut_out method in superclass
+            [ sequences, indicators ] = cut_out@math.sequence_increasing( sequences, lbs, ubs );
+
+            % iterate sequences
+            for index_object = 1:numel( sequences )
+
+                % update offset
+                sequences( index_object ).offset = sequences( index_object ).members( 1 );
+
+            end % for index_object = 1:numel( sequences )
+
+        end % function [ sequences, indicators ] = cut_out( sequences, lbs, ubs )
+
+        %------------------------------------------------------------------
+        % unique deltas
+        %------------------------------------------------------------------
+        function deltas = unique_deltas( sequences )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.sequence_increasing_regular
+            if ~isa( sequences, 'math.sequence_increasing_regular' )
+                errorStruct.message = 'sequences must be math.sequence_increasing_regular!';
+                errorStruct.identifier = 'unique_deltas:NoRegularQuantizedSequence';
+                error( errorStruct );
+            end
+
+            % ensure equal subclasses of physical_values.physical_quantity
+            auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', sequences.delta );
+
+            %--------------------------------------------------------------
+            % 2.) unique deltas
+            %--------------------------------------------------------------
+            % extract unique deltas
+            deltas = unique( [ sequences.delta ] );
+
+        end % function deltas = unique_deltas( sequences )
 
     end % methods
 
