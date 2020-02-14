@@ -117,6 +117,6 @@ only a few lines of code.
 
 The physical models underlying this toolbox and exemplary images were published in:
 
-1. M. F. Schiffner, "Random Incident Waves for Fast Compressed Pulse-Echo Ultrasound Imaging", [![physics.med-ph:arXiv:1801.00205](https://img.shields.io/static/v1?label=physics.med--ph&message=arXiv%3A1801.00205&color=B31B1B&style=flat&logo=arXiv&logoWidth=40&link=http://left&link=http://right)](https://arxiv.org/abs/1801.00205 "Preprint on arXiv.org")
+1. M. F. Schiffner, "Random Incident Waves for Fast Compressed Pulse-Echo Ultrasound Imaging", [![physics.med-ph:arXiv:1801.00205](https://img.shields.io/static/v1?label=physics.med--ph&message=arXiv%3A1801.00205&color=B31B1B&style=flat&logoWidth=40&link=http://left&link=http://right)](https://arxiv.org/abs/1801.00205 "Preprint on arXiv.org")
 2. M. F. Schiffner and G. Schmitz, "Compensating the Combined Effects of Absorption and Dispersion in Plane Wave Pulse-Echo Ultrasound Imaging Using Sparse Recovery", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 573--576, [![DOI:10.1109/ULTSYM.2013.0148](https://img.shields.io/badge/DOI-10.1109%2FULTSYM.2013.0148-blue)](http://dx.doi.org/10.1109/ULTSYM.2013.0148)
 3. M. F. Schiffner and G. Schmitz, "The Separate Recovery of Spatial Fluctuations in Compressibility and Mass Density in Plane Wave Pulse-Echo Ultrasound Imaging", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 577--580, [![DOI:10.1109/ULTSYM.2013.0149](https://img.shields.io/badge/DOI-10.1109%2FULTSYM.2013.0149-blue)](http://dx.doi.org/10.1109/ULTSYM.2013.0149)
