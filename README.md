@@ -113,7 +113,7 @@ only a few lines of code.
 - symmetric grids (future releases might support the fast multipole method (FMM) and adaptive cross approximation (ACA))
 - developed and tested in MATLAB R2018b / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
 
-:notebook: ## References
+## References :notebook:
 
 The physical models underlying this toolbox and exemplary images were published in:
 
