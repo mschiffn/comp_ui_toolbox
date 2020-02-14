@@ -5,6 +5,10 @@ the development and evaluation of
 computational ultrasound imaging (UI) methods for
 freely programmable UI systems.
 
+[![GitHub](https://img.shields.io/github/license/mschiffn/comp_ui_toolbox)](https://github.com/mschiffn/comp_ui_toolbox/COPYING)
+
+![arXiv:1801.00205](https://img.shields.io/badge/physics.med--ph-arXiv%3A1801.00205-B31B1B)
+
 ## Motivation
 
 Advances in
