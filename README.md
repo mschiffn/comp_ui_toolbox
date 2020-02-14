@@ -1,11 +1,11 @@
 # Computational Ultrasound Imaging Toolbox for MATLAB
 
+[![GitHub](https://img.shields.io/github/license/mschiffn/comp_ui_toolbox)](https://github.com/mschiffn/comp_ui_toolbox/COPYING)
+
 This [MATLAB](https://mathworks.com/products/matlab.html) (The MathWorks, Inc., Natick, MA, USA) toolbox facilitates
 the development and evaluation of
 computational ultrasound imaging (UI) methods for
 freely programmable UI systems.
-
-[![GitHub](https://img.shields.io/github/license/mschiffn/comp_ui_toolbox)](https://github.com/mschiffn/comp_ui_toolbox/COPYING)
 
 ## Motivation
 
