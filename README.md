@@ -7,8 +7,6 @@ freely programmable UI systems.
 
 [![GitHub](https://img.shields.io/github/license/mschiffn/comp_ui_toolbox)](https://github.com/mschiffn/comp_ui_toolbox/COPYING)
 
-[![arXiv:1801.00205](https://img.shields.io/badge/physics.med--ph-arXiv%3A1801.00205-B31B1B)](https://arxiv.org/abs/1801.00205)
-
 ## Motivation
 
 Advances in
@@ -120,5 +118,6 @@ only a few lines of code.
 The physical models underlying this toolbox and exemplary images were published in:
 
 1. M. F. Schiffner, "Random Incident Waves for Fast Compressed Pulse-Echo Ultrasound Imaging", [arXiv:1801.00205](https://arxiv.org/abs/1801.00205) [physics.med-ph]
+[![arXiv:1801.00205](https://img.shields.io/badge/physics.med--ph-arXiv%3A1801.00205-B31B1B)](https://arxiv.org/abs/1801.00205)
 2. M. F. Schiffner and G. Schmitz, "Compensating the Combined Effects of Absorption and Dispersion in Plane Wave Pulse-Echo Ultrasound Imaging Using Sparse Recovery", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 573--576, DOI: [10.1109/ULTSYM.2013.0148](http://dx.doi.org/10.1109/ULTSYM.2013.0148)
 3. M. F. Schiffner and G. Schmitz, "The Separate Recovery of Spatial Fluctuations in Compressibility and Mass Density in Plane Wave Pulse-Echo Ultrasound Imaging", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 577--580, DOI: [10.1109/ULTSYM.2013.0149](http://dx.doi.org/10.1109/ULTSYM.2013.0149)
