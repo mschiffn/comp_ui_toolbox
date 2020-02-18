@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2020-02-17
+% modified: 2020-02-18
 %
 classdef (Abstract) operator
 
@@ -114,8 +114,8 @@ classdef (Abstract) operator
         % received energy (wrapper)
         %------------------------------------------------------------------
         function E_M = energy_rx( operators, options )
-% TODO: own options class? -> normalization is not required!
-% TODO: make get_configs a method of options class
+% TODO: own options class? -> normalization is not required! -> implement get_configs for this class
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -181,12 +181,12 @@ classdef (Abstract) operator
                     % i.) create configuration (deactivate normalization)
                     %------------------------------------------------------
                     options_no_norm = set_properties( options{ index_operator }( index_options ), regularization.normalizations.off );
-                    [ operator_born_act, LT_act, ~, LTs_tgc_measurement ] = get_configs( operators( index_operator ), options_no_norm );
+                    [ operator_born_act, LT_dict_act, ~, LTs_tgc_measurement ] = get_configs( options_no_norm, operators( index_operator ) );
 
                     %------------------------------------------------------
                     % ii.) call received energy (scalar; decomposition)
                     %------------------------------------------------------
-                    E_M{ index_operator }{ index_options } = energy_rx_scalar( operator_born_act, LT_act, LTs_tgc_measurement );
+                    E_M{ index_operator }{ index_options } = energy_rx_scalar( operator_born_act, LT_dict_act, LTs_tgc_measurement );
 
                 end % for index_options = 1:numel( options{ index_operator } )
 
@@ -454,13 +454,13 @@ classdef (Abstract) operator
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods (abstract, protected, and hidden)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Abstract, Access = protected, Hidden)
+	methods (Abstract, Hidden)
 
         %------------------------------------------------------------------
         % received energy (scalar; decomposition)
         %------------------------------------------------------------------
         E_M = energy_rx_scalar( operator, LT, LTs_tgc_measurement )
 
-	end % methods (Abstract, Access = protected, Hidden)
+	end % methods (Abstract, Hidden)
 
 end % classdef (Abstract) operator

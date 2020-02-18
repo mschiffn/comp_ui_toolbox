@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2020-02-17
+% modified: 2020-02-18
 %
 classdef lq_minimization < regularization.options.common
 
@@ -140,6 +140,10 @@ classdef lq_minimization < regularization.options.common
 
         end % function show( options )
 
+        %------------------------------------------------------------------
+        % execute
+        %------------------------------------------------------------------
+        
 	end % methods
 
 end % classdef lq_minimization < regularization.options.common

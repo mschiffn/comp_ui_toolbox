@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-02-17
+% modified: 2020-02-18
 %
 classdef common
 
@@ -177,6 +177,103 @@ classdef common
             end % for index_arg = 1:numel( varargin )
 
         end % function common = set_properties( common, varargin )
+
+        %------------------------------------------------------------------
+        % create configurations
+        %------------------------------------------------------------------
+        function [ operators_born, LTs_dict, LTs_tgc, LTs_tgc_measurement ] = get_configs( options, operators_born )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.common
+            if ~isa( options, 'regularization.options.common' )
+                errorStruct.message = 'options must be regularization.options.common!';
+                errorStruct.identifier = 'get_configs:NoCommonOptions';
+                error( errorStruct );
+            end
+
+            % ensure class scattering.operator_born
+            if ~isa( operators_born, 'scattering.operator_born' )
+                errorStruct.message = 'operators_born must be scattering.operator_born!';
+                errorStruct.identifier = 'get_configs:NoOperatorsBorn';
+                error( errorStruct );
+            end
+
+            % multiple options / single operators_born
+            if ~isscalar( options ) && isscalar( operators_born )
+                operators_born = repmat( operators_born, size( options ) );
+            end
+
+            % single options / multiple operators_born
+            if isscalar( options ) && ~isscalar( operators_born )
+                options = repmat( options, size( operators_born ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( options, operators_born );
+
+            %--------------------------------------------------------------
+            % 2.) create configurations
+            %--------------------------------------------------------------
+            % set momentary scattering operator options
+            operators_born = set_options_momentary( operators_born, reshape( [ options.momentary ], size( options ) ) );
+
+            % specify cell arrays
+            LTs_dict = cell( size( options ) );
+            LTs_tgc = cell( size( options ) );
+            LTs_tgc_measurement = cell( size( options ) );
+
+            % iterate common regularization options
+            for index_options = 1:numel( options )
+
+                %----------------------------------------------------------
+                % a) time gain compensation (TGC)
+                %----------------------------------------------------------
+                [ LTs_tgc{ index_options }, LTs_tgc_measurement{ index_options } ] = get_LTs( options( index_options ).tgc, operators_born( index_options ) );
+
+                %----------------------------------------------------------
+                % b) create dictionary
+                %----------------------------------------------------------
+                LTs_dict{ index_options } = get_LTs( options( index_options ).dictionary, operators_born( index_options ) );
+
+                %----------------------------------------------------------
+                % c) apply normalization
+                %----------------------------------------------------------
+                if ~isa( options( index_options ).normalization, 'regularization.normalizations.off' )
+
+                    % compute received energies
+                    E_M = energy_rx_scalar( operators_born( index_options ), LTs_dict{ index_options }, LTs_tgc_measurement{ index_options } );
+
+                    % create inverse weighting matrix
+                    LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
+
+                    % apply normalization settings
+                    LT_weighting_inv = apply( options( index_options ).normalization, LT_weighting_inv );
+
+                    % composition with non-canonical linear transform
+% TODO: neglect identity in composition
+                    if ~isa( LTs_dict{ index_options }, 'linear_transforms.identity' )
+                        LT_weighting_inv = linear_transforms.composition( LT_weighting_inv, LTs_dict{ index_options } );
+                    end
+
+                    % update dictionary
+                    LTs_dict{ index_options } = LT_weighting_inv;
+
+                end % if ~isa( options( index_options ).normalization, 'regularization.normalizations.off' )
+
+            end % for index_options = 1:numel( options )
+
+            % convert cell arrays to arrays
+            LTs_tgc = reshape( cat( 1, LTs_tgc{ : } ), size( options ) );
+
+            % avoid cell arrays for single options
+            if isscalar( options )
+                LTs_dict = LTs_dict{ 1 };
+                LTs_tgc_measurement = LTs_tgc_measurement{ 1 };
+            end
+
+        end % function [ operators_born, LTs_dict, LTs_tgc, LTs_tgc_measurement ] = get_configs( options, operators_born )
 
 	end % methods
 

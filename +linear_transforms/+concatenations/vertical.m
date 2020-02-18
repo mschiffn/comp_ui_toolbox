@@ -5,6 +5,7 @@
 % date: 2016-08-10
 % modified: 2020-01-29
 %
+% TODO: < linear_transforms.concatenations.concatenation
 classdef vertical < linear_transforms.linear_transform_matrix
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

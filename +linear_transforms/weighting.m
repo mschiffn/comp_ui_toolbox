@@ -3,13 +3,13 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-02-17
+% modified: 2020-02-18
 %
 classdef weighting < linear_transforms.linear_transform_matrix
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties (SetAccess = private)
 
         % independent properties
@@ -18,11 +18,11 @@ classdef weighting < linear_transforms.linear_transform_matrix
         % dependent properties
         weights_conj ( :, 1 )
 
-    end % properties
+	end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
@@ -35,7 +35,7 @@ classdef weighting < linear_transforms.linear_transform_matrix
             %--------------------------------------------------------------
             % ensure cell array for weights
             if ~iscell( weights )
-                weights = mat2cell( weights, size( weights, 1 ), ones( 1, size( weights, 2 ) ) );
+                weights = { weights };
             end
 
             %--------------------------------------------------------------
@@ -50,10 +50,10 @@ classdef weighting < linear_transforms.linear_transform_matrix
             % iterate diagonal weighting matrices
             for index_object = 1:numel( weights )
 
-                % ensure numeric weights
+                % ensure numeric array for weights{ index_object }
                 if ~isnumeric( weights{ index_object } )
-                    errorStruct.message = sprintf( 'weights{ %d } must be numeric!', index_object );
-                    errorStruct.identifier = 'weighting:InvalidWeights';
+                    errorStruct.message = sprintf( 'weights{ %d } must be a numeric array!', index_object );
+                    errorStruct.identifier = 'weighting:NoNumericArray';
                     error( errorStruct );
                 end
 
@@ -75,65 +75,60 @@ classdef weighting < linear_transforms.linear_transform_matrix
         end % function objects = weighting( weights )
 
         %------------------------------------------------------------------
-        % normalization
+        % threshold
         %------------------------------------------------------------------
-        function LTs = normalize( LTs, options )
-% TODO: move to regularizations.normalizations.normalization
+        function [ LTs, N_threshold ] = threshold( LTs, xis )
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class linear_transforms.weighting
             if ~isa( LTs, 'linear_transforms.weighting' )
                 errorStruct.message = 'LTs must be linear_transforms.weighting!';
-                errorStruct.identifier = 'normalize:NoWeightings';
+                errorStruct.identifier = 'threshold:NoWeighting';
                 error( errorStruct );
             end
 
-            % ensure class regularization.normalizations.normalization
-            if ~isa( options, 'regularization.normalizations.normalization' )
-                errorStruct.message = 'options must be regularization.normalizations.normalization!';
-                errorStruct.identifier = 'normalize:NoNormalizations';
-                error( errorStruct );
+            % ensure valid xis ( 0; 1 ]
+            mustBePositive( xis );
+            mustBeLessThanOrEqual( xis, 1 );
+
+            % multiple LTs / single xis
+            if ~isscalar( LTs ) && isscalar( xis )
+                xis = repmat( xis, size( LTs ) );
+            end
+
+            % single LTs / multiple xis
+            if isscalar( LTs ) && ~isscalar( xis )
+                LTs = repmat( LTs, size( xis ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, options );
+            auxiliary.mustBeEqualSize( LTs, xis );
 
             %--------------------------------------------------------------
-            % 2.) apply normalization
+            % 2.) apply thresholds to diagonal weighting matrices
             %--------------------------------------------------------------
-            % iterate linear transforms
+            % initialize N_threshold with zeros
+            N_threshold = zeros( size( LTs ) );
+
+            % iterate diagonal weighting matrices
             for index_object = 1:numel( LTs )
 
-                % check type of normalization
-                if isa( options( index_object ), 'regularization.normalizations.off' )
+                % compute threshold
+                one_over_lb = min( LTs( index_object ).weights ) / xis( index_object );
 
-                    %------------------------------------------------------
-                    % a) no normalization
-                    %------------------------------------------------------
-                    % do not modify linear transform
+                % detect invalid weights
+                indicator = LTs( index_object ).weights > one_over_lb;
+                N_threshold( index_object ) = sum( indicator );
 
-                elseif isa( options( index_object ), 'regularization.normalizations.threshold' )
-
-                    %------------------------------------------------------
-                    % b) apply threshold to inverse weighting matrix
-                    %------------------------------------------------------
-                    [ LTs( index_object ), N_threshold ] = threshold( LTs( index_object ), options( index_object ).value );
-
-                else
-
-                    %------------------------------------------------------
-                    % c) unknown normalization settings
-                    %------------------------------------------------------
-                    errorStruct.message = sprintf( 'Class of options( %d ) is unknown!', index_object );
-                    errorStruct.identifier = 'normalize:UnknownOptionsClass';
-                    error( errorStruct );
-
-                end % if isa( options( index_object ), 'regularization.normalizations.off' )
+                % apply threshold
+                LTs( index_object ).weights( indicator ) = one_over_lb;
+                LTs( index_object ).weights_conj = conj( LTs( index_object ).weights );
 
             end % for index_object = 1:numel( LTs )
 
-        end % function LTs = normalize( LTs, options )
+        end % function [ LTs, N_threshold ] = threshold( LTs, xis )
 
 	end % methods
 
@@ -221,68 +216,5 @@ classdef weighting < linear_transforms.linear_transform_matrix
         end % function y = inverse_transform_matrix( LT, x )
 
 	end % methods (Access = protected, Hidden)
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% methods (private, hidden)
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Hidden)
-
-        %------------------------------------------------------------------
-        % threshold
-        %------------------------------------------------------------------
-        function [ LTs, N_threshold ] = threshold( LTs, xis )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.weighting
-            if ~isa( LTs, 'linear_transforms.weighting' )
-                errorStruct.message = 'LTs must be linear_transforms.weighting!';
-                errorStruct.identifier = 'threshold:NoWeighting';
-                error( errorStruct );
-            end
-
-            % ensure valid xis ( 0; 1 ]
-            mustBePositive( xis );
-            mustBeLessThanOrEqual( xis, 1 );
-
-            % multiple LTs / single xis
-            if ~isscalar( LTs ) && isscalar( xis )
-                xis = repmat( xis, size( LTs ) );
-            end
-
-            % single LTs / multiple xis
-            if isscalar( LTs ) && ~isscalar( xis )
-                LTs = repmat( LTs, size( xis ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, xis );
-
-            %--------------------------------------------------------------
-            % 2.) apply thresholds to diagonal weighting matrices
-            %--------------------------------------------------------------
-            % initialize N_threshold with zeros
-            N_threshold = zeros( size( LTs ) );
-
-            % iterate diagonal weighting matrices
-            for index_object = 1:numel( LTs )
-
-                % compute threshold
-                one_over_lb = min( LTs( index_object ).weights ) / xis( index_object );
-
-                % detect invalid weights
-                indicator = LTs( index_object ).weights > one_over_lb;
-                N_threshold( index_object ) = sum( indicator );
-
-                % apply threshold
-                LTs( index_object ).weights( indicator ) = one_over_lb;
-                LTs( index_object ).weights_conj = conj( LTs( index_object ).weights );
-
-            end % for index_object = 1:numel( LTs )
-
-        end % function [ LTs, N_threshold ] = threshold( LTs, xis )
-
-	end % methods (Hidden)
 
 end % classdef weighting < linear_transforms.linear_transform_matrix

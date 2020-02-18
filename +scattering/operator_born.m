@@ -328,12 +328,12 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % i.) create configuration
                     %------------------------------------------------------
-                    [ operator_born_act, LT_act, LT_tgc_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
+                    [ operator_born_act, LT_dict_act, LT_tgc_act ] = get_configs( options{ index_operator }( index_options ), operators_born( index_operator ) );
 
                     %------------------------------------------------------
                     % ii.) quick forward scattering
                     %------------------------------------------------------
-                    u_M{ index_operator }{ index_options } = forward_quick( operator_born_act, fluctuations{ index_operator }, LT_act, LT_tgc_act );
+                    u_M{ index_operator }{ index_options } = forward_quick( operator_born_act, fluctuations{ index_operator }, LT_dict_act, LT_tgc_act );
                     u_M{ index_operator }{ index_options } = physical_values.volt( u_M{ index_operator }{ index_options } );
 
                     % create signals or signal matrices
@@ -443,7 +443,7 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % i.) create configuration
                     %------------------------------------------------------
-                    [ operator_born_act, LT_dict_act, LT_tgc_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
+                    [ operator_born_act, LT_dict_act, LT_tgc_act ] = get_configs( options{ index_operator }( index_options ), operators_born( index_operator ) );
 
                     %------------------------------------------------------
                     % ii.) create mixed voltage signals
@@ -583,7 +583,7 @@ classdef operator_born < scattering.operator
                     %------------------------------------------------------
                     % i.) create configuration
                     %------------------------------------------------------
-                    [ operator_born_act, LT_dict_act, LT_tgc_act ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
+                    [ operator_born_act, LT_dict_act, LT_tgc_act ] = get_configs( options{ index_operator }( index_options ), operators_born( index_operator ) );
 
                     %------------------------------------------------------
                     % ii.) create coefficient vectors
@@ -767,143 +767,12 @@ classdef operator_born < scattering.operator
 
         end % function u_M = format_voltages( operators_born, u_M )
 
-        %------------------------------------------------------------------
-        % create configurations
-        %------------------------------------------------------------------
-        function [ operators_born_out, LTs, LTs_tgc, LTs_tgc_measurement ] = get_configs( operators_born, options )
-% TODO: move to regularization.options.common?
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class scattering.operator_born
-            if ~isa( operators_born, 'scattering.operator_born' )
-                errorStruct.message = 'operators_born must be scattering.operator_born!';
-                errorStruct.identifier = 'get_configs:NoOperatorsBorn';
-                error( errorStruct );
-            end
-
-            % ensure nonempty options
-            if nargin < 2 || isempty( options )
-                options = regularization.options.common;
-            end
-
-            % ensure cell array for options
-            if ~iscell( options )
-                options = { options };
-            end
-
-            % multiple operators_born / single options
-            if ~isscalar( operators_born ) && isscalar( options )
-                options = repmat( options, size( operators_born ) );
-            end
-
-            % single operators_born / multiple options
-            if isscalar( operators_born ) && ~isscalar( options )
-                operators_born = repmat( operators_born, size( options ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators_born, options );
-
-            %--------------------------------------------------------------
-            % 2.) create configurations
-            %--------------------------------------------------------------
-            % specify cell arrays
-            operators_born_out = cell( size( operators_born ) );
-            LTs = cell( size( operators_born ) );
-            LTs_tgc = cell( size( operators_born ) );
-            LTs_tgc_measurement = cell( size( operators_born ) );
-
-            % iterate scattering operators
-            for index_operator = 1:numel( operators_born )
-
-                %----------------------------------------------------------
-                % a) check arguments
-                %----------------------------------------------------------
-                % ensure class regularization.options.common
-                if ~isa( options{ index_operator }, 'regularization.options.common' )
-                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
-                    errorStruct.identifier = 'get_configs:NoCommonOptions';
-                    error( errorStruct );
-                end
-
-                %----------------------------------------------------------
-                % b) process options
-                %----------------------------------------------------------
-                % set momentary scattering operator options
-                operators_born_out{ index_operator } = set_options_momentary( operators_born( index_operator ), reshape( [ options{ index_operator }.momentary ], size( options{ index_operator } ) ) );
-
-                % specify cell arrays
-                LTs{ index_operator } = cell( size( options{ index_operator } ) );
-                LTs_tgc{ index_operator } = cell( size( options{ index_operator } ) );
-                LTs_tgc_measurement{ index_operator } = cell( size( options{ index_operator } ) );
-
-                % iterate options
-                for index_options = 1:numel( options{ index_operator } )
-
-                    %------------------------------------------------------
-                    % i.) time gain compensation (TGC)
-                    %------------------------------------------------------
-                    [ LTs_tgc{ index_operator }{ index_options }, LTs_tgc_measurement{ index_operator }{ index_options } ] = get_LTs( options{ index_operator }( index_options ).tgc, operators_born_out{ index_operator }( index_options ) );
-
-                    %------------------------------------------------------
-                    % ii.) create dictionary
-                    %------------------------------------------------------
-                    LTs{ index_operator }{ index_options } = get_LTs( options{ index_operator }( index_options ).dictionary, operators_born_out{ index_operator }( index_options ) );
-
-                    % normalize sensing matrix
-% TODO: move to normalization
-                    if ~isa( options{ index_operator }( index_options ).normalization, 'regularization.normalizations.off' )
-
-                        % compute received energies
-                        E_M = energy_rx_scalar( operators_born_out{ index_operator }( index_options ), LTs{ index_operator }{ index_options }, LTs_tgc_measurement{ index_operator }{ index_options } );
-
-                        % create weighting matrix
-                        LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
-
-                        % apply normalization settings
-                        LT_weighting_inv = normalize( LT_weighting_inv, options{ index_operator }( index_options ).normalization );
-
-                        % composition with non-canonical linear transform
-% TODO: neglect identity in composition
-                        if ~isa( LTs{ index_operator }{ index_options }, 'linear_transforms.identity' )
-                            LT_weighting_inv = linear_transforms.composition( LT_weighting_inv, LTs{ index_operator }{ index_options } );
-                        end
-
-                        % update dictionary
-                        LTs{ index_operator }{ index_options } = LT_weighting_inv;
-
-                    end % if ~isa( options{ index_operator }( index_options ).normalization, 'regularization.normalizations.off' )
-
-                end % for index_options = 1:numel( options{ index_operator } )
-
-                % convert cell arrays to arrays
-                LTs_tgc{ index_operator } = reshape( cat( 1, LTs_tgc{ index_operator }{ : } ), size( options{ index_operator } ) );
-
-                % avoid cell array for single options{ index_operator }
-                if isscalar( options{ index_operator } )
-                    LTs{ index_operator } = LTs{ index_operator }{ 1 };
-                    LTs_tgc_measurement{ index_operator } = LTs_tgc_measurement{ index_operator }{ 1 };
-                end
-
-            end % for index_operator = 1:numel( operators_born )
-
-            % avoid cell arrays for single operators_born
-            if isscalar( operators_born )
-                operators_born_out = operators_born_out{ 1 };
-                LTs = LTs{ 1 };
-                LTs_tgc = LTs_tgc{ 1 };
-                LTs_tgc_measurement = LTs_tgc_measurement{ 1 };
-            end
-
-        end % function [ operators_born_out, LTs, LTs_tgc, LTs_tgc_measurement ] = get_configs( operators_born, options )
-
 	end % methods
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods (protected and hidden)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Access = protected, Hidden)
+	methods (Hidden)
 
         %------------------------------------------------------------------
         % received energy (scalar; decomposition)
@@ -1015,7 +884,7 @@ classdef operator_born < scattering.operator
 
         end % function E_M = energy_rx_scalar( operator_born, LT, LTs_tgc_measurement )
 
-	end % methods (Access = protected, Hidden)
+	end % methods (Hidden)
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods (private and hidden)

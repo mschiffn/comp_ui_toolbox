@@ -5,6 +5,7 @@
 % date: 2016-08-13
 % modified: 2020-01-30
 %
+% TODO: < linear_transforms.concatenations.concatenation
 classdef diagonal < linear_transforms.linear_transform_matrix
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

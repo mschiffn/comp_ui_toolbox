@@ -4,9 +4,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 %
 % author: Martin F. Schiffner
 % date: 2015-06-01
-% modified: 2020-02-14
+% modified: 2020-02-18
 %
-
+% TODO: move to regularization.options.lq_minimization!
 	% print status
 	time_start = tic;
 	str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
@@ -55,16 +55,6 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 	%----------------------------------------------------------------------
 	% 2.) process scattering operators
 	%----------------------------------------------------------------------
-	% create sensing matrices
-	[ operators_born_configured, LTs, LTs_tgc ] = get_configs( operators_born, options );
-
-	% ensure cell arrays
-	if ~iscell( operators_born_configured )
-        operators_born_configured = { operators_born_configured };
-        LTs = { LTs };
-        LTs_tgc = { LTs_tgc };
-	end
-
 	% specify cell arrays
 	gamma_recon = cell( size( operators_born ) );
 	theta_recon_normed = cell( size( operators_born ) );
@@ -119,16 +109,9 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
             show( options{ index_operator }( index_options ) );
 
             %--------------------------------------------------------------
-            % i.) extract current configuration
+            % i.) create configuration
             %--------------------------------------------------------------
-            % ensure cell arrays
-            if ~iscell( LTs{ index_operator } )
-                LTs{ index_operator } = LTs( index_operator );
-            end
-
-            operator_born_act = operators_born_configured{ index_operator }( index_options );
-            LT_act = LTs{ index_operator }{ index_options };
-            LT_tgc_act = LTs_tgc{ index_operator }( index_options );
+            [ operator_born_act, LT_dict_act, LT_tgc_act ] = get_configs( options{ index_operator }( index_options ), operators_born( index_operator ) );
 
             %--------------------------------------------------------------
             % ii.) create mixed voltage signals
@@ -146,15 +129,11 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
             %--------------------------------------------------------------
             % iii.) define anonymous function for sensing matrix
             %--------------------------------------------------------------
-            op_A_bar = @( x, mode ) combined_quick( operator_born_act, mode, x, LT_act, LT_tgc_act );
+            op_A_bar = @( x, mode ) combined_quick( operator_born_act, mode, x, LT_dict_act, LT_tgc_act );
 
             %--------------------------------------------------------------
             % iv.) recover transform coefficients and material fluctuations
             %--------------------------------------------------------------
-            % get previous state
-            % requirements: same operator_born_act!, same LT_act, same LT_tgc_act
-% TODO: warm start? state_start( options{ index_operator }( index_options ).algorithm, options{ index_operator }( index_options ).warm_start )
-
             % execute algorithm
             [ theta_recon_normed{ index_operator }{ index_options }, ...
               u_M_act_vect_tgc_normed_res, ...
@@ -162,7 +141,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
             = execute( options{ index_operator }( index_options ).algorithm, op_A_bar, u_M_act_vect_tgc_normed );
 
             % invert normalization and apply adjoint linear transform
-            gamma_recon{ index_operator }{ index_options } = adjoint_transform( LT_act, theta_recon_normed{ index_operator }{ index_options } ) * u_M_act_vect_tgc_norm;
+            gamma_recon{ index_operator }{ index_options } = adjoint_transform( LT_dict_act, theta_recon_normed{ index_operator }{ index_options } ) * u_M_act_vect_tgc_norm;
 
             % format residual mixed RF voltage signals
             u_M_res{ index_operator }{ index_options } = format_voltages( operator_born_act, u_M_act_vect_tgc_normed_res * u_M_act_vect_tgc_norm );
