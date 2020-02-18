@@ -4,7 +4,7 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 %
 % author: Martin F. Schiffner
 % date: 2015-06-01
-% modified: 2020-01-10
+% modified: 2020-02-14
 %
 
 	% print status
@@ -28,14 +28,16 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
     end
 
 	% ensure nonempty options
-	if nargin <= 2 || isempty( options )
+	if nargin < 3 || isempty( options )
         options = regularization.options.lq_minimization;
-	end
+    end
 
 	% ensure cell array for options
 	if ~iscell( options )
         options = { options };
     end
+
+	% method get_configs ensures class regularization.options.common for options
 
 	% multiple operators_born / single options
 	if ~isscalar( operators_born ) && isscalar( options )
@@ -53,10 +55,20 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 	%----------------------------------------------------------------------
 	% 2.) process scattering operators
 	%----------------------------------------------------------------------
+	% create sensing matrices
+	[ operators_born_configured, LTs, LTs_tgc ] = get_configs( operators_born, options );
+
+	% ensure cell arrays
+	if ~iscell( operators_born_configured )
+        operators_born_configured = { operators_born_configured };
+        LTs = { LTs };
+        LTs_tgc = { LTs_tgc };
+	end
+
 	% specify cell arrays
 	gamma_recon = cell( size( operators_born ) );
 	theta_recon_normed = cell( size( operators_born ) );
-    u_M_res = cell( size( operators_born ) );
+	u_M_res = cell( size( operators_born ) );
 	info = cell( size( operators_born ) );
 
 	% iterate scattering operators
@@ -103,10 +115,20 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
         % iterate options
         for index_options = 1:numel( options{ index_operator } )
 
+            % display options
+            show( options{ index_operator }( index_options ) );
+
             %--------------------------------------------------------------
-            % i.) create configuration
+            % i.) extract current configuration
             %--------------------------------------------------------------
-            [ operator_born_act, LT_act, LT_tgc ] = get_configs( operators_born( index_operator ), options{ index_operator }( index_options ) );
+            % ensure cell arrays
+            if ~iscell( LTs{ index_operator } )
+                LTs{ index_operator } = LTs( index_operator );
+            end
+
+            operator_born_act = operators_born_configured{ index_operator }( index_options );
+            LT_act = LTs{ index_operator }{ index_options };
+            LT_tgc_act = LTs_tgc{ index_operator }( index_options );
 
             %--------------------------------------------------------------
             % ii.) create mixed voltage signals
@@ -117,227 +139,79 @@ function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( o
 
             % apply TGC and normalize mixed voltage signals
             u_M_act_vect = return_vector( u_M_act );
-            u_M_act_vect_tgc = forward_transform( LT_tgc, u_M_act_vect );
+            u_M_act_vect_tgc = forward_transform( LT_tgc_act, u_M_act_vect );
             u_M_act_vect_tgc_norm = norm( u_M_act_vect_tgc );
             u_M_act_vect_tgc_normed = u_M_act_vect_tgc / u_M_act_vect_tgc_norm;
 
             %--------------------------------------------------------------
             % iii.) define anonymous function for sensing matrix
             %--------------------------------------------------------------
-            op_A_bar = @( x, mode ) combined_quick( operator_born_act, mode, x, LT_act, LT_tgc );
+            op_A_bar = @( x, mode ) combined_quick( operator_born_act, mode, x, LT_act, LT_tgc_act );
 
             %--------------------------------------------------------------
-            % iv.) execute algorithm
+            % iv.) recover transform coefficients and material fluctuations
             %--------------------------------------------------------------
-            if isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_spgl1' )
+            % get previous state
+            % requirements: same operator_born_act!, same LT_act, same LT_tgc_act
+% TODO: warm start? state_start( options{ index_operator }( index_options ).algorithm, options{ index_operator }( index_options ).warm_start )
 
-                %----------------------------------------------------------
-                % a) SPGL1: l2- or l1-minimization (convex)
-                %----------------------------------------------------------
-                % create SPGL1 options structure
-                spgl_opts = spgSetParms( 'verbosity', 1, 'optTol', 1e-4, 'iterations', options{ index_operator }( index_options ).algorithm.N_iterations_max );
+            % execute algorithm
+            [ theta_recon_normed{ index_operator }{ index_options }, ...
+              u_M_act_vect_tgc_normed_res, ...
+              info{ index_operator }{ index_options } ] ...
+            = execute( options{ index_operator }( index_options ).algorithm, op_A_bar, u_M_act_vect_tgc_normed );
 
-                % alternative projection methods for l2-minimization
-                if options{ index_operator }( index_options ).algorithm.q == 2
-                    spgl_opts.project = @( x, weight, tau ) regularization.NormL2_project( x, weight, tau );
-                    spgl_opts.primal_norm = @( x, weight ) regularization.NormL2_primal( x, weight );
-                    spgl_opts.dual_norm = @( x, weight ) regularization.NormL2_dual( x, weight );
-                end
+            % invert normalization and apply adjoint linear transform
+            gamma_recon{ index_operator }{ index_options } = adjoint_transform( LT_act, theta_recon_normed{ index_operator }{ index_options } ) * u_M_act_vect_tgc_norm;
 
-                % specify start vector
-                indicator_q = index_options > 1 && isa( options{ index_operator }( index_options - 1 ).algorithm, 'regularization.options.algorithm_spgl1' ) && isequal( options{ index_operator }( index_options ).algorithm.q, options{ index_operator }( index_options - 1 ).algorithm.q );
-                indicator_rel_RMSE = index_options > 1 && options{ index_operator }( index_options ).algorithm.rel_RMSE < options{ index_operator }( index_options - 1 ).algorithm.rel_RMSE;
-
-                if ~indicator_q || ~indicator_rel_RMSE || isa( options{ index_operator }( index_options ).warm_start, 'regularization.options.warm_start_off' )
-
-                    % A) inactive or impossible warm start
-                    x_0 = [];
-                    tau = [];
-
-                elseif isa( options{ index_operator }( index_options ).warm_start, 'regularization.options.warm_start_previous' )
-
-% TODO: might cause problems if normalization changes!
-                    % B) use result for previous options for warm start
-                    x_0 = theta_recon_normed{ index_operator }{ index_options - 1 };
-                    tau = info{ index_operator }{ index_options - 1 }.tau;
-
-                else
-
-                    % C) invalid warm start settings
-                    errorStruct.message = sprintf( 'Options{ %d }( %d ).warm_start is invalid for SPGL1!', index_operator, index_options );
-                    errorStruct.identifier = 'lq_minimization:InvalidWarmStartSetting';
-                    error( errorStruct );
-
-                end % if ~indicator_q || ~indicator_rel_RMSE || isa( options{ index_operator }( index_options ).warm_start, 'regularization.options.warm_start_off' )
-
-                % call SPGL1
-                [ theta_recon_normed{ index_operator }{ index_options }, ...
-                  u_M_act_vect_tgc_normed_res, ~, ...
-                  info{ index_operator }{ index_options } ] ...
-                = spgl1( op_A_bar, u_M_act_vect_tgc_normed, tau, options{ index_operator }( index_options ).algorithm.rel_RMSE, x_0, spgl_opts );
-
-            elseif isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_omp' )
-
-                %----------------------------------------------------------
-                % b) OMP: l0-minimization (nonconvex)
-                %----------------------------------------------------------
-                % specify start vector
-                if isa( options{ index_operator }( index_options ).warm_start, 'regularization.options.warm_start_off' )
-
-                    % A) inactive or impossible warm start
-                    x_0 = [];
-                    atoms = [];
-
-                else
-
-                    % B) invalid warm start settings
-                    errorStruct.message = sprintf( 'Options{ %d }( %d ).warm_start is invalid for OMP!', index_operator, index_options );
-                    errorStruct.identifier = 'lq_minimization:InvalidWarmStartSetting';
-                    error( errorStruct );
-
-                end % if isa( options{ index_operator }( index_options ).warm_start, 'regularization.options.warm_start_off' )
-
-                % call OMP
-% TODO: start vector x_0, atoms
-                [ theta_recon_normed{ index_operator }{ index_options }, ...
-                  u_M_act_vect_tgc_normed_res, ...
-                  info{ index_operator }{ index_options } ] ...
-                = regularization.omp( op_A_bar, u_M_act_vect_tgc_normed, options{ index_operator }( index_options ).algorithm );
-
-            elseif isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_cosamp' )
-
-                %----------------------------------------------------------
-                % c) CoSaMP: l0-minimization (nonconvex)
-                %----------------------------------------------------------
-                [ theta_recon_normed{ index_operator }{ index_options }, ...
-                  u_M_act_vect_tgc_normed_res, ...
-                  info{ index_operator }{ index_options } ] ...
-                = regularization.cosamp( op_A_bar, u_M_act_vect_tgc_normed, options{ index_operator }( index_options ).algorithm );
-
-            else
-
-                %----------------------------------------------------------
-                % d) unknown algorithm
-                %----------------------------------------------------------
-                errorStruct.message = sprintf( 'Class of options{ %d }( %d ).algorithm is unknown!', index_operator, index_options );
-                errorStruct.identifier = 'lq_minimization:UnknownOptionsClass';
-                error( errorStruct );
-
-            end % if isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_spgl1' )
-
-            %--------------------------------------------------------------
-            % v.) format residual mixed RF voltage signals
-            %--------------------------------------------------------------
+            % format residual mixed RF voltage signals
             u_M_res{ index_operator }{ index_options } = format_voltages( operator_born_act, u_M_act_vect_tgc_normed_res * u_M_act_vect_tgc_norm );
 
             %--------------------------------------------------------------
-            % vi.) optional reweighting (Foucart's algorithm, nonconvex)
-            %--------------------------------------------------------------
-            if isa( options{ index_operator }( index_options ).reweighting, 'regularization.options.reweighting_sequence' )
-
-                %----------------------------------------------------------
-                % a) sequential reweighting
-                %----------------------------------------------------------
-                % exponent, sequence, and number of iterations
-                exponent_act = options{ index_operator }( index_options ).reweighting.q;
-                epsilon_n_act = options{ index_operator }( index_options ).reweighting.epsilon_n;
-                N_iterations = numel( epsilon_n_act );
-
-                % allocate memory for results and specify start vector ( minimizer of P_{(1, eta)} )
-                theta_n = zeros( LT_act.N_coefficients, N_iterations + 1 );
-                theta_n( :, 1 ) = theta_recon_normed{ index_operator }{ index_options };
-% TODO: residual voltages
-                % statistics
-                info{ index_operator }{ index_options }.info_reweighting = cell( 1, N_iterations );
-
-                % iterate reweighted problems
-                for index_iter = 1:N_iterations
-
-                    % specify diagonal weighting matrix
-                    weights_act = ( abs( theta_n( :, index_iter ) ) + epsilon_n_act( index_iter ) ).^( 1 - exponent_act );
-                    LT_act_n = linear_transforms.composition( linear_transforms.weighting( weights_act ), LT_act );
-
-                    % define anonymous function for reweighted sensing matrix
-                    op_A_bar_n = @( x, mode ) combined_quick( operator_born_act, mode, x, LT_act_n, LT_tgc );
-
-                    % solve reweighted problem
-                    if isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_spgl1' )
-
-                        % call SPGL1
-                        [ temp, ~, ~, info_reweighting ] = spgl1( op_A_bar_n, u_M_act_vect_tgc_normed, [], options{ index_operator }( index_options ).algorithm.rel_RMSE, [], spgl_opts );
-
-                    elseif isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_omp' )
-
-                        % call OMP
-                        [ temp, ~, info_reweighting ] = regularization.omp( op_A_bar_n, u_M_act_vect_tgc_normed, options{ index_operator }( index_options ).algorithm );
-
-                    else
-
-                        % unknown
-                        errorStruct.message = sprintf( 'options{ %d }( %d ).algorithm is invalid for reweighting!', index_operator, index_options );
-                        errorStruct.identifier = 'lq_minimization:InvalidAlgorithmSetting';
-                        error( errorStruct );
-
-                    end % if isa( options{ index_operator }( index_options ).algorithm, 'regularization.options.algorithm_spgl1' )
-
-                    % remove reweighting
-                    theta_n( :, index_iter + 1 ) = temp .* weights_act;
-
-                    % statistics for computational costs
-                    info{ index_operator }{ index_options }.info_reweighting{ index_iter } = info_reweighting;
-
-                end % for index_iter = 1:N_iterations
-
-                % store results for entire reweighting sequence
-                theta_recon_normed{ index_operator }{ index_options } = theta_n;
-
-            end % if isa( options{ index_operator }( index_options ).reweighting, 'regularization.options.reweighting_sequence' )
-
-            %--------------------------------------------------------------
-            % vii.) invert normalization and apply adjoint linear transform
-            %--------------------------------------------------------------
-            gamma_recon{ index_operator }{ index_options } ...
-            = operator_transform( LT_act, theta_recon_normed{ index_operator }{ index_options }, 2 ) * u_M_act_vect_tgc_norm;
-
+            % v.) optional steps
             %--------------------------------------------------------------
             % save results to temporary file
-            %--------------------------------------------------------------
-            save( str_filename, 'gamma_recon', 'theta_recon_normed', 'u_M_res', 'info' );
+            if options{ index_operator }( index_options ).save_progress
+                save( str_filename, 'gamma_recon', 'theta_recon_normed', 'u_M_res', 'info' );
+            end
 
             % display result
-            figure( index_options );
-            temp_1 = squeeze( reshape( theta_recon_normed{ index_operator }{ index_options }( :, end ), operators_born( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
-            temp_2 = squeeze( reshape( gamma_recon{ index_operator }{ index_options }( :, end ), operators_born( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
-            if ismatrix( temp_1 )
-                subplot( 1, 2, 1 );
-                imagesc( illustration.dB( temp_1, 20 )', [ -60, 0 ] );
-                subplot( 1, 2, 2 );
-                imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
-            else
-                subplot( 1, 2, 1 );
-                imagesc( illustration.dB( squeeze( temp_1( :, 5, : ) ), 20 )', [ -60, 0 ] );
-                subplot( 1, 2, 2 );
-                imagesc( illustration.dB( squeeze( temp_2( :, 5, : ) ), 20 )', [ -60, 0 ] );
-            end
-            colormap gray;
+            if options{ index_operator }( index_options ).display
+
+                figure( index_options );
+% TODO: reshape is invalid for transform coefficients! method format_coefficients in linear transform?
+                temp_1 = squeeze( reshape( theta_recon_normed{ index_operator }{ index_options }( :, end ), operators_born( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
+                temp_2 = squeeze( reshape( gamma_recon{ index_operator }{ index_options }( :, end ), operators_born( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
+                if ismatrix( temp_1 )
+                    subplot( 1, 2, 1 );
+                    imagesc( illustration.dB( temp_1, 20 )', [ -60, 0 ] );
+                    subplot( 1, 2, 2 );
+                    imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
+                else
+                    subplot( 1, 2, 1 );
+                    imagesc( illustration.dB( squeeze( temp_1( :, 5, : ) ), 20 )', [ -60, 0 ] );
+                    subplot( 1, 2, 2 );
+                    imagesc( illustration.dB( squeeze( temp_2( :, 5, : ) ), 20 )', [ -60, 0 ] );
+                end
+                colormap gray;
+
+            end % if options{ index_operator }( index_options ).display
 
         end % for index_options = 1:numel( options{ index_operator } )
 
         %------------------------------------------------------------------
-        % c) create images and signal matrices
+        % c) create images
         %------------------------------------------------------------------
-        gamma_recon{ index_operator } ...
-        = processing.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, gamma_recon{ index_operator } );
-        theta_recon_normed{ index_operator } ...
-        = processing.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, theta_recon_normed{ index_operator } );
+        gamma_recon{ index_operator } = processing.image( operators_born( index_operator ).sequence.setup.FOV.shape.grid, gamma_recon{ index_operator } );
 
         % avoid cell arrays for single options{ index_operator }
         if isscalar( options{ index_operator } )
+            theta_recon_normed{ index_operator } = theta_recon_normed{ index_operator }{ 1 };
             u_M_res{ index_operator } = u_M_res{ index_operator }{ 1 };
             info{ index_operator } = info{ index_operator }{ 1 };
         end
 
-    end % for index_operator = 1:numel( operators_born )
+	end % for index_operator = 1:numel( operators_born )
 
 	% avoid cell arrays for single operators_born
 	if isscalar( operators_born )

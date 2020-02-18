@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2019-12-30
+% modified: 2020-02-17
 %
 classdef (Abstract) operator
 
@@ -13,8 +13,8 @@ classdef (Abstract) operator
 	properties (SetAccess = private)
 
         % independent properties
-        sequence %( 1, 1 ) scattering.sequences.sequence         % pulse-echo measurement sequence
-        options ( 1, 1 ) scattering.options                         % scattering operator options
+        sequence %( 1, 1 ) scattering.sequences.sequence        % pulse-echo measurement sequence
+        options ( 1, 1 ) scattering.options                     % scattering operator options
 
         % dependent properties
         incident_waves ( :, 1 ) scattering.sequences.syntheses.incident_wave             % incident waves
@@ -111,6 +111,100 @@ classdef (Abstract) operator
         end % function objects = operator( sequences, options )
 
         %------------------------------------------------------------------
+        % received energy (wrapper)
+        %------------------------------------------------------------------
+        function E_M = energy_rx( operators, options )
+% TODO: own options class? -> normalization is not required!
+% TODO: make get_configs a method of options class
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.operator
+            if ~isa( operators, 'scattering.operator' )
+                errorStruct.message = 'operators must be scattering.operator!';
+                errorStruct.identifier = 'energy_rx:NoScatteringOperators';
+                error( errorStruct );
+            end
+
+            % ensure nonempty options
+            if nargin < 2 || isempty( options )
+                options = regularization.options.common;
+            end
+
+            % ensure cell array for options
+            if ~iscell( options )
+                options = { options };
+            end
+
+            % multiple operators / single options
+            if ~isscalar( operators ) && isscalar( options )
+                options = repmat( options, size( operators ) );
+            end
+
+            % single operators / multiple options
+            if isscalar( operators ) && ~isscalar( options )
+                operators = repmat( operators, size( options ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( operators, options );
+
+            %--------------------------------------------------------------
+            % 2.) compute received energies
+            %--------------------------------------------------------------
+            % specify cell array for E_M
+            E_M = cell( size( operators ) );
+
+            % iterate scattering operators
+            for index_operator = 1:numel( operators )
+
+                %----------------------------------------------------------
+                % a) check arguments
+                %----------------------------------------------------------
+                % ensure class regularization.options.common
+                if ~isa( options{ index_operator }, 'regularization.options.common' )
+                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
+                    errorStruct.identifier = 'energy_rx:NoCommonOptions';
+                    error( errorStruct );
+                end
+
+                %----------------------------------------------------------
+                % b) process options
+                %----------------------------------------------------------
+                % specify cell array for E_M{ index_operator }
+                E_M{ index_operator } = cell( size( options{ index_operator } ) );
+
+                % iterate options
+                for index_options = 1:numel( options{ index_operator } )
+
+                    %------------------------------------------------------
+                    % i.) create configuration (deactivate normalization)
+                    %------------------------------------------------------
+                    options_no_norm = set_properties( options{ index_operator }( index_options ), regularization.normalizations.off );
+                    [ operator_born_act, LT_act, ~, LTs_tgc_measurement ] = get_configs( operators( index_operator ), options_no_norm );
+
+                    %------------------------------------------------------
+                    % ii.) call received energy (scalar; decomposition)
+                    %------------------------------------------------------
+                    E_M{ index_operator }{ index_options } = energy_rx_scalar( operator_born_act, LT_act, LTs_tgc_measurement );
+
+                end % for index_options = 1:numel( options{ index_operator } )
+
+                % avoid cell array for single options{ index_operator }
+                if isscalar( options{ index_operator } )
+                    E_M{ index_operator } = E_M{ index_operator }{ 1 };
+                end
+
+            end % for index_operator = 1:numel( operators )
+
+            % avoid cell array for single operators
+            if isscalar( operators )
+                E_M = E_M{ 1 };
+            end
+
+        end % function E_M = energy_rx( operators, options )
+
+        %------------------------------------------------------------------
         % apply spatial anti-aliasing filters
         %------------------------------------------------------------------
         function spatiospectrals = anti_aliasing_filter( operators )
@@ -156,7 +250,7 @@ classdef (Abstract) operator
         %------------------------------------------------------------------
         % set properties of momentary scattering operator options
         %------------------------------------------------------------------
-        function operators = set_properties_momentary( operators, varargin )
+        function operators = set_options_momentary( operators, options )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -164,26 +258,29 @@ classdef (Abstract) operator
             % ensure class scattering.operator
             if ~isa( operators, 'scattering.operator' )
                 errorStruct.message = 'operators must be scattering.operator!';
-                errorStruct.identifier = 'set_properties_momentary:NoOperators';
+                errorStruct.identifier = 'set_options_momentary:NoOperators';
                 error( errorStruct );
             end
 
-            % single operators / multiple varargin{ : }
-            for index_arg = 1:numel( varargin )
-                if isscalar( operators ) && ~isscalar( varargin{ index_arg } )
-                    operators = repmat( operators, size( varargin{ index_arg } ) );
-                end
+            % ensure class scattering.options.momentary
+            if ~isa( options, 'scattering.options.momentary' )
+                errorStruct.message = 'options must be scattering.options.momentary!';
+                errorStruct.identifier = 'set_options_momentary:NoMomentaryOptions';
+                error( errorStruct );
             end
 
-            % multiple operators / single varargin{ : }
-            for index_arg = 1:numel( varargin )
-                if ~isscalar( operators ) && isscalar( varargin{ index_arg } )
-                    varargin{ index_arg } = repmat( varargin{ index_arg }, size( operators ) );
-                end
+            % multiple operators / single options
+            if ~isscalar( operators ) && isscalar( options )
+                options = repmat( options, size( operators ) );
+            end
+
+            % single operators / multiple options
+            if isscalar( operators ) && ~isscalar( options )
+                operators = repmat( operators, size( options ) );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators, varargin{ : } );
+            auxiliary.mustBeEqualSize( operators, options );
 
             %--------------------------------------------------------------
             % 2.) set momentary scattering operator options
@@ -191,24 +288,16 @@ classdef (Abstract) operator
             % save momentary scattering options
             options_old = reshape( [ operators.options ], size( operators ) );
 
-            % specify cell array for arguments
-            args = cell( size( varargin ) );
-
             % iterate scattering operators
             for index_object = 1:numel( operators )
-
-                % process arguments
-                for index_arg = 1:numel( varargin )
-                    args{ index_arg } = varargin{ index_arg }( index_object );
-                end
 
                 %----------------------------------------------------------
                 % a) set current momentary scattering options
                 %----------------------------------------------------------
-                operators( index_object ).options = set_properties_momentary( operators( index_object ).options, args{ : } );
+                operators( index_object ).options = set_options_momentary( operators( index_object ).options, options( index_object ) );
 
                 %----------------------------------------------------------
-                % b) update data structures
+                % b) detect changes update data structures
                 %----------------------------------------------------------
                 % indices_measurement_sel
                 if ~isequal( operators( index_object ).options.momentary.sequence, options_old( index_object ).momentary.sequence )
@@ -227,7 +316,7 @@ classdef (Abstract) operator
                         % ensure valid indices
                         if any( operators( index_object ).options.momentary.sequence.indices > numel( operators( index_object ).sequence.settings ) )
                             errorStruct.message = sprintf( 'operators( %d ).options.momentary.sequence.indices must not exceed %d!', index_object, numel( operators( index_object ).sequence.settings ) );
-                            errorStruct.identifier = 'set_properties_momentary:InvalidSequenceIndices';
+                            errorStruct.identifier = 'set_options_momentary:InvalidSequenceIndices';
                             error( errorStruct );
                         end
 
@@ -253,7 +342,7 @@ classdef (Abstract) operator
 
             end % for index_object = 1:numel( operators )
 
-        end % function operators = set_properties_momentary( operators, varargin )
+        end % function operators = set_options_momentary( operators, varargin )
 
         %------------------------------------------------------------------
         % transform point spread function (TPSF)
@@ -361,5 +450,17 @@ classdef (Abstract) operator
         theta_hat = adjoint( operators, u_M, varargin )
 
     end % methods (Abstract)
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (abstract, protected, and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract, Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % received energy (scalar; decomposition)
+        %------------------------------------------------------------------
+        E_M = energy_rx_scalar( operator, LT, LTs_tgc_measurement )
+
+	end % methods (Abstract, Access = protected, Hidden)
 
 end % classdef (Abstract) operator

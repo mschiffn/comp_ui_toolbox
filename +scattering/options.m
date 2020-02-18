@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-15
-% modified: 2019-08-03
+% modified: 2020-02-17
 %
 classdef options
 
@@ -83,7 +83,7 @@ classdef options
         %------------------------------------------------------------------
         % set properties of momentary scattering operator options
         %------------------------------------------------------------------
-        function options = set_properties_momentary( options, varargin )
+        function options = set_options_momentary( options, momentaries )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -91,33 +91,32 @@ classdef options
             % ensure class scattering.options
             if ~isa( options, 'scattering.options' )
                 errorStruct.message = 'options must be scattering.options!';
-                errorStruct.identifier = 'set_properties_momentary:NoOptions';
+                errorStruct.identifier = 'set_options_momentary:NoOptions';
+                error( errorStruct );
+            end
+
+            % ensure class scattering.options.momentary
+            if ~isa( momentaries, 'scattering.options.momentary' )
+                errorStruct.message = 'momentaries must be scattering.options.momentary!';
+                errorStruct.identifier = 'set_options_momentary:NoMomentaryOptions';
                 error( errorStruct );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options, varargin{ : } );
+            auxiliary.mustBeEqualSize( options, momentaries );
 
             %--------------------------------------------------------------
             % 2.) set momentary scattering operator options
             %--------------------------------------------------------------
-            % specify cell array for arguments
-            args = cell( size( varargin ) );
-
             % iterate scattering operators
             for index_object = 1:numel( options )
 
-                % process arguments
-                for index_arg = 1:numel( varargin )
-                    args{ index_arg } = varargin{ index_arg }( index_object );
-                end
-
                 % set properties of momentary scattering operator options
-                options( index_object ).momentary = set_properties( options( index_object ).momentary, args{ : } );
+                options( index_object ).momentary = momentaries( index_object );
 
             end % for index_object = 1:numel( options )
 
-        end % function options = set_properties_momentary( options, varargin )
+        end % function options = set_options_momentary( options, momentaries )
 
 	end % methods
 

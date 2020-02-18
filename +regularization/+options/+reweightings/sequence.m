@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-01-14
+% modified: 2020-02-12
 %
-classdef reweighting_sequence < regularization.options.reweighting
+classdef sequence < regularization.options.reweightings.reweighting
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -26,7 +26,7 @@ classdef reweighting_sequence < regularization.options.reweighting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = reweighting_sequence( q, epsilon_n )
+        function objects = sequence( q, epsilon_n )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -45,7 +45,7 @@ classdef reweighting_sequence < regularization.options.reweighting
             % 2.) create sequence reweighting options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.options.reweighting( size( q ) );
+            objects@regularization.options.reweightings.reweighting( size( q ) );
 
             % iterate sequence reweighting options
             for index_object = 1:numel( objects )
@@ -56,19 +56,19 @@ classdef reweighting_sequence < regularization.options.reweighting
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = reweighting_sequence( epsilon_n )
+        end % function objects = sequence( epsilon_n )
 
         %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
-        function strs_out = string( reweightings_sequence )
+        function strs_out = string( options_sequence )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.reweighting_sequence
-            if ~isa( reweightings_sequence, 'regularization.options.reweighting_sequence' )
-                errorStruct.message = 'reweightings_sequence must be regularization.options.reweighting_sequence!';
+            % ensure class regularization.options.reweightings.sequence
+            if ~isa( options_sequence, 'regularization.options.reweightings.sequence' )
+                errorStruct.message = 'options_sequence must be regularization.options.reweightings.sequence!';
                 errorStruct.identifier = 'string:NoOptionsReweightingSequence';
                 error( errorStruct );
             end
@@ -77,17 +77,17 @@ classdef reweighting_sequence < regularization.options.reweighting
             % 2.) create string array
             %--------------------------------------------------------------
             % initialize string array for strs_out
-            strs_out = repmat( "", size( reweightings_sequence ) );
+            strs_out = repmat( "", size( options_sequence ) );
 
             % iterate sequence reweighting options
-            for index_object = 1:numel( reweightings_sequence )
+            for index_object = 1:numel( options_sequence )
 
-                strs_out( index_object ) = sprintf( "%s (q = %2.1f, N = %d)", 'sequence', reweightings_sequence( index_object ).q, numel( reweightings_sequence( index_object ).epsilon_n ) );
+                strs_out( index_object ) = sprintf( "%s (q = %2.1f, N = %d)", 'sequence', options_sequence( index_object ).q, numel( options_sequence( index_object ).epsilon_n ) );
 
-            end % for index_object = 1:numel( reweightings_sequence )
+            end % for index_object = 1:numel( options_sequence )
 
-        end % function strs_out = string( reweightings_sequence )
+        end % function strs_out = string( options_sequence )
 
 	end % methods
 
-end % classdef reweighting_sequence < regularization.options.reweighting
+end % classdef sequence < regularization.options.reweightings.reweighting

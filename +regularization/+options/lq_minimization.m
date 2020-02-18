@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2020-01-07
+% modified: 2020-02-17
 %
 classdef lq_minimization < regularization.options.common
 
@@ -13,9 +13,8 @@ classdef lq_minimization < regularization.options.common
 	properties (SetAccess = private)
 
         % independent properties
-        algorithm ( 1, 1 ) regularization.options.algorithm { mustBeNonempty } = regularization.options.algorithm_spgl1( 0.3, 1e3, 1 )	% algorithm options
-        reweighting ( 1, 1 ) regularization.options.reweighting { mustBeNonempty } = regularization.options.reweighting_off             % reweighting options
-        warm_start ( 1, 1 ) regularization.options.warm_start { mustBeNonempty } = regularization.options.warm_start_off                % warm start options
+        algorithm ( 1, 1 ) regularization.algorithms.algorithm { mustBeNonempty } = regularization.algorithms.convex.spgl1( 0.3, 1e3, 1 )	% algorithm options
+        save_progress ( 1, 1 ) logical { mustBeNonempty } = true	% save intermediate results
 
 	end % properties
 
@@ -70,37 +69,23 @@ classdef lq_minimization < regularization.options.common
                 % iterate arguments
                 for index_arg = 1:numel( varargin )
 
-                    if isa( varargin{ index_arg }, 'regularization.options.algorithm' )
+                    if isa( varargin{ index_arg }, 'regularization.algorithms.algorithm' )
 
                         %--------------------------------------------------
                         % a) algorithm options
                         %--------------------------------------------------
                         objects( index_object ).algorithm = varargin{ index_arg }( index_object );
 
-                    elseif isa( varargin{ index_arg }, 'regularization.options.reweighting' )
-
-                        %--------------------------------------------------
-                        % b) reweighting options
-                        %--------------------------------------------------
-                        objects( index_object ).reweighting = varargin{ index_arg }( index_object );
-
-                    elseif isa( varargin{ index_arg }, 'regularization.options.warm_start' )
-
-                        %--------------------------------------------------
-                        % c) warm start options
-                        %--------------------------------------------------
-                        objects( index_object ).warm_start = varargin{ index_arg }( index_object );
-
                     else
 
                         %--------------------------------------------------
-                        % d) unknown class
+                        % b) unknown class
                         %--------------------------------------------------
                         errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
                         errorStruct.identifier = 'lq_minimization:UnknownClass';
                         error( errorStruct );
 
-                    end % if isa( varargin{ index_arg }, 'regularization.options.algorithm' )
+                    end % if isa( varargin{ index_arg }, 'regularization.algorithms.algorithm' )
 
                 end % for index_arg = 1:numel( varargin )
 
@@ -145,11 +130,9 @@ classdef lq_minimization < regularization.options.common
                 %----------------------------------------------------------
                 % print content
                 %----------------------------------------------------------
-                fprintf( ' %-12s: %-13s %4s %-12s: %-5s %4s %-12s: %-13s\n', 'algorithm', string( options( index_object ).algorithm ), '', 'reweighting', string( options( index_object ).reweighting ), '', 'warm start', string( options( index_object ).warm_start ) );
+                % print properties
+                fprintf( ' %-12s: %-13s\n', 'algorithm', string( options( index_object ).algorithm ) );
 
-                %----------------------------------------------------------
-                % print superclass
-                %----------------------------------------------------------
                 % call method show of superclass
                 show@regularization.options.common( options( index_object ) );
 

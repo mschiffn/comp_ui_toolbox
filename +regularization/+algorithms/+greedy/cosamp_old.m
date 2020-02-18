@@ -6,7 +6,7 @@ function [ theta_recon, y_m_res, info ] = cosamp( op_A, y_m, options )
 % INPUT:
 %	op_A = linear dictionary operator (matrix or function handle)
 %	y_m = vector of observations
-%	options = regularization.options.algorithm_cosamp
+%	options = regularization.algorithms.cosamp
 %
 % OUTPUT:
 %   theta_recon = recovered coefficients
@@ -21,7 +21,7 @@ function [ theta_recon, y_m_res, info ] = cosamp( op_A, y_m, options )
 %
 % author: Martin F. Schiffner
 % date: 2013-05-13
-% modified: 2020-01-03
+% modified: 2020-02-13
 %
 
 	% internal constant
@@ -50,9 +50,9 @@ function [ theta_recon, y_m_res, info ] = cosamp( op_A, y_m, options )
     y_m = y_m( : );
     y_m_norm = norm( y_m, 2 );
 
-    % ensure class regularization.options.algorithm_cosamp
-    if ~isa( options, 'regularization.options.algorithm_cosamp' )
-        errorStruct.message = 'options must be regularization.options.algorithm_cosamp!';
+    % ensure class regularization.algorithms.cosamp
+    if ~isa( options, 'regularization.algorithms.cosamp' )
+        errorStruct.message = 'options must be regularization.algorithms.cosamp!';
         errorStruct.identifier = 'omp:NoOptionsAlgorithmCoSaMP';
         error( errorStruct );
     end

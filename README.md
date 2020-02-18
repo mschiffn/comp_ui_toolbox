@@ -1,5 +1,9 @@
 # Computational Ultrasound Imaging Toolbox for MATLAB
 
+[![GitHub](https://img.shields.io/github/license/mschiffn/comp-ui-toolbox)](https://github.com/mschiffn/comp-ui-toolbox/COPYING)
+![GitHub repo size](https://img.shields.io/github/repo-size/mschiffn/comp_ui_toolbox)
+![GitHub All Releases](https://img.shields.io/github/downloads/mschiffn/comp_ui_toolbox/total)
+
 This [MATLAB](https://mathworks.com/products/matlab.html) (The MathWorks, Inc., Natick, MA, USA) toolbox facilitates
 the development and evaluation of
 computational ultrasound imaging (UI) methods for
@@ -115,10 +119,10 @@ only a few lines of code.
 - symmetric grids (future releases might support the fast multipole method (FMM) and adaptive cross approximation (ACA))
 - developed and tested in MATLAB R2018b, R2019a / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
 
-## References
+## References :notebook:
 
 The physical models underlying this toolbox and exemplary images were published in:
 
-1. M. F. Schiffner, "Random Incident Waves for Fast Compressed Pulse-Echo Ultrasound Imaging", [arXiv:1801.00205](https://arxiv.org/abs/1801.00205) [physics.med-ph]
-2. M. F. Schiffner and G. Schmitz, "Compensating the Combined Effects of Absorption and Dispersion in Plane Wave Pulse-Echo Ultrasound Imaging Using Sparse Recovery", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 573--576, DOI: [10.1109/ULTSYM.2013.0148](http://dx.doi.org/10.1109/ULTSYM.2013.0148)
-3. M. F. Schiffner and G. Schmitz, "The Separate Recovery of Spatial Fluctuations in Compressibility and Mass Density in Plane Wave Pulse-Echo Ultrasound Imaging", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 577--580, DOI: [10.1109/ULTSYM.2013.0149](http://dx.doi.org/10.1109/ULTSYM.2013.0149)
+1. M. F. Schiffner, "Random Incident Waves for Fast Compressed Pulse-Echo Ultrasound Imaging", [![physics.med-ph:arXiv:1801.00205](https://img.shields.io/badge/physics.med--ph-arXiv%3A1801.00205-B31B1B)](https://arxiv.org/abs/1801.00205 "Preprint on arXiv.org")
+2. M. F. Schiffner and G. Schmitz, "Compensating the Combined Effects of Absorption and Dispersion in Plane Wave Pulse-Echo Ultrasound Imaging Using Sparse Recovery", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 573--576, [![DOI:10.1109/ULTSYM.2013.0148](https://img.shields.io/badge/DOI-10.1109%2FULTSYM.2013.0148-blue)](http://dx.doi.org/10.1109/ULTSYM.2013.0148)
+3. M. F. Schiffner and G. Schmitz, "The Separate Recovery of Spatial Fluctuations in Compressibility and Mass Density in Plane Wave Pulse-Echo Ultrasound Imaging", 2013 IEEE Int. Ultrasonics Symp. (IUS), pp. 577--580, [![DOI:10.1109/ULTSYM.2013.0149](https://img.shields.io/badge/DOI-10.1109%2FULTSYM.2013.0149-blue)](http://dx.doi.org/10.1109/ULTSYM.2013.0149)

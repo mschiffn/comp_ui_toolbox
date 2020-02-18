@@ -1,11 +1,11 @@
 %
-% superclass for all Fourier dictionary options
+% superclass for all inactive reweighting options
 %
 % author: Martin F. Schiffner
-% date: 2019-12-28
-% modified: 2020-01-25
+% date: 2019-09-17
+% modified: 2020-02-12
 %
-classdef dictionary_fourier < regularization.options.dictionary
+classdef off < regularization.options.reweightings.reweighting
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef dictionary_fourier < regularization.options.dictionary
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = dictionary_fourier( varargin )
+        function objects = off( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -28,39 +28,39 @@ classdef dictionary_fourier < regularization.options.dictionary
             end
 
             % superclass ensures row vector for size
-            % superclass ensures nonempty positive integers for size
+            % superclass ensures nonempty positive integers
 
             %--------------------------------------------------------------
-            % 2.) create Fourier dictionary options
+            % 2.) create inactive normalization options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.options.dictionary( size );
+            objects@regularization.options.reweightings.reweighting( size );
 
-        end % function objects = dictionary_fourier( varargin )
+        end % function objects = off( varargin )
 
         %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
-        function strs_out = string( dictionaries_fourier )
+        function strs_out = string( options_off )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.dictionary_fourier
-            if ~isa( dictionaries_fourier, 'regularization.options.dictionary_fourier' )
-                errorStruct.message = 'dictionaries_fourier must be regularization.options.dictionary_fourier!';
-                errorStruct.identifier = 'string:NoOptionsDictionaryFourier';
+            % ensure class regularization.options.reweightings.off
+            if ~isa( options_off, 'regularization.options.reweightings.off' )
+                errorStruct.message = 'options_off must be regularization.options.reweightings.off!';
+                errorStruct.identifier = 'string:NoOptionsReweightingOff';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
             % 2.) create string array
             %--------------------------------------------------------------
-            % repeat string "Fourier"
-            strs_out = repmat( "Fourier", size( dictionaries_fourier ) );
+            % repeat string "off"
+            strs_out = repmat( "off", size( options_off ) );
 
-        end % function strs_out = string( dictionaries_fourier )
+        end % function strs_out = string( options_off )
 
 	end % methods
 
-end % classdef dictionary_fourier < regularization.options.dictionary
+end % classdef off < regularization.options.reweightings.reweighting

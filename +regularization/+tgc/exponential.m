@@ -1,11 +1,11 @@
 %
-% superclass for all exponential time gain compensation curves
+% superclass for all exponential time gain compensation (TGC) options
 %
 % author: Martin F. Schiffner
-% date: 2019-12-07
-% modified: 2020-01-11
+% date: 2019-12-19
+% modified: 2020-02-17
 %
-classdef exponential < regularization.tgc.curve
+classdef exponential < regularization.tgc.tgc
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -13,9 +13,10 @@ classdef exponential < regularization.tgc.curve
 	properties (SetAccess = private)
 
         % independent properties
-        exponent ( 1, 1 ) physical_values.frequency { mustBePositive, mustBeNonempty } = physical_values.hertz( 1 )
+        exponents ( :, 1 ) physical_values.frequency { mustBePositive, mustBeNonempty } = physical_values.hertz( 1 )
+        decays_dB ( :, 1 ) double { mustBeNegative, mustBeNonempty } = -40
 
-    end % properties
+	end % properties
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -25,256 +26,187 @@ classdef exponential < regularization.tgc.curve
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = exponential( intervals_t, exponents )
+        function objects = exponential( exponents, decays_dB )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass ensures class math.interval for intervals_t
-            % superclass ensures equal subclasses of physical_values.time for bounds in intervals_t
-
-            % property validation functions ensure nonempty positive frequencies for exponents
-
-            % multiple intervals_t / single exponents
-            if ~isscalar( intervals_t ) && isscalar( exponents )
-                exponents = repmat( exponents, size( intervals_t ) );
+            % ensure cell array for exponents
+            if ~iscell( exponents )
+                exponents = { exponents };
             end
 
-            % single intervals_t / multiple exponents
-            if isscalar( intervals_t ) && ~isscalar( exponents )
-                intervals_t = repmat( intervals_t, size( exponents ) );
+            % ensure cell array for exponents
+            if ~iscell( decays_dB )
+                decays_dB = { decays_dB };
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( intervals_t, exponents );
+            auxiliary.mustBeEqualSize( exponents, decays_dB );
 
             %--------------------------------------------------------------
-            % 2.) create exponential time gain compensation curves
+            % 2.) create exponential TGC options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.tgc.curve( intervals_t );
+            objects@regularization.tgc.tgc( size( exponents ) );
 
-            % iterate exponential time gain compensation curves
+            % iterate exponential TGC options
             for index_object = 1:numel( objects )
 
+                % property validation function ensures class physical_values.frequency for exponents{ index_object }
+                % property validation function ensures nonempty negative doubles for decays_dB{ index_object }
+
+                % multiple exponents{ index_object } / single decays_dB{ index_object }
+                if ~isscalar( exponents{ index_object } ) && isscalar( decays_dB{ index_object } )
+                    decays_dB{ index_object } = repmat( decays_dB{ index_object }, size( exponents{ index_object } ) );
+                end
+
+                % ensure equal number of dimensions and sizes
+                auxiliary.mustBeEqualSize( exponents{ index_object }, decays_dB{ index_object } );
+
                 % set independent properties
-                objects( index_object ).exponent = exponents( index_object );
+                objects( index_object ).exponents = exponents{ index_object }( : );
+                objects( index_object ).decays_dB = decays_dB{ index_object }( : );
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = exponential( intervals_t, exponents )
+        end % function objects = exponential( exponents, decays_dB )
 
         %------------------------------------------------------------------
-        % sample exponential time gain compensation curves
+        % string array (overload string method)
         %------------------------------------------------------------------
-        function samples = sample_curve( curves, axes )
+        function strs_out = string( tgcs_exponential )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class regularization.tgc.exponential
-            if ~isa( curves, 'regularization.tgc.exponential' )
-                errorStruct.message = 'tgcs must be regularization.tgc.exponential!';
-                errorStruct.identifier = 'compute_samples:NoExponentialTGC';
+            if ~isa( tgcs_exponential, 'regularization.tgc.exponential' )
+                errorStruct.message = 'tgcs_exponential must be regularization.tgc.exponential!';
+                errorStruct.identifier = 'string:NoTGCExponential';
                 error( errorStruct );
             end
 
-            % ensure class math.sequence_increasing
-            if ~isa( axes, 'math.sequence_increasing' )
-                errorStruct.message = 'axes must be math.sequence_increasing!';
-                errorStruct.identifier = 'compute_samples:NoSequenceIncreasing';
-                error( errorStruct );
-            end
-
-            % multiple curves / single axes
-            if ~isscalar( curves ) && isscalar( axes )
-                axes = repmat( axes, size( curves ) );
-            end
-
-            % single curves / multiple axes
-            if isscalar( curves ) && ~isscalar( axes )
-                curves = repmat( curves, size( axes ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( curves, axes );
-
             %--------------------------------------------------------------
-            % 2.) sample exponential time gain compensation curves
+            % 2.) create string array
             %--------------------------------------------------------------
-            % specify cell array for samples
-            samples = cell( size( curves ) );
+            % initializse string array for strs_out
+            strs_out = repmat( "", size( tgcs_exponential ) );
 
-            % iterate exponential time gain compensation curves
-            for index_object = 1:numel( curves )
+            % iterate exponential TGC options
+            for index_object = 1:numel( tgcs_exponential )
 
-                if isa( axes( index_object ).members, 'physical_values.time' )
+                strs_out( index_object ) = sprintf( "%s", 'exponential' );
 
-                    %------------------------------------------------------
-                    % a) time-domain samples
-                    %------------------------------------------------------
-                    % set independent properties
-                    samples{ index_object } = exp( curves( index_object ).exponent * ( axes( index_object ).members - curves( index_object ).interval_t.lb ) );
+            end % for index_object = 1:numel( tgcs_exponential )
 
-                elseif isa( axes( index_object ).members, 'physical_values.frequency' )
-
-                    %------------------------------------------------------
-                    % b) frequency-domain samples
-                    %------------------------------------------------------
-                    temp_1 = curves( index_object ).exponent - 2j * pi * axes( index_object ).members;
-                    arg_1 = temp_1 * curves( index_object ).T / 2;
-                    phase = exp( - 2j * pi * axes( index_object ).members * curves( index_object ).interval_t.lb );
-                    samples{ index_object } = 2 * exp( arg_1 ) .* sinh( arg_1 ) .* phase ./ ( temp_1 * curves( index_object ).T );
-
-                end % if isa( axes( index_object ).members, 'physical_values.time' )
-
-            end % for index_object = 1:numel( curves )
-
-            % avoid cell array for single curves
-            if isscalar( curves )
-                samples = samples{ 1 };
-            end
-
-        end % function samples = sample_curve( curves, axes )
-
-        %------------------------------------------------------------------
-        % Fourier transform
-        %------------------------------------------------------------------
-        function signal_matrices = fourier_transform( curves, varargin )
-
-            
-        end % function signal_matrices = fourier_transform( curves, varargin )
-
-        %------------------------------------------------------------------
-        % Fourier coefficients
-        %------------------------------------------------------------------
-        function signal_matrices = fourier_coefficients( curves, varargin )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class regularization.tgc.exponential
-            if ~isa( curves, 'regularization.tgc.exponential' )
-                errorStruct.message = 'curves must be regularization.tgc.exponential!';
-                errorStruct.identifier = 'fourier_coefficients:NoExponentialCurves';
-                error( errorStruct );
-            end
-
-            % ensure nonempty T_ref
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
-                T_ref = varargin{ 1 };
-            else
-                T_ref = reshape( [ curves.T ], size( curves ) );
-            end
-
-            % ensure valid T_ref
-            indicator = T_ref < reshape( [ curves.T ], size( curves ) );
-            if any( indicator( : ) )
-                errorStruct.message = 'T_ref must be greater than or equal to T!';
-                errorStruct.identifier = 'fourier_coefficients:InvalidReferenceT';
-                error( errorStruct );
-            end
-
-            % ensure nonempty decays_dB
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
-                decays_dB = varargin{ 2 };
-            else
-                decays_dB = repmat( -40, size( curves ) );
-            end
-
-            % ensure negative decays_dB
-            mustBeNegative( decays_dB );
-
-            % multiple curves / single T_ref
-            if ~isscalar( curves ) && isscalar( T_ref )
-                T_ref = repmat( T_ref, size( curves ) );
-            end
-
-            % multiple curves / single decays_dB
-            if ~isscalar( curves ) && isscalar( decays_dB )
-                decays_dB = repmat( decays_dB, size( curves ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( curves, T_ref, decays_dB );
-
-            %--------------------------------------------------------------
-            % 2.) compute Fourier coefficients
-            %--------------------------------------------------------------
-            % compute upper frequency bounds
-            if abs( T_ref - reshape( [ curves.T ], size( curves ) ) ) <= eps( 0 ) * [ curves.T ]
-                ubs_f = reshape( [ curves.exponent ], size( curves ) ) .* sqrt( 10.^( - decays_dB / 10 ) - 1 ) / ( 2 * pi );
-            else
-% TODO: exponent close to zero?
-                temp_1 = reshape( exp( - [ curves.exponent ] .* [ curves.T ] ), size( curves ) );
-                ubs_f = reshape( [ curves.exponent ], size( curves ) ) .* sqrt( ( ( 1 + temp_1 ) .* 10.^( - decays_dB / 20 ) ./ ( 1 - temp_1 ) ).^2 - 1 ) / ( 2 * pi );
-            end
-
-            % create frequency axes
-            axes_f = math.sequence_increasing_regular_quantized( zeros( size( curves ) ), ceil( ubs_f .* T_ref ), 1 ./ T_ref );
-
-            % specify cell array for samples
-            samples = cell( size( curves ) );
-
-            % iterate exponential time gain compensation curves
-            for index_object = 1:numel( curves )
-
-                denominator = curves( index_object ).exponent - 2j * pi * axes_f( index_object ).members;
-                numerator = exp( denominator * curves( index_object ).T ) - 1;
-                phase_shift = exp( - 2j * pi * axes_f( index_object ).members * curves( index_object ).interval_t.lb );
-
-                samples{ index_object } = phase_shift .* numerator ./ ( denominator * T_ref( index_object ) );
-
-            end % for index_object = 1:numel( curves )
-
-            % create signal matrices
-            signal_matrices = processing.signal_matrix( axes_f, samples );
-
-        end % function signal_matrices = fourier_coefficients( curves, varargin )
-
-        %------------------------------------------------------------------
-        % get axes
-        %------------------------------------------------------------------
-        function axes_f = get_axes( curves, decays_dB )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class regularization.tgc.exponential
-            if ~isa( curves, 'regularization.tgc.exponential' )
-                errorStruct.message = 'curves must be regularization.tgc.exponential!';
-                errorStruct.identifier = 'compute_samples:NoExponentialTGC';
-                error( errorStruct );
-            end
-
-            % ensure nonempty negative decays_dB
-            mustBeNonempty( decays_dB );
-            mustBeNegative( decays_dB );
-
-            % multiple curves / single decays_dB
-            if ~isscalar( curves ) && isscalar( decays_dB )
-                decays_dB = repmat( decays_dB, size( curves ) );
-            end
-
-            % single curves / multiple decays_dB
-            if isscalar( curves ) && ~isscalar( decays_dB )
-                curves = repmat( curves, size( decays_dB ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( curves, decays_dB );
-
-            %--------------------------------------------------------------
-            % 2.) get axes
-            %--------------------------------------------------------------
-            % compute upper frequency bounds
-            ubs_f = [ curves.exponent ] .* sqrt( ( ( 1 + exp( - [ curves.exponent ] .* [ curves.T ] ) ) .* 10.^( - decays_dB / 20 ) ./ ( 1 - exp( - [ curves.exponent ] .* [ curves.T ] ) ) ).^2 - 1 ) / ( 2 * pi );
-
-            % create axes
-            axes_f = math.sequence_increasing_regular_quantized( zeros( size( curves ) ), ceil( ubs_f .* reshape( [ curves.T ], size( curves ) ) ), 1 ./ reshape( [ curves.T ], size( curves ) ) );
-
-        end % function axes_f = get_axes( curves, decays_dB )
+        end % function strs_out = string( tgcs_exponential )
 
 	end % methods
 
-end % classdef exponential < regularization.tgc.curve
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected, hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % create linear transform (scalar)
+        %------------------------------------------------------------------
+        function [ LT, LTs_measurement ] = get_LT_scalar( tgc, operator_born )
+% TODO: no linear_transforms.concatenations.diagonal for single mixed RF
+% voltage signal? single convolution?
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class regularization.tgc.tgc (scalar)
+            % calling function ensures class scattering.operator_born (scalar)
+
+            %--------------------------------------------------------------
+            % 2.) create linear transform (scalar)
+            %--------------------------------------------------------------
+            % numbers of observations for all sequential pulse-echo measurements
+            N_observations_mix = { operator_born.sequence.settings( operator_born.indices_measurement_sel ).N_observations };
+
+            % number of mixed voltage signals for each sequential pulse-echo measurement
+            N_mixes_measurement = cellfun( @numel, N_observations_mix );
+
+            % specify cell array for LTs_measurement
+            LTs_measurement = cell( numel( operator_born.indices_measurement_sel ), 1 );
+
+            % indices for each mix
+            indices = mat2cell( 1:sum( N_mixes_measurement ), 1, N_mixes_measurement );
+
+            %------------------------------------------------------
+            % a) extract frequency axes, time intervals, and numbers observations
+            %------------------------------------------------------
+            % specify cell arrays
+            axes_f_mix = cell( numel( operator_born.indices_measurement_sel ), 1 );
+            intervals_t = cell( numel( operator_born.indices_measurement_sel ), 1 );
+
+            % iterate selected sequential pulse-echo measurements
+            for index_measurement_sel = 1:numel( operator_born.indices_measurement_sel )
+
+                % index of sequential pulse-echo measurement
+                index_measurement = operator_born.indices_measurement_sel( index_measurement_sel );
+
+                % subsample global unique frequencies to get unique frequencies of pulse-echo measurement
+                axis_f_measurement_unique = subsample( operator_born.sequence.axis_f_unique, operator_born.sequence.indices_f_to_unique( index_measurement ) );
+
+                % map frequencies of mixed voltage signals to unique frequencies of pulse-echo measurement
+                indices_f_mix_to_measurement = operator_born.sequence.settings( index_measurement ).indices_f_to_unique;
+
+                % subsample unique frequencies of pulse-echo measurement to get frequencies of mixed voltage signals
+                axes_f_mix{ index_measurement_sel } = subsample( axis_f_measurement_unique, indices_f_mix_to_measurement );
+
+                intervals_t{ index_measurement_sel } = [ operator_born.sequence.settings( index_measurement ).rx.interval_t ].';
+
+            end % for index_measurement_sel = 1:numel( operator_born.indices_measurement_sel )
+
+            % concatenate vertically
+            axes_f_mix = cat( 1, axes_f_mix{ : } );
+            intervals_t = cat( 1, intervals_t{ : } );
+
+            %--------------------------------------------------------------
+            % A) exponential TGC curves
+            %--------------------------------------------------------------
+            TGC_curves = regularization.tgc.curves.exponential( intervals_t, tgc.exponents );
+
+            %--------------------------------------------------------------
+            % c) create discrete convolutions by discretizing TGC curves
+            %--------------------------------------------------------------
+            % time intervals for discretization
+            Ts_ref = reshape( 1 ./ [ axes_f_mix.delta ], size( axes_f_mix ) );
+
+            % compute Fourier coefficients
+            signal_matrices = fourier_coefficients( TGC_curves, Ts_ref, tgc.decays_dB );
+
+            % compute kernels for discrete convolutions
+            kernels = cell( size( signal_matrices ) );
+            for index_mix = 1:numel( signal_matrices )
+
+                kernels{ index_mix } = [ conj( signal_matrices( index_mix ).samples( end:-1:2 ) ); signal_matrices( index_mix ).samples ];
+
+            end % for index_mix = 1:numel( signal_matrices )
+
+            % create discrete convolution for each mix
+            LTs_conv = num2cell( linear_transforms.convolution( kernels, cat( 1, N_observations_mix{ : } ) ) );
+
+            %--------------------------------------------------------------
+            % d) concatenate discrete convolutions diagonally
+            %--------------------------------------------------------------
+            % create TGC operator for each selected sequential pulse-echo measurement
+            for index_measurement_sel = 1:numel( operator_born.indices_measurement_sel )
+                LTs_measurement{ index_measurement_sel } = linear_transforms.concatenations.diagonal( LTs_conv{ indices{ index_measurement_sel } } );
+            end
+
+            % create TGC operator for all selected sequential pulse-echo measurement
+            LT = linear_transforms.concatenations.diagonal( LTs_conv{ : } );
+
+            % concatenate vertically
+            LTs_measurement = cat( 1, LTs_measurement{ : } );
+
+        end % function [ LT, LTs_measurement ] = get_LT_scalar( tgc, operator_born )
+
+	end % methods (Access = protected, Hidden)
+
+end % classdef exponential < regularization.tgc.tgc

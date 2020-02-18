@@ -1,11 +1,11 @@
 %
-% superclass for all previous warm start options
+% superclass for all inactive warm start options
 %
 % author: Martin F. Schiffner
 % date: 2019-09-24
-% modified: 2020-01-07
+% modified: 2020-02-12
 %
-classdef warm_start_previous < regularization.options.warm_start
+classdef off < regularization.options.warm_starts.warm_start
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef warm_start_previous < regularization.options.warm_start
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = warm_start_previous( varargin )
+        function objects = off( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -31,36 +31,36 @@ classdef warm_start_previous < regularization.options.warm_start
             % superclass ensures nonempty positive integers
 
             %--------------------------------------------------------------
-            % 2.) create previous warm start options
+            % 2.) create inactive warm start options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.options.warm_start( size );
+            objects@regularization.options.warm_starts.warm_start( size );
 
-        end % function objects = warm_start_previous( size )
+        end % function objects = off( size )
 
         %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
-        function strs_out = string( warm_starts_previous )
+        function strs_out = string( options_off )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.warm_start_previous
-            if ~isa( warm_starts_previous, 'regularization.options.warm_start_previous' )
-                errorStruct.message = 'warm_starts_previous must be regularization.options.warm_start_previous!';
-                errorStruct.identifier = 'string:NoOptionsWarmStartPrevious';
+            % ensure class regularization.options.warm_starts.off
+            if ~isa( options_off, 'regularization.options.warm_starts.off' )
+                errorStruct.message = 'options_off must be regularization.options.warm_starts.off!';
+                errorStruct.identifier = 'string:NoOptionsWarmStartOff';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
             % 2.) create string array
             %--------------------------------------------------------------
-            % repeat string "previous"
-            strs_out = repmat( "previous", size( warm_starts_previous ) );
+            % repeat string "off"
+            strs_out = repmat( "off", size( options_off ) );
 
-        end % function strs_out = string( warm_starts_previous )
+        end % function strs_out = string( options_off )
 
 	end % methods
 
-end % classdef warm_start_previous < regularization.options.warm_start
+end % classdef off < regularization.options.warm_starts.warm_start

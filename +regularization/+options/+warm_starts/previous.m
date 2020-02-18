@@ -1,21 +1,21 @@
 %
-% superclass for all inactive reweighting options
+% superclass for all previous warm start options
 %
 % author: Martin F. Schiffner
-% date: 2019-09-17
-% modified: 2020-01-16
+% date: 2019-09-24
+% modified: 2020-02-12
 %
-classdef reweighting_off < regularization.options.reweighting
+classdef previous < regularization.options.warm_starts.warm_start
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods
+    methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = reweighting_off( varargin )
+        function objects = previous( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -31,36 +31,36 @@ classdef reweighting_off < regularization.options.reweighting
             % superclass ensures nonempty positive integers
 
             %--------------------------------------------------------------
-            % 2.) create inactive normalization options
+            % 2.) create previous warm start options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.options.reweighting( size );
+            objects@regularization.options.warm_starts.warm_start( size );
 
-        end % function objects = reweighting_off( varargin )
+        end % function objects = previous( size )
 
         %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
-        function strs_out = string( reweightings_off )
+        function strs_out = string( warm_starts_previous )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.reweighting_off
-            if ~isa( reweightings_off, 'regularization.options.reweighting_off' )
-                errorStruct.message = 'reweightings_off must be regularization.options.reweighting_off!';
-                errorStruct.identifier = 'string:NoOptionsReweightingOff';
+            % ensure class regularization.options.warm_starts.previous
+            if ~isa( warm_starts_previous, 'regularization.options.warm_starts.previous' )
+                errorStruct.message = 'warm_starts_previous must be regularization.options.warm_starts.previous!';
+                errorStruct.identifier = 'string:NoOptionsWarmStartPrevious';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
             % 2.) create string array
             %--------------------------------------------------------------
-            % repeat string "off"
-            strs_out = repmat( "off", size( reweightings_off ) );
+            % repeat string "previous"
+            strs_out = repmat( "previous", size( warm_starts_previous ) );
 
-        end % function strs_out = string( reweightings_off )
+        end % function strs_out = string( warm_starts_previous )
 
 	end % methods
 
-end % classdef reweighting_off < regularization.options.reweighting
+end % classdef previous < regularization.options.warm_starts.warm_start

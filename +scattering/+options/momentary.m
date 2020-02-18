@@ -109,6 +109,11 @@ classdef momentary
 
         end % function momentary = set_properties( momentary, varargin )
 
+        %------------------------------------------------------------------
+        % show
+        %------------------------------------------------------------------
+				
+
 	end % methods
 
 end % classdef momentary

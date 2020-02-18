@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-10
-% modified: 2020-02-04
+% modified: 2020-02-11
 %
 % TODO: make subclass of field
 %
@@ -179,7 +179,7 @@ classdef image
                     %------------------------------------------------------
                     % v.) unknown options
                     %------------------------------------------------------
-                    errorStruct.message = sprintf( 'No implementation for options{ %d }!', index_matrix );
+                    errorStruct.message = sprintf( 'No implementation for options{ %d } (%s)!', index_matrix, class( options{ index_matrix } ) );
                     errorStruct.identifier = 'evaluate_metric:UnknownProcessingOptions';
                     error( errorStruct );
 
@@ -193,6 +193,16 @@ classdef image
             end
 
         end % function results = evaluate_metric( images, options )
+
+        %------------------------------------------------------------------
+        % show
+        %------------------------------------------------------------------
+        function show( images, dynamic_ranges_dB )
+
+            samples_act = reshape( images.samples, images.grid.N_points_axis );
+            imagesc( illustration.dB( samples_act, 20 ), [ -dynamic_ranges_dB, 0 ] );
+
+        end
 
 	end % methods
 
@@ -236,7 +246,7 @@ classdef image
                 %----------------------------------------------------------
                 % a) project image pixels
                 %----------------------------------------------------------
-                % ensure valid dimension
+                % ensure valid number of dimensions
                 if options( index_options ).ROI.N_dimensions ~= image.grid.N_dimensions
                     errorStruct.message = sprintf( 'Number of dimensions of options( %d ).ROI must equal the number of dimensions of the image grid!', index_options );
                     errorStruct.identifier = 'profile:DimensionMismatch';
@@ -322,19 +332,19 @@ classdef image
             % 2.) compute regions
             %--------------------------------------------------------------
             % extract axes
-            axes = get_axes( images( index_matrix ).grid );
+            axes = get_axes( image.grid );
 
             % specify cell arrays
-            N_samples = cell( size( options ) );
-            volumes = cell( size( options ) );
+            N_samples = cell( numel( options ), 1 );
+            volumes = cell( numel( options ), 1 );
 
             % iterate options
             for index_options = 1:numel( options )
 
-                % ensure valid numbers of dimensions
-                if options( index_options ).ROI.N_dimensions ~= images( index_matrix ).grid.N_dimensions
-                    errorStruct.message = sprintf( 'Numbers of dimensions in options{ %d }( %d ).ROI and images( %d ).grid must equal!', index_matrix, index_options, index_matrix );
-                    errorStruct.identifier = 'region_boundary:DimensionMismatch';
+                % ensure valid number of dimensions
+                if options( index_options ).ROI.N_dimensions ~= image.grid.N_dimensions
+                    errorStruct.message = sprintf( 'Number of dimensions of options( %d ).ROI must equal the number of dimensions of the image grid!', index_options );
+                    errorStruct.identifier = 'profile:DimensionMismatch';
                     error( errorStruct );
                 end
 
@@ -342,14 +352,14 @@ classdef image
                 [ ~, indicators ] = cut_out( axes, cat( 2, options( index_options ).ROI.intervals.lb ), cat( 2, options( index_options ).ROI.intervals.ub ) );
 
                 % initialize results w/ zeros
-                N_samples{ index_options } = zeros( 1, images( index_matrix ).N_images );
-                volumes{ index_options } = zeros( 1, images( index_matrix ).N_images );
+                N_samples{ index_options } = zeros( 1, image.N_images );
+                volumes{ index_options } = zeros( 1, image.N_images );
 
                 % iterate images
-                for index_image = 1:images( index_matrix ).N_images
+                for index_image = 1:image.N_images
 
                     % extract relevant samples
-                    samples_act = reshape( images( index_matrix ).samples( :, index_image ), images( index_matrix ).grid.N_points_axis );
+                    samples_act = reshape( image.samples( :, index_image ), image.grid.N_points_axis );
                     samples_act = samples_act( indicators{ : } );
 
                     % logarithmic compression and hard thresholding
@@ -358,9 +368,9 @@ classdef image
 
                     % number of samples and volumes
                     N_samples{ index_options }( index_image ) = sum( indicator( : ) );
-                    volumes{ index_options }( index_image ) = N_samples{ index_options }( index_image ) * images( index_matrix ).grid.cell_ref.volume;
+                    volumes{ index_options }( index_image ) = N_samples{ index_options }( index_image ) * image.grid.cell_ref.volume;
 
-                end % for index_image = 1:images( index_matrix ).N_images
+                end % for index_image = 1:image.N_images
 
             end % for index_options = 1:numel( options )
 
@@ -399,7 +409,7 @@ classdef image
             % 2.) compute contrast-to-noise ratios (CNRs)
             %--------------------------------------------------------------
             % specify cell arrays
-            CNRs = cell( size( options ) );
+            CNRs = cell( numel( options ), 1 );
 
             % iterate options
             for index_options = 1:numel( options )
@@ -409,7 +419,7 @@ classdef image
                 [ ~, indicator_roi_noise ] = cut_out( image.grid, options( index_options ).ROI_noise );
 
                 % initialize CNRs w/ zeros
-                CNRs{ index_options } = zeros( image.N_images, 1 );
+                CNRs{ index_options } = zeros( 1, image.N_images );
 
                 % iterate images
                 for index_image = 1:image.N_images
@@ -426,27 +436,25 @@ classdef image
                     samples_act_dB_noise = samples_act_dB( indicator_roi_noise );
 
                     % statistics
-                    samples_act_dB_mean = mean( samples_act_dB_ref );
-                    samples_act_dB_var = var( samples_act_dB_ref );
+                    samples_act_dB_ref_mean = mean( samples_act_dB_ref );
+                    samples_act_dB_ref_var = var( samples_act_dB_ref );
                     samples_act_dB_noise_mean = mean( samples_act_dB_noise );
                     samples_act_dB_noise_var = var( samples_act_dB_noise );
 
                     % contrast-to-noise ratio (CNR) % TODO: 20 * log10( ) ?
-                    CNRs{ index_options }( index_image ) = abs( samples_act_dB_mean - samples_act_dB_noise_mean ) / sqrt( ( samples_act_dB_var + samples_act_dB_noise_var ) / 2 );
+                    CNRs{ index_options }( index_image ) = abs( samples_act_dB_ref_mean - samples_act_dB_noise_mean ) / sqrt( ( samples_act_dB_ref_var + samples_act_dB_noise_var ) / 2 );
 
                 end % for index_image = 1:image.N_images
 
             end % for index_options = 1:numel( options )
 
-            % avoid cell array for single options
-            if isscalar( options )
-                CNRs = CNRs{ 1 };
-            end
+            % concatenate vertically
+            CNRs = cat( 1, CNRs{ : } );
 
         end % function CNRs = contrast_noise_ratios( image, options )
 
         %------------------------------------------------------------------
-        % speckle quality (from Kolmogorov-Smirnov test)
+        % speckle quality (Kolmogorov-Smirnov test)
         %------------------------------------------------------------------
         function CNRs = speckle_quality( image, options )
 

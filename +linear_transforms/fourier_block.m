@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2020-01-31
+% modified: 2020-02-17
 %
 classdef fourier_block < linear_transforms.linear_transform_vector
 
@@ -22,6 +22,8 @@ classdef fourier_block < linear_transforms.linear_transform_vector
         N_points_block_sqrt
         indices_start
         indices_stop
+% TODO: partitioning cell array size( N_blocks_axis ) content N_points_block_axis
+        partitioning
 
     end % properties
 
@@ -136,10 +138,10 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class linear_transforms.fourier (scalar)
-            if ~( isa( LT, 'linear_transforms.fourier' ) && isscalar( LT ) )
-                errorStruct.message = 'LT must be linear_transforms.fourier!';
-                errorStruct.identifier = 'forward_transform_vector:NoSingleFourierTransform';
+            % ensure class linear_transforms.fourier_block (scalar)
+            if ~( isa( LT, 'linear_transforms.fourier_block' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.fourier_block!';
+                errorStruct.identifier = 'forward_transform_vector:NoSingleBlockFourierTransform';
                 error( errorStruct );
             end
 
@@ -147,30 +149,29 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             % superclass ensures equal numbers of points for x
 
             %--------------------------------------------------------------
-            % 2.) compute forward Fourier transform (single vector)
+            % 2.) compute forward block Fourier transform (single vector)
             %--------------------------------------------------------------
-            % create size matrix
-            size_matrix = [ LT.N_points_block_axis; LT.N_blocks_axis ];
-
-            % block partitioning
-            x = reshape( x, size_matrix( : )' );
-            
             % prepare shape of vector
             if LT.N_dimensions >= 2
                 x = reshape( x, LT.N_points_axis );
             end
 
-            
-            mat2cell( x, LT.N_blocks_axis )
-            x = reshape( x, [object.N_points_axis(2), object.N_points_axis(1)] );
-            y = zeros( object.N_points_axis(2), object.N_points_axis(1) );
-            for index_x = 1:object.N_blocks_axis(1)
-                for index_z = 1:object.N_blocks_axis(2)
+            % block partitioning
+            x = mat2cell( x, LT.partitioning{ : } );
 
-                    x_block = x( object.indices_start{2}(index_z):object.indices_stop{2}(index_z), object.indices_start{1}(index_x):object.indices_stop{1}(index_x) );
-                    y( object.indices_start{2}(index_z):object.indices_stop{2}(index_z), object.indices_start{1}(index_x):object.indices_stop{1}(index_x) ) = fft2( x_block ) / object.N_lattice_block_sqrt;
-                end
-            end
+            % specify cell array for y
+            y = cell( LT.N_blocks_axis );
+
+            % iterate blocks
+            for index_block = 1:LT.N_blocks
+
+                % apply forward block transform
+                y{ index_block } = fftn( x{ index_block } ) / LT.N_points_block_sqrt;
+
+            end % for index_block = 1:LT.N_blocks
+
+            % avoid cell array for y
+            y = cell2mat( y );
 
         end % function y = forward_transform_vector( LT, x )
 
@@ -182,10 +183,10 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class linear_transforms.fourier (scalar)
-            if ~( isa( LT, 'linear_transforms.fourier' ) && isscalar( LT ) )
-                errorStruct.message = 'LT must be linear_transforms.fourier!';
-                errorStruct.identifier = 'adjoint_transform_vector:NoSingleFourierTransform';
+            % ensure class linear_transforms.fourier_block (scalar)
+            if ~( isa( LT, 'linear_transforms.fourier_block' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.fourier_block!';
+                errorStruct.identifier = 'adjoint_transform_vector:NoSingleBlockFourierTransform';
                 error( errorStruct );
             end
 
@@ -193,22 +194,29 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             % superclass ensures equal numbers of coefficients
 
             %--------------------------------------------------------------
-            % 2.) compute adjoint Fourier transform (single vector)
+            % 2.) compute adjoint block Fourier transform (single vector)
             %--------------------------------------------------------------
             % prepare shape of vector
             if LT.N_dimensions >= 2
                 x = reshape( x, LT.N_points_axis );
             end
 
-            x = reshape( x, [LT_fourier_blk.N_points_axis(2), LT_fourier_blk.N_points_axis(1)] );
-            y = zeros( LT_fourier_blk.N_points_axis(2), LT_fourier_blk.N_points_axis(1) );
-            for index_x = 1:LT_fourier_blk.N_blocks_axis(1)
-                for index_z = 1:LT_fourier_blk.N_blocks_axis(2)
+            % block partitioning
+            x = mat2cell( x, LT.partitioning{ : } );
 
-                    x_block = x( LT_fourier_blk.indices_start{2}(index_z):LT_fourier_blk.indices_stop{2}(index_z), LT_fourier_blk.indices_start{1}(index_x):LT_fourier_blk.indices_stop{1}(index_x) );
-                    y( LT_fourier_blk.indices_start{2}(index_z):LT_fourier_blk.indices_stop{2}(index_z), LT_fourier_blk.indices_start{1}(index_x):LT_fourier_blk.indices_stop{1}(index_x) ) = ifft2( x_block ) * LT_fourier_blk.N_lattice_block_sqrt;
-                end
-            end
+            % specify cell array for y
+            y = cell( LT.N_blocks_axis );
+
+            % iterate blocks
+            for index_block = 1:LT.N_blocks
+
+                % apply inverse block transform
+                y{ index_block } = ifftn( x{ index_block } ) * LT.N_points_block_sqrt;
+
+            end % for index_block = 1:LT.N_blocks
+
+            % avoid cell array for y
+            y = cell2mat( y );
 
         end % function y = adjoint_transform_vector( LT, x )
 

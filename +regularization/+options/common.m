@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-01-25
+% modified: 2020-02-17
 %
 classdef common
 
@@ -14,9 +14,10 @@ classdef common
 
         % independent properties
         momentary ( 1, 1 ) scattering.options.momentary { mustBeNonempty } = scattering.options.momentary                           % momentary scattering options
-        tgc ( 1, 1 ) regularization.options.tgc { mustBeNonempty } = regularization.options.tgc_off                                 % TGC options
-        dictionary ( 1, 1 ) regularization.options.dictionary { mustBeNonempty } = regularization.options.dictionary_identity       % dictionary options
-        normalization ( 1, 1 ) regularization.options.normalization { mustBeNonempty } = regularization.options.normalization_off	% normalization options
+        tgc ( 1, 1 ) regularization.tgc.tgc { mustBeNonempty } = regularization.tgc.off                                             % TGC
+        dictionary ( 1, 1 ) regularization.dictionaries.dictionary { mustBeNonempty } = regularization.dictionaries.identity        % dictionary
+        normalization ( 1, 1 ) regularization.normalizations.normalization { mustBeNonempty } = regularization.normalizations.off	% normalization options
+        display ( 1, 1 ) logical { mustBeNonempty } = 1                                                                             % display results of estimate
 
 	end % properties
 
@@ -58,49 +59,13 @@ classdef common
             % iterate options
             for index_object = 1:numel( objects )
 
-                % iterate arguments
-                for index_arg = 1:numel( varargin )
+                args = cell( 1, nargin );
+                for index_arg = 1:nargin
+                    args{ index_arg } = varargin{ index_arg }( index_object );
+                end
 
-                    if isa( varargin{ index_arg }, 'scattering.options.momentary' )
-
-                        %--------------------------------------------------
-                        % a) momentary scattering options
-                        %--------------------------------------------------
-                        objects( index_object ).momentary = varargin{ index_arg }( index_object );
-
-                    elseif isa( varargin{ index_arg }, 'regularization.options.tgc' )
-
-                        %--------------------------------------------------
-                        % b) TGC options
-                        %--------------------------------------------------
-                        objects( index_object ).tgc = varargin{ index_arg }( index_object );
-
-                    elseif isa( varargin{ index_arg }, 'regularization.options.dictionary' )
-
-                        %--------------------------------------------------
-                        % c) dictionary options
-                        %--------------------------------------------------
-                        objects( index_object ).dictionary = varargin{ index_arg }( index_object );
-
-                    elseif isa( varargin{ index_arg }, 'regularization.options.normalization' )
-
-                        %--------------------------------------------------
-                        % d) normalization options
-                        %--------------------------------------------------
-                        objects( index_object ).normalization = varargin{ index_arg }( index_object );
-
-                    else
-
-                        %--------------------------------------------------
-                        % e) unknown class
-                        %--------------------------------------------------
-                        errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
-                        errorStruct.identifier = 'common:UnknownClass';
-                        error( errorStruct );
-
-                    end % if isa( varargin{ index_arg }, 'scattering.options.momentary' )
-
-                end % for index_arg = 1:numel( varargin )
+                % set independent properties
+                objects( index_object ) = set_properties( objects( index_object ), args{ : } );
 
             end % for index_object = 1:numel( objects )
 
@@ -148,6 +113,70 @@ classdef common
             end % for index_object = 1:numel( options )
 
         end % function show( options )
+
+        %------------------------------------------------------------------
+        % set independent properties
+        %------------------------------------------------------------------
+        function common = set_properties( common, varargin )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.options.common (scalar)
+            if ~( isa( common, 'regularization.options.common' ) && isscalar( common ) )
+                errorStruct.message = 'common must be regularization.options.common!';
+                errorStruct.identifier = 'set_properties:NoOptionsMomentary';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) set properties
+            %--------------------------------------------------------------
+            % iterate arguments
+            for index_arg = 1:numel( varargin )
+
+                if isa( varargin{ index_arg }, 'scattering.options.momentary' )
+
+                    %--------------------------------------------------
+                    % a) momentary scattering options
+                    %------------------------------------------------------
+                    common.momentary = varargin{ index_arg };
+
+                elseif isa( varargin{ index_arg }, 'regularization.tgc.tgc' )
+
+                    %------------------------------------------------------
+                    % b) TGC options
+                    %------------------------------------------------------
+                    common.tgc = varargin{ index_arg };
+
+                elseif isa( varargin{ index_arg }, 'regularization.dictionaries.dictionary' )
+
+                    %------------------------------------------------------
+                    % c) dictionary options
+                    %------------------------------------------------------
+                    common.dictionary = varargin{ index_arg };
+
+                elseif isa( varargin{ index_arg }, 'regularization.normalizations.normalization' )
+
+                    %------------------------------------------------------
+                    % d) normalization options
+                    %------------------------------------------------------
+                    common.normalization = varargin{ index_arg };
+
+                else
+
+                    %------------------------------------------------------
+                    % e) unknown class
+                    %------------------------------------------------------
+                    errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
+                    errorStruct.identifier = 'common:UnknownClass';
+                    error( errorStruct );
+
+                end % if isa( varargin{ index_arg }, 'scattering.options.momentary' )
+
+            end % for index_arg = 1:numel( varargin )
+
+        end % function common = set_properties( common, varargin )
 
 	end % methods
 

@@ -224,6 +224,7 @@ classdef sequence_increasing
                 deltas = diff( sequences( index_object ).members );
 
                 % check regularity
+% TODO: check quantization!
                 if all( abs( deltas( : ) - deltas( 1 ) ) < 1e-10 * deltas( 1 ) )
                     % convert to strictly monotonically increasing sequence with regular spacing
                     q_lb = round( sequences( index_object ).members( 1 ) / deltas( 1 ) );

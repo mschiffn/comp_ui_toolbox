@@ -7,7 +7,7 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
 % INPUT:
 %	op_A = linear dictionary operator (matrix or function handle)
 %	y_m = vector of observations
-%	options = regularization.options.algorithm_omp
+%	options = regularization.algorithms.omp
 %
 % OUTPUT:
 %   theta_recon = recovered coefficients
@@ -25,7 +25,7 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
 %
 % author: Martin F. Schiffner
 % date: 2011-06-15
-% modified: 2020-01-14
+% modified: 2020-02-13
 %
 
 	% print status
@@ -52,9 +52,9 @@ function [ theta_recon, y_m_res, info ] = omp( op_A, y_m, options )
     y_m = y_m( : );
     y_m_norm = norm( y_m, 2 );
 
-    % ensure class regularization.options.algorithm_omp
-    if ~isa( options, 'regularization.options.algorithm_omp' )
-        errorStruct.message = 'options must be regularization.options.algorithm_omp!';
+    % ensure class regularization.algorithms.omp
+    if ~isa( options, 'regularization.algorithms.omp' )
+        errorStruct.message = 'options must be regularization.algorithms.omp!';
         errorStruct.identifier = 'omp:NoOptionsAlgorithmOMP';
         error( errorStruct );
     end

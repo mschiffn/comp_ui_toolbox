@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-10
-% modified: 2020-01-15
+% modified: 2020-02-17
 %
-classdef normalization_off < regularization.options.normalization
+classdef off < regularization.normalizations.normalization
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef normalization_off < regularization.options.normalization
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = normalization_off( varargin )
+        function objects = off( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -34,9 +34,9 @@ classdef normalization_off < regularization.options.normalization
             % 2.) create inactive normalization options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.options.normalization( size );
+            objects@regularization.normalizations.normalization( size );
 
-        end % function objects = normalization_off( varargin )
+        end % function objects = off( varargin )
 
         %------------------------------------------------------------------
         % string array (overload string method)
@@ -46,10 +46,10 @@ classdef normalization_off < regularization.options.normalization
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.normalization_off
-            if ~isa( normalizations_off, 'regularization.options.normalization_off' )
-                errorStruct.message = 'normalizations_off must be regularization.options.normalization_off!';
-                errorStruct.identifier = 'string:NoOptionsNormalizationOff';
+            % ensure class regularization.normalizations.off
+            if ~isa( normalizations_off, 'regularization.normalizations.off' )
+                errorStruct.message = 'normalizations_off must be regularization.normalizations.off!';
+                errorStruct.identifier = 'string:NoNormalizationsOff';
                 error( errorStruct );
             end
 
@@ -63,4 +63,29 @@ classdef normalization_off < regularization.options.normalization
 
 	end % methods
 
-end % classdef normalization_off < regularization.options.normalization
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected, hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % apply normalization (scalar)
+        %------------------------------------------------------------------
+        function weighting = apply_scalar( ~, weighting )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class regularization.normalizations.normalization (scalar) for normalization
+            % calling function ensures class linear_transforms.weighting (scalar) for weighting
+
+            %--------------------------------------------------------------
+            % 2.) apply threshold (scalar)
+            %--------------------------------------------------------------
+            % do not modify the weighting
+
+        end % function weighting = apply_scalar( ~, weighting )
+
+	end % methods (Access = protected, Hidden)
+
+end % classdef off < regularization.normalizations.normalization

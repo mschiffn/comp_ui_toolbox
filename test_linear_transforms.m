@@ -206,7 +206,7 @@ signal_BP_tilde = processing.signal_matrix( axis_t, repmat( samples_BP_tilde, [ 
 %--------------------------------------------------------------------------
 % 2.) create time-dependent variable gain
 %--------------------------------------------------------------------------
-TGC_curve = regularization.tgc.exponential( math.interval_quantized( axis_t.q_lb, axis_t.q_ub + 1, axis_t.delta ), physical_values.hertz( 2e4 ) );
+TGC_curve = regularization.tgc.curves.exponential( math.interval_quantized( axis_t.q_lb, axis_t.q_ub + 1, axis_t.delta ), physical_values.hertz( 2e4 ) );
 
 % sample TGC curve
 samples_gain_tilde = sample_curve( TGC_curve, axis_t );

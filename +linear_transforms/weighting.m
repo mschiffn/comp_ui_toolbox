@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-01-30
+% modified: 2020-02-17
 %
 classdef weighting < linear_transforms.linear_transform_matrix
 
@@ -78,7 +78,7 @@ classdef weighting < linear_transforms.linear_transform_matrix
         % normalization
         %------------------------------------------------------------------
         function LTs = normalize( LTs, options )
-
+% TODO: move to regularizations.normalizations.normalization
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -89,10 +89,10 @@ classdef weighting < linear_transforms.linear_transform_matrix
                 error( errorStruct );
             end
 
-            % ensure class regularization.options.normalization
-            if ~isa( options, 'regularization.options.normalization' )
-                errorStruct.message = 'options must be regularization.options.normalization!';
-                errorStruct.identifier = 'normalize:NoNormalizationOptions';
+            % ensure class regularization.normalizations.normalization
+            if ~isa( options, 'regularization.normalizations.normalization' )
+                errorStruct.message = 'options must be regularization.normalizations.normalization!';
+                errorStruct.identifier = 'normalize:NoNormalizations';
                 error( errorStruct );
             end
 
@@ -106,19 +106,19 @@ classdef weighting < linear_transforms.linear_transform_matrix
             for index_object = 1:numel( LTs )
 
                 % check type of normalization
-                if isa( options( index_object ), 'regularization.options.normalization_off' )
+                if isa( options( index_object ), 'regularization.normalizations.off' )
 
                     %------------------------------------------------------
                     % a) no normalization
                     %------------------------------------------------------
                     % do not modify linear transform
 
-                elseif isa( options( index_object ), 'regularization.options.normalization_threshold' )
+                elseif isa( options( index_object ), 'regularization.normalizations.threshold' )
 
                     %------------------------------------------------------
                     % b) apply threshold to inverse weighting matrix
                     %------------------------------------------------------
-                    [ LTs( index_object ), N_threshold ] = threshold( LTs( index_object ), options( index_object ).threshold );
+                    [ LTs( index_object ), N_threshold ] = threshold( LTs( index_object ), options( index_object ).value );
 
                 else
 
@@ -129,7 +129,7 @@ classdef weighting < linear_transforms.linear_transform_matrix
                     errorStruct.identifier = 'normalize:UnknownOptionsClass';
                     error( errorStruct );
 
-                end % if isa( options( index_object ), 'regularization.options.normalization_off' )
+                end % if isa( options( index_object ), 'regularization.normalizations.off' )
 
             end % for index_object = 1:numel( LTs )
 
@@ -225,7 +225,7 @@ classdef weighting < linear_transforms.linear_transform_matrix
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods (private, hidden)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Access = private, Hidden)
+	methods (Hidden)
 
         %------------------------------------------------------------------
         % threshold
@@ -283,6 +283,6 @@ classdef weighting < linear_transforms.linear_transform_matrix
 
         end % function [ LTs, N_threshold ] = threshold( LTs, xis )
 
-	end % methods (Access = private, Hidden)
+	end % methods (Hidden)
 
 end % classdef weighting < linear_transforms.linear_transform_matrix
