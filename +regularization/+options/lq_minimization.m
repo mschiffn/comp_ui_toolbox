@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2020-02-18
+% modified: 2020-02-19
 %
 classdef lq_minimization < regularization.options.common
 
@@ -18,9 +18,9 @@ classdef lq_minimization < regularization.options.common
 
 	end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
@@ -32,7 +32,7 @@ classdef lq_minimization < regularization.options.common
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure nonempty options_common
-            if nargin <= 0 || isempty( options_common )
+            if nargin < 1 || isempty( options_common )
                 options_common = regularization.options.common;
             end
 
@@ -58,7 +58,7 @@ classdef lq_minimization < regularization.options.common
             % 2.) create lq-minimization options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.options.common( [ options_common.momentary ], [ options_common.tgc ], [ options_common.dictionary ], [ options_common.normalization ] );
+            objects@regularization.options.common( regularization.options.energy_rx( [ options_common.momentary ], [ options_common.tgc ], [ options_common.dictionary ] ), [ options_common.normalization ] );
 
             % reshape lq-minimization options
             objects = reshape( objects, size( options_common ) );
@@ -101,11 +101,6 @@ classdef lq_minimization < regularization.options.common
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure nonempty options_common
-            if nargin <= 0 || isempty( options )
-                options = regularization.options.lq_minimization;
-            end
-
             % ensure class regularization.options.lq_minimization
             if ~isa( options, 'regularization.options.lq_minimization' )
                 errorStruct.message = 'options must be regularization.options.lq_minimization!';
@@ -140,10 +135,6 @@ classdef lq_minimization < regularization.options.common
 
         end % function show( options )
 
-        %------------------------------------------------------------------
-        % execute
-        %------------------------------------------------------------------
-        
 	end % methods
 
 end % classdef lq_minimization < regularization.options.common

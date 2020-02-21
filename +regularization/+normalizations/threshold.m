@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-10
-% modified: 2020-02-17
+% modified: 2020-02-20
 %
 classdef threshold < regularization.normalizations.normalization
 
@@ -103,6 +103,25 @@ classdef threshold < regularization.normalizations.normalization
             [ weighting, N_threshold ] = threshold( weighting, normalization.value );
 
         end % function [ weighting, N_threshold ] = apply_scalar( normalization, weighting )
+
+        %------------------------------------------------------------------
+        % create linear transform (scalar)
+        %------------------------------------------------------------------
+%         function LT = get_LT_scalar( ~, operator_born )
+% 
+%             %--------------------------------------------------------------
+%             % 1.) check arguments
+%             %--------------------------------------------------------------
+%             % calling function ensures class regularization.normalizations.normalization (scalar) for normalization
+%             % calling function ensures class scattering.operator_born (scalar) for operator_born
+% 
+%             %--------------------------------------------------------------
+%             % 2.) create linear transform (scalar)
+%             %--------------------------------------------------------------
+%             % create linear transform
+%             LT = linear_transforms.identity( operator_born.sequence.setup.FOV.shape.grid.N_points );
+% 
+%         end % function LT = get_LT_scalar( ~, operator_born )
 
 	end % methods (Access = protected, Hidden)
 

@@ -7,7 +7,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-13
-% modified: 2020-02-16
+% modified: 2020-02-18
 %
 classdef reweighting < regularization.algorithms.algorithm
 
@@ -17,7 +17,7 @@ classdef reweighting < regularization.algorithms.algorithm
 	properties (SetAccess = private)
 
         % independent properties
-        algorithm ( 1, 1 ) regularization.algorithms.algorithm { mustBeNonempty } = regularization.algorithms.spgl1( 0.3, 1e3 )	% regularization algorithm
+        algorithm ( 1, 1 ) regularization.algorithms.algorithm { mustBeNonempty } = regularization.algorithms.convex.spgl1( 0.3, 1e3, 1 )	% regularization algorithm
         q ( 1, 1 ) double { mustBeNonnegative, mustBeLessThanOrEqual( q, 2 ) } = 0.5	% norm parameter
         epsilon_n ( :, 1 ) double { mustBeNonnegative } = 1 ./ ( 1 + (1:5) )            % monotonically decreasing reweighting sequence
 
@@ -123,51 +123,58 @@ classdef reweighting < regularization.algorithms.algorithm
         %------------------------------------------------------------------
         % execute (implement execute_scalar method)
         %------------------------------------------------------------------
-        function [ theta_recon_n, y_m_res_n, info ] = execute_scalar( algorithms_reweighting, op_A, y_m )
+        function [ theta_recon_n, y_m_res_n, info ] = execute_scalar( algorithm_reweighting, op_A, y_m )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass ensures class regularization.algorithms.algorithm (scalar) for spgl1
-            % superclass ensures numeric matrix or function_handle for op_A
-            % superclass ensures compatibility of y_m
+            % calling function ensures class regularization.algorithms.algorithm (scalar) for spgl1
+            % calling function ensures numeric matrix or function_handle for op_A
+            % calling function ensures compatibility of y_m
 
             %--------------------------------------------------------------
             % 2.) execute reweighting
             %--------------------------------------------------------------
-% TODO: warm start for multiple rel_RMSEs
+% TODO: warm start for multiple rel_RMSEs?
             % compute initial guess
-            [ theta_recon_n, y_m_res_n, info ] = execute_scalar( algorithms_reweighting.algorithm, op_A, y_m );
+            [ theta_recon_n, y_m_res_n, info ] = execute_scalar( algorithm_reweighting.algorithm, op_A, y_m );
 
             % allocate memory for results and specify start vector ( minimizer of P_{(1, eta)} )
-            theta_recon_n = [ theta_recon_n, zeros( size( theta_recon_n, 1 ), algorithms_reweighting.N_iterations ) ];
-            y_m_res_n = [ y_m_res_n, zeros( size( y_m_res_n, 1 ), algorithms_reweighting.N_iterations ) ];
+            theta_recon_n = [ theta_recon_n, zeros( size( theta_recon_n, 1 ), algorithm_reweighting.N_iterations ) ];
+            y_m_res_n = [ y_m_res_n, zeros( size( y_m_res_n, 1 ), algorithm_reweighting.N_iterations ) ];
 
             % statistics
-            info.info_reweighting = cell( 1, algorithms_reweighting.N_iterations );
+            info.info_reweighting = cell( 1, algorithm_reweighting.N_iterations );
 
             % iterate reweighted problems
-            for index_iter = 1:algorithms_reweighting.N_iterations
-% TODO: residual voltages
+            for index_iter = 1:algorithm_reweighting.N_iterations
 
-                % specify diagonal weighting matrix
-                weights_act = ( abs( theta_recon_n( :, index_iter ) ) + algorithms_reweighting.epsilon_n( index_iter ) ).^( 1 - algorithms_reweighting.q );
-                LT_act_n = linear_transforms.composition( linear_transforms.weighting( weights_act ), LT_act );
+                % compute weights
+                theta_recon_n_act_abs = abs( theta_recon_n( :, index_iter ) );
+                theta_recon_n_act_abs_lb = max( theta_recon_n_act_abs ) * algorithm_reweighting.epsilon_n( index_iter );
+                weights_act = ( theta_recon_n_act_abs + theta_recon_n_act_abs_lb ).^( 1 - algorithm_reweighting.q );
 
                 % define anonymous function for reweighted sensing matrix
-% TODO: use function handle...
-                op_A_bar_n = @( x, mode ) combined_quick( operator_born_act, mode, x, LT_act_n, LT_tgc_act );
+                op_A_bar_n = @( x, mode ) operator_weighted( algorithm_reweighting, weights_act, op_A, x, mode );
 
                 % solve reweighted problem
-                [ temp, temp_res, info.info_reweighting{ index_iter } ] = execute_scalar( algorithms_reweighting.algorithm, op_A_bar_n, y_m );
+                [ temp, temp_res, info.info_reweighting{ index_iter } ] = execute_scalar( algorithm_reweighting.algorithm, op_A_bar_n, y_m );
 
                 % remove weights
                 theta_recon_n( :, index_iter + 1 ) = temp .* weights_act;
                 y_m_res_n( :, index_iter + 1 ) = temp_res;
 
-            end % for index_iter = 1:algorithms_reweighting.N_iterations
+            end % for index_iter = 1:algorithm_reweighting.N_iterations
 
-        end % function [ theta_recon_n, y_m_res_n, info ] = execute_scalar( algorithms_reweighting, op_A, y_m )
+        end % function [ theta_recon_n, y_m_res_n, info ] = execute_scalar( algorithm_reweighting, op_A, y_m )
+
+        function y = operator_weighted( ~, weights_act, op_A, x, mode )
+            if mode == 1
+                y = op_A( weights_act .* x, 1 );
+            elseif mode == 2
+                y = weights_act .* op_A( x, 2 );
+            end
+        end
 
 	end % methods (Access = protected, Hidden)
 

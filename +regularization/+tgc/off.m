@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-15
-% modified: 2020-02-17
+% modified: 2020-02-21
 %
 classdef off < regularization.tgc.tgc
 
@@ -90,7 +90,7 @@ classdef off < regularization.tgc.tgc
             LTs_measurement = cell( numel( operator_born.indices_measurement_sel ), 1 );
 
             % iterate selected sequential pulse-echo measurements
-            for index_measurement_sel = 1:numel( operators_born( index_object ).indices_measurement_sel )
+            for index_measurement_sel = 1:numel( operator_born.indices_measurement_sel )
 
                 % create identity for the selected sequential pulse-echo measurement
                 LTs_measurement{ index_measurement_sel } = linear_transforms.identity( N_observations_measurement( index_measurement_sel ) );

@@ -1,11 +1,11 @@
 %
-% superclass for all common regularization options
+% superclass for all energy options
 %
 % author: Martin F. Schiffner
-% date: 2019-12-28
+% date: 2020-02-21
 % modified: 2020-02-21
 %
-classdef common < regularization.options.energy_rx
+classdef energy_rx
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -13,115 +13,118 @@ classdef common < regularization.options.energy_rx
 	properties (SetAccess = private)
 
         % independent properties
-        normalization ( 1, 1 ) regularization.normalizations.normalization { mustBeNonempty } = regularization.normalizations.off	% normalization options
-        display ( 1, 1 ) logical { mustBeNonempty } = 1                                                                             % display results of estimate
+        momentary ( 1, 1 ) scattering.options.momentary { mustBeNonempty } = scattering.options.momentary                           % momentary scattering options
+        tgc ( 1, 1 ) regularization.tgc.tgc { mustBeNonempty } = regularization.tgc.off                                             % TGC
+        dictionary ( 1, 1 ) regularization.dictionaries.dictionary { mustBeNonempty } = regularization.dictionaries.identity        % dictionary
 
 	end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = common( options_energy, normalizations )
+        function objects = energy_rx( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.energy_rx
-            if ~isa( options_energy, 'regularization.options.energy_rx' )
-                errorStruct.message = 'options_energy must be regularization.options.energy_rx!';
-                errorStruct.identifier = 'common:NoEnergyOptions';
-                error( errorStruct );
+            % return if no input argument
+            if nargin == 0
+                return;
             end
 
-            % ensure class regularization.normalizations.normalization
-            if ~isa( normalizations, 'regularization.normalizations.normalization' )
-                errorStruct.message = 'normalizations must be regularization.normalizations.normalization!';
-                errorStruct.identifier = 'common:NoNormalizations';
-                error( errorStruct );
-            end
-
-            % multiple options_energy / single normalizations
-            if ~isscalar( options_energy ) && isscalar( normalizations )
-                normalizations = repmat( normalizations, size( options_energy ) );
-            end
-
-            % single options_energy / multiple normalizations
-            if isscalar( options_energy ) && ~isscalar( normalizations )
-                options_energy = repmat( options_energy, size( normalizations ) );
+            % iterate arguments
+            for index_arg = 2:numel( varargin )
+                % multiple varargin{ 1 } / single varargin{ index_arg }
+                if ~isscalar( varargin{ 1 } ) && isscalar( varargin{ index_arg } )
+                    varargin{ index_arg } = repmat( varargin{ index_arg }, size( varargin{ 1 } ) );
+                end
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options_energy, normalizations );
+            auxiliary.mustBeEqualSize( varargin{ : } );
 
             %--------------------------------------------------------------
             % 2.) create options
             %--------------------------------------------------------------
-            % constructor of superclass
-            objects@regularization.options.energy_rx( [ options_energy.momentary ], [ options_energy.tgc ], [ options_energy.dictionary ] );
-
-            % reshape common options
-            objects = reshape( objects, size( options_energy ) );
+            % repeat default options
+            objects = repmat( objects, size( varargin{ 1 } ) );
 
             % iterate options
             for index_object = 1:numel( objects )
 
+                args = cell( 1, nargin );
+                for index_arg = 1:nargin
+                    args{ index_arg } = varargin{ index_arg }( index_object );
+                end
+
                 % set independent properties
-                objects( index_object ).normalization = normalizations( index_object );
+                objects( index_object ) = set_properties( objects( index_object ), args{ : } );
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = common( options_energy, normalizations )
+        end % function objects = energy_rx( varargin )
 
         %------------------------------------------------------------------
         % set independent properties
         %------------------------------------------------------------------
-        function common = set_properties( common, varargin )
+        function energy_rx = set_properties( energy_rx, varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.common (scalar)
-            if ~( isa( common, 'regularization.options.common' ) && isscalar( common ) )
-                errorStruct.message = 'common must be regularization.options.common!';
-                errorStruct.identifier = 'set_properties:NoOptionsMomentary';
+            % ensure class regularization.options.energy_rx (scalar)
+            if ~( isa( energy_rx, 'regularization.options.energy_rx' ) && isscalar( energy_rx ) )
+                errorStruct.message = 'energy_rx must be regularization.options.energy_rx!';
+                errorStruct.identifier = 'set_properties:NoOptionsEnergy';
                 error( errorStruct );
             end
 
             %--------------------------------------------------------------
             % 2.) set properties
             %--------------------------------------------------------------
-            % call set_properties method of superclass
-            common = set_properties@regularization.options.energy_rx( common, varargin{ : } );
-
             % iterate arguments
             for index_arg = 1:numel( varargin )
 
-                if isa( varargin{ index_arg }, 'regularization.normalizations.normalization' )
+                if isa( varargin{ index_arg }, 'scattering.options.momentary' )
+
+                    %--------------------------------------------------
+                    % a) momentary scattering options
+                    %------------------------------------------------------
+                    energy_rx.momentary = varargin{ index_arg };
+
+                elseif isa( varargin{ index_arg }, 'regularization.tgc.tgc' )
 
                     %------------------------------------------------------
-                    % a) normalization options
+                    % b) TGC options
                     %------------------------------------------------------
-                    common.normalization = varargin{ index_arg };
+                    energy_rx.tgc = varargin{ index_arg };
+
+                elseif isa( varargin{ index_arg }, 'regularization.dictionaries.dictionary' )
+
+                    %------------------------------------------------------
+                    % c) dictionary options
+                    %------------------------------------------------------
+                    energy_rx.dictionary = varargin{ index_arg };
 
                 else
-% 
+
 %                     %------------------------------------------------------
-%                     % b) unknown class
+%                     % d) unknown class
 %                     %------------------------------------------------------
 %                     errorStruct.message = sprintf( 'Class of varargin{ %d } is unknown!', index_arg );
-%                     errorStruct.identifier = 'common:UnknownClass';
+%                     errorStruct.identifier = 'energy_rx:UnknownClass';
 %                     error( errorStruct );
 
-                end % if isa( varargin{ index_arg }, 'regularization.normalizations.normalization' )
+                end % if isa( varargin{ index_arg }, 'scattering.options.momentary' )
 
             end % for index_arg = 1:numel( varargin )
 
-        end % function common = set_properties( common, varargin )
+        end % function energy_rx = set_properties( energy_rx, varargin )
 
         %------------------------------------------------------------------
         % create configurations
@@ -131,9 +134,9 @@ classdef common < regularization.options.energy_rx
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class regularization.options.common
-            if ~isa( options, 'regularization.options.common' )
-                errorStruct.message = 'options must be regularization.options.common!';
+            % ensure class regularization.options.energy_rx
+            if ~isa( options, 'regularization.options.energy_rx' )
+                errorStruct.message = 'options must be regularization.options.energy_rx!';
                 errorStruct.identifier = 'get_configs:NoCommonOptions';
                 error( errorStruct );
             end
@@ -161,45 +164,31 @@ classdef common < regularization.options.energy_rx
             %--------------------------------------------------------------
             % 2.) create configurations
             %--------------------------------------------------------------
-            % call get_configs method of superclass
-            [ operators, LTs_dict, LTs_tgc, LTs_tgc_measurement ] = get_configs@regularization.options.energy_rx( options, operators );
+            % set momentary scattering operator options
+            operators = set_options_momentary( operators, reshape( [ options.momentary ], size( options ) ) );
 
-            % ensure cell arrays
-            if ~iscell( LTs_dict )
-                LTs_dict = { LTs_dict };
-                LTs_tgc_measurement = { LTs_tgc_measurement };
-            end
+            % specify cell arrays
+            LTs_dict = cell( size( options ) );
+            LTs_tgc = cell( size( options ) );
+            LTs_tgc_measurement = cell( size( options ) );
 
-            % iterate common regularization options
+            % iterate ennergy options
             for index_options = 1:numel( options )
 
                 %----------------------------------------------------------
-                % a) apply normalization
+                % a) create dictionary
                 %----------------------------------------------------------
-% TODO: LTs_dict{ index_options } = get_LTs( options( index_options ).normalization, operators( index_options ), LTs_dict{ index_options } );
-                if ~isa( options( index_options ).normalization, 'regularization.normalizations.off' )
+                LTs_dict{ index_options } = get_LTs( options( index_options ).dictionary, operators( index_options ) );
 
-                    % compute received energies
-                    E_M = energy_rx_scalar( operators( index_options ), LTs_dict{ index_options }, LTs_tgc_measurement{ index_options } );
-
-                    % create inverse weighting matrix
-                    LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
-
-                    % apply normalization settings
-                    LT_weighting_inv = apply( options( index_options ).normalization, LT_weighting_inv );
-
-                    % composition with non-canonical linear transform
-% TODO: neglect identity in composition
-                    if ~isa( LTs_dict{ index_options }, 'linear_transforms.identity' )
-                        LT_weighting_inv = linear_transforms.composition( LT_weighting_inv, LTs_dict{ index_options } );
-                    end
-
-                    % update dictionary
-                    LTs_dict{ index_options } = LT_weighting_inv;
-
-                end % if ~isa( options( index_options ).normalization, 'regularization.normalizations.off' )
+                %----------------------------------------------------------
+                % b) time gain compensation (TGC)
+                %----------------------------------------------------------
+                [ LTs_tgc{ index_options }, LTs_tgc_measurement{ index_options } ] = get_LTs( options( index_options ).tgc, operators( index_options ) );
 
             end % for index_options = 1:numel( options )
+
+            % convert cell arrays to arrays
+            LTs_tgc = reshape( cat( 1, LTs_tgc{ : } ), size( options ) );
 
             % avoid cell arrays for single options
             if isscalar( options )
@@ -219,12 +208,12 @@ classdef common < regularization.options.energy_rx
             %--------------------------------------------------------------
             % ensure nonempty options
             if nargin <= 0 || isempty( options )
-                options = regularization.options.common;
+                options = regularization.options.energy_rx;
             end
 
-            % ensure class regularization.options.common
-            if ~isa( options, 'regularization.options.common' )
-                errorStruct.message = 'options must be regularization.options.common!';
+            % ensure class regularization.options.energy_rx
+            if ~isa( options, 'regularization.options.energy_rx' )
+                errorStruct.message = 'options must be regularization.options.energy_rx!';
                 errorStruct.identifier = 'show:NoOptions';
                 error( errorStruct );
             end
@@ -232,7 +221,7 @@ classdef common < regularization.options.energy_rx
             %--------------------------------------------------------------
             % 2.) display options
             %--------------------------------------------------------------
-            % iterate common regularization options
+            % iterate ennergy options
             for index_object = 1:numel( options )
 
                 %----------------------------------------------------------
@@ -240,7 +229,7 @@ classdef common < regularization.options.energy_rx
                 %----------------------------------------------------------
                 str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
                 fprintf( ' %s\n', repmat( '-', [ 1, 80 ] ) );
-                fprintf( ' %s (%s)\n', 'common regularization options', str_date_time );
+                fprintf( ' %s (%s)\n', 'ennergy options', str_date_time );
                 fprintf( ' %s\n', repmat( '-', [ 1, 80 ] ) );
 
                 %----------------------------------------------------------
@@ -254,4 +243,4 @@ classdef common < regularization.options.energy_rx
 
 	end % methods
 
-end % classdef common < regularization.options.energy_rx
+end % classdef energy_rx

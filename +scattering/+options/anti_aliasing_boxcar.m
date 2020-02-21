@@ -1,11 +1,11 @@
 %
-% superclass for all boxcar spatial anti-aliasing filter options
+% superclass for all boxcar spatial anti-aliasing filters
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2020-02-01
+% modified: 2020-02-21
 %
-classdef anti_aliasing_boxcar < scattering.options.anti_aliasing
+classdef anti_aliasing_boxcar < scattering.options.anti_aliasing_on
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -34,7 +34,7 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing
             % 2.) create boxcar spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options.anti_aliasing( size );
+            objects@scattering.options.anti_aliasing_on( size );
 
         end % function objects = anti_aliasing_boxcar( varargin )
 
@@ -83,7 +83,7 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing
         end % function filters = compute_filter( options_anti_aliasing, flags )
 
         %------------------------------------------------------------------
-        % string array (overload string method)
+        % string array (implement string method)
         %------------------------------------------------------------------
         function strs_out = string( anti_aliasings_boxcar )
 
@@ -106,5 +106,31 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing
         end % function strs_out = string( anti_aliasings_boxcar )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % compute samples of spatial anti-aliasing filter (scalar)
+        %------------------------------------------------------------------
+        function filter_samples = compute_samples_scalar( ~, flag )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures valid flag
+
+            %--------------------------------------------------------------
+            % 2.) apply spatial anti-aliasing filter (scalar)
+            %--------------------------------------------------------------
+            % detect valid grid points
+            filter_samples = all( flag < pi, 3 );
+
+        end % function filter_samples = compute_samples_scalar( ~, flag )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef anti_aliasing_boxcar < scattering.options.anti_aliasing

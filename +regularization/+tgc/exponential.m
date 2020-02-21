@@ -113,8 +113,7 @@ classdef exponential < regularization.tgc.tgc
         % create linear transform (scalar)
         %------------------------------------------------------------------
         function [ LT, LTs_measurement ] = get_LT_scalar( tgc, operator_born )
-% TODO: no linear_transforms.concatenations.diagonal for single mixed RF
-% voltage signal? single convolution?
+% TODO: no linear_transforms.concatenations.diagonal for single mixed RF voltage signal? single convolution?
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------

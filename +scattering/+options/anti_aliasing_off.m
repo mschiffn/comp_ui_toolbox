@@ -1,9 +1,9 @@
 %
-% superclass for all inactive spatial anti-aliasing filter options
+% superclass for all inactive spatial anti-aliasing filters
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2020-02-01
+% modified: 2020-02-20
 %
 classdef anti_aliasing_off < scattering.options.anti_aliasing
 
@@ -83,7 +83,7 @@ classdef anti_aliasing_off < scattering.options.anti_aliasing
         end % function filters = compute_filter( options_anti_aliasing, flags )
 
         %------------------------------------------------------------------
-        % string array (overload string method)
+        % string array (implement string method)
         %------------------------------------------------------------------
         function strs_out = string( anti_aliasings_off )
 
@@ -106,5 +106,33 @@ classdef anti_aliasing_off < scattering.options.anti_aliasing
         end % function strs_out = string( anti_aliasings_off )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % apply spatial anti-aliasing filter (scalar)
+        %------------------------------------------------------------------
+        function h_transfer = apply_scalar( ~, ~, h_transfer, ~ )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures class scattering.sequences.setups.setup for setup (scalar)
+            % calling method ensures class scattering.sequences.setups.transducers.array_planar_regular_orthogonal for setup.xdc_array (scalar)
+            % calling method ensures class processing.field for h_transfer (scalar)
+            % calling method ensures ensure nonempty indices_element
+
+            %--------------------------------------------------------------
+            % 2.) apply spatial anti-aliasing filter (scalar)
+            %--------------------------------------------------------------
+            % copy spatial transfer function
+
+        end % function h_transfer = apply_scalar( ~, ~, h_transfer, ~ )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef anti_aliasing_off < scattering.options.anti_aliasing

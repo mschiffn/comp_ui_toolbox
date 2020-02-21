@@ -1,12 +1,12 @@
 %
-% superclass for all raised-cosine spatial anti-aliasing filter options
+% superclass for all raised-cosine spatial anti-aliasing filters
 % ( see https://en.wikipedia.org/wiki/Raised-cosine_filter )
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2020-02-01
+% modified: 2020-02-21
 %
-classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
+classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -37,7 +37,7 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
             % 2.) create cosine spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options.anti_aliasing( size( roll_off_factors ) );
+            objects@scattering.options.anti_aliasing_on( size( roll_off_factors ) );
 
             % iterate cosine spatial anti-aliasing filter options
             for index_object = 1:numel( objects )
@@ -113,7 +113,7 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
         end % function filters = compute_filter( options_anti_aliasing, flags )
 
         %------------------------------------------------------------------
-        % string array (overload string method)
+        % string array (implement string method)
         %------------------------------------------------------------------
         function strs_out = string( anti_aliasings_raised_cosine )
 
@@ -143,5 +143,46 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
         end % function strs_out = string( anti_aliasings_raised_cosine )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % compute samples of spatial anti-aliasing filter (scalar)
+        %------------------------------------------------------------------
+        function filter_samples = compute_samples_scalar( filter, flag )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures valid flag
+
+            %--------------------------------------------------------------
+            % 2.) apply spatial anti-aliasing filter (scalar)
+            %--------------------------------------------------------------
+% TODO: small value of filter.roll_off_factor causes NaN
+% TODO: why more conservative aliasing
+            % compute lower and upper bounds
+            flag_lb = pi * ( 1 - filter.roll_off_factor );
+            flag_ub = pi; %pi * ( 1 + filter.roll_off_factor );
+            flag_delta = flag_ub - flag_lb;
+
+            % detect tapered grid points
+            indicator_on = flag <= flag_lb;
+            indicator_taper = ( flag > flag_lb ) & ( flag < flag_ub );
+            indicator_off = flag >= flag_ub;
+
+            % compute raised-cosine function
+            flag( indicator_on ) = 1;
+            flag( indicator_taper ) = 0.5 * ( 1 + cos( pi * ( flag( indicator_taper ) - flag_lb ) / flag_delta ) );
+            flag( indicator_off ) = 0;
+            filter_samples = prod( flag, 3 );
+
+        end % function filter_samples = compute_samples_scalar( filter, flag )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing

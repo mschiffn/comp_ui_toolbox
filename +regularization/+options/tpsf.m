@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-01-03
+% modified: 2020-02-21
 %
 classdef tpsf < regularization.options.common
 
@@ -37,6 +37,11 @@ classdef tpsf < regularization.options.common
                 error( errorStruct );
             end
 
+            % ensure nonempty indices
+            if nargin < 2 || isempty( indices )
+% TODO: default indices!
+            end
+
             % ensure cell array for indices
             if ~iscell( indices )
                 indices = { indices };
@@ -59,7 +64,7 @@ classdef tpsf < regularization.options.common
             % 2.) create TPSF options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.options.common( [ options_common.momentary ], [ options_common.tgc ], [ options_common.dictionary ], [ options_common.normalization ] );
+            objects@regularization.options.common( regularization.options.energy_rx( [ options_common.momentary ], [ options_common.tgc ], [ options_common.dictionary ] ), [ options_common.normalization ] );
 
             % reshape TPSF options
             objects = reshape( objects, size( options_common ) );

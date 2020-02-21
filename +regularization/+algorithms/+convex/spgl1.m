@@ -10,7 +10,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-02-16
+% modified: 2020-02-19
 %
 classdef spgl1 < regularization.algorithms.convex.convex
 
@@ -148,7 +148,7 @@ classdef spgl1 < regularization.algorithms.convex.convex
             % superclass ensures compatibility of y_m
 
             %--------------------------------------------------------------
-            % 2.) execute single algorithm
+            % 2.) execute SPGL1
             %--------------------------------------------------------------
             % specify cell arrays
             theta_recon = cell( 1, numel( algorithm_spgl1.rel_RMSEs ) );

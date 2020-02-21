@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-10
-% modified: 2020-02-17
+% modified: 2020-02-20
 %
 classdef (Abstract) normalization < regularization.options.template
 
@@ -79,6 +79,62 @@ classdef (Abstract) normalization < regularization.options.template
 
         end % function weightings = apply( normalizations, weightings )
 
+        %------------------------------------------------------------------
+        % create linear transforms
+        %------------------------------------------------------------------
+        function LTs = get_LTs( normalizations, operators_born, LTs_dict )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class regularization.normalizations.normalization
+            if ~isa( normalizations, 'regularization.normalizations.normalization' )
+                errorStruct.message = 'normalizations must be regularization.normalizations.normalization!';
+                errorStruct.identifier = 'get_LTs:NoDictionaries';
+                error( errorStruct );
+            end
+
+            % ensure class scattering.operator_born
+            if ~isa( operators_born, 'scattering.operator_born' )
+                errorStruct.message = 'operators_born must be scattering.operator_born!';
+                errorStruct.identifier = 'get_LTs:NoOperatorsBorn';
+                error( errorStruct );
+            end
+
+            % multiple normalizations / single operators_born
+            if ~isscalar( normalizations ) && isscalar( operators_born )
+                operators_born = repmat( operators_born, size( normalizations ) );
+            end
+
+            % single normalizations / multiple operators_born
+            if isscalar( normalizations ) && ~isscalar( operators_born )
+                normalizations = repmat( normalizations, size( operators_born ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( normalizations, operators_born );
+
+            %--------------------------------------------------------------
+            % 2.) create linear transforms
+            %--------------------------------------------------------------
+            % specify cell array for LTs
+            LTs = cell( size( normalizations ) );
+
+            % iterate normalizations
+            for index_dictionary = 1:numel( normalizations )
+
+                % create linear transform (scalar)
+                LTs{ index_dictionary } = get_LT_scalar( normalizations( index_dictionary ), operators_born( index_dictionary ) );
+
+            end % for index_dictionary = 1:numel( normalizations )
+
+            % avoid cell arrays for single normalizations
+            if isscalar( normalizations )
+                LTs = LTs{ 1 };
+            end
+
+        end % function LTs = get_LTs( normalizations, operators_born, LTs_dict )
+
 	end % methods
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,6 +146,11 @@ classdef (Abstract) normalization < regularization.options.template
         % apply normalization (scalar)
         %------------------------------------------------------------------
         weighting = apply_scalar( normalization, weighting )
+
+        %------------------------------------------------------------------
+        % create linear transform (scalar)
+        %------------------------------------------------------------------
+%         LT = get_LT_scalar( normalization, operator_born )
 
 	end % methods (Abstract, Access = protected, Hidden)
 

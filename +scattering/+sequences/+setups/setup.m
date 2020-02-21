@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2020-01-10
+% modified: 2020-02-20
 %
 classdef setup
 
@@ -680,10 +680,10 @@ classdef setup
         %------------------------------------------------------------------
         % apply anti-aliasing filter
         %------------------------------------------------------------------
-        function h_transfer_aa = anti_aliasing_filter( setups, h_transfer, options_anti_aliasing, varargin )
+        function h_transfer_aa = anti_aliasing_filter( setups, h_transfer, options_anti_aliasing, indices_element )
         % apply anti-aliasing filter to
         % the spatial transfer function for the d-dimensional Euclidean space
-% TODO: in-place computation in h_transfer
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -717,10 +717,8 @@ classdef setup
             end
 
             % ensure nonempty indices_element
-            if nargin >= 4 && ~isempty( varargin{ 1 } )
-                indices_element = varargin{ 1 };
-            else
-                indices_element = num2cell( ones( size( setups ) ) );
+            if nargin < 4 || isempty( indices_element )
+                indices_element = num2cell( 1 );
             end
 
             % ensure cell array for indices_element
@@ -833,7 +831,42 @@ classdef setup
             %--------------------------------------------------------------
             h_transfer_aa = processing.field( [ h_transfer.axis ], [ h_transfer.grid_FOV ], h_samples_aa );
 
-        end % function h_transfer_aa = anti_aliasing_filter( setups, h_transfer, options_anti_aliasing, varargin )
+        end % function h_transfer_aa = anti_aliasing_filter( setups, h_transfer, options_anti_aliasing, indices_element )
+
+        %------------------------------------------------------------------
+        % compute flag reflecting the local angular spatial frequencies (scalar)
+        %------------------------------------------------------------------
+        function flag = compute_flag( ~, setup, h_transfer, index_element )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures class scattering.sequences.setups.setup for setup (scalar)
+            % calling method ensures class scattering.sequences.setups.transducers.array_planar_regular_orthogonal for setup.xdc_array (scalar)
+            % calling method ensures class processing.field for h_transfer (scalar)
+            % calling method ensures ensure nonempty indices_element
+
+            %--------------------------------------------------------------
+            % 2.) apply spatial anti-aliasing filter (scalar)
+            %--------------------------------------------------------------
+            % numbers of discrete frequencies
+            N_samples_f = abs( h_transfer.axis );
+
+            % compute lateral components of mutual unit vectors
+            e_1_minus_2 = mutual_unit_vectors( math.grid( setup.xdc_array.positions_ctr ), h_transfer.grid_FOV, index_element );
+            e_1_minus_2 = repmat( abs( e_1_minus_2( :, :, 1:( end - 1 ) ) ), [ N_samples_f, 1 ] );
+
+            % exclude dimensions with less than two array elements
+            indicator_dimensions = setup.xdc_array.N_elements_axis > 1;
+            N_dimensions_lateral_relevant = sum( indicator_dimensions );
+            e_1_minus_2 = e_1_minus_2( :, :, indicator_dimensions );
+
+            % compute flag reflecting the local angular spatial frequencies
+            axis_k_tilde = compute_wavenumbers( setup.homogeneous_fluid.absorption_model, h_transfer.axis );
+            flag = real( axis_k_tilde.members ) .* e_1_minus_2 .* reshape( setup.xdc_array.cell_ref.edge_lengths( indicator_dimensions ), [ 1, 1, N_dimensions_lateral_relevant ] );
+
+        end % function flag = compute_flag( ~, setup, h_transfer, index_element )
 
         %------------------------------------------------------------------
         % is discretized setup symmetric
