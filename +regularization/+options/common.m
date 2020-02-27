@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-02-21
+% modified: 2020-02-26
 %
 classdef common < regularization.options.energy_rx
 
@@ -235,17 +235,10 @@ classdef common < regularization.options.energy_rx
             % iterate common regularization options
             for index_object = 1:numel( options )
 
-                %----------------------------------------------------------
                 % print header
-                %----------------------------------------------------------
-                str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-                fprintf( ' %s\n', repmat( '-', [ 1, 80 ] ) );
-                fprintf( ' %s (%s)\n', 'common regularization options', str_date_time );
-                fprintf( ' %s\n', repmat( '-', [ 1, 80 ] ) );
+                auxiliary.print_header( "common regularization options", '-' );
 
-                %----------------------------------------------------------
                 % print content
-                %----------------------------------------------------------
                 fprintf( ' %-4s: %-13s %4s %-11s: %-5s %4s %-14s: %-13s\n', 'TGC', string( options( index_object ).tgc ), '', 'dictionary', string( options( index_object ).dictionary ), '', 'normalization', string( options( index_object ).normalization ) );
 
             end % for index_object = 1:numel( options )

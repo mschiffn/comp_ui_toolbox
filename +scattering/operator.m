@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2020-02-21
+% modified: 2020-02-25
 %
 classdef (Abstract) operator
 
@@ -19,9 +19,6 @@ classdef (Abstract) operator
         % dependent properties
         incident_waves ( :, 1 ) scattering.sequences.syntheses.incident_wave             % incident waves
         indices_measurement_sel ( :, 1 ) double { mustBePositive, mustBeInteger } % indices of selected sequential pulse-echo measurements
-
-        % optional properties
-        h_ref_aa ( 1, : ) processing.field                     % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
 
 	end % properties
 
@@ -86,18 +83,15 @@ classdef (Abstract) operator
                 objects( index_object ).sequence = discretize( objects( index_object ).sequence, objects( index_object ).options.static.discretization );
 
                 %----------------------------------------------------------
-                % c) apply spatial anti-aliasing filter
+                % c) incident acoustic fields (unique frequencies)
                 %----------------------------------------------------------
-                if isa( objects( index_object ).sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
-                    objects( index_object ).sequence = apply_anti_aliasing_filter( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing );
-                    objects( index_object ).h_ref_aa = anti_aliasing_filter( objects( index_object ).sequence.setup, objects( index_object ).sequence.h_ref, objects( index_object ).options.momentary.anti_aliasing );
-                end
+                objects( index_object ).incident_waves = scattering.sequences.syntheses.incident_wave( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing_tx );
 
                 %----------------------------------------------------------
-                % d) incident acoustic fields (unique frequencies)
+                % d) apply spatial anti-aliasing filter
                 %----------------------------------------------------------
-                objects( index_object ).incident_waves = scattering.sequences.syntheses.incident_wave( objects( index_object ).sequence );
-                
+                objects( index_object ).sequence = update_transfer_function( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing_rx );
+
 % TODO: use update function
                 % update indices of selected sequential pulse-echo measurements
                 if isa( objects( index_object ).options.momentary.sequence, 'scattering.options.sequence_full' )
@@ -117,8 +111,7 @@ classdef (Abstract) operator
 
             % print status
             time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\t %s: forward scattering...\n', str_date_time );
+            auxiliary.print_header( "forward scattering" );
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -237,8 +230,7 @@ classdef (Abstract) operator
 
             % print status
             time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\t %s: adjoint scattering...\n', str_date_time );
+            auxiliary.print_header( "adjoint scattering" );
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -392,8 +384,7 @@ classdef (Abstract) operator
 
             % print status
             time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\t %s: computing received energies...\n', str_date_time );
+            auxiliary.print_header( "computing received energies" );
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -493,8 +484,7 @@ classdef (Abstract) operator
 
             % print status
             time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\t %s: computing TPSFs...\n', str_date_time );
+            auxiliary.print_header( "transform point spread functions (TPSFs)" );
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -637,8 +627,7 @@ classdef (Abstract) operator
 
             % print status
             time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\t %s: minimizing lq-norms...\n', str_date_time );
+            auxiliary.print_header( "lq-minimization" );
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -835,49 +824,6 @@ classdef (Abstract) operator
         end % function [ gamma_recon, theta_recon_normed, u_M_res, info ] = lq_minimization( operators, u_M, options )
 
         %------------------------------------------------------------------
-        % apply spatial anti-aliasing filters
-        %------------------------------------------------------------------
-        function spatiospectrals = anti_aliasing_filter( operators )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class scattering.operator
-            if ~isa( operators, 'scattering.operator' )
-                errorStruct.message = 'operators must be scattering.operator!';
-                errorStruct.identifier = 'anti_aliasing_filter:NoOperators';
-                error( errorStruct );
-            end
-
-% TODO: ensure symmetric spatial grids
-%             auxiliary.mustBeEqualSubclasses( 'discretizations.spatial_grid_symmetric', operators.discretization )
-
-            % ensure class scattering.options.anti_aliasing
-%             if ~isa( options_anti_aliasing, 'scattering.options.anti_aliasing' )
-%                 errorStruct.message = 'options_anti_aliasing must be scattering.options.anti_aliasing!';
-%                 errorStruct.identifier = 'discretize:NoAntiAliasingOptions';
-%                 error( errorStruct );
-%             end
-
-            % ensure equal number of dimensions and sizes
-%             auxiliary.mustBeEqualSize( spatiospectrals, options_anti_aliasing );
-
-            %--------------------------------------------------------------
-            % 2.) apply spatial anti-aliasing filters
-            %--------------------------------------------------------------
-            % iterate scattering operators
-            for index_object = 1:numel( operators )
-
-                % apply spatial anti-aliasing filter via external function
-                if ~isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_off' )
-                    spatiospectrals( index_object ).h_ref_aa = anti_aliasing_filter( spatiospectrals( index_object ).spatial, spatiospectrals( index_object ).h_ref, options_anti_aliasing( index_object ).parameter );
-                end
-
-            end % for index_object = 1:numel( operators )
-
-        end % function spatiospectrals = anti_aliasing_filter( spatiospectrals, options_anti_aliasing )
-
-        %------------------------------------------------------------------
         % set properties of momentary scattering operator options
         %------------------------------------------------------------------
         function operators = set_options_momentary( operators, options )
@@ -957,18 +903,16 @@ classdef (Abstract) operator
 
                 end % if ~isequal( operators( index_object ).options.momentary.sequence, options_old( index_object ).momentary.sequence )
 
-                % h_ref_aa
-                if ~isequal( operators( index_object ).options.momentary.anti_aliasing, options_old( index_object ).momentary.anti_aliasing )
+                % reference spatial transfer function
+                if ~isequal( operators( index_object ).options.momentary.anti_aliasing_rx, options_old( index_object ).momentary.anti_aliasing_rx )
 
                     %------------------------------------------------------
                     % ii.) change in spatial anti-aliasing filter options
                     %------------------------------------------------------
                     % update reference spatial transfer function w/ anti-aliasing filter
-                    if isa( operators( index_object ).sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
-                        operators( index_object ).h_ref_aa = anti_aliasing_filter( operators( index_object ).sequence.setup, operators( index_object ).sequence.h_ref, operators( index_object ).options.momentary.anti_aliasing );
-                    end
+                    operators( index_object ).sequence = update_transfer_function( operators( index_object ).sequence, operators( index_object ).options.momentary.anti_aliasing_rx );
 
-                end % if ~isequal( operators( index_object ).options.momentary.anti_aliasing, options_old( index_object ).momentary.anti_aliasing )
+                end % if ~isequal( operators( index_object ).options.momentary.anti_aliasing_rx, options_old( index_object ).momentary.anti_aliasing_rx )
 
             end % for index_object = 1:numel( operators )
 

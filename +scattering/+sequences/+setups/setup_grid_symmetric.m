@@ -17,7 +17,7 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
 
         % dependent properties
         indices_grid_FOV_shift ( :, : )	% indices of laterally shifted grid points
-
+% TODO: h_ref and h_ref_grad
 	end % properties
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,6 +228,45 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
 
         end % function indices_grids_shift = shift_lateral( setups_grid_symmetric, indices_element, varargin )
 
+        %------------------------------------------------------------------
+        % compute spatial transfer functions
+        %------------------------------------------------------------------
+% TODO: elegant way for transfer_function: use property h_ref (unique
+% frequencies?)
+%         function h_transfer = transfer_function( setups, axes_f, indices_element, filters )
+%
+%         end
+
+
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (private and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = private, Hidden)
+
+        %------------------------------------------------------------------
+        % compute spatial transfer function (scalar)
+        %------------------------------------------------------------------
+%         function h_samples = transfer_function_scalar( setup, h_ref_unique, indices_f_to_unique, index_element )
+% 
+%             %--------------------------------------------------------------
+%             % 1.) check arguments
+%             %--------------------------------------------------------------
+%             % calling function ensures class scattering.sequences.setups.setup (scalar) for setup
+%             % calling function ensures class math.grid_regular for setup.xdc_array.aperture.shape.grid
+%             % calling function ensures class math.sequence_increasing with physical_values.frequency members (scalar) for axis_f
+%             % calling function ensures nonempty positive integer that does not exceed the number of array elements for index_element
+% 
+%             %--------------------------------------------------------------
+%             % 2.) compute spatial transfer function (scalar)
+%             %--------------------------------------------------------------
+%             % resample reference spatial transfer function (global unique frequencies)
+%             h_ref_unique = h_ref_unique;
+%             h_ref_unique = double( h_ref_unique.samples( indices_f_to_unique_act, : ) );
+% 
+%         end % function h_samples = transfer_function_scalar( setup, axis_f, index_element )
+
+	end % methods (Access = private, Hidden)
 
 end % classdef setup_grid_symmetric < scattering.sequences.setups.setup

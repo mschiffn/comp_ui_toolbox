@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-18
-% modified: 2019-10-21
+% modified: 2019-10-25
 %
 classdef face
 
@@ -229,6 +229,62 @@ classdef face
         end % function faces = discretize( faces, methods )
 
         %------------------------------------------------------------------
+        % compute complex-valued apodization weights
+        %------------------------------------------------------------------
+        function weights = compute_weights( faces, axes_f )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.sequences.setups.transducers.face
+            if ~isa( faces, 'scattering.sequences.setups.transducers.face' )
+                errorStruct.message = 'faces must be scattering.sequences.setups.transducers.face!';
+                errorStruct.identifier = 'compute_weights:NoFaces';
+                error( errorStruct );
+            end
+
+            % ensure class math.sequence_increasing with physical_values.frequency members
+            if ~( isa( axes_f, 'math.sequence_increasing' ) && all( cellfun( @( x ) isa( x, 'physical_values.frequency' ), { axes_f.members } ) ) )
+                errorStruct.message = 'axes_f must be math.sequence_increasing with physical_values.frequency members!';
+                errorStruct.identifier = 'compute_weights:InvalidFrequencyAxes';
+                error( errorStruct );
+            end
+
+            % multiple faces / single axes_f
+            if ~isscalar( faces ) && isscalar( axes_f )
+                axes_f = repmat( axes_f, size( faces ) );
+            end
+
+            % single faces / multiple axes_f
+            if isscalar( faces ) && ~isscalar( axes_f )
+                faces = repmat( faces, size( axes_f ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( faces, axes_f );
+
+            %--------------------------------------------------------------
+            % 2.) compute complex-valued apodization weights
+            %--------------------------------------------------------------
+            % specify cell array for weights
+            weights = cell( size( faces ) );
+
+            % iterate discretized vibrating faces
+            for index_face = 1:numel( faces )
+
+                % compute complex-valued apodization weights (scalar)
+                weights{ index_face } = compute_weights_scalar( faces( index_face ), axes_f( index_face ) );
+
+            end % for index_face = 1:numel( faces )
+
+            % avoid cell array for single faces
+            if isscalar( faces )
+                weights = weights{ 1 };
+            end
+
+        end % function weights = compute_weights( faces, axes_f )
+
+        %------------------------------------------------------------------
         % is symmetric
         %------------------------------------------------------------------
         function tf = issymmetric( faces )
@@ -291,5 +347,34 @@ classdef face
         end % function tf = issymmetric( faces )
 
     end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (private and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = private, Hidden)
+
+        %------------------------------------------------------------------
+        % compute complex-valued apodization weights (scalar)
+        %------------------------------------------------------------------
+        function weights = compute_weights_scalar( face, axis_f )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class scattering.sequences.setups.transducers.face (scalar) for face
+            % calling function ensures class math.sequence_increasing with physical_values.frequency members (scalar) for axis_f
+
+            %--------------------------------------------------------------
+            % 2.) compute complex-valued apodization weights (scalar)
+            %--------------------------------------------------------------
+            % compute complex-valued wavenumbers for acoustic lens
+            axis_k_tilde_lens = compute_wavenumbers( face.lens.absorption_model, axis_f );
+
+            % compute complex-valued apodization weights
+            weights = reshape( face.apodization .* exp( - 1j * face.lens.thickness * axis_k_tilde_lens.members.' ), [ face.shape.grid.N_points, 1, abs( axis_f ) ] );
+
+        end % function weights = compute_weights_scalar( face, axis_f )
+
+	end % methods (Access = private, Hidden)
 
 end % classdef face

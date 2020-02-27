@@ -62,8 +62,8 @@ classdef (Abstract) anti_aliasing_on < scattering.options.anti_aliasing
             %--------------------------------------------------------------
             % 2.) apply spatial anti-aliasing filter (scalar)
             %--------------------------------------------------------------
-            % compute flag reflecting the local angular spatial frequencies
-            flag = compute_flag( setup, h_transfer, index_element );
+            % compute flags reflecting the local angular spatial frequencies
+            flag = compute_flags( setup, h_transfer.axis, index_element );
 
             % compute samples of spatial anti-aliasing filter
             filter_samples = compute_samples_scalar( filter, flag );

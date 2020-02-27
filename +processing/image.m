@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-10
-% modified: 2020-02-11
+% modified: 2020-02-21
 %
 % TODO: make subclass of field
 %
@@ -102,7 +102,7 @@ classdef image
             % ensure class processing.image
             if ~isa( images, 'processing.image' )
                 errorStruct.message = 'images must be processing.image!';
-                errorStruct.identifier = 'profile:NoImages';
+                errorStruct.identifier = 'evaluate_metric:NoImages';
                 error( errorStruct );
             end
 
@@ -219,8 +219,7 @@ classdef image
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.image for image
-            % calling function ensures scalar for image
+            % calling function ensures class processing.image (scalar) for image
 
             % ensure class math.grid_regular_orthogonal
             if ~isa( image.grid, 'math.grid_regular_orthogonal' )
@@ -234,7 +233,7 @@ classdef image
             %--------------------------------------------------------------
             % 2.) compute projected profiles
             %--------------------------------------------------------------
-            % extract axes and number of points
+            % extract axes
             axes = get_axes( image.grid );
 
             % specify cell array for profiles
@@ -265,6 +264,7 @@ classdef image
                     % extract relevant samples
                     samples_act = reshape( image.samples( :, index_image ), image.grid.N_points_axis );
                     samples_act = shiftdim( samples_act( indicators{ : } ), options( index_options ).dim - 1 );
+                    deltas = circshift( [ axes.delta ], 1 - options( index_options ).dim );
 
                     % project samples
                     for index_dim = 2:image.grid.N_dimensions
@@ -272,24 +272,20 @@ classdef image
                     end
 
                     % save profile
-% TODO: physical unit?!
-                    profiles{ index_options }{ index_image } = samples_act * sqrt( image.grid.cell_ref.edge_lengths( options( index_options ).dim ) );
+                    profiles{ index_options }{ index_image } = samples_act * sqrt( prod( deltas( 2:end ) ) );
 
                 end % for index_image = 1:image.N_images
 
-                % concatenate horizontally
-                profiles{ index_options } = cat( 2, profiles{ index_options }{ : } );
-
-                % add zeros
-%                 profiles{ index_options } = [ profiles{ index_options }; zeros( options( index_options ).N_zeros_add, image.N_images ) ];
-
                 %----------------------------------------------------------
-                % b) create signal matrices
+                % b) create profile signals / signal matrices
                 %----------------------------------------------------------
-                if image.N_images == 1
-                    profiles{ index_options } = processing.signal( axes_cut( options( index_options ).dim ), profiles{ index_options } );
-                else
-                    profiles{ index_options } = processing.signal_matrix( axes_cut( options( index_options ).dim ), profiles{ index_options } );
+                % create profile signals
+                profiles{ index_options } = processing.signal( axes_cut( options( index_options ).dim ), profiles{ index_options } );
+
+                % try to merge profile signals
+                try
+                    profiles{ index_options } = merge( profiles{ index_options } );
+                catch
                 end
 
                 %----------------------------------------------------------
@@ -303,7 +299,7 @@ classdef image
 
             end % for index_options = 1:numel( options )
 
-            % create signal matrix array
+            % create signal_matrix or signal array
             profiles = reshape( cat( 1, profiles{ : } ), size( options ) );
 
         end % function profiles = profile( image, options )
@@ -316,8 +312,7 @@ classdef image
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.image for image
-            % calling function ensures scalar for image
+            % calling function ensures class processing.image (scalar) for image
 
             % ensure class math.grid_regular_orthogonal
             if ~isa( image.grid, 'math.grid_regular_orthogonal' )
@@ -353,7 +348,7 @@ classdef image
 
                 % initialize results w/ zeros
                 N_samples{ index_options } = zeros( 1, image.N_images );
-                volumes{ index_options } = zeros( 1, image.N_images );
+                volumes{ index_options } = repmat( image.grid.cell_ref.volume, [ 1, image.N_images ] );
 
                 % iterate images
                 for index_image = 1:image.N_images
@@ -380,9 +375,9 @@ classdef image
         end % function RBs = region_boundary( image, options )
 
         %------------------------------------------------------------------
-        % contrast-to-noise ratios (CNRs)
+        % contrast
         %------------------------------------------------------------------
-        function CNRs = contrast_noise_ratios( image, options )
+        function results = contrast_noise_ratios( image, options )
             %
             %   "The contrast-to-noise ratio (CNR) is
             %    an object size-independent measure of the signal level in the presence of noise.
@@ -394,14 +389,17 @@ classdef image
             %    Thus, the CNR is given by
             %    [ CNR = ( \bar{x}_{ \text{S} } - \bar{x}_{ \text{bg} } ) / \sigma_{ \text{bg} } ] (4-22)" (see [1, p. 91]
             %
+            %   "Intuitively, we assume that higher CNR leads to higher probability of lesion detection, and this is indeed the case for DAS" (see [2])
+            %
             % REFERENCES:
             %	[1] J. T. Bushberg, J. A. Seibert, E. M. Leidholdt, and J. M. Boone, "The Essential Physics of Medical Imaging", Sect. 4.8
+            %	[2] A. Rodriguez-Molares, O. M. H. Rindal, J. D’hooge, S.-E. Måsøy, A. Austeng, and H. Torp, "The Generalized Contrast-to-Noise Ratio",
+            %       2018 IEEE Int. Ultrasonics Symp. (IUS), 2018, DOI: 10.1109/ULTSYM.2018.8580101
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.image for image
-            % calling function ensures scalar for image
+            % calling function ensures class processing.image (scalar) for image
 
             % calling function ensures class processing.options.contrast for options
 
@@ -409,7 +407,7 @@ classdef image
             % 2.) compute contrast-to-noise ratios (CNRs)
             %--------------------------------------------------------------
             % specify cell arrays
-            CNRs = cell( numel( options ), 1 );
+            results = repmat( struct,  [ numel( options ), image.N_images ] );
 
             % iterate options
             for index_options = 1:numel( options )
@@ -418,12 +416,12 @@ classdef image
                 [ ~, indicator_roi_ref ] = cut_out( image.grid, options( index_options ).ROI_ref );
                 [ ~, indicator_roi_noise ] = cut_out( image.grid, options( index_options ).ROI_noise );
 
-                % initialize CNRs w/ zeros
-                CNRs{ index_options } = zeros( 1, image.N_images );
-
                 % iterate images
                 for index_image = 1:image.N_images
 
+                    %------------------------------------------------------
+                    % a) logarithmic compression and subsampling
+                    %------------------------------------------------------
                     % logarithmic compression
                     samples_act_dB = illustration.dB( image.samples( :, index_image ), 20 );
 
@@ -435,23 +433,34 @@ classdef image
                     samples_act_dB_ref = samples_act_dB( indicator_roi_ref );
                     samples_act_dB_noise = samples_act_dB( indicator_roi_noise );
 
-                    % statistics
+                    %------------------------------------------------------
+                    % b) generalized contrast-to-noise ratio (gCNR)
+                    %------------------------------------------------------
+                    % estimate PDFs of samples_act_dB
+                    samples_act_dB_ref_pdf = histcounts( samples_act_dB_ref, (-options( index_options ).dynamic_range_dB:0), 'Normalization', 'pdf' );
+                    samples_act_dB_noise_pdf = histcounts( samples_act_dB_noise, (-options( index_options ).dynamic_range_dB:0), 'Normalization', 'pdf' );
+
+                    % overlap of PDFs and gCNR
+                    overlap = sum( min( samples_act_dB_ref_pdf, samples_act_dB_noise_pdf ) );
+                    results( index_options, index_image ).gCNR = 1 - overlap;
+
+                    %------------------------------------------------------
+                    % c) contrast-to-noise ratio (CNR)
+                    %------------------------------------------------------
+                    % means and variances
                     samples_act_dB_ref_mean = mean( samples_act_dB_ref );
                     samples_act_dB_ref_var = var( samples_act_dB_ref );
                     samples_act_dB_noise_mean = mean( samples_act_dB_noise );
                     samples_act_dB_noise_var = var( samples_act_dB_noise );
 
-                    % contrast-to-noise ratio (CNR) % TODO: 20 * log10( ) ?
-                    CNRs{ index_options }( index_image ) = abs( samples_act_dB_ref_mean - samples_act_dB_noise_mean ) / sqrt( ( samples_act_dB_ref_var + samples_act_dB_noise_var ) / 2 );
+                    % contrast-to-noise ratio (CNR)
+                    results( index_options, index_image ).CNR = abs( samples_act_dB_ref_mean - samples_act_dB_noise_mean ) / sqrt( ( samples_act_dB_ref_var + samples_act_dB_noise_var ) / 2 );
 
                 end % for index_image = 1:image.N_images
 
             end % for index_options = 1:numel( options )
 
-            % concatenate vertically
-            CNRs = cat( 1, CNRs{ : } );
-
-        end % function CNRs = contrast_noise_ratios( image, options )
+        end % function results = contrast_noise_ratios( image, options )
 
         %------------------------------------------------------------------
         % speckle quality (Kolmogorov-Smirnov test)

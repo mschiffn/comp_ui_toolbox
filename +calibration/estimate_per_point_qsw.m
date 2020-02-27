@@ -208,6 +208,7 @@ function [ e_B_tilde_ref, cal_tx_tilde, cal_rx_tilde, rel_RMSE_local, e_B_tilde,
             u_SA_window = merge( u_SA_window.' );
 
             % compute spatial transfer functions of the individual vibrating faces
+% TODO: anti-aliasing?
             h_transfer = transfer_function( setup, u_SA_window.axis, ( 1:setup.xdc_array.N_elements ) );
 
             % compute prefactors

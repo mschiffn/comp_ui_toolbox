@@ -18,7 +18,7 @@
 //
 // author: Martin F. Schiffner
 // date: 2019-06-29
-// modified: 2019-12-05
+// modified: 2020-02-26
 // All rights reserved!
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -377,10 +377,10 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 		if( DEBUG_MODE ) mexPrintf( "index_device = %d\n", index_device );
 
 		// extract reference spatial transfer function
-		h_ref = mxGetProperty( mxGetProperty( mxGetProperty( prhs[ 0 ], 0, "h_ref_aa" ), 0, "samples" ), 0, "values" );
+		h_ref = mxGetProperty( mxGetProperty( mxGetProperty( sequence, 0, "h_ref" ), 0, "samples" ), 0, "values" );
 
 		// ensure complex doubles (mxDOUBLE_CLASS)
-		if( !( mxIsDouble( h_ref ) && mxIsComplex( h_ref ) ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoComplexDoubles", "operator_born.h_ref_aa must be complex doubles!" );
+		if( !( mxIsDouble( h_ref ) && mxIsComplex( h_ref ) ) ) mexErrMsgIdAndTxt( "combined_quick_gpu:NoComplexDoubles", "operator_born.sequence.h_ref must be complex doubles!" );
 
 		// read complex doubles
 		h_ref_complex = mxGetComplexDoubles( h_ref );

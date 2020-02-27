@@ -172,6 +172,7 @@ function [ e_B_tilde, e_B_tilde_mean, e_B_tilde_std_dev ] = estimate_per_point_q
             u_rx_qpw_window = merge( u_rx_qpw_window );
 
             % compute spatial transfer functions
+% TODO: anti-aliasing?
             h_transfer = transfer_function( setup, u_rx_qpw_window.axis, ( 1:setup.xdc_array.N_elements ) );
             h_tx = sum( h_transfer );
 

@@ -439,6 +439,19 @@ classdef physical_quantity < physical_values.transparent_container
 
         end
 
+        % product of array elements
+% TODO: finish implementation
+        function physical_quantity = prod( physical_quantity, varargin )
+
+            % exponents
+            physical_quantity.exponents = size( physical_quantity.values, 2 ) * physical_quantity.exponents;
+
+            % call prod method of superclass
+            physical_quantity = prod@physical_values.transparent_container( physical_quantity, varargin{ : } );
+            physical_quantity = determine_class( physical_quantity );
+
+        end
+
         % matrix power
         function physical_quantity = mpower( physical_quantity, power )
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2020-02-20
+% modified: 2020-02-27
 %
 classdef setup
 
@@ -85,7 +85,7 @@ classdef setup
         %------------------------------------------------------------------
         % lower and upper bounds on the times-of-flight
         %------------------------------------------------------------------
-        function intervals_tof = times_of_flight( setups, varargin )
+        function intervals_tof = times_of_flight( setups, indices_active_tx, indices_active_rx )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -109,9 +109,7 @@ classdef setup
             end
 
             % ensure nonempty indices_active_tx
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
-                indices_active_tx = varargin{ 1 };
-            else
+            if nargin < 2 || isempty( indices_active_tx )
                 indices_active_tx = cell( size( setups ) );
                 for index_setup = 1:numel( setups )
                     indices_active_tx{ index_setup } = ( 1:setups( index_setup ).xdc_array.N_elements );
@@ -124,9 +122,7 @@ classdef setup
             end
 
             % ensure nonempty indices_active_rx
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
-                indices_active_rx = varargin{ 2 };
-            else
+            if nargin < 3 || isempty( indices_active_rx )
                 indices_active_rx = cell( size( setups ) );
                 for index_setup = 1:numel( setups )
                     indices_active_rx{ index_setup } = ( 1:setups( index_setup ).xdc_array.N_elements );
@@ -508,18 +504,10 @@ classdef setup
         end % function prefactors = compute_prefactors( setups, axes_f )
 
         %------------------------------------------------------------------
-        % compute spatial transfer function
+        % compute spatial transfer functions
         %------------------------------------------------------------------
-        function h_transfer = transfer_function( setups, axes_f, varargin )
-
-            % internal constant
-            N_points_max = 1;
-
-            % print status
-            time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\t %s: computing spatial transfer function... ', str_date_time );
-
+        function h_transfer = transfer_function( setups, axes_f, indices_element, filters )
+% TODO: add gradient?
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -530,8 +518,16 @@ classdef setup
                 error( errorStruct );
             end
 
-% TODO: ensure discretized setup
+% TODO: ensure discretized setup -> faces with regular grids
+% cellfun( @( x ) x.aperture, { setups.xdc_array } )
 
+% TODO: ensure class math.grid_regular
+%             if ~isa( face_act.shape.grid, 'math.grid_regular' )
+%                 errorStruct.message = 'face_act.shape.grid must be math.grid_regular!';
+%                 errorStruct.identifier = 'transfer_function_scalar:NoRegularGrid';
+%                 error( errorStruct );
+%             end
+            
             % ensure class math.sequence_increasing with physical_values.frequency members
             if ~( isa( axes_f, 'math.sequence_increasing' ) && all( cellfun( @( x ) isa( x, 'physical_values.frequency' ), { axes_f.members } ) ) )
                 errorStruct.message = 'axes_f must be math.sequence_increasing with physical_values.frequency members!';
@@ -540,10 +536,138 @@ classdef setup
             end
 
             % ensure nonempty indices_element
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                indices_element = varargin{ 1 };
-            else
-                indices_element = num2cell( ones( size( setups ) ) );
+            if nargin < 3 || isempty( indices_element )
+                indices_element = 1;
+            end
+
+            % ensure cell array for indices_element
+            if ~iscell( indices_element )
+                indices_element = { indices_element };
+            end
+
+            % ensure nonempty filters
+            if nargin < 4 || isempty( filters )
+                filters = scattering.options.anti_aliasing_off;
+            end
+
+            % ensure class scattering.options.anti_aliasing
+            if ~isa( filters, 'scattering.options.anti_aliasing' )
+                errorStruct.message = 'filters must be scattering.options.anti_aliasing!';
+                errorStruct.identifier = 'transfer_function:NoSpatialAntiAliasingFilters';
+                error( errorStruct );
+            end
+
+            % multiple setups / single axes_f
+            if ~isscalar( setups ) && isscalar( axes_f )
+                axes_f = repmat( axes_f, size( setups ) );
+            end
+
+            % multiple setups / single indices_element
+            if ~isscalar( setups ) && isscalar( indices_element )
+                indices_element = repmat( indices_element, size( setups ) );
+            end
+
+            % multiple setups / single filters
+            if ~isscalar( setups ) && isscalar( filters )
+                filters = repmat( filters, size( setups ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( setups, axes_f, indices_element, filters );
+
+            %--------------------------------------------------------------
+            % 2.) compute spatial transfer functions
+            %--------------------------------------------------------------
+            % specify cell array for h_transfer
+            h_transfer = cell( size( setups ) );
+
+            % iterate discretized pulse-echo measurement setups
+            for index_setup = 1:numel( setups )
+
+                %----------------------------------------------------------
+                % a) validate indices of selected array elements
+                %----------------------------------------------------------
+                % ensure nonempty positive integers
+                mustBeNonempty( indices_element{ index_setup } );
+                mustBeInteger( indices_element{ index_setup } );
+                mustBePositive( indices_element{ index_setup } );
+
+                % ensure that indices_element{ index_setup } does not exceed the number of array elements
+                if any( indices_element{ index_setup }( : ) > setups( index_setup ).xdc_array.N_elements )
+                    errorStruct.message = sprintf( 'indices_element{ %d } must not exceed the number of array elements %d!', index_setup, setups( index_setup ).xdc_array.N_elements );
+                    errorStruct.identifier = 'transfer_function:InvalidElementIndices';
+                    error( errorStruct );
+                end
+
+                %----------------------------------------------------------
+                % b) compute spatial transfer functions for selected array elements
+                %----------------------------------------------------------
+                % specify cell array for h_samples
+                h_samples = cell( size( indices_element{ index_setup } ) );
+
+                % iterate selected array elements
+                for index_selected = 1:numel( indices_element{ index_setup } )
+
+                    % index of current array element
+                    index_element = indices_element{ index_setup }( index_selected );
+
+                    % create format string for filename
+                    str_format = sprintf( 'data/%s/setup_%%s/h_%d_axis_f_%%s.mat', setups( index_setup ).str_name, index_element );
+
+                    % load or compute spatial transfer function
+% TODO: loading and saving optional
+                    h_samples{ index_selected } ...
+                    = auxiliary.compute_or_load_hash( str_format, @transfer_function_scalar, [ 4, 2 ], [ 1, 2, 3 ], ...
+                      setups( index_setup ), axes_f( index_setup ), index_element, ...
+                      { setups( index_setup ).xdc_array.aperture, setups( index_setup ).homogeneous_fluid, setups( index_setup ).FOV, setups( index_setup ).str_name } );
+
+                end % for index_selected = 1:numel( indices_element{ index_setup } )
+
+                %----------------------------------------------------------
+                % c) create fields
+                %----------------------------------------------------------
+                h_transfer{ index_setup } = processing.field( axes_f( index_setup ), setups( index_setup ).FOV.shape.grid, h_samples );
+
+                %----------------------------------------------------------
+                % d) apply spatial anti-aliasing filter
+                %----------------------------------------------------------
+% TODO: multiple indices_element{ index_setup } valid?
+                h_transfer{ index_setup } = apply( filters( index_setup ), setups( index_setup ), h_transfer{ index_setup }, indices_element{ index_setup } );
+
+            end % for index_setup = 1:numel( setups )
+
+            % avoid cell array for single setups
+            if isscalar( setups )
+                h_transfer = h_transfer{ 1 };
+            end
+
+        end % function h_transfer = transfer_function( setups, axes_f, indices_element, filters )
+
+        %------------------------------------------------------------------
+        % compute flags reflecting the local angular spatial frequencies
+        %------------------------------------------------------------------
+        function flags = compute_flags( setups, axes_f, indices_element )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.sequences.setups.setup
+            if ~isa( setups, 'scattering.sequences.setups.setup' )
+                errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
+                errorStruct.identifier = 'compute_flags:NoSetups';
+                error( errorStruct );
+            end
+
+            % ensure class math.sequence_increasing with physical_values.frequency members
+            if ~( isa( axes_f, 'math.sequence_increasing' ) && all( cellfun( @( x ) isa( x, 'physical_values.frequency' ), { axes_f.members } ) ) )
+                errorStruct.message = 'axes_f must be math.sequence_increasing with physical_values.frequency members!';
+                errorStruct.identifier = 'compute_flags:InvalidFrequencyAxes';
+                error( errorStruct );
+            end
+
+            % ensure nonempty indices_element
+            if nargin < 3 || isempty( indices_element )
+                indices_element = 1;
             end
 
             % ensure cell array for indices_element
@@ -565,124 +689,77 @@ classdef setup
             auxiliary.mustBeEqualSize( setups, axes_f, indices_element );
 
             %--------------------------------------------------------------
-            % 2.) compute spatial transfer functions
+            % 2.) compute flags reflecting the local angular spatial frequencies
             %--------------------------------------------------------------
-            % numbers of frequencies
+            % numbers of discrete frequencies
             N_samples_f = abs( axes_f );
 
-            % specify cell array for h_transfer
-            h_transfer = cell( size( setups ) );
+            % specify cell array for flags
+            flags = cell( size( setups ) );
 
-            % iterate discretized pulse-echo measurement setups
-            for index_grid = 1:numel( setups )
+            % iterate pulse-echo measurement setups
+            for index_setup = 1:numel( setups )
 
                 %----------------------------------------------------------
                 % a) validate indices of selected array elements
                 %----------------------------------------------------------
-                % ensure positive integers
-                mustBeInteger( indices_element{ index_grid } );
-                mustBePositive( indices_element{ index_grid } );
+                % ensure nonempty positive integers
+                mustBeInteger( indices_element{ index_setup } );
+                mustBePositive( indices_element{ index_setup } );
+                mustBeNonempty( indices_element{ index_setup } );
 
-                % ensure that indices_element{ index_grid } does not exceed the number of array elements
-                if any( indices_element{ index_grid }( : ) > setups( index_grid ).xdc_array.N_elements )
-                    errorStruct.message = sprintf( 'indices_element{ %d } must not exceed the number of array elements %d!', index_grid, setups( index_grid ).xdc_array.N_elements );
-                    errorStruct.identifier = 'transfer_function:InvalidElementIndices';
+                % ensure that indices_element{ index_setup } does not exceed the number of array elements
+                if any( indices_element{ index_setup }( : ) > setups( index_setup ).xdc_array.N_elements )
+                    errorStruct.message = sprintf( 'indices_element{ %d } must not exceed the number of array elements %d!', index_setup, setups( index_setup ).xdc_array.N_elements );
+                    errorStruct.identifier = 'compute_flags:InvalidElementIndices';
                     error( errorStruct );
                 end
 
                 %----------------------------------------------------------
-                % b) compute current complex-valued wavenumbers
+                % b) compute flags for selected array elements
                 %----------------------------------------------------------
-                axis_k_tilde = compute_wavenumbers( setups( index_grid ).homogeneous_fluid.absorption_model, axes_f( index_grid ) );
+                % compute current complex-valued wavenumbers
+                axis_k_tilde = compute_wavenumbers( setups( index_setup ).homogeneous_fluid.absorption_model, axes_f( index_setup ) );
 
-                %----------------------------------------------------------
-                % c) compute spatial transfer functions for selected array elements
-                %----------------------------------------------------------
-                % specify cell arrays
-                h_samples = cell( size( indices_element{ index_grid } ) );
+                % compute absolute lateral components of mutual unit vectors
+                e_1_minus_2 = mutual_unit_vectors( math.grid( setups( index_setup ).xdc_array.positions_ctr ), setups( index_setup ).FOV.shape.grid, indices_element{ index_setup } );
+                e_1_minus_2 = abs( e_1_minus_2( :, :, 1:( end - 1 ) ) );
+
+                % exclude dimensions with less than two array elements
+                indicator_dimensions = setups( index_setup ).xdc_array.N_elements_axis > 1;
+                N_dimensions_lateral_relevant = sum( indicator_dimensions );
+                e_1_minus_2 = e_1_minus_2( :, :, indicator_dimensions );
+
+                % specify cell array for flags{ index_setup }
+                flags{ index_setup } = cell( size( indices_element{ index_setup } ) );
 
                 % iterate selected array elements
-                for index_selected = 1:numel( indices_element{ index_grid } )
+                for index_selected = 1:numel( indices_element{ index_setup } )
 
-                    %------------------------------------------------------
-                    % i.) compute complex-valued apodization weights
-                    %------------------------------------------------------
-                    % index of current array element
-                    index_element = indices_element{ index_grid }( index_selected );
+                    % select absolute lateral components of mutual unit vectors
+                    e_1_minus_2_act = repmat( e_1_minus_2( index_selected, :, : ), [ N_samples_f( index_setup ), 1, 1 ] );
 
-                    % extract discretized vibrating face
-                    face_act = setups( index_grid ).xdc_array.aperture( index_element );
+                    % compute flag reflecting the local angular spatial frequencies
+                    flags{ index_setup }{ index_selected } = real( axis_k_tilde.members ) .* e_1_minus_2_act .* reshape( setups( index_setup ).xdc_array.cell_ref.edge_lengths( indicator_dimensions ), [ 1, 1, N_dimensions_lateral_relevant ] );
 
-                    % ensure class math.grid_regular
-                    if ~isa( face_act.shape.grid, 'math.grid_regular' )
-                        errorStruct.message = 'face_act.shape.grid must be math.grid_regular!';
-                        errorStruct.identifier = 'transfer_function:NoRegularGrid';
-                        error( errorStruct );
-                    end
+                end % for index_selected = 1:numel( indices_element{ index_setup } )
 
-                    % compute complex-valued wavenumbers for acoustic lens
-                    axis_k_tilde_lens = compute_wavenumbers( face_act.lens.absorption_model, axes_f( index_grid ) );
+                % create fields
+                flags{ index_setup } = processing.field( axes_f( index_setup ), setups( index_setup ).FOV.shape.grid, flags{ index_setup } );
 
-                    % compute complex-valued apodization weights
-                    weights = reshape( face_act.apodization .* exp( - 1j * face_act.lens.thickness * axis_k_tilde_lens.members.' ), [ face_act.shape.grid.N_points, 1, N_samples_f( index_grid ) ] );
-
-                    %------------------------------------------------------
-                    % ii.) compute spatial transfer functions
-                    %------------------------------------------------------
-                    % initialize samples with zeros
-                    h_samples{ index_selected } = physical_values.meter( zeros( N_samples_f( index_grid ), setups( index_grid ).FOV.shape.grid.N_points ) );
-
-                    % partition grid points into batches to save memory
-                    N_batches = ceil( face_act.shape.grid.N_points / N_points_max );
-                    N_points_last = face_act.shape.grid.N_points - ( N_batches - 1 ) * N_points_max;
-                    indices = mat2cell( (1:face_act.shape.grid.N_points), 1, [ N_points_max * ones( 1, N_batches - 1 ), N_points_last ] );
-
-                    % iterate batches
-                    for index_batch = 1:N_batches
-
-                        % print progress in percent
-                        fprintf( '%5.1f %%', ( index_batch - 1 ) / N_batches * 1e2 );
-
-                        % compute Green's functions for specified pairs of grids and specified grid points
-                        temp = processing.greens_function( face_act.shape.grid, setups( index_grid ).FOV.shape.grid, axis_k_tilde, indices{ index_batch } );
-
-                        % apply complex-valued apodization weights
-                        temp = weights( indices{ index_batch }, :, : ) .* temp;
-
-                        % integrate over aperture
-                        h_samples{ index_selected } = h_samples{ index_selected } - 2 * face_act.shape.grid.cell_ref.volume * shiftdim( sum( temp, 1 ), 1 ).';
-
-                        % erase progress in percent
-                        fprintf( '\b\b\b\b\b\b\b' );
-
-                    end % for index_batch = 1:N_batches
-
-                end % for index_selected = 1:numel( indices_element{ index_grid } )
-
-                %----------------------------------------------------------
-                % d) create fields
-                %----------------------------------------------------------
-                h_transfer{ index_grid } = processing.field( repmat( axes_f( index_grid ), size( h_samples ) ), repmat( setups( index_grid ).FOV.shape.grid, size( h_samples ) ), h_samples );
-
-            end % for index_grid = 1:numel( setups )
+            end % for index_setup = 1:numel( setups )
 
             % avoid cell array for single setups
             if isscalar( setups )
-                h_transfer = h_transfer{ 1 };
+                flags = flags{ 1 };
             end
 
-            % infer and print elapsed time
-            time_elapsed = toc( time_start );
-            fprintf( 'done! (%f s)\n', time_elapsed );
-
-        end % function h_transfer = transfer_function( setups, axes_f, varargin )
+        end % function flags = compute_flags( setups, axes_f, indices_element )
 
         %------------------------------------------------------------------
-        % apply anti-aliasing filter
+        % compute incident acoustic pressure fields
         %------------------------------------------------------------------
-        function h_transfer_aa = anti_aliasing_filter( setups, h_transfer, options_anti_aliasing, indices_element )
-        % apply anti-aliasing filter to
-        % the spatial transfer function for the d-dimensional Euclidean space
+        function fields = compute_p_in( setups, settings, filters )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -690,183 +767,32 @@ classdef setup
             % ensure class scattering.sequences.setups.setup
             if ~isa( setups, 'scattering.sequences.setups.setup' )
                 errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
-                errorStruct.identifier = 'anti_aliasing_filter:NoSetups';
+                errorStruct.identifier = 'compute_p_in:NoSetups';
                 error( errorStruct );
             end
 
-            % ensure class scattering.sequences.setups.transducers.array_planar_regular_orthogonal
-            indicator = cellfun( @( x ) ~isa( x, 'scattering.sequences.setups.transducers.array_planar_regular_orthogonal' ), { setups.xdc_array } );
-            if any( indicator( : ) )
-                errorStruct.message = 'setups.xdc_array must be scattering.sequences.setups.transducers.array_planar_regular_orthogonal!';
-                errorStruct.identifier = 'anti_aliasing_filter:NoOrthogonalRegularPlanarArrays';
-                error( errorStruct );
-            end
-
-            % ensure class processing.field
-            if ~isa( h_transfer, 'processing.field' )
-                errorStruct.message = 'h_transfer must be processing.field!';
-                errorStruct.identifier = 'anti_aliasing_filter:NoFields';
-                error( errorStruct );
-            end
-
-            % ensure class scattering.options.anti_aliasing
-            if ~isa( options_anti_aliasing, 'scattering.options.anti_aliasing' )
-                errorStruct.message = 'options_anti_aliasing must be scattering.options.anti_aliasing!';
-                errorStruct.identifier = 'anti_aliasing_filter:NoAntiAliasingOptions';
-                error( errorStruct );
-            end
-
-            % ensure nonempty indices_element
-            if nargin < 4 || isempty( indices_element )
-                indices_element = num2cell( 1 );
-            end
-
-            % ensure cell array for indices_element
-            if ~iscell( indices_element )
-                indices_element = { indices_element };
-            end
+            % ensure cell array for settings
+            
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( setups, h_transfer, options_anti_aliasing, indices_element );
+            auxiliary.mustBeEqualSize( setups, settings, filters );
 
             %--------------------------------------------------------------
-            % 2.) apply anti-aliasing filter
+            % 2.) compute incident acoustic pressure fields
             %--------------------------------------------------------------
-            % numbers of discrete frequencies
-            N_samples_f = cellfun( @abs, { h_transfer.axis } );
+            % specify cell arrays
+            fields = cell( size( setups ) );
 
-            % specify cell array for h_samples_aa
-            h_samples_aa = cell( size( setups ) );
+            % iterate setups of pulse-echo measurements
+            for index_setup = 1:numel( setups )
 
-            % iterate pulse-echo measurement setups
-            for index_object = 1:numel( setups )
+                fields{ index_setup } = compute_p_in_scalar( setups( index_setup ), settings_tx.indices_active, settings_tx.v_d, filters( index_setup ) );
 
-                % check spatial anti-aliasing filter status
-                if isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_off' )
+            end % for index_setup = 1:numel( setups )
 
-                    %------------------------------------------------------
-                    % a) inactive spatial anti-aliasing filter
-                    %------------------------------------------------------
-                    % copy spatial transfer function
-                    h_samples_aa{ index_object } = h_transfer( index_object ).samples;
+            fields = processing.field( axes_f_measurement_unique, setups( index_setup ).FOV.shape.grid, fields{ index_sequence } );
 
-                else
-
-                    %------------------------------------------------------
-                    % b) active spatial anti-aliasing filter
-                    %------------------------------------------------------
-                    % compute lateral components of mutual unit vectors
-                    e_1_minus_2 = mutual_unit_vectors( math.grid( setups( index_object ).xdc_array.positions_ctr ), h_transfer( index_object ).grid_FOV, indices_element{ index_object } );
-                    e_1_minus_2 = repmat( abs( e_1_minus_2( :, :, 1:(end - 1) ) ), [ N_samples_f( index_object ), 1 ] );
-
-                    % exclude dimensions with less than two array elements
-                    indicator_dimensions = setups( index_object ).xdc_array.N_elements_axis > 1;
-                    N_dimensions_lateral_relevant = sum( indicator_dimensions );
-                    e_1_minus_2 = e_1_minus_2( :, :, indicator_dimensions );
-
-                    % compute flag reflecting the local angular spatial frequencies
-                    axis_k_tilde = compute_wavenumbers( setups( index_object ).homogeneous_fluid.absorption_model, h_transfer( index_object ).axis );
-                    flag = real( axis_k_tilde.members ) .* e_1_minus_2 .* reshape( setups( index_object ).xdc_array.cell_ref.edge_lengths( indicator_dimensions ), [ 1, 1, N_dimensions_lateral_relevant ] );
-
-                    % check type of spatial anti-aliasing filter
-                    if isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_boxcar' )
-
-                        %--------------------------------------------------
-                        % i.) boxcar spatial anti-aliasing filter
-                        %--------------------------------------------------
-                        % detect valid grid points
-                        filter = all( flag < pi, 3 );
-
-                    elseif isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_raised_cosine' )
-
-                        %--------------------------------------------------
-                        % ii.) raised-cosine spatial anti-aliasing filter
-                        %--------------------------------------------------
-% TODO: small value of options_anti_aliasing( index_object ).roll_off_factor causes NaN
-% TODO: why more conservative aliasing
-                        % compute lower and upper bounds
-                        flag_lb = pi * ( 1 - options_anti_aliasing( index_object ).roll_off_factor );
-                        flag_ub = pi; %pi * ( 1 + options_anti_aliasing( index_object ).roll_off_factor );
-                        flag_delta = flag_ub - flag_lb;
-
-                        % detect tapered grid points
-                        indicator_on = flag <= flag_lb;
-                        indicator_taper = ( flag > flag_lb ) & ( flag < flag_ub );
-                        indicator_off = flag >= flag_ub;
-
-                        % compute raised-cosine function
-                        flag( indicator_on ) = 1;
-                        flag( indicator_taper ) = 0.5 * ( 1 + cos( pi * ( flag( indicator_taper ) - flag_lb ) / flag_delta ) );
-                        flag( indicator_off ) = 0;
-                        filter = prod( flag, 3 );
-
-                    elseif isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_logistic' )
-
-                        %--------------------------------------------------
-                        % iii.) logistic spatial anti-aliasing filter
-                        %--------------------------------------------------
-                        % compute logistic function
-                        filter = prod( 1 ./ ( 1 + exp( options_anti_aliasing( index_object ).growth_rate * ( flag - pi ) ) ), 3 );
-
-                    else
-
-                        %--------------------------------------------------
-                        % iv.) unknown spatial anti-aliasing filter
-                        %--------------------------------------------------
-                        errorStruct.message = sprintf( 'Class of options_anti_aliasing( %d ) is unknown!', index_object );
-                        errorStruct.identifier = 'anti_aliasing_filter:UnknownOptionsClass';
-                        error( errorStruct );
-
-                    end % if isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_boxcar' )
-
-                    % apply anti-aliasing filter
-                    h_samples_aa{ index_object } = h_transfer( index_object ).samples .* filter;
-
-                end % if isa( options_anti_aliasing( index_object ), 'scattering.options.anti_aliasing_off' )
-
-            end % for index_object = 1:numel( setups )
-
-            %--------------------------------------------------------------
-            % 3.) create fields
-            %--------------------------------------------------------------
-            h_transfer_aa = processing.field( [ h_transfer.axis ], [ h_transfer.grid_FOV ], h_samples_aa );
-
-        end % function h_transfer_aa = anti_aliasing_filter( setups, h_transfer, options_anti_aliasing, indices_element )
-
-        %------------------------------------------------------------------
-        % compute flag reflecting the local angular spatial frequencies (scalar)
-        %------------------------------------------------------------------
-        function flag = compute_flag( ~, setup, h_transfer, index_element )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
-            % calling method ensures class scattering.sequences.setups.setup for setup (scalar)
-            % calling method ensures class scattering.sequences.setups.transducers.array_planar_regular_orthogonal for setup.xdc_array (scalar)
-            % calling method ensures class processing.field for h_transfer (scalar)
-            % calling method ensures ensure nonempty indices_element
-
-            %--------------------------------------------------------------
-            % 2.) apply spatial anti-aliasing filter (scalar)
-            %--------------------------------------------------------------
-            % numbers of discrete frequencies
-            N_samples_f = abs( h_transfer.axis );
-
-            % compute lateral components of mutual unit vectors
-            e_1_minus_2 = mutual_unit_vectors( math.grid( setup.xdc_array.positions_ctr ), h_transfer.grid_FOV, index_element );
-            e_1_minus_2 = repmat( abs( e_1_minus_2( :, :, 1:( end - 1 ) ) ), [ N_samples_f, 1 ] );
-
-            % exclude dimensions with less than two array elements
-            indicator_dimensions = setup.xdc_array.N_elements_axis > 1;
-            N_dimensions_lateral_relevant = sum( indicator_dimensions );
-            e_1_minus_2 = e_1_minus_2( :, :, indicator_dimensions );
-
-            % compute flag reflecting the local angular spatial frequencies
-            axis_k_tilde = compute_wavenumbers( setup.homogeneous_fluid.absorption_model, h_transfer.axis );
-            flag = real( axis_k_tilde.members ) .* e_1_minus_2 .* reshape( setup.xdc_array.cell_ref.edge_lengths( indicator_dimensions ), [ 1, 1, N_dimensions_lateral_relevant ] );
-
-        end % function flag = compute_flag( ~, setup, h_transfer, index_element )
+        end % function fields = compute_p_in( setups, settings_tx, filters )
 
         %------------------------------------------------------------------
         % is discretized setup symmetric
@@ -998,6 +924,136 @@ classdef setup
         function setup_grid_symmetric( setups )
         end
 
-    end % methods
+	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (private and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = private, Hidden)
+
+        %------------------------------------------------------------------
+        % compute spatial transfer function (scalar)
+        %------------------------------------------------------------------
+        function h_samples = transfer_function_scalar( setup, axis_f, index_element )
+
+            % internal constant
+            N_points_max = 1;
+
+            % print status
+            time_start = tic;
+            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+            fprintf( '\t %s: computing spatial transfer function... ', str_date_time );
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class scattering.sequences.setups.setup (scalar) for setup
+            % calling function ensures class math.grid_regular for setup.xdc_array.aperture.shape.grid
+            % calling function ensures class math.sequence_increasing with physical_values.frequency members (scalar) for axis_f
+            % calling function ensures nonempty positive integer that does not exceed the number of array elements for index_element
+
+            %--------------------------------------------------------------
+            % 2.) compute spatial transfer function (scalar)
+            %--------------------------------------------------------------
+            % extract discretized vibrating face
+            face_act = setup.xdc_array.aperture( index_element );
+
+            % compute complex-valued apodization weights
+            weights = compute_weights( face_act, axis_f );
+
+            % number of discrete frequencies
+            N_samples_f = abs( axis_f );
+
+            % compute current complex-valued wavenumbers
+            axis_k_tilde = compute_wavenumbers( setup.homogeneous_fluid.absorption_model, axis_f );
+
+            % initialize samples with zeros
+            h_samples = physical_values.meter( zeros( N_samples_f, setup.FOV.shape.grid.N_points ) );
+
+            % partition grid points on vibrating face into batches to save memory
+            N_batches = ceil( face_act.shape.grid.N_points / N_points_max );
+            N_points_last = face_act.shape.grid.N_points - ( N_batches - 1 ) * N_points_max;
+            indices = mat2cell( (1:face_act.shape.grid.N_points), 1, [ N_points_max * ones( 1, N_batches - 1 ), N_points_last ] );
+
+            % iterate batches
+            for index_batch = 1:N_batches
+
+                % print progress in percent
+                fprintf( '%5.1f %%', ( index_batch - 1 ) / N_batches * 1e2 );
+
+                % compute Green's functions for specified pairs of grids and specified grid points
+                temp = processing.greens_function( face_act.shape.grid, setup.FOV.shape.grid, axis_k_tilde, indices{ index_batch } );
+
+                % apply complex-valued apodization weights
+                temp = weights( indices{ index_batch }, :, : ) .* temp;
+
+                % integrate over aperture
+                h_samples = h_samples - 2 * face_act.shape.grid.cell_ref.volume * shiftdim( sum( temp, 1 ), 1 ).';
+
+                % erase progress in percent
+                fprintf( '\b\b\b\b\b\b\b' );
+
+            end % for index_batch = 1:N_batches
+
+            % infer and print elapsed time
+            time_elapsed = toc( time_start );
+            fprintf( 'done! (%f s)\n', time_elapsed );
+
+        end % function h_samples = transfer_function_scalar( setup, axis_f, index_element )
+
+        %------------------------------------------------------------------
+        % compute incident acoustic pressure field (scalar)
+        %------------------------------------------------------------------
+        function p_in_samples = compute_p_in_scalar( setup, indices_active, v_d, filter )
+
+            % print status
+            time_start = tic;
+            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+            fprintf( '\t %s: computing incident acoustic pressure field (kappa)...', str_date_time );
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class scattering.sequences.setups.setup (scalar) for setup
+            % calling function ensures nonempty positive integers that do not exceed the number of array elements for indices_active
+            % calling function ensures class processing.signal_matrix (scalar) for v_d
+            % calling function ensures class scattering.options.anti_aliasing (scalar) for filter
+
+            %--------------------------------------------------------------
+            % 2.) compute incident acoustic pressure field (scalar)
+            %--------------------------------------------------------------
+            % extract frequency axis
+            axis_f = v_d.axis;
+            N_samples_f = abs( axis_f );
+
+            % initialize pressure samples with zeros
+            p_in_samples = physical_values.pascal( zeros( N_samples_f, setup.FOV.shape.grid.N_points ) );
+
+            % iterate active array elements
+            for index_active = 1:numel( indices_active )
+
+                % index of active array element
+                index_element = indices_active( index_active );
+
+                % compute spatial transfer function of the active array element
+                h_tx_unique = transfer_function( setup, axis_f, index_element, filter );
+                h_tx_unique = double( h_tx_unique.samples );
+
+                % compute summand for the incident pressure field
+                p_in_samples_summand = h_tx_unique .* double( v_d.samples( :, index_active ) );
+
+                % add summand to the incident pressure field
+% TODO: correct unit problem
+                p_in_samples = p_in_samples + physical_values.pascal( p_in_samples_summand );
+
+            end % for index_active = 1:numel( indices_active )
+
+            % infer and print elapsed time
+            time_elapsed = toc( time_start );
+            fprintf( 'done! (%f s)\n', time_elapsed );
+
+        end % function p_in_samples = compute_p_in_scalar( setup, indices_active, v_d, filter )
+
+	end % methods (Access = private, Hidden)
 
 end % classdef setup

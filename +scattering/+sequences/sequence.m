@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2020-01-10
+% modified: 2020-02-26
 %
 classdef sequence
 
@@ -27,11 +27,10 @@ classdef sequence
         size ( 1, : ) double                            % size of the discretization
 
         % optional properties
-        h_ref ( :, 1 ) processing.field            % reference spatial transfer function (unique frequencies)
-        h_ref_aa ( :, 1 ) processing.field         % reference spatial transfer function (unique frequencies)
-        h_ref_grad ( :, 1 ) processing.field       % spatial gradient of the reference spatial transfer function (unique frequencies)
+        h_ref ( :, 1 ) processing.field            % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
+        h_ref_grad ( :, 1 ) processing.field       % spatial gradient of the reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
 
-    end % properties
+	end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -508,33 +507,70 @@ classdef sequence
                 % size of the discretization
                 sequences( index_object ).size = [ sum( cellfun( @( x ) sum( x( : ) ), { sequences( index_object ).settings.N_observations } ) ), sequences( index_object ).setup.FOV.shape.grid.N_points ];
 
-                %----------------------------------------------------------
-                % c) set optional properties for symmetric spatial discretizations based on orthogonal regular grids
-                %----------------------------------------------------------
-                if isa( sequences( index_object ).setup, 'scattering.sequences.setups.setup_grid_symmetric' )
-
-                    % create format string for filename
-                    str_format = sprintf( 'data/%s/setup_%%s/h_ref_axis_f_unique_%%s.mat', sequences( index_object ).setup.str_name );
-
-                    % load or compute reference spatial transfer function (unique frequencies)
-                    sequences( index_object ).h_ref ...
-                    = auxiliary.compute_or_load_hash( str_format, @transfer_function, [ 3, 2 ], [ 1, 2 ], ...
-                        sequences( index_object ).setup, sequences( index_object ).axis_f_unique, ...
-                        { sequences( index_object ).setup.xdc_array.aperture, sequences( index_object ).setup.homogeneous_fluid, sequences( index_object ).setup.FOV, sequences( index_object ).setup.str_name } );
-
-                end % if isa( sequences( index_object ).setup, 'scattering.sequences.setups.setup_grid_symmetric' )
-
             end % for index_object = 1:numel( sequences )
 
         end % function sequences = discretize( sequences, options )
 
         %------------------------------------------------------------------
-        %
+        % update reference spatial transfer function
         %------------------------------------------------------------------
-        function sequences = apply_anti_aliasing_filter( sequences, options_anti_aliasing )
+        function sequences = update_transfer_function( sequences, filters )
 
-            sequences.h_ref_aa = anti_aliasing_filter( sequences.setup, sequences.h_ref, options_anti_aliasing );
-        end
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.sequences.sequence
+            if ~isa( sequences, 'scattering.sequences.sequence' )
+                errorStruct.message = 'sequences must be scattering.sequences.sequence!';
+                errorStruct.identifier = 'update_transfer_function:NoSequences';
+                error( errorStruct );
+            end
+
+            % ensure class scattering.sequences.setups.setup_grid_symmetric
+            indicator = cellfun( @( x ) ~isa( x, 'scattering.sequences.setups.setup_grid_symmetric' ), { sequences.setup } );
+            if any( indicator( : ) )
+                errorStruct.message = 'sequences.setup must be scattering.sequences.setups.setup_grid_symmetric!';
+                errorStruct.identifier = 'update_transfer_function:NoSymmetricSetup';
+                error( errorStruct );
+            end
+
+            % ensure nonempty filters
+            if nargin < 2 || isempty( filters )
+                filters = scattering.options.anti_aliasing_off;
+            end
+
+            % ensure class scattering.options.anti_aliasing
+            if ~isa( filters, 'scattering.options.anti_aliasing' )
+                errorStruct.message = 'filters must be scattering.options.anti_aliasing!';
+                errorStruct.identifier = 'update_transfer_function:NoSpatialAntiAliasingFilters';
+                error( errorStruct );
+            end
+
+            % multiple sequences / single filters
+            if ~isscalar( sequences ) && isscalar( filters )
+                filters = repmat( filters, size( sequences ) );
+            end
+
+            % single sequences / multiple filters
+            if isscalar( sequences ) && ~isscalar( filters )
+                sequences = repmat( sequences, size( filters ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, filters );
+
+            %--------------------------------------------------------------
+            % 2.) update reference spatial transfer function
+            %--------------------------------------------------------------
+            % iterate sequences of pulse-echo measurements
+            for index_sequence = 1:numel( sequences )
+
+                % compute reference spatial transfer function (unique frequencies)
+                sequences( index_sequence ).h_ref = transfer_function( sequences( index_sequence ).setup, sequences( index_sequence ).axis_f_unique, [], filters( index_sequence ) );
+
+            end % for index_sequence = 1:numel( sequences )
+
+        end % function sequences = update_transfer_function( sequences, filters )
 
         %------------------------------------------------------------------
         % compute prefactors (local frequencies)
@@ -586,11 +622,235 @@ classdef sequence
         end % function prefactors = compute_prefactors( sequences )
 
         %------------------------------------------------------------------
-        % compute incident acoustic pressure field
+        % compute incident acoustic pressure fields
         %------------------------------------------------------------------
-        function fields = compute_p_in( sequences, varargin )
-        end
+        function fields = compute_p_in( sequences, indices_incident, filters )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.sequences.sequence
+            if ~isa( sequences, 'scattering.sequences.sequence' )
+                errorStruct.message = 'sequences must be scattering.sequences.sequence!';
+                errorStruct.identifier = 'compute_p_in:NoSequences';
+                error( errorStruct );
+            end
+% TODO: fix indices_incident
+            % ensure cell array for indices_incident
+            if ~iscell( indices_incident )
+                indices_incident = { indices_incident };
+            end
+
+            % ensure nonempty filters
+            if nargin < 3 || isempty( filters )
+                filters = scattering.options.anti_aliasing_off;
+            end
+
+            % ensure class scattering.options.anti_aliasing
+            if ~isa( filters, 'scattering.options.anti_aliasing' )
+                errorStruct.message = 'filters must be scattering.options.anti_aliasing!';
+                errorStruct.identifier = 'compute_p_in:NoSpatialAntiAliasingFilters';
+                error( errorStruct );
+            end
+
+            % multiple sequences / single indices_incident
+            if ~isscalar( sequences ) && isscalar( indices_incident )
+                indices_incident = repmat( indices_incident, size( sequences ) );
+            end
+
+            % single sequences / multiple indices_incident
+            if isscalar( sequences ) && ~isscalar( indices_incident )
+                sequences = repmat( sequences, size( indices_incident ) );
+            end
+
+            % multiple sequences / single filters
+            if ~isscalar( sequences ) && isscalar( filters )
+                filters = repmat( filters, size( sequences ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( sequences, indices_incident, filters );
+
+            %--------------------------------------------------------------
+            % 2.) compute incident acoustic pressure fields
+            %--------------------------------------------------------------
+            % specify cell arrays
+            fields = cell( size( sequences ) );
+
+            % iterate sequences of pulse-echo measurements
+            for index_sequence = 1:numel( sequences )
+
+                %----------------------------------------------------------
+                % a) check indices indices_incident{ index_sequence }
+                %----------------------------------------------------------
+                % ensure nonempty indices_incident{ index_sequence }
+                if nargin < 2 || isempty( indices_incident{ index_sequence } )
+                    indices_incident{ index_sequence } = ( 1:numel( sequences( index_sequence ).settings ) );
+                end
+
+                % ensure nonempty positive integers
+                mustBeNonempty( indices_incident{ index_sequence } );
+                mustBeInteger( indices_incident{ index_sequence } );
+                mustBePositive( indices_incident{ index_sequence } );
+
+                % ensure that indices_incident{ index_sequence } do not exceed the number of sequential pulse-echo measurements
+                if any( indices_incident{ index_sequence } > numel( sequences( index_sequence ).settings ) )
+                    errorStruct.message = sprintf( 'indices_incident{ %d } must not exceed the number of sequential pulse-echo measurements!', index_sequence );
+                    errorStruct.identifier = 'compute_p_in:InvalidMeasurement';
+                    error( errorStruct );
+                end
+
+                %----------------------------------------------------------
+                % b) compute field samples
+                %----------------------------------------------------------
+                % map unique frequencies of pulse-echo measurement to global unique frequencies
+                indices_f_measurement_to_global = sequences( index_sequence ).indices_f_to_unique{ indices_incident{ index_sequence } };
+
+                % subsample global unique frequencies to get unique frequencies of pulse-echo measurements
+                axes_f_measurement_unique = subsample( sequences( index_sequence ).axis_f_unique, indices_f_measurement_to_global );
+
+                % specify cell array for fields{ index_sequence }
+                fields{ index_sequence } = cell( size( indices_incident{ index_sequence } ) );
+
+                % iterate pulse-echo measurements
+                for index_incident_sel = 1:numel( indices_incident{ index_sequence } )
+
+                    % index of selected pulse-echo measurement
+                    index_incident = indices_incident{ index_sequence }( index_incident_sel );
+
+                    % create format string for filename
+                    str_format = sprintf( 'data/%s/setup_%%s/p_in_indices_active_%%s_v_d_unique_%%s_aliasing_%%s.mat', sequences( index_sequence ).setup.str_name );
+
+                    % load or compute incident acoustic pressure field (scalar)
+% TODO: loading and saving optional
+                    fields{ index_sequence }{ index_incident_sel } = ...
+                    auxiliary.compute_or_load_hash( str_format, @compute_p_in_scalar, [ 4, 5, 6, 3 ], [ 1, 2, 3 ], ...
+                                                    sequences( index_sequence ), index_incident, filters( index_sequence ), ...
+                                                    { sequences( index_sequence ).setup.xdc_array.aperture, sequences( index_sequence ).setup.homogeneous_fluid, sequences( index_sequence ).setup.FOV, sequences( index_sequence ).setup.str_name }, ...
+                                                    sequences( index_sequence ).settings( index_incident ).tx_unique.indices_active, ...
+                                                    sequences( index_sequence ).settings( index_incident ).v_d_unique );
+
+                end % for index_incident_sel = 1:numel( indices_incident{ index_sequence } )
+
+                %----------------------------------------------------------
+                % c) create fields
+                %----------------------------------------------------------
+                fields{ index_sequence } = processing.field( axes_f_measurement_unique, sequences( index_sequence ).setup.FOV.shape.grid, fields{ index_sequence } );
+
+            end % for index_sequence = 1:numel( sequences )
+
+            % avoid cell array for single sequences
+            if isscalar( sequences )
+                fields = fields{ 1 };
+            end
+
+        end % function fields = compute_p_in( sequences, indices_incident, filters )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (private and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = private, Hidden)
+
+        %------------------------------------------------------------------
+        % compute incident acoustic pressure field (scalar)
+        %------------------------------------------------------------------
+        function p_in_samples = compute_p_in_scalar( sequence, index_incident, filter )
+
+            % print status
+            time_start = tic;
+            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+            fprintf( '\t %s: computing incident acoustic pressure field (kappa)...', str_date_time );
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class scattering.sequences.sequence (scalar) for sequence
+            % calling function ensures nonempty positive integer that does not exceed the number of sequential pulse-echo measurements for index_incident
+            % calling function ensures class scattering.options.anti_aliasing for filter
+
+            %--------------------------------------------------------------
+            % 2.) compute incident acoustic pressure field (scalar)
+            %--------------------------------------------------------------
+            if isa( sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
+
+                %----------------------------------------------------------
+                % precompute spatial transfer function for symmetric grid
+                %----------------------------------------------------------
+                % map unique frequencies of selected pulse-echo measurement to global unique frequencies
+                indices_f_to_unique_act = sequence.indices_f_to_unique{ index_incident };
+
+                % compute reference spatial transfer function (global unique frequencies)
+                h_ref_unique = transfer_function( sequence.setup, sequence.axis_f_unique, [], filter );
+                h_ref_unique = double( h_ref_unique.samples( indices_f_to_unique_act, : ) );
+
+            end % if isa( sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
+
+            % extract transducer control settings in synthesis mode (unique frequencies of selected pulse-echo measurement)
+            settings_tx_unique = sequence.settings( index_incident ).tx_unique;
+
+            % extract normal velocities (unique frequencies of selected pulse-echo measurement)
+            v_d_unique = sequence.settings( index_incident ).v_d_unique;
+
+            % extract frequency axes (unique frequencies of selected pulse-echo measurement)
+            axis_f_unique_measurement = v_d_unique.axis;
+            N_samples_f = abs( axis_f_unique_measurement );
+
+            % initialize pressure samples with zeros
+            p_in_samples = physical_values.pascal( zeros( N_samples_f, sequence.setup.FOV.shape.grid.N_points ) );
+
+            % iterate active array elements
+            for index_active = 1:numel( settings_tx_unique.indices_active )
+
+                % index of active array element
+                index_element = settings_tx_unique.indices_active( index_active );
+
+                % spatial transfer function of the active array element
+                if isa( sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
+
+                    %------------------------------------------------------
+                    % a) symmetric spatial discretization based on orthogonal regular grids
+                    %------------------------------------------------------
+                    % shift reference spatial transfer function to infer that of the active array element
+                    indices_occupied_act = sequence.setup.indices_grid_FOV_shift( :, index_element );
+                    h_tx_unique = h_ref_unique( :, indices_occupied_act );
+
+                else
+
+                    %------------------------------------------------------
+                    % b) arbitrary grid
+                    %------------------------------------------------------
+                    % compute spatial transfer function of the active array element
+                    h_tx_unique = transfer_function( sequence.setup, axis_f_unique_measurement, index_element, filter );
+                    h_tx_unique = double( h_tx_unique.samples );
+
+                end % if isa( sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
+
+                % compute summand for the incident pressure field
+                p_in_samples_summand = h_tx_unique .* double( v_d_unique.samples( :, index_active ) );
+
+                % add summand to the incident pressure field
+% TODO: correct unit problem
+                p_in_samples = p_in_samples + physical_values.pascal( p_in_samples_summand );
+
+                % display result
+                figure( index_incident );
+                test = squeeze( reshape( p_in_samples( 1, : ), sequence.setup.FOV.shape.grid.N_points_axis ) );
+                if ndims( test ) == 2
+                    imagesc( abs( double( test ) )' );
+                else
+                    imagesc( abs( double( squeeze( test( :, 1, : ) ) ) )' );
+                end
+
+            end % for index_active = 1:numel( settings_tx_unique.indices_active )
+
+            % infer and print elapsed time
+            time_elapsed = toc( time_start );
+            fprintf( 'done! (%f s)\n', time_elapsed );
+
+        end % function p_in_samples = compute_p_in_scalar( sequence, index_incident, filter )
+
+	end % methods (Access = private, Hidden)
 
 end % classdef sequence

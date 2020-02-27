@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-09
-% modified: 2019-08-03
+% modified: 2020-02-26
 %
 classdef momentary
 
@@ -14,7 +14,8 @@ classdef momentary
 
         % independent properties
         sequence ( 1, 1 ) scattering.options.sequence { mustBeNonempty } = scattering.options.sequence_full                         % sequence options
-        anti_aliasing ( 1, 1 ) scattering.options.anti_aliasing { mustBeNonempty } = scattering.options.anti_aliasing_raised_cosine( 0.5 )	% spatial anti-aliasing filter options
+        anti_aliasing_tx ( 1, 1 ) scattering.options.anti_aliasing { mustBeNonempty } = scattering.options.anti_aliasing_raised_cosine( 0.5 )	% spatial anti-aliasing filter tx
+        anti_aliasing_rx ( 1, 1 ) scattering.options.anti_aliasing { mustBeNonempty } = scattering.options.anti_aliasing_raised_cosine( 0.5 )	% spatial anti-aliasing filter rx
         gpu ( 1, 1 ) scattering.options.gpu { mustBeNonempty } = scattering.options.gpu_active( 0 )                                 % GPU options
         algorithm ( 1, 1 ) scattering.options.algorithm { mustBeNonempty } = scattering.options.algorithm_direct                    % algorithm options
 
@@ -76,9 +77,10 @@ classdef momentary
                 elseif isa( varargin{ index_arg }, 'scattering.options.anti_aliasing' )
 
                     %------------------------------------------------------
-                    % b) spatial anti-aliasing filter options
+                    % b) spatial anti-aliasing filters
                     %------------------------------------------------------
-                    momentary.anti_aliasing = varargin{ index_arg };
+                    momentary.anti_aliasing_tx = varargin{ index_arg };
+                    momentary.anti_aliasing_rx = varargin{ index_arg };
 
                 elseif isa( varargin{ index_arg }, 'scattering.options.gpu' )
 

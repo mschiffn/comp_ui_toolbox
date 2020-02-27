@@ -169,8 +169,9 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
             flag_lb = pi * ( 1 - filter.roll_off_factor );
             flag_ub = pi; %pi * ( 1 + filter.roll_off_factor );
             flag_delta = flag_ub - flag_lb;
-
+% TODO: filter function for processing.field?
             % detect tapered grid points
+            flag = flag.samples;
             indicator_on = flag <= flag_lb;
             indicator_taper = ( flag > flag_lb ) & ( flag < flag_ub );
             indicator_off = flag >= flag_ub;

@@ -22,11 +22,11 @@ classdef setting
 
         % discretization
         tx_unique ( :, : ) scattering.sequences.settings.controls.tx	% synthesis settings (unique frequencies)
-        v_d_unique ( :, 1 ) processing.signal_matrix            % normal velocities (unique frequencies)
-        indices_f_to_unique                                     % cell array mapping frequencies of each mixed voltage signal to unique frequencies of current pulse-echo measurement
+        v_d_unique ( :, 1 ) processing.signal_matrix                    % normal velocities (unique frequencies)
+        indices_f_to_unique                                             % cell array mapping frequencies of each mixed voltage signal to unique frequencies of current pulse-echo measurement
         indices_active_rx_unique ( 1, : ) double
         indices_active_rx_to_unique
-        N_observations ( :, : ) double                          % numbers of observations in each mixed voltage signal
+        N_observations ( :, : ) double                                  % numbers of observations in each mixed voltage signal
 
     end % properties
 
@@ -102,6 +102,7 @@ classdef setting
             settings_tx = cell( size( settings ) );
 
             % check spectral discretization options
+% TODO: move to scattering.sequences.settings.discretizations.discretization
             if isa( options_spectral, 'scattering.sequences.settings.discretizations.signal' )
 
                 %----------------------------------------------------------

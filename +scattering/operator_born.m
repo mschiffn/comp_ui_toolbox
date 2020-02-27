@@ -177,7 +177,7 @@ classdef operator_born < scattering.operator
                             operator_born, LTs_tgc_measurement( index_measurement_sel ), ...
                             { operator_born.sequence.setup.xdc_array.aperture, operator_born.sequence.setup.homogeneous_fluid, operator_born.sequence.setup.FOV, operator_born.sequence.setup.str_name }, ...
                             operator_born.sequence.settings( index_measurement ), ...
-                            operator_born.options.momentary.anti_aliasing );
+                            operator_born.options.momentary.anti_aliasing_rx );
 
                     end % for index_measurement_sel = 1:numel( indices_measurement_sel )
 
@@ -205,7 +205,7 @@ classdef operator_born < scattering.operator
                                 operator_born, LT_dict{ index_dictionary }, LTs_tgc_measurement( index_measurement_sel ), ...
                                 { operator_born.sequence.setup.xdc_array.aperture, operator_born.sequence.setup.homogeneous_fluid, operator_born.sequence.setup.FOV, operator_born.sequence.setup.str_name }, ...
                                 operator_born.sequence.settings( index_measurement ), ...
-                                operator_born.options.momentary.anti_aliasing );
+                                operator_born.options.momentary.anti_aliasing_rx );
 
                     end % for index_measurement_sel = 1:numel( indices_measurement_sel )
 
@@ -492,10 +492,10 @@ classdef operator_born < scattering.operator
                             indices_occupied_act = operator_born.sequence.setup.indices_grid_FOV_shift( indices_occupied, index_element );
 
                             % extract current frequencies from unique frequencies
-                            if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.h_ref_aa.axis )
-                                h_rx = double( operator_born.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                            if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.sequence.h_ref.axis )
+                                h_rx = double( operator_born.sequence.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                             else
-                                h_rx = double( operator_born.h_ref_aa.samples( :, indices_occupied_act ) );
+                                h_rx = double( operator_born.sequence.h_ref.samples( :, indices_occupied_act ) );
                             end
 
                         else
@@ -504,10 +504,7 @@ classdef operator_born < scattering.operator
                             % b) arbitrary grid
                             %----------------------------------------------
                             % compute spatial transfer function of the active array element
-                            h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element );
-
-                            % apply spatial anti-aliasing filter
-                            h_rx = anti_aliasing_filter( operator_born.sequence.setup, h_rx, operator_born.options.momentary.anti_aliasing );
+                            h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing_rx );
                             h_rx = double( h_rx.samples );
 
                         end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
@@ -627,10 +624,10 @@ classdef operator_born < scattering.operator
                             indices_occupied_act = operator_born.sequence.setup.indices_grid_FOV_shift( :, index_element );
 
                             % extract current frequencies from unique frequencies
-                            if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.h_ref_aa.axis )
-                                h_rx = double( operator_born.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                            if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.sequence.h_ref.axis )
+                                h_rx = double( operator_born.sequence.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                             else
-                                h_rx = double( operator_born.h_ref_aa.samples( :, indices_occupied_act ) );
+                                h_rx = double( operator_born.sequence.h_ref.samples( :, indices_occupied_act ) );
                             end
 
                         else
@@ -639,10 +636,7 @@ classdef operator_born < scattering.operator
                             % b) arbitrary grid
                             %----------------------------------------------
                             % compute spatial transfer function of the active array element
-                            h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element );
-
-                            % apply spatial anti-aliasing filter
-                            h_rx = anti_aliasing_filter( operator_born.sequence.setup, h_rx, operator_born.options.momentary.anti_aliasing );
+                            h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing_rx );
                             h_rx = double( h_rx.samples );
 
                         end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
@@ -877,10 +871,10 @@ classdef operator_born < scattering.operator
                         indices_occupied_act = operator_born.sequence.setup.indices_grid_FOV_shift( :, index_element );
 
                         % extract current frequencies from unique frequencies
-                        if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.h_ref_aa.axis )
-                            h_rx = double( operator_born.h_ref_aa.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
+                        if numel( indices_f_mix_to_measurement{ index_mix } ) < abs( operator_born.sequence.h_ref.axis )
+                            h_rx = double( operator_born.sequence.h_ref.samples( indices_f_measurement_to_global( indices_f_mix_to_measurement{ index_mix } ), indices_occupied_act ) );
                         else
-                            h_rx = double( operator_born.h_ref_aa.samples( :, indices_occupied_act ) );
+                            h_rx = double( operator_born.sequence.h_ref.samples( :, indices_occupied_act ) );
                         end
 
                     else
@@ -889,10 +883,7 @@ classdef operator_born < scattering.operator
                         % ii.) arbitrary grid
                         %--------------------------------------------------
                         % compute spatial transfer function of the active array element
-                        h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element );
-
-                        % apply spatial anti-aliasing filter
-                        h_rx = anti_aliasing_filter( operator_born.sequence.setup, h_rx, operator_born.options.momentary.anti_aliasing );
+                        h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing_rx );
                         h_rx = double( h_rx.samples );
 
                     end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )

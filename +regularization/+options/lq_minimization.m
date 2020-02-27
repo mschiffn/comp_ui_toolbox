@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-29
-% modified: 2020-02-19
+% modified: 2020-02-26
 %
 classdef lq_minimization < regularization.options.common
 
@@ -114,17 +114,9 @@ classdef lq_minimization < regularization.options.common
             % iterate lq-minimization options
             for index_object = 1:numel( options )
 
-                %----------------------------------------------------------
                 % print header
-                %----------------------------------------------------------
-                str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-                fprintf( ' %s\n', repmat( '=', [ 1, 80 ] ) );
-                fprintf( ' %s (%s)\n', 'lq-minimization options', str_date_time );
-                fprintf( ' %s\n', repmat( '=', [ 1, 80 ] ) );
+                auxiliary.print_header( "lq-minimization options", '=' );
 
-                %----------------------------------------------------------
-                % print content
-                %----------------------------------------------------------
                 % print properties
                 fprintf( ' %-12s: %-13s\n', 'algorithm', string( options( index_object ).algorithm ) );
 

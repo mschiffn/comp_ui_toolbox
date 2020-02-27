@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-25
-% modified: 2019-11-02
+% modified: 2019-02-21
 %
 classdef transparent_container
 
@@ -228,6 +228,11 @@ classdef transparent_container
         % rearrange dimensions of N-D array
         function container = permute( container, order )
             container.values = permute( container.values, order );
+        end
+
+        % product of array elements
+        function container = prod( container, varargin )
+            container.values = prod( container.values, varargin{ : } );
         end
 
         % real part of complex number

@@ -124,6 +124,7 @@ classdef weighting < linear_transforms.linear_transform_matrix
 
                 % apply threshold
                 LTs( index_object ).weights( indicator ) = one_over_lb;
+%                 LTs( index_object ).weights( indicator ) = eps;
                 LTs( index_object ).weights_conj = conj( LTs( index_object ).weights );
 
             end % for index_object = 1:numel( LTs )

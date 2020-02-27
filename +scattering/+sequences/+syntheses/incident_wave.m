@@ -3,8 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-04-06
-% modified: 2020-01-10
+% modified: 2020-02-26
 %
+% TODO: change functionality...
 classdef incident_wave
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -26,7 +27,7 @@ classdef incident_wave
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = incident_wave( sequence )
+        function objects = incident_wave( sequence, filter )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -60,33 +61,16 @@ classdef incident_wave
                     % b) arbitrary wave
                     %------------------------------------------------------
                     % determine number of active elements
-                    N_elements_active = numel( sequence.settings( index_object ).tx_unique.indices_active );
+%                     N_elements_active = numel( sequence.settings( index_object ).tx_unique.indices_active );
 
-                    % determine if saving is required
-                    if N_elements_active >= 2
-
-                        % create format string for filename
-                        str_format = sprintf( 'data/%s/setup_%%s/p_in_indices_active_%%s_v_d_unique_%%s.mat', sequence.setup.str_name );
-
-                        % load or compute incident acoustic pressure field (unique frequencies)
-                        objects( index_object ).p_incident...
-                        = auxiliary.compute_or_load_hash( str_format, @scattering.sequences.syntheses.compute_p_in, [ 3, 4, 5 ], [ 1, 2 ], ...
-                            sequence, index_object, ...
-                            { sequence.setup.xdc_array.aperture, sequence.setup.homogeneous_fluid, sequence.setup.FOV, sequence.setup.str_name }, ...
-                            sequence.settings( index_object ).tx_unique.indices_active, sequence.settings( index_object ).v_d_unique );
-
-                    else
-
-                        % compute incident acoustic pressure field (unique frequencies)
-                        objects( index_object ).p_incident = scattering.sequences.syntheses.compute_p_in( sequence, index_object );
-
-                    end % if N_elements_active >= 2
+                    % compute incident acoustic pressure field (unique frequencies)
+                    objects( index_object ).p_incident = compute_p_in( sequence, index_object, filter );
 
                 end % if isa( sequence.settings( index_object ).tx_unique, 'scattering.sequences.settings.controls.tx_PW' )
 
             end % for index_object = 1:numel( sequence.settings )
 
-        end % function objects = incident_wave( sequence )
+        end % function objects = incident_wave( sequence, filter )
 
 	end % methods
 
