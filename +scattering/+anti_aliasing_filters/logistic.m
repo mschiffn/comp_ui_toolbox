@@ -4,9 +4,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-31
-% modified: 2020-02-21
+% modified: 2020-03-04
 %
-classdef anti_aliasing_logistic < scattering.options.anti_aliasing_on
+classdef logistic < scattering.anti_aliasing_filters.on
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -26,7 +26,7 @@ classdef anti_aliasing_logistic < scattering.options.anti_aliasing_on
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = anti_aliasing_logistic( growth_rates )
+        function objects = logistic( growth_rates )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -37,7 +37,7 @@ classdef anti_aliasing_logistic < scattering.options.anti_aliasing_on
             % 2.) create logistic spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options.anti_aliasing_on( size( growth_rates ) );
+            objects@scattering.anti_aliasing_filters.on( size( growth_rates ) );
 
             % iterate logistic spatial anti-aliasing filter options
             for index_object = 1:numel( objects )
@@ -47,7 +47,7 @@ classdef anti_aliasing_logistic < scattering.options.anti_aliasing_on
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = anti_aliasing_logistic( growth_rates )
+        end % function objects = logistic( growth_rates )
 
         %------------------------------------------------------------------
         % compute spatial anti-aliasing filters
@@ -57,9 +57,9 @@ classdef anti_aliasing_logistic < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing_logistic
-            if ~isa( options_anti_aliasing, 'scattering.options.anti_aliasing_logistic' )
-                errorStruct.message = 'options_anti_aliasing must be scattering.options.anti_aliasing_logistic!';
+            % ensure class scattering.anti_aliasing_filters.logistic
+            if ~isa( options_anti_aliasing, 'scattering.anti_aliasing_filters.logistic' )
+                errorStruct.message = 'options_anti_aliasing must be scattering.anti_aliasing_filters.logistic!';
                 errorStruct.identifier = 'compute_filter:NoOptionsAntiAliasingLogistic';
                 error( errorStruct );
             end
@@ -101,9 +101,9 @@ classdef anti_aliasing_logistic < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing_logistic
-            if ~isa( anti_aliasings_logistic, 'scattering.options.anti_aliasing_logistic' )
-                errorStruct.message = 'anti_aliasings_logistic must be scattering.options.anti_aliasing_logistic!';
+            % ensure class scattering.anti_aliasing_filters.logistic
+            if ~isa( anti_aliasings_logistic, 'scattering.anti_aliasing_filters.logistic' )
+                errorStruct.message = 'anti_aliasings_logistic must be scattering.anti_aliasing_filters.logistic!';
                 errorStruct.identifier = 'string:NoOptionsAntiAliasingLogistic';
                 error( errorStruct );
             end
@@ -138,7 +138,7 @@ classdef anti_aliasing_logistic < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter (scalar)
             % calling method ensures valid flag
 
             %--------------------------------------------------------------
@@ -151,4 +151,4 @@ classdef anti_aliasing_logistic < scattering.options.anti_aliasing_on
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef anti_aliasing_logistic < scattering.options.anti_aliasing
+end % classdef logistic < scattering.anti_aliasing_filters.on

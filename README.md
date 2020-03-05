@@ -1,8 +1,14 @@
 # Computational Ultrasound Imaging Toolbox for MATLAB
 
-[![GitHub](https://img.shields.io/github/license/mschiffn/comp-ui-toolbox)](https://github.com/mschiffn/comp-ui-toolbox/COPYING)
+[![GitHub](license-image)](license-url)
+[![GitHub](downloads-image)](downloads-url)
 ![GitHub repo size](https://img.shields.io/github/repo-size/mschiffn/comp_ui_toolbox)
 ![GitHub All Releases](https://img.shields.io/github/downloads/mschiffn/comp_ui_toolbox/total)
+
+[license-image]: https://img.shields.io/github/license/mschiffn/comp-ui-toolbox
+[license-url]: https://github.com/mschiffn/comp-ui-toolbox/COPYING
+[downloads-image]: https://img.shields.io/github/downloads/mschiffn/comp_ui_toolbox/total
+[downloads-url]: https://npmjs.org/package/ieee754
 
 This [MATLAB](https://mathworks.com/products/matlab.html) (The MathWorks, Inc., Natick, MA, USA) toolbox facilitates
 the development and evaluation of

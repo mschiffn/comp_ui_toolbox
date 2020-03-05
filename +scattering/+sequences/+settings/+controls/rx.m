@@ -250,7 +250,7 @@ classdef rx < scattering.sequences.settings.controls.common
             N_signal_matrices = cellfun( @numel, impulse_responses );
             if any( N_signal_matrices ~= 1 )
                 errorStruct.message = 'excitation_voltages and impulse_responses must be processing.signal_matrix!';
-                errorStruct.identifier = 'compute_normal_velocities:NoSignalMatrices';
+                errorStruct.identifier = 'compute_N_observations:NoSignalMatrices';
                 error( errorStruct );
             end
 

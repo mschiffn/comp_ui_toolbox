@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-30
-% modified: 2020-02-21
+% modified: 2020-03-04
 %
-classdef anti_aliasing_boxcar < scattering.options.anti_aliasing_on
+classdef boxcar < scattering.anti_aliasing_filters.on
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing_on
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = anti_aliasing_boxcar( varargin )
+        function objects = boxcar( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -34,9 +34,9 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing_on
             % 2.) create boxcar spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options.anti_aliasing_on( size );
+            objects@scattering.anti_aliasing_filters.on( size );
 
-        end % function objects = anti_aliasing_boxcar( varargin )
+        end % function objects = boxcar( varargin )
 
         %------------------------------------------------------------------
         % compute spatial anti-aliasing filters
@@ -46,9 +46,9 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing_boxcar
-            if ~isa( options_anti_aliasing, 'scattering.options.anti_aliasing_boxcar' )
-                errorStruct.message = 'options_anti_aliasing must be scattering.options.anti_aliasing_boxcar!';
+            % ensure class scattering.anti_aliasing_filters.boxcar
+            if ~isa( options_anti_aliasing, 'scattering.anti_aliasing_filters.boxcar' )
+                errorStruct.message = 'options_anti_aliasing must be scattering.anti_aliasing_filters.boxcar!';
                 errorStruct.identifier = 'compute_filter:NoOptionsAntiAliasingBoxcar';
                 error( errorStruct );
             end
@@ -90,9 +90,9 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing_boxcar
-            if ~isa( anti_aliasings_boxcar, 'scattering.options.anti_aliasing_boxcar' )
-                errorStruct.message = 'anti_aliasings_boxcar must be scattering.options.anti_aliasing_boxcar!';
+            % ensure class scattering.anti_aliasing_filters.boxcar
+            if ~isa( anti_aliasings_boxcar, 'scattering.anti_aliasing_filters.boxcar' )
+                errorStruct.message = 'anti_aliasings_boxcar must be scattering.anti_aliasing_filters.boxcar!';
                 errorStruct.identifier = 'string:NoOptionsAntiAliasingBoxcar';
                 error( errorStruct );
             end
@@ -120,7 +120,7 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter (scalar)
             % calling method ensures valid flag
 
             %--------------------------------------------------------------
@@ -133,4 +133,4 @@ classdef anti_aliasing_boxcar < scattering.options.anti_aliasing_on
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef anti_aliasing_boxcar < scattering.options.anti_aliasing
+end % classdef boxcar < scattering.anti_aliasing_filters.on

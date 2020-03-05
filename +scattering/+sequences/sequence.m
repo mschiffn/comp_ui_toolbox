@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2020-02-26
+% modified: 2020-03-04
 %
 classdef sequence
 
@@ -536,12 +536,12 @@ classdef sequence
 
             % ensure nonempty filters
             if nargin < 2 || isempty( filters )
-                filters = scattering.options.anti_aliasing_off;
+                filters = scattering.anti_aliasing_filters.off;
             end
 
-            % ensure class scattering.options.anti_aliasing
-            if ~isa( filters, 'scattering.options.anti_aliasing' )
-                errorStruct.message = 'filters must be scattering.options.anti_aliasing!';
+            % ensure class scattering.anti_aliasing_filters.anti_aliasing_filter
+            if ~isa( filters, 'scattering.anti_aliasing_filters.anti_aliasing_filter' )
+                errorStruct.message = 'filters must be scattering.anti_aliasing_filters.anti_aliasing_filter!';
                 errorStruct.identifier = 'update_transfer_function:NoSpatialAntiAliasingFilters';
                 error( errorStruct );
             end
@@ -635,7 +635,15 @@ classdef sequence
                 errorStruct.identifier = 'compute_p_in:NoSequences';
                 error( errorStruct );
             end
-% TODO: fix indices_incident
+
+            % ensure nonempty indices_incident
+            if nargin < 2 || isempty( indices_incident )
+                indices_incident = cell( size( sequences ) );
+                for index_sequence = 1:numel( sequences )
+                    indices_incident{ index_sequence } = ( 1:numel( sequences( index_sequence ).settings ) );
+                end % for index_sequence = 1:numel( sequences )
+            end
+
             % ensure cell array for indices_incident
             if ~iscell( indices_incident )
                 indices_incident = { indices_incident };
@@ -643,12 +651,12 @@ classdef sequence
 
             % ensure nonempty filters
             if nargin < 3 || isempty( filters )
-                filters = scattering.options.anti_aliasing_off;
+                filters = scattering.anti_aliasing_filters.off;
             end
 
-            % ensure class scattering.options.anti_aliasing
-            if ~isa( filters, 'scattering.options.anti_aliasing' )
-                errorStruct.message = 'filters must be scattering.options.anti_aliasing!';
+            % ensure class scattering.anti_aliasing_filters.anti_aliasing_filter
+            if ~isa( filters, 'scattering.anti_aliasing_filters.anti_aliasing_filter' )
+                errorStruct.message = 'filters must be scattering.anti_aliasing_filters.anti_aliasing_filter!';
                 errorStruct.identifier = 'compute_p_in:NoSpatialAntiAliasingFilters';
                 error( errorStruct );
             end
@@ -683,11 +691,6 @@ classdef sequence
                 %----------------------------------------------------------
                 % a) check indices indices_incident{ index_sequence }
                 %----------------------------------------------------------
-                % ensure nonempty indices_incident{ index_sequence }
-                if nargin < 2 || isempty( indices_incident{ index_sequence } )
-                    indices_incident{ index_sequence } = ( 1:numel( sequences( index_sequence ).settings ) );
-                end
-
                 % ensure nonempty positive integers
                 mustBeNonempty( indices_incident{ index_sequence } );
                 mustBeInteger( indices_incident{ index_sequence } );
@@ -696,7 +699,7 @@ classdef sequence
                 % ensure that indices_incident{ index_sequence } do not exceed the number of sequential pulse-echo measurements
                 if any( indices_incident{ index_sequence } > numel( sequences( index_sequence ).settings ) )
                     errorStruct.message = sprintf( 'indices_incident{ %d } must not exceed the number of sequential pulse-echo measurements!', index_sequence );
-                    errorStruct.identifier = 'compute_p_in:InvalidMeasurement';
+                    errorStruct.identifier = 'compute_p_in:InvalidIndicesMeasurement';
                     error( errorStruct );
                 end
 
@@ -704,7 +707,7 @@ classdef sequence
                 % b) compute field samples
                 %----------------------------------------------------------
                 % map unique frequencies of pulse-echo measurement to global unique frequencies
-                indices_f_measurement_to_global = sequences( index_sequence ).indices_f_to_unique{ indices_incident{ index_sequence } };
+                indices_f_measurement_to_global = sequences( index_sequence ).indices_f_to_unique( indices_incident{ index_sequence } );
 
                 % subsample global unique frequencies to get unique frequencies of pulse-echo measurements
                 axes_f_measurement_unique = subsample( sequences( index_sequence ).axis_f_unique, indices_f_measurement_to_global );
@@ -768,7 +771,7 @@ classdef sequence
             %--------------------------------------------------------------
             % calling function ensures class scattering.sequences.sequence (scalar) for sequence
             % calling function ensures nonempty positive integer that does not exceed the number of sequential pulse-echo measurements for index_incident
-            % calling function ensures class scattering.options.anti_aliasing for filter
+            % calling function ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter
 
             %--------------------------------------------------------------
             % 2.) compute incident acoustic pressure field (scalar)

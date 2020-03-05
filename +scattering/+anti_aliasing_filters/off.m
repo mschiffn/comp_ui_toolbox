@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2020-02-20
+% modified: 2020-03-04
 %
-classdef anti_aliasing_off < scattering.options.anti_aliasing
+classdef off < scattering.anti_aliasing_filters.anti_aliasing_filter
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef anti_aliasing_off < scattering.options.anti_aliasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = anti_aliasing_off( varargin )
+        function objects = off( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -34,9 +34,9 @@ classdef anti_aliasing_off < scattering.options.anti_aliasing
             % 2.) create inactive spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options.anti_aliasing( size );
+            objects@scattering.anti_aliasing_filters.anti_aliasing_filter( size );
 
-        end % function objects = anti_aliasing_off( varargin )
+        end % function objects = off( varargin )
 
         %------------------------------------------------------------------
         % compute spatial anti-aliasing filters
@@ -46,9 +46,9 @@ classdef anti_aliasing_off < scattering.options.anti_aliasing
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing_off
-            if ~isa( options_anti_aliasing, 'scattering.options.anti_aliasing_off' )
-                errorStruct.message = 'options_anti_aliasing must be scattering.options.anti_aliasing_off!';
+            % ensure class scattering.anti_aliasing_filters.off
+            if ~isa( options_anti_aliasing, 'scattering.anti_aliasing_filters.off' )
+                errorStruct.message = 'options_anti_aliasing must be scattering.anti_aliasing_filters.off!';
                 errorStruct.identifier = 'compute_filter:NoOptionsAntiAliasingOff';
                 error( errorStruct );
             end
@@ -90,9 +90,9 @@ classdef anti_aliasing_off < scattering.options.anti_aliasing
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing_off
-            if ~isa( anti_aliasings_off, 'scattering.options.anti_aliasing_off' )
-                errorStruct.message = 'anti_aliasings_off must be scattering.options.anti_aliasing_off!';
+            % ensure class scattering.anti_aliasing_filters.off
+            if ~isa( anti_aliasings_off, 'scattering.anti_aliasing_filters.off' )
+                errorStruct.message = 'anti_aliasings_off must be scattering.anti_aliasing_filters.off!';
                 errorStruct.identifier = 'string:NoOptionsAlgorithmDirect';
                 error( errorStruct );
             end
@@ -120,7 +120,7 @@ classdef anti_aliasing_off < scattering.options.anti_aliasing
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter (scalar)
             % calling method ensures class scattering.sequences.setups.setup for setup (scalar)
             % calling method ensures class scattering.sequences.setups.transducers.array_planar_regular_orthogonal for setup.xdc_array (scalar)
             % calling method ensures class processing.field for h_transfer (scalar)
@@ -135,4 +135,4 @@ classdef anti_aliasing_off < scattering.options.anti_aliasing
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef anti_aliasing_off < scattering.options.anti_aliasing
+end % classdef off < scattering.anti_aliasing_filters.anti_aliasing_filter

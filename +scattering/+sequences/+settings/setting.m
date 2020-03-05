@@ -106,13 +106,13 @@ classdef setting
             if isa( options_spectral, 'scattering.sequences.settings.discretizations.signal' )
 
                 %----------------------------------------------------------
-                % a) individual frequency axis for each recorded signal
+                % a) individual frequency axis for each mixed signal
                 %----------------------------------------------------------
                 % iterate pulse-echo measurement settings
                 for index_object = 1:numel( settings )
 % TODO: quantize intervals_t?
 
-                    % time and frequency intervals of each recorded signal
+                    % time and frequency intervals of each mixed signal
                     intervals_t = reshape( [ settings( index_object ).rx.interval_t ], size( settings( index_object ).rx ) );
                     intervals_f = reshape( [ settings( index_object ).rx.interval_f ], size( settings( index_object ).rx ) );
 

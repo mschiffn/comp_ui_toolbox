@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-20
-% modified: 2020-02-20
+% modified: 2020-03-04
 %
-classdef (Abstract) anti_aliasing_on < scattering.options.anti_aliasing
+classdef (Abstract) on < scattering.anti_aliasing_filters.anti_aliasing_filter
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef (Abstract) anti_aliasing_on < scattering.options.anti_aliasing
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = anti_aliasing_on( varargin )
+        function objects = on( varargin )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -34,9 +34,9 @@ classdef (Abstract) anti_aliasing_on < scattering.options.anti_aliasing
             % 2.) create inactive spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options.anti_aliasing( size );
+            objects@scattering.anti_aliasing_filters.anti_aliasing_filter( size );
 
-        end % function objects = anti_aliasing_on( varargin )
+        end % function objects = on( varargin )
 
 	end % methods
 
@@ -53,7 +53,7 @@ classdef (Abstract) anti_aliasing_on < scattering.options.anti_aliasing
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter (scalar)
             % calling method ensures class scattering.sequences.setups.setup for setup (scalar)
             % calling method ensures class scattering.sequences.setups.transducers.array_planar_regular_orthogonal for setup.xdc_array (scalar)
             % calling method ensures class processing.field for h_transfer (scalar)
@@ -87,4 +87,4 @@ classdef (Abstract) anti_aliasing_on < scattering.options.anti_aliasing
 
 	end % methods (Abstract, Access = protected, Hidden)
 
-end % classdef (Abstract) anti_aliasing_on < scattering.options.anti_aliasing
+end % classdef (Abstract) on < scattering.anti_aliasing_filters.anti_aliasing_filter

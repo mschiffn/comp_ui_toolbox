@@ -4,9 +4,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2020-02-21
+% modified: 2020-03-04
 %
-classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
+classdef raised_cosine < scattering.anti_aliasing_filters.on
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% properties
@@ -26,7 +26,7 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = anti_aliasing_raised_cosine( roll_off_factors )
+        function objects = raised_cosine( roll_off_factors )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -37,7 +37,7 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
             % 2.) create cosine spatial anti-aliasing filter options
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.options.anti_aliasing_on( size( roll_off_factors ) );
+            objects@scattering.anti_aliasing_filters.on( size( roll_off_factors ) );
 
             % iterate cosine spatial anti-aliasing filter options
             for index_object = 1:numel( objects )
@@ -47,7 +47,7 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = anti_aliasing_raised_cosine( roll_off_factors )
+        end % function objects = raised_cosine( roll_off_factors )
 
         %------------------------------------------------------------------
         % compute spatial anti-aliasing filters
@@ -57,9 +57,9 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing_raised_cosine
-            if ~isa( options_anti_aliasing, 'scattering.options.anti_aliasing_raised_cosine' )
-                errorStruct.message = 'options_anti_aliasing must be scattering.options.anti_aliasing_raised_cosine!';
+            % ensure class scattering.anti_aliasing_filters.raised_cosine
+            if ~isa( options_anti_aliasing, 'scattering.anti_aliasing_filters.raised_cosine' )
+                errorStruct.message = 'options_anti_aliasing must be scattering.anti_aliasing_filters.raised_cosine!';
                 errorStruct.identifier = 'compute_filter:NoOptionsAntiAliasingRaisedCosine';
                 error( errorStruct );
             end
@@ -120,9 +120,9 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing_raised_cosine
-            if ~isa( anti_aliasings_raised_cosine, 'scattering.options.anti_aliasing_raised_cosine' )
-                errorStruct.message = 'anti_aliasings_raised_cosine must be scattering.options.anti_aliasing_raised_cosine!';
+            % ensure class scattering.anti_aliasing_filters.raised_cosine
+            if ~isa( anti_aliasings_raised_cosine, 'scattering.anti_aliasing_filters.raised_cosine' )
+                errorStruct.message = 'anti_aliasings_raised_cosine must be scattering.anti_aliasing_filters.raised_cosine!';
                 errorStruct.identifier = 'string:NoOptionsAntiAliasingRaisedCosine';
                 error( errorStruct );
             end
@@ -157,7 +157,7 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling method ensures class scattering.options.anti_aliasing for filter (scalar)
+            % calling method ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter (scalar)
             % calling method ensures valid flag
 
             %--------------------------------------------------------------
@@ -186,4 +186,4 @@ classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing_on
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef anti_aliasing_raised_cosine < scattering.options.anti_aliasing
+end % classdef raised_cosine < scattering.anti_aliasing_filters.on

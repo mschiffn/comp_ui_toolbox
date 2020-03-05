@@ -85,12 +85,13 @@ classdef (Abstract) operator
                 %----------------------------------------------------------
                 % c) incident acoustic fields (unique frequencies)
                 %----------------------------------------------------------
-                objects( index_object ).incident_waves = scattering.sequences.syntheses.incident_wave( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing_tx );
+%                 p_incident = compute_p_in( objects( index_object ).sequence, [], objects( index_object ).options.momentary.anti_aliasing.tx );
+                objects( index_object ).incident_waves = scattering.sequences.syntheses.incident_wave( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing.tx );
 
                 %----------------------------------------------------------
                 % d) apply spatial anti-aliasing filter
                 %----------------------------------------------------------
-                objects( index_object ).sequence = update_transfer_function( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing_rx );
+                objects( index_object ).sequence = update_transfer_function( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing.rx );
 
 % TODO: use update function
                 % update indices of selected sequential pulse-echo measurements
@@ -776,16 +777,16 @@ classdef (Abstract) operator
 
                         figure( index_options );
 % TODO: reshape is invalid for transform coefficients! method format_coefficients in linear transform?
-                        temp_1 = squeeze( reshape( theta_recon_normed{ index_operator }{ index_options }( :, end ), operators( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
+%                         temp_1 = squeeze( reshape( theta_recon_normed{ index_operator }{ index_options }( :, end ), operators( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
                         temp_2 = squeeze( reshape( gamma_recon{ index_operator }{ index_options }( :, end ), operators( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
-                        if ismatrix( temp_1 )
+                        if ismatrix( temp_2 )
                             subplot( 1, 2, 1 );
-                            imagesc( illustration.dB( temp_1, 20 )', [ -60, 0 ] );
+%                             imagesc( illustration.dB( temp_1, 20 )', [ -60, 0 ] );
                             subplot( 1, 2, 2 );
                             imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
                         else
                             subplot( 1, 2, 1 );
-                            imagesc( illustration.dB( squeeze( temp_1( :, 5, : ) ), 20 )', [ -60, 0 ] );
+%                             imagesc( illustration.dB( squeeze( temp_1( :, 5, : ) ), 20 )', [ -60, 0 ] );
                             subplot( 1, 2, 2 );
                             imagesc( illustration.dB( squeeze( temp_2( :, 5, : ) ), 20 )', [ -60, 0 ] );
                         end
@@ -904,15 +905,15 @@ classdef (Abstract) operator
                 end % if ~isequal( operators( index_object ).options.momentary.sequence, options_old( index_object ).momentary.sequence )
 
                 % reference spatial transfer function
-                if ~isequal( operators( index_object ).options.momentary.anti_aliasing_rx, options_old( index_object ).momentary.anti_aliasing_rx )
+                if ~isequal( operators( index_object ).options.momentary.anti_aliasing.rx, options_old( index_object ).momentary.anti_aliasing.rx )
 
                     %------------------------------------------------------
                     % ii.) change in spatial anti-aliasing filter options
                     %------------------------------------------------------
                     % update reference spatial transfer function w/ anti-aliasing filter
-                    operators( index_object ).sequence = update_transfer_function( operators( index_object ).sequence, operators( index_object ).options.momentary.anti_aliasing_rx );
+                    operators( index_object ).sequence = update_transfer_function( operators( index_object ).sequence, operators( index_object ).options.momentary.anti_aliasing.rx );
 
-                end % if ~isequal( operators( index_object ).options.momentary.anti_aliasing_rx, options_old( index_object ).momentary.anti_aliasing_rx )
+                end % if ~isequal( operators( index_object ).options.momentary.anti_aliasing.rx, options_old( index_object ).momentary.anti_aliasing.rx )
 
             end % for index_object = 1:numel( operators )
 

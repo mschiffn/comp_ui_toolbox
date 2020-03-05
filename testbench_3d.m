@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-10
-% modified: 2019-11-04
+% modified: 2020-03-04
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -161,7 +161,7 @@ options_disc = scattering.options.discretization( options_disc_spatial, options_
 options_static = scattering.options.static( options_disc );
 
 % create momentary scattering operator options
-options_momentary = scattering.options.momentary( scattering.options.anti_aliasing_off );
+options_momentary = scattering.options.momentary( scattering.anti_aliasing_filters.off );
 
 % scattering options
 options = scattering.options( options_static, options_momentary );
@@ -266,13 +266,13 @@ for index_sequence = 1:N_ops
 	operator = scattering.operator_born( sequences{ index_sequence }, options );
 
     %
-    u_M{ index_sequence } = forward( operator, theta, [], scattering.options.gpu_off, scattering.options.anti_aliasing_off );
+    u_M{ index_sequence } = forward( operator, theta, [], scattering.options.gpu_off, scattering.anti_aliasing_filters.off );
 
 end
 
 u_M = cat( 1, u_M{ : } );
 
-u_M = forward( operators_born, theta, [], scattering.options.gpu_off, scattering.options.anti_aliasing_off );
+u_M = forward( operators_born, theta, [], scattering.options.gpu_off, scattering.anti_aliasing_filters.off );
 
 lbs_q = zeros( size( u_M ) );
 for index_sequence = 1:numel( sequences )

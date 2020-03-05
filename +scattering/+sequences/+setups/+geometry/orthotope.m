@@ -85,6 +85,7 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
                 N_points_axis = cell( size( orthotopes ) );
 
                 % check discretization subtype
+% TODO: move functionality to scattering.sequences.setups.discretizations.methods.grid
                 if isa( methods, 'scattering.sequences.setups.discretizations.methods.grid_numbers' )
 
                     %------------------------------------------------------

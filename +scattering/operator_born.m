@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2020-02-21
+% modified: 2020-03-04
 %
 classdef operator_born < scattering.operator
 
@@ -142,8 +142,9 @@ classdef operator_born < scattering.operator
             indices_measurement_sel = operator_born.indices_measurement_sel;
 
             % create common format string for filename
-            str_format_common = sprintf( 'data/%s/setup_%%s/E_M_settings_%%s_TGC_%%s_options_aliasing_%%s', operator_born.sequence.setup.str_name );
+            str_format_common = sprintf( 'data/%s/setup_%%s/E_M_settings_%%s_TGC_%%s_aliasing_%%s', operator_born.sequence.setup.str_name );
 
+            % specify cell array for E_M_unique
             E_M_unique = cell( size( LT_dict ) );
 
             % iterate dictionaries
@@ -177,7 +178,7 @@ classdef operator_born < scattering.operator
                             operator_born, LTs_tgc_measurement( index_measurement_sel ), ...
                             { operator_born.sequence.setup.xdc_array.aperture, operator_born.sequence.setup.homogeneous_fluid, operator_born.sequence.setup.FOV, operator_born.sequence.setup.str_name }, ...
                             operator_born.sequence.settings( index_measurement ), ...
-                            operator_born.options.momentary.anti_aliasing_rx );
+                            operator_born.options.momentary.anti_aliasing );
 
                     end % for index_measurement_sel = 1:numel( indices_measurement_sel )
 
@@ -205,7 +206,7 @@ classdef operator_born < scattering.operator
                                 operator_born, LT_dict{ index_dictionary }, LTs_tgc_measurement( index_measurement_sel ), ...
                                 { operator_born.sequence.setup.xdc_array.aperture, operator_born.sequence.setup.homogeneous_fluid, operator_born.sequence.setup.FOV, operator_born.sequence.setup.str_name }, ...
                                 operator_born.sequence.settings( index_measurement ), ...
-                                operator_born.options.momentary.anti_aliasing_rx );
+                                operator_born.options.momentary.anti_aliasing );
 
                     end % for index_measurement_sel = 1:numel( indices_measurement_sel )
 
@@ -367,18 +368,18 @@ classdef operator_born < scattering.operator
             end % if nargin >= 3 && ~isempty( LT_dict )
 
             % illustrate
-            temp_2 = squeeze( reshape( abs( theta_hat( :, 1 ) ), operator_born.sequence.setup.FOV.shape.grid.N_points_axis ) );
+%             temp_2 = squeeze( reshape( abs( theta_hat( :, 1 ) ), operator_born.sequence.setup.FOV.shape.grid.N_points_axis ) );
             figure(999);
             if ismatrix( temp_1 )
                 subplot( 1, 2, 1 );
                 imagesc( illustration.dB( temp_1, 20 )', [ -60, 0 ] );
                 subplot( 1, 2, 2 );
-                imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
+%                 imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
             else
                 subplot( 1, 2, 1 );
                 imagesc( illustration.dB( squeeze( temp_1( :, 5, : ) ), 20 )', [ -60, 0 ] );
                 subplot( 1, 2, 2 );
-                imagesc( illustration.dB( squeeze( temp_2( :, 5, : ) ), 20 )', [ -60, 0 ] );
+%                 imagesc( illustration.dB( squeeze( temp_2( :, 5, : ) ), 20 )', [ -60, 0 ] );
             end
 
         end % function theta_hat = adjoint_scalar( operator_born, u_M, LT_dict, LT_tgc )
@@ -504,7 +505,7 @@ classdef operator_born < scattering.operator
                             % b) arbitrary grid
                             %----------------------------------------------
                             % compute spatial transfer function of the active array element
-                            h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing_rx );
+                            h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing.rx );
                             h_rx = double( h_rx.samples );
 
                         end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
@@ -636,7 +637,7 @@ classdef operator_born < scattering.operator
                             % b) arbitrary grid
                             %----------------------------------------------
                             % compute spatial transfer function of the active array element
-                            h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing_rx );
+                            h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing.rx );
                             h_rx = double( h_rx.samples );
 
                         end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )
@@ -883,7 +884,7 @@ classdef operator_born < scattering.operator
                         % ii.) arbitrary grid
                         %--------------------------------------------------
                         % compute spatial transfer function of the active array element
-                        h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing_rx );
+                        h_rx = transfer_function( operator_born.sequence.setup, axes_f( index_mix ), index_element, operator_born.options.momentary.anti_aliasing.rx );
                         h_rx = double( h_rx.samples );
 
                     end % if isa( operator_born.sequence.setup, 'scattering.sequences.setups.setup_grid_symmetric' )

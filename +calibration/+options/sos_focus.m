@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-22
-% modified: 2020-02-03
+% modified: 2020-03-04
 %
 classdef sos_focus < calibration.options.common
 
@@ -15,7 +15,7 @@ classdef sos_focus < calibration.options.common
         % independent properties
         time_shift_ctr ( 1, 1 ) physical_values.time = physical_values.second( 19 / 40e6 )      % time shift to waveform center
         interval_f ( 1, 1 ) math.interval { mustBeNonempty } = math.interval( physical_values.hertz( 2e6 ), physical_values.hertz( 6e6 ) )      % frequency interval for Fourier domain focusing
-        anti_aliasing ( 1, 1 ) scattering.options.anti_aliasing { mustBeNonempty } = scattering.options.anti_aliasing_boxcar                    % spatial anti-aliasing filter options
+        anti_aliasing ( 1, 1 ) scattering.options.anti_aliasing { mustBeNonempty } = scattering.options.anti_aliasing                           % spatial anti-aliasing options
         relative_bandwidth_lb ( 1, 1 ) double { mustBeNonnegative, mustBeLessThanOrEqual( relative_bandwidth_lb, 1 ), mustBeNonempty } = 1      % lower bound on the relative bandwidth
         N_iterations_max ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 20	% maximum number of re-focusing experiments
         factor_interp ( 1, 1 ) double { mustBeInteger, mustBePositive, mustBeNonempty } = 30	% interpolation factor
@@ -42,7 +42,7 @@ classdef sos_focus < calibration.options.common
 
             % ensure nonempty anti_aliasings
             if nargin < 4 || isempty( anti_aliasings )
-                anti_aliasings = scattering.options.anti_aliasing_boxcar( size( durations_window_t ) );
+                anti_aliasings = repmat( scattering.options.anti_aliasing, size( durations_window_t ) );
             end
 
             % property validation function ensures class scattering.options.anti_aliasing for anti_aliasings

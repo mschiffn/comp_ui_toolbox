@@ -427,8 +427,7 @@ classdef setup
             %--------------------------------------------------------------
             % 3.) construct spatial discretizations
             %--------------------------------------------------------------
-% TODO: vectorize 
-            setup_grid_symmetric( setups )
+% TODO: vectorize
             try
                 setups = scattering.sequences.setups.setup_grid_symmetric( [ setups.xdc_array ], [ setups.homogeneous_fluid ], [ setups.FOV ], [ setups.str_name ] );
             catch
@@ -547,12 +546,12 @@ classdef setup
 
             % ensure nonempty filters
             if nargin < 4 || isempty( filters )
-                filters = scattering.options.anti_aliasing_off;
+                filters = scattering.anti_aliasing_filters.off;
             end
 
-            % ensure class scattering.options.anti_aliasing
-            if ~isa( filters, 'scattering.options.anti_aliasing' )
-                errorStruct.message = 'filters must be scattering.options.anti_aliasing!';
+            % ensure class scattering.anti_aliasing_filters.anti_aliasing_filter
+            if ~isa( filters, 'scattering.anti_aliasing_filters.anti_aliasing_filter' )
+                errorStruct.message = 'filters must be scattering.anti_aliasing_filters.anti_aliasing_filter!';
                 errorStruct.identifier = 'transfer_function:NoSpatialAntiAliasingFilters';
                 error( errorStruct );
             end
@@ -759,7 +758,7 @@ classdef setup
         %------------------------------------------------------------------
         % compute incident acoustic pressure fields
         %------------------------------------------------------------------
-        function fields = compute_p_in( setups, settings, filters )
+        function fields = compute_p_in( setups, settings_tx, filters )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -771,11 +770,13 @@ classdef setup
                 error( errorStruct );
             end
 
-            % ensure cell array for settings
-            
+            % ensure cell array for settings_tx
+            if ~iscell( settings_tx )
+                settings_tx = { settings_tx };
+            end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( setups, settings, filters );
+            auxiliary.mustBeEqualSize( setups, settings_tx, filters );
 
             %--------------------------------------------------------------
             % 2.) compute incident acoustic pressure fields
@@ -786,7 +787,7 @@ classdef setup
             % iterate setups of pulse-echo measurements
             for index_setup = 1:numel( setups )
 
-                fields{ index_setup } = compute_p_in_scalar( setups( index_setup ), settings_tx.indices_active, settings_tx.v_d, filters( index_setup ) );
+                fields{ index_setup } = compute_p_in_scalar( setups( index_setup ), settings_tx( index_setup ).indices_active, settings_tx.v_d, filters( index_setup ) );
 
             end % for index_setup = 1:numel( setups )
 
@@ -920,10 +921,6 @@ classdef setup
 
         end % function [ tf, N_points_per_pitch_axis ] = issymmetric( setups )
 
-        %
-        function setup_grid_symmetric( setups )
-        end
-
 	end % methods
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1017,7 +1014,7 @@ classdef setup
             % calling function ensures class scattering.sequences.setups.setup (scalar) for setup
             % calling function ensures nonempty positive integers that do not exceed the number of array elements for indices_active
             % calling function ensures class processing.signal_matrix (scalar) for v_d
-            % calling function ensures class scattering.options.anti_aliasing (scalar) for filter
+            % calling function ensures class scattering.anti_aliasing_filters.anti_aliasing_filter (scalar) for filter
 
             %--------------------------------------------------------------
             % 2.) compute incident acoustic pressure field (scalar)

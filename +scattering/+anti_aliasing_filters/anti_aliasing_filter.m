@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-11
-% modified: 2020-02-21
+% modified: 2020-03-04
 %
-classdef (Abstract) anti_aliasing < scattering.options.template
+classdef (Abstract) anti_aliasing_filter < scattering.options.template
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,7 +15,7 @@ classdef (Abstract) anti_aliasing < scattering.options.template
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = anti_aliasing( size )
+        function objects = anti_aliasing_filter( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -29,7 +29,7 @@ classdef (Abstract) anti_aliasing < scattering.options.template
             % constructor of superclass
             objects@scattering.options.template( size );
 
-        end % function objects = anti_aliasing( size )
+        end % function objects = anti_aliasing_filter( size )
 
         %------------------------------------------------------------------
         % apply spatial anti-aliasing filters
@@ -39,9 +39,9 @@ classdef (Abstract) anti_aliasing < scattering.options.template
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.options.anti_aliasing
-            if ~isa( filters, 'scattering.options.anti_aliasing' )
-                errorStruct.message = 'filters must be scattering.options.anti_aliasing!';
+            % ensure class scattering.anti_aliasing_filters.anti_aliasing_filter
+            if ~isa( filters, 'scattering.anti_aliasing_filters.anti_aliasing_filter' )
+                errorStruct.message = 'filters must be scattering.anti_aliasing_filters.anti_aliasing_filter!';
                 errorStruct.identifier = 'apply:NoSpatialAntiAliasingFilters';
                 error( errorStruct );
             end
@@ -123,4 +123,4 @@ classdef (Abstract) anti_aliasing < scattering.options.template
 
 	end % methods (Abstract, Access = protected, Hidden)
 
-end % classdef (Abstract) anti_aliasing < scattering.options.template
+end % classdef (Abstract) anti_aliasing_filter < scattering.options.template

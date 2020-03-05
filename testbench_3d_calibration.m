@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-11-16
-% modified: 2020-02-03
+% modified: 2020-03-04
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -175,7 +175,7 @@ for index_setup = 1:numel( setups )
     options_static = scattering.options.static( options_disc );
 
     % create momentary scattering operator options
-    options_momentary = scattering.options.momentary( scattering.options.anti_aliasing_off, scattering.options.gpu_off );
+    options_momentary = scattering.options.momentary( scattering.anti_aliasing_filters.off, scattering.options.gpu_off );
 
 	% scattering options
 	options = scattering.options( options_static, options_momentary );
@@ -469,7 +469,7 @@ end
 %--------------------------------------------------------------------------
 % create sound speed estimation options
 options_sos_qsw = calibration.options.sos_qsw( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, (1:xdc_array.N_elements), 1, xdc_array.N_elements, 60, auxiliary.setting_window( @tukeywin, 0.1 ) );
-options_sos_focus = calibration.options.sos_focus( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, interval_f, scattering.options.anti_aliasing_raised_cosine( 0.25 ), 0.4, 60, 20, 1e-3 );
+options_sos_focus = calibration.options.sos_focus( physical_values.second( 2.5e-6 ), ( numel( pulse ) - 1 ) / 2 * T_s, interval_f, scattering.anti_aliasing_filters.raised_cosine( 0.25 ), 0.4, 60, 20, 1e-3 );
 
 % create pulse-echo response estimation options
 handle_absorption_model_sa = @( x ) scattering.sequences.setups.materials.absorption_models.time_causal( 0, 2.17e-3, 2, x, f_ref );
