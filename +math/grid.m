@@ -67,22 +67,20 @@ classdef grid
         %------------------------------------------------------------------
         % mutual differences
         %------------------------------------------------------------------
-        function differences = mutual_differences( grids_1, grids_2, varargin )
+        function differences = mutual_differences( grids_1, grids_2, indices_1, indices_2 )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class math.grid
             if ~( isa( grids_1, 'math.grid' ) && isa( grids_2, 'math.grid' ) )
-                errorStruct.message     = 'Both arguments must be math.grid!';
-                errorStruct.identifier	= 'mutual_differences:NoGrids';
+                errorStruct.message = 'Both arguments must be math.grid!';
+                errorStruct.identifier = 'mutual_differences:NoGrids';
                 error( errorStruct );
             end
 
             % ensure nonempty indices_1
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                indices_1 = varargin{ 1 };
-            else
+            if nargin < 3 || isempty( indices_1 )
                 indices_1 = cell( size( grids_1 ) );
                 for index_object = 1:numel( grids_1 )
                     indices_1{ index_object } = (1:grids_1( index_object ).N_points);
@@ -95,9 +93,7 @@ classdef grid
             end
 
             % ensure nonempty indices_2
-            if nargin >= 4 && ~isempty( varargin{ 2 } )
-                indices_2 = varargin{ 2 };
-            else
+            if nargin < 4 || isempty( indices_2 )
                 indices_2 = cell( size( grids_2 ) );
                 for index_object = 1:numel( grids_2 )
                     indices_2{ index_object } = (1:grids_2( index_object ).N_points);
@@ -157,7 +153,7 @@ classdef grid
                 differences = differences{ 1 };
             end
 
-        end % function differences = mutual_differences( grids_1, grids_2, varargin )
+        end % function differences = mutual_differences( grids_1, grids_2, indices_1, indices_2 )
 
         %------------------------------------------------------------------
         % mutual distances
@@ -184,7 +180,7 @@ classdef grid
             for index_object = 1:numel( differences )
 
                 % compute l2-norms
-                D{ index_object } = sqrt( sum( differences{ index_object }.^2, 3 ) );
+                D{ index_object } = vecnorm( differences{ index_object }, 2, 3 );
 
             end % for index_object = 1:numel( differences )
 
@@ -206,13 +202,9 @@ classdef grid
             %--------------------------------------------------------------
             [ D, differences ] = mutual_distances( grids_1, grids_2, varargin{ : } );
 
-            % ensure cell array for D
+            % ensure cell array for D and differences
             if ~iscell( D )
                 D = { D };
-            end
-
-            % ensure cell array for differences
-            if ~iscell( differences )
                 differences = { differences };
             end
 
@@ -232,8 +224,8 @@ classdef grid
 
             % avoid cell array for single pair of grids
             if isscalar( grids_1 )
-                D = D{ 1 };
                 e_1_minus_2 = e_1_minus_2{ 1 };
+                D = D{ 1 };
             end
 
         end % function [ e_1_minus_2, D ] = mutual_unit_vectors( grids_1, grids_2, varargin )
