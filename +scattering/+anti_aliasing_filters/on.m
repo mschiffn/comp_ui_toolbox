@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-20
-% modified: 2020-03-04
+% modified: 2020-03-09
 %
 classdef (Abstract) on < scattering.anti_aliasing_filters.anti_aliasing_filter
 
@@ -15,28 +15,26 @@ classdef (Abstract) on < scattering.anti_aliasing_filters.anti_aliasing_filter
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = on( varargin )
+        function objects = on( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure nonempty size
-            if nargin >= 1 && ~isempty( varargin{ 1 } )
-                size = varargin{ 1 };
-            else
+            if nargin < 1 || isempty( size )
                 size = 1;
             end
 
-            % superclass ensures row vectors for size
-            % superclass ensures positive integers for size
+            % superclass ensures row vector for size
+            % superclass ensures nonempty positive integers for size
 
             %--------------------------------------------------------------
-            % 2.) create inactive spatial anti-aliasing filter options
+            % 2.) create active spatial anti-aliasing filters
             %--------------------------------------------------------------
             % constructor of superclass
             objects@scattering.anti_aliasing_filters.anti_aliasing_filter( size );
 
-        end % function objects = on( varargin )
+        end % function objects = on( size )
 
 	end % methods
 
@@ -63,10 +61,10 @@ classdef (Abstract) on < scattering.anti_aliasing_filters.anti_aliasing_filter
             % 2.) apply spatial anti-aliasing filter (scalar)
             %--------------------------------------------------------------
             % compute flags reflecting the local angular spatial frequencies
-            flag = compute_flags( setup, h_transfer.axis, index_element );
+            flags = compute_flags( setup, h_transfer.axis, index_element );
 
-            % compute samples of spatial anti-aliasing filter
-            filter_samples = compute_samples_scalar( filter, flag );
+            % compute filter samples (scalar)
+            filter_samples = compute_samples_scalar( filter, flags.samples );
 
             % apply anti-aliasing filter
             h_transfer = h_transfer .* processing.field( h_transfer.axis, h_transfer.grid_FOV, filter_samples );
@@ -74,17 +72,5 @@ classdef (Abstract) on < scattering.anti_aliasing_filters.anti_aliasing_filter
         end % function h_transfer = apply_scalar( filter, setup, h_transfer, index_element )
 
 	end % methods (Access = protected, Hidden)
-
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% methods (Abstract, protected, hidden)
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Abstract, Access = protected, Hidden)
-
-        %------------------------------------------------------------------
-        % compute samples of spatial anti-aliasing filter (scalar)
-        %------------------------------------------------------------------
-        filter_samples = compute_samples_scalar( filter, flag )
-
-	end % methods (Abstract, Access = protected, Hidden)
 
 end % classdef (Abstract) on < scattering.anti_aliasing_filters.anti_aliasing_filter

@@ -3,11 +3,11 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-11
-% modified: 2020-03-04
+% modified: 2020-03-09
 %
-classdef (Abstract) anti_aliasing_filter < scattering.options.template
+classdef (Abstract) anti_aliasing_filter
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
@@ -20,14 +20,23 @@ classdef (Abstract) anti_aliasing_filter < scattering.options.template
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass ensures row vector for size
-            % superclass ensures nonempty positive integers for size
+            % ensure row vector for size
+            if ~isrow( size )
+                errorStruct.message = 'size must be a row vector!';
+                errorStruct.identifier = 'anti_aliasing_filter:NoRowVector';
+                error( errorStruct );
+            end
+
+            % ensure nonempty positive integers
+            mustBePositive( size );
+            mustBeInteger( size );
+            mustBeNonempty( size );
 
             %--------------------------------------------------------------
-            % 2.) create spatial anti-aliasing filter options
+            % 2.) create spatial anti-aliasing filters
             %--------------------------------------------------------------
-            % constructor of superclass
-            objects@scattering.options.template( size );
+            % repeat default spatial anti-aliasing filter
+            objects = repmat( objects, size );
 
         end % function objects = anti_aliasing_filter( size )
 
@@ -73,11 +82,6 @@ classdef (Abstract) anti_aliasing_filter < scattering.options.template
                 indices_element = 1;
             end
 
-            % ensure cell array for indices_element
-            if ~iscell( indices_element )
-                indices_element = { indices_element };
-            end
-
             % ensure equal number of dimensions and sizes
             auxiliary.mustBeEqualSize( filters, setups, hs_transfer, indices_element );
 
@@ -90,11 +94,67 @@ classdef (Abstract) anti_aliasing_filter < scattering.options.template
                 %----------------------------------------------------------
                 % a) apply spatial anti-aliasing filter (scalar)
                 %----------------------------------------------------------
-                hs_transfer( index_object ) = apply_scalar( filters( index_object ), setups( index_object ), hs_transfer( index_object ), indices_element{ index_object } );
+                hs_transfer( index_object ) = apply_scalar( filters( index_object ), setups( index_object ), hs_transfer( index_object ), indices_element( index_object ) );
 
             end % for index_object = 1:numel( filters )
 
         end % function hs_transfer = apply( filters, setups, hs_transfer, indices_element )
+
+        %------------------------------------------------------------------
+        % compute filter samples
+        %------------------------------------------------------------------
+        function samples = compute_samples( filters, flags )
+% TODO: return fields
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.anti_aliasing_filters.anti_aliasing_filter
+            if ~isa( filters, 'scattering.anti_aliasing_filters.anti_aliasing_filter' )
+                errorStruct.message = 'filters must be scattering.anti_aliasing_filters.anti_aliasing_filter!';
+                errorStruct.identifier = 'compute_samples:NoSpatialAntiAliasingFilters';
+                error( errorStruct );
+            end
+
+            % ensure class processing.field
+            if ~isa( flags, 'processing.field' )
+                errorStruct.message = 'flags must be processing.field!';
+                errorStruct.identifier = 'compute_samples:NoFields';
+                error( errorStruct );
+            end
+
+            % multiple filters / single flags
+            if ~isscalar( filters ) && isscalar( flags )
+                flags = repmat( flags, size( filters ) );
+            end
+
+            % single filters / multiple flags
+            if isscalar( filters ) && ~isscalar( flags )
+                filters = repmat( filters, size( flags ) );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( filters, flags );
+
+            %--------------------------------------------------------------
+            % 2.) compute filter samples
+            %--------------------------------------------------------------
+            % specify cell array for samples
+            samples = cell( size( filters ) );
+
+            % iterate spatial anti-aliasing filters
+            for index_filter = 1:numel( filters )
+
+                % compute filter samples (scalar)
+                samples{ index_filter } = compute_samples_scalar( filters( index_filter ), flags( index_filter ) );
+
+            end % for index_filter = 1:numel( filters )
+
+            % avoid cell array for single filters
+            if isscalar( filters )
+                samples = samples{ 1 };
+            end
+
+        end % function samples = compute_samples( filters, flags )
 
 	end % methods
 
@@ -104,10 +164,9 @@ classdef (Abstract) anti_aliasing_filter < scattering.options.template
 	methods (Abstract)
 
         %------------------------------------------------------------------
-        % compute spatial anti-aliasing filters
+        % string array (overload string method)
         %------------------------------------------------------------------
-% TODO: implement in superclass and reduce method in subclasses
-        filters = compute_filter( options_anti_aliasing, flags )
+        strs_out = string( filters )
 
 	end % methods (Abstract)
 
@@ -121,6 +180,11 @@ classdef (Abstract) anti_aliasing_filter < scattering.options.template
         %------------------------------------------------------------------
         h_transfer = apply_scalar( filter, setup, h_transfer, index_element )
 
+        %------------------------------------------------------------------
+        % compute filter samples (scalar)
+        %------------------------------------------------------------------
+        samples = compute_samples_scalar( filter, flags )
+
 	end % methods (Abstract, Access = protected, Hidden)
 
-end % classdef (Abstract) anti_aliasing_filter < scattering.options.template
+end % classdef (Abstract) anti_aliasing_filter

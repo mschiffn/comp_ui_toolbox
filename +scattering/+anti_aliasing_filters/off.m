@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-29
-% modified: 2020-03-04
+% modified: 2020-03-09
 %
 classdef off < scattering.anti_aliasing_filters.anti_aliasing_filter
 
@@ -15,85 +15,39 @@ classdef off < scattering.anti_aliasing_filters.anti_aliasing_filter
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = off( varargin )
+        function objects = off( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure nonempty size
-            if nargin >= 1 && ~isempty( varargin{ 1 } )
-                size = varargin{ 1 };
-            else
+            if nargin < 1 || isempty( size )
                 size = 1;
             end
 
-            % superclass ensures row vectors for size
-            % superclass ensures positive integers for size
+            % superclass ensures row vector for size
+            % superclass ensures nonempty positive integers for size
 
             %--------------------------------------------------------------
-            % 2.) create inactive spatial anti-aliasing filter options
+            % 2.) create inactive spatial anti-aliasing filters
             %--------------------------------------------------------------
             % constructor of superclass
             objects@scattering.anti_aliasing_filters.anti_aliasing_filter( size );
 
-        end % function objects = off( varargin )
-
-        %------------------------------------------------------------------
-        % compute spatial anti-aliasing filters
-        %------------------------------------------------------------------
-        function filters = compute_filter( options_anti_aliasing, flags )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class scattering.anti_aliasing_filters.off
-            if ~isa( options_anti_aliasing, 'scattering.anti_aliasing_filters.off' )
-                errorStruct.message = 'options_anti_aliasing must be scattering.anti_aliasing_filters.off!';
-                errorStruct.identifier = 'compute_filter:NoOptionsAntiAliasingOff';
-                error( errorStruct );
-            end
-
-            % ensure cell array for flags
-            if ~iscell( flags )
-                flags = { flags };
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options_anti_aliasing, flags );
-
-            %--------------------------------------------------------------
-            % 2.) compute spatial anti-aliasing filters
-            %--------------------------------------------------------------
-            % specify cell array for filters
-            filters = cell( size( options_anti_aliasing ) );
-
-            % iterate spatial anti-aliasing filter options
-            for index_filter = 1:numel( options_anti_aliasing )
-
-                % detect valid grid points
-                filters{ index_filter } = true( size( flags{ index_filter } ) );
-
-            end % for index_filter = 1:numel( options_anti_aliasing )
-
-            % avoid cell array for single options_anti_aliasing
-            if isscalar( options_anti_aliasing )
-                filters = filters{ 1 };
-            end
-
-        end % function filters = compute_filter( options_anti_aliasing, flags )
+        end % function objects = off( size )
 
         %------------------------------------------------------------------
         % string array (implement string method)
         %------------------------------------------------------------------
-        function strs_out = string( anti_aliasings_off )
+        function strs_out = string( filters_off )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class scattering.anti_aliasing_filters.off
-            if ~isa( anti_aliasings_off, 'scattering.anti_aliasing_filters.off' )
-                errorStruct.message = 'anti_aliasings_off must be scattering.anti_aliasing_filters.off!';
-                errorStruct.identifier = 'string:NoOptionsAlgorithmDirect';
+            if ~isa( filters_off, 'scattering.anti_aliasing_filters.off' )
+                errorStruct.message = 'filters_off must be scattering.anti_aliasing_filters.off!';
+                errorStruct.identifier = 'string:NoInactiveSpatialAntiAliasingFilters';
                 error( errorStruct );
             end
 
@@ -101,9 +55,9 @@ classdef off < scattering.anti_aliasing_filters.anti_aliasing_filter
             % 2.) create string array
             %--------------------------------------------------------------
             % repeat string "off"
-            strs_out = repmat( "off", size( anti_aliasings_off ) );
+            strs_out = repmat( "off", size( filters_off ) );
 
-        end % function strs_out = string( anti_aliasings_off )
+        end % function strs_out = string( filters_off )
 
 	end % methods
 
@@ -132,6 +86,33 @@ classdef off < scattering.anti_aliasing_filters.anti_aliasing_filter
             % copy spatial transfer function
 
         end % function h_transfer = apply_scalar( ~, ~, h_transfer, ~ )
+
+        %------------------------------------------------------------------
+        % compute filter samples (scalar)
+        %------------------------------------------------------------------
+        function coefficients = compute_samples_scalar( filter, flags )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter
+
+            % ensure class scattering.anti_aliasing_filters.off
+            if ~isa( filter, 'scattering.anti_aliasing_filters.off' )
+                errorStruct.message = 'filter must be scattering.anti_aliasing_filters.off!';
+                errorStruct.identifier = 'compute_samples_scalar:NoInactiveSpatialAntiAliasingFilters';
+                error( errorStruct );
+            end
+
+            % calling function ensures cell array for flags
+
+            %--------------------------------------------------------------
+            % 2.) compute filter samples (scalar)
+            %--------------------------------------------------------------
+            % all grid points are valid
+            coefficients = ones( size( flags ) );
+
+        end % function coefficients = compute_samples_scalar( filter, flags )
 
 	end % methods (Access = protected, Hidden)
 

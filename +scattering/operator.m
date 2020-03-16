@@ -131,7 +131,10 @@ classdef (Abstract) operator
 
             % ensure nonempty options
             if nargin < 3 || isempty( options )
-                options = regularization.options.common;
+% TODO: ensure usage of current momentary options
+                options_momentary = reshape( [ operators.options.momentary ], size( operators ) );
+                options_energy = regularization.options.energy_rx( options_momentary );
+                options = regularization.options.common( options_energy );
             end
 
             % ensure cell array for options
@@ -874,13 +877,13 @@ classdef (Abstract) operator
                 operators( index_object ).options = set_options_momentary( operators( index_object ).options, options( index_object ) );
 
                 %----------------------------------------------------------
-                % b) detect changes update data structures
+                % b) detect changes and update data structures
                 %----------------------------------------------------------
                 % indices_measurement_sel
                 if ~isequal( operators( index_object ).options.momentary.sequence, options_old( index_object ).momentary.sequence )
 
                     %------------------------------------------------------
-                    % i.) change in sequence options
+                    % i.) sequence options
                     %------------------------------------------------------
                     % update indices of selected sequential pulse-echo measurements
                     if isa( operators( index_object ).options.momentary.sequence, 'scattering.options.sequence_full' )
@@ -904,11 +907,21 @@ classdef (Abstract) operator
 
                 end % if ~isequal( operators( index_object ).options.momentary.sequence, options_old( index_object ).momentary.sequence )
 
+                % incident waves
+                if ~isequal( operators( index_object ).options.momentary.anti_aliasing.tx, options_old( index_object ).momentary.anti_aliasing.tx )
+
+                    %------------------------------------------------------
+                    % ii.) spatial anti-aliasing filter (tx)
+                    %------------------------------------------------------
+                    operators( index_object ).incident_waves = scattering.sequences.syntheses.incident_wave( operators( index_object ).sequence, operators( index_object ).options.momentary.anti_aliasing.tx );
+
+                end % if ~isequal( operators( index_object ).options.momentary.anti_aliasing.tx, options_old( index_object ).momentary.anti_aliasing.tx )
+
                 % reference spatial transfer function
                 if ~isequal( operators( index_object ).options.momentary.anti_aliasing.rx, options_old( index_object ).momentary.anti_aliasing.rx )
 
                     %------------------------------------------------------
-                    % ii.) change in spatial anti-aliasing filter options
+                    % iii.) spatial anti-aliasing filter (rx)
                     %------------------------------------------------------
                     % update reference spatial transfer function w/ anti-aliasing filter
                     operators( index_object ).sequence = update_transfer_function( operators( index_object ).sequence, operators( index_object ).options.momentary.anti_aliasing.rx );

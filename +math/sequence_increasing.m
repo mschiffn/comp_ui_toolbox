@@ -158,7 +158,7 @@ classdef sequence_increasing
         % subsample
         %------------------------------------------------------------------
         function sequences_out = subsample( sequences, indices )
-
+% TODO: only a single indice -> check for regularity fails
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------

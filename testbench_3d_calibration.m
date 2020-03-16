@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-11-16
-% modified: 2020-03-04
+% modified: 2020-03-12
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -139,7 +139,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% forward simulations
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO: turn off anti-aliasing in p_in via options
 
 %--------------------------------------------------------------------------
 % 2.) specify scattering operator options
@@ -174,8 +173,8 @@ for index_setup = 1:numel( setups )
     % create static scattering operator options
     options_static = scattering.options.static( options_disc );
 
-    % create momentary scattering operator options
-    options_momentary = scattering.options.momentary( scattering.anti_aliasing_filters.off, scattering.options.gpu_off );
+	% create momentary scattering operator options (deactivate spatial anti-aliasing, CPU)
+	options_momentary = scattering.options.momentary( scattering.options.anti_aliasing( scattering.anti_aliasing_filters.off, scattering.anti_aliasing_filters.off ), scattering.options.gpu_off );
 
 	% scattering options
 	options = scattering.options( options_static, options_momentary );
@@ -189,7 +188,7 @@ for index_setup = 1:numel( setups )
 	% a) create scattering operator (Born approximation)
 	operator_qpw = scattering.operator_born( sequences_QPW{ index_setup }, options );
 
-    % b) specify coefficient vector
+	% b) specify coefficient vector
 	N_coefficients = 9;
     N_dimensions = operator_qpw.sequence.setup.FOV.shape.grid.N_dimensions;
     direction = operator_qpw.sequence.setup.FOV.shape.grid.N_points_axis - ones( 1, N_dimensions );

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-02-26
+% modified: 2020-03-12
 %
 classdef common < regularization.options.energy_rx
 
@@ -31,11 +31,21 @@ classdef common < regularization.options.energy_rx
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure nonempty options_energy
+            if nargin < 1 || isempty( options_energy )
+                options_energy = regularization.options.energy_rx;
+            end
+
             % ensure class regularization.options.energy_rx
             if ~isa( options_energy, 'regularization.options.energy_rx' )
                 errorStruct.message = 'options_energy must be regularization.options.energy_rx!';
                 errorStruct.identifier = 'common:NoEnergyOptions';
                 error( errorStruct );
+            end
+
+            % ensure nonempty normalizations
+            if nargin < 2 || isempty( normalizations )
+                normalizations = regularization.normalizations.off;
             end
 
             % ensure class regularization.normalizations.normalization
@@ -184,6 +194,7 @@ classdef common < regularization.options.energy_rx
 
                     % create inverse weighting matrix
                     LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
+%                     LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) .* 1 ./ ( 1 + 1e12 ./ double( E_M ).^2 ) );
 
                     % apply normalization settings
                     LT_weighting_inv = apply( options( index_options ).normalization, LT_weighting_inv );

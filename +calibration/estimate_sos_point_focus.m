@@ -40,7 +40,7 @@ function [ states, rel_RMSE ] = estimate_sos_point_focus( u_rx_tilde_qsw, xdc_ar
 %
 % author: Martin F. Schiffner
 % date: 2020-01-21
-% modified: 2020-02-04
+% modified: 2020-03-09
 
     %----------------------------------------------------------------------
 	% 1.) check arguments
@@ -249,12 +249,13 @@ function [ states, rel_RMSE ] = estimate_sos_point_focus( u_rx_tilde_qsw, xdc_ar
             %--------------------------------------------------------------
             % iv.) compute spatial anti-aliasing filter
             %--------------------------------------------------------------
+% TODO: use method compute_flags of setup
             % compute flag reflecting the local angular spatial frequencies
             axis_k_tilde = 2 * pi * axis_f.members / states{ index_data }( index_target ).c_avg;
             flag = real( axis_k_tilde ) .* e_r0_minus_r( index_target, :, : ) .* reshape( xdc_array( index_data ).cell_ref.edge_lengths( indicator_dimensions ), [ 1, 1, N_dimensions_lateral_relevant ] );
 
             % detect valid grid points
-            filter = compute_filter( options{ index_data }( index_target ).anti_aliasing, flag );
+            filter = compute_samples( options{ index_data }( index_target ).anti_aliasing, flag );
 
             %--------------------------------------------------------------
             % v.) select active elements according to bandwidth

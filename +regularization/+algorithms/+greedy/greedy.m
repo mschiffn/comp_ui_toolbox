@@ -27,7 +27,7 @@ classdef (Abstract) greedy < regularization.algorithms.algorithm
             % 2.) create greedy regularization algorithms
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@regularization.algorithms.algorithm( rel_RMSEs, N_iterations_max )
+            objects@regularization.algorithms.algorithm( rel_RMSEs, N_iterations_max );
 
         end % function objects = greedy( rel_RMSEs, N_iterations_max )
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2011-06-15
-% modified: 2020-02-16
+% modified: 2020-03-15
 %
 classdef omp < regularization.algorithms.greedy.greedy
 
@@ -88,24 +88,15 @@ classdef omp < regularization.algorithms.greedy.greedy
         %   - Unlike the matching pursuit, OMP never selects the same atom twice.
         %	- Results of greedy algorithms might be suboptimal.
 
+            % print status
+            time_start = tic;
+            auxiliary.print_header( "OMP v. 1.0" );
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % superclass ensures class regularization.algorithms.algorithm (scalar) for algorithm_omp
-            % superclass ensures numeric matrix or function_handle for op_A
-            % superclass ensures compatibility of y_m
 
-            % print status
-            time_start = tic;
-            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
-            fprintf( '\n' );
-            fprintf( ' %s\n', repmat( '=', [ 1, 80 ] ) );
-            fprintf( ' %s (%s)\n', 'OMP v. 1.0', str_date_time );
-            fprintf( ' %s\n', repmat( '=', [ 1, 80 ] ) );
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
             % ensure class regularization.algorithms.greedy.omp
             if ~isa( algorithm_omp, 'regularization.algorithms.greedy.omp' )
                 errorStruct.message = 'algorithm_omp must be regularization.algorithms.greedy.omp!';
@@ -113,6 +104,12 @@ classdef omp < regularization.algorithms.greedy.greedy
                 error( errorStruct );
             end
 
+            % superclass ensures numeric matrix or function_handle for op_A
+            % superclass ensures compatibility of y_m with op_A
+
+            %--------------------------------------------------------------
+            % 2.) 
+            %--------------------------------------------------------------
             % size of the linear operator
             if isnumeric( op_A )
                 size_A = size( op_A );
@@ -133,11 +130,11 @@ classdef omp < regularization.algorithms.greedy.greedy
             N_chars_max = max( max( cellfun( @numel, strings ) ) );
             fprintf( ' %-20s: %7d %10s %-30s: %7d\n', 'number of rows', N_observations, '', 'number of columns', N_coefficients );
             fprintf( ' %-20s: %7.4f %10s %-30s: %7d\n', 'y_m_norm', y_m_norm, '', 'number of iterations', N_iterations_max );
-            fprintf( ' %-20s: %7.4f\n', 'objective', algorithm_omp.rel_RMSE );
+            fprintf( ' %-20s: %7.4f\n', 'objective', algorithm_omp.rel_RMSEs );
             fprintf( ' %s\n', repmat( '-', [ 1, 80 ] ) );
 
             %--------------------------------------------------------------
-            % 2.) initialization
+            % 3.) initialization
             %--------------------------------------------------------------
             % initialize reduced sensing matrix with selected columns
             A_sel = zeros( N_observations, N_iterations_max );
@@ -153,17 +150,19 @@ classdef omp < regularization.algorithms.greedy.greedy
             theta_recon = zeros( N_coefficients, 1 );
 
             %--------------------------------------------------------------
-            % 3.) recover transform coefficients
+            % 4.) recover transform coefficients
             %--------------------------------------------------------------
-            % iterate rel_RMSEs
-            for index_rel_RMSE = 1:numel( algorithm_spgl1.rel_RMSEs )
+            % iterate relative RMSEs
+            for index_rel_RMSE = 1:numel( algorithm_omp.rel_RMSEs )
+
+% TODO: warm start for multiple rel_RMSEs
 
                 fprintf( ' %-10s %-10s\n', 'Iter', 'rel. RMSE' );
                 for k_iter = 1:N_iterations_max
 
-                    %----------------------------------------------------------
+                    %------------------------------------------------------
                     % 1.) select new atom
-                    %----------------------------------------------------------
+                    %------------------------------------------------------
                     % a.) apply adjoint operator
                     if isnumeric( op_A )
                         temp = op_A' * y_m_res;
@@ -184,10 +183,6 @@ classdef omp < regularization.algorithms.greedy.greedy
                         A_sel( :, k_iter ) = op_A( temp, 1 );
                     end
 
-                    figure( k_iter );
-                    subplot( 1, 2, 1 );
-                    imagesc( reshape( abs( temp ), [ N_lattice_z, N_lattice_x] ) );
-
                     %----------------------------------------------------------
                     % 2.) find optimal values of coefficients (least-squares approximation of original y_m)
                     %----------------------------------------------------------
@@ -204,35 +199,32 @@ classdef omp < regularization.algorithms.greedy.greedy
                     %----------------------------------------------------------
                     % graphical illustration
                     %----------------------------------------------------------
-%         axis = math.sequence_increasing_regular_quantized( 188, 563, physical_values.hertz( 11986.814504045551075250841677188873291015625 ) );
-%         y_m_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
-%         y_approx_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
-%         y_m_res_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 376, 128 ] ) ) ), 1400, physical_values.second( 1/40e6 ) );
-%         y_m_tilde_max = max( abs( y_m_tilde.samples(:) ) );
-% 
-%         figure( k_iter );
-%         subplot( 2, 3, 1 );
-%         imagesc( 20*log10( abs( y_m_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
-%         subplot( 2, 3, 2 );
-%         imagesc( 20*log10( abs( y_approx_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
-%         subplot( 2, 3, 3 );
-%         imagesc( 20*log10( abs( y_m_res_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
-%         subplot( 2, 3, 4 );
-%         plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 32 ), 'b', ...
-%               (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 32 ), 'g', ...
-%               (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 32 ), 'r:' );
-%         subplot( 2, 3, 5 );
-%         plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 64 ), 'b', ...
-%               (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 64 ), 'g', ...
-%               (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 64 ), 'r:' );
-%         subplot( 2, 3, 6 );
-%         plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 96 ), 'b', ...
-%               (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 96 ), 'g', ...
-%               (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 96 ), 'r:' );
-%         colormap parula;
+                    axis = math.sequence_increasing_regular_quantized( 165, 493, physical_values.hertz( 12165.45012165443040430545806884765625 ) );
+                    y_m_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 329, 384 ] ) ) ), 21, physical_values.second( 1/20e6 ) );
+                    y_approx_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 329, 384 ] ) ) ), 21, physical_values.second( 1/20e6 ) );
+                    y_m_res_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 329, 384 ] ) ) ), 21, physical_values.second( 1/20e6 ) );
+                    y_m_tilde_max = max( abs( y_m_tilde.samples(:) ) );
 
-%         subplot(1,2,2);
-%         imagesc(reshape(abs(theta_recon), [N_lattice_z, N_lattice_x]));
+                    figure( k_iter );
+                    subplot( 2, 3, 1 );
+                    imagesc( 20*log10( abs( y_m_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+                    subplot( 2, 3, 2 );
+                    imagesc( 20*log10( abs( y_approx_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+                    subplot( 2, 3, 3 );
+                    imagesc( 20*log10( abs( y_m_res_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+                    subplot( 2, 3, 4 );
+                    plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 32 ), 'b', ...
+                          (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 32 ), 'g', ...
+                          (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 32 ), 'r:' );
+                    subplot( 2, 3, 5 );
+                    plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 64 ), 'b', ...
+                          (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 64 ), 'g', ...
+                          (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 64 ), 'r:' );
+                    subplot( 2, 3, 6 );
+                    plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 96 ), 'b', ...
+                          (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 96 ), 'g', ...
+                          (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 96 ), 'r:' );
+                    colormap parula;
 
                     % print status
                     fprintf( ' %10d %10.4f\n', k_iter, y_m_res_norm_rel( k_iter ) );
@@ -240,13 +232,13 @@ classdef omp < regularization.algorithms.greedy.greedy
                     %----------------------------------------------------------
                     % 4.) stopping criterion
                     %----------------------------------------------------------
-                    if y_m_res_norm_rel( k_iter ) <= algorithm_omp.rel_RMSE
+                    if y_m_res_norm_rel( k_iter ) <= algorithm_omp.rel_RMSEs( index_rel_RMSE )
                         break;
                     end
 
                 end % for k_iter = 1:N_iterations_max
 
-            end % for index_rel_RMSE = 1:numel( algorithm_spgl1.rel_RMSEs )
+            end % for index_rel_RMSE = 1:numel( algorithm_omp.rel_RMSEs )
 
             % truncate data structures to actual number of iterations
             atoms = atoms( 1:k_iter );
@@ -256,7 +248,7 @@ classdef omp < regularization.algorithms.greedy.greedy
             time_elapsed = toc( time_start );
 
             %--------------------------------------------------------------
-            % 4.) return info structure
+            % 5.) return info structure
             %--------------------------------------------------------------
             info.size_A = size_A;
             info.atoms = atoms;
