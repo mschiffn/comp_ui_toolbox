@@ -95,7 +95,10 @@ classdef off < regularization.tgc.tgc
                 % create identity for the selected sequential pulse-echo measurement
                 LTs_measurement{ index_measurement_sel } = linear_transforms.identity( N_observations_measurement( index_measurement_sel ) );
 
-            end
+            end % for index_measurement_sel = 1:numel( operator_born.indices_measurement_sel )
+
+            % concatenate vertically
+            LTs_measurement = cat( 1, LTs_measurement{ : } );
 
             % create identity for all selected sequential pulse-echo measurements
             LT = linear_transforms.identity( sum( N_observations_measurement( : ) ) );

@@ -14,7 +14,7 @@ function c_water = speed_of_sound_water( T )
 %
 % REFERENCES:
 %	[1] V. A. Del Grosso, C. W. Mader, "Speed of sound in pure water,"
-%       J. Acoust. Soc. Am., vol. 52, no. 5B, pp. 1442–1446, Nov. 1972.
+%       J. Acoust. Soc. Am., vol. 52, no. 5B, pp. 1442-1446, Nov. 1972.
 %       DOI: 10.1121/1.1913258
 %
 % REMARKS:

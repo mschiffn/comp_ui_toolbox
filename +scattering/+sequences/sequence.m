@@ -689,7 +689,7 @@ classdef sequence
             for index_sequence = 1:numel( sequences )
 
                 %----------------------------------------------------------
-                % a) check indices indices_incident{ index_sequence }
+                % a) check indices_incident{ index_sequence }
                 %----------------------------------------------------------
                 % ensure nonempty positive integers
                 mustBeNonempty( indices_incident{ index_sequence } );
@@ -771,7 +771,7 @@ classdef sequence
             %--------------------------------------------------------------
             % calling function ensures class scattering.sequences.sequence (scalar) for sequence
             % calling function ensures nonempty positive integer that does not exceed the number of sequential pulse-echo measurements for index_incident
-            % calling function ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter
+            % calling function ensures class scattering.anti_aliasing_filters.anti_aliasing_filter (scalar) for filter
 
             %--------------------------------------------------------------
             % 2.) compute incident acoustic pressure field (scalar)

@@ -89,21 +89,21 @@ classdef logistic < scattering.anti_aliasing_filters.on
         %------------------------------------------------------------------
         % compute filter samples (scalar)
         %------------------------------------------------------------------
-        function samples = compute_samples_scalar( filter, flags )
+        function samples = compute_samples_scalar( filter, flags_samples )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % calling method ensures class scattering.anti_aliasing_filters.anti_aliasing_filter for filter (scalar)
-            % calling method ensures valid flags
+            % calling method ensures valid flags_samples
 
             %--------------------------------------------------------------
             % 2.) compute filter samples (scalar)
             %--------------------------------------------------------------
             % compute logistic function
-            samples = prod( 1 ./ ( 1 + exp( filter.growth_rate * ( flags - pi ) ) ), 3 );
+            samples = prod( 1 ./ ( 1 + exp( filter.growth_rate * ( flags_samples - pi ) ) ), 3 );
 
-        end % function samples = compute_samples_scalar( filter, flags )
+        end % function samples = compute_samples_scalar( filter, flags_samples )
 
 	end % methods (Access = protected, Hidden)
 

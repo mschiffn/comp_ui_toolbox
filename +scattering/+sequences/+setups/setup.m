@@ -724,10 +724,13 @@ classdef setup
                 e_1_minus_2 = mutual_unit_vectors( math.grid( setups( index_setup ).xdc_array.positions_ctr ), setups( index_setup ).FOV.shape.grid, indices_element{ index_setup } );
                 e_1_minus_2 = abs( e_1_minus_2( :, :, 1:( end - 1 ) ) );
 
-                % exclude dimensions with less than two array elements
+                % exclude lateral dimensions with less than two array elements
                 indicator_dimensions = setups( index_setup ).xdc_array.N_elements_axis > 1;
                 N_dimensions_lateral_relevant = sum( indicator_dimensions );
                 e_1_minus_2 = e_1_minus_2( :, :, indicator_dimensions );
+
+                % local phase shift per element pitch (rad)
+                beta_times_delta = real( axis_k_tilde.members ) .* reshape( setups( index_setup ).xdc_array.cell_ref.edge_lengths( indicator_dimensions ), [ 1, 1, N_dimensions_lateral_relevant ] );
 
                 % specify cell array for flags{ index_setup }
                 flags{ index_setup } = cell( size( indices_element{ index_setup } ) );
@@ -738,12 +741,13 @@ classdef setup
                     % select absolute lateral components of mutual unit vectors
                     e_1_minus_2_act = repmat( e_1_minus_2( index_selected, :, : ), [ N_samples_f( index_setup ), 1, 1 ] );
 
-                    % compute flag reflecting the local angular spatial frequencies
-                    flags{ index_setup }{ index_selected } = real( axis_k_tilde.members ) .* e_1_minus_2_act .* reshape( setups( index_setup ).xdc_array.cell_ref.edge_lengths( indicator_dimensions ), [ 1, 1, N_dimensions_lateral_relevant ] );
+                    % lateral local phase shift per element pitch (rad)
+                    flags{ index_setup }{ index_selected } = beta_times_delta .* e_1_minus_2_act;
 
                 end % for index_selected = 1:numel( indices_element{ index_setup } )
 
-                % create fields
+                % create field arrays
+% TODO: problem with three-dimensional flags{ index_setup }{ index_selected }!
                 flags{ index_setup } = processing.field( axes_f( index_setup ), setups( index_setup ).FOV.shape.grid, flags{ index_setup } );
 
             end % for index_setup = 1:numel( setups )

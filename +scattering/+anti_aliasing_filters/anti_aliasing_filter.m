@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-11
-% modified: 2020-03-09
+% modified: 2020-03-21
 %
 classdef (Abstract) anti_aliasing_filter
 
@@ -104,7 +104,7 @@ classdef (Abstract) anti_aliasing_filter
         % compute filter samples
         %------------------------------------------------------------------
         function samples = compute_samples( filters, flags )
-% TODO: return fields
+
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
@@ -145,14 +145,15 @@ classdef (Abstract) anti_aliasing_filter
             for index_filter = 1:numel( filters )
 
                 % compute filter samples (scalar)
-                samples{ index_filter } = compute_samples_scalar( filters( index_filter ), flags( index_filter ) );
+                samples{ index_filter } = compute_samples_scalar( filters( index_filter ), flags( index_filter ).samples );
+
+                % create field
+                samples{ index_filter } = processing.field( flags( index_filter ).axis, flags( index_filter ).grid_FOV, samples{ index_filter } );
 
             end % for index_filter = 1:numel( filters )
 
-            % avoid cell array for single filters
-            if isscalar( filters )
-                samples = samples{ 1 };
-            end
+            % concatenate fields
+            samples = reshape( cat( 1, samples{ : } ), size( filters ) );
 
         end % function samples = compute_samples( filters, flags )
 
@@ -183,7 +184,7 @@ classdef (Abstract) anti_aliasing_filter
         %------------------------------------------------------------------
         % compute filter samples (scalar)
         %------------------------------------------------------------------
-        samples = compute_samples_scalar( filter, flags )
+        samples = compute_samples_scalar( filter, flags_samples )
 
 	end % methods (Abstract, Access = protected, Hidden)
 

@@ -85,7 +85,7 @@ classdef (Abstract) operator
                 %----------------------------------------------------------
                 % c) incident acoustic fields (unique frequencies)
                 %----------------------------------------------------------
-%                 p_incident = compute_p_in( objects( index_object ).sequence, [], objects( index_object ).options.momentary.anti_aliasing.tx );
+%                 p_incident = compute_p_in( objects( index_object ).sequence.setup, objects( index_object ).sequence.settings, objects( index_object ).options.momentary.anti_aliasing.tx );
                 objects( index_object ).incident_waves = scattering.sequences.syntheses.incident_wave( objects( index_object ).sequence, objects( index_object ).options.momentary.anti_aliasing.tx );
 
                 %----------------------------------------------------------

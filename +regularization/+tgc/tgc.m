@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-15
-% modified: 2020-02-17
+% modified: 2020-03-18
 %
 classdef (Abstract) tgc < regularization.options.template
 
@@ -71,7 +71,7 @@ classdef (Abstract) tgc < regularization.options.template
             %--------------------------------------------------------------
             % specify cell array for LTs
             LTs = cell( size( tgcs ) );
-            LTs_measurement = cell( size( operators_born ) );
+            LTs_measurement = cell( size( tgcs ) );
 
             % iterate TGCs
             for index_tgc = 1:numel( tgcs )

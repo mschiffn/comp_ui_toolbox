@@ -12,13 +12,13 @@ function alpha = absorption_water( T )
 %   alpha = power-law absorption coefficient in pure water (dB / MHz^2 / cm)
 %
 % REFERENCES:
-%   [1] J. M. M. Pinkerton, "The Absorption of Ultrasonic Waves in Liquids and its Relation to Molecular Constitution",
-%       Proc. Phys. Soc. Sec. B, Vol. 62, No. 2, pp. 129 - 141, 1949
-%       DOI: 
+%   [1] J. M. M. Pinkerton, "The absorption of ultrasonic waves in liquids and its relation to molecular constitution,"
+%       P. Phys. Soc. B, vol. 62, no. 2, pp. 129-141, Feb. 1949
+%       DOI: 10.1088/0370-1301/62/2/307
 %
 % author: Martin F. Schiffner
 % data: 2020-01-13
-% modified: 2020-01-14
+% modified: 2020-03-21
 
     %----------------------------------------------------------------------
     % 1.) check arguments

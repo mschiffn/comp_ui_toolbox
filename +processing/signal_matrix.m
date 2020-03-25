@@ -111,7 +111,7 @@ classdef signal_matrix
         %------------------------------------------------------------------
         % orthonormal discrete Fourier transform (DFT)
         %------------------------------------------------------------------
-        function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, varargin )
+        function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, Ts_ref, intervals_f )
 % TODO: generalize for complex-valued samples
 % TODO: circshift not suitable for Fourier transform?!
 
@@ -149,26 +149,22 @@ classdef signal_matrix
             ubs_q_signal = reshape( double( [ axes_t.q_ub ] ), size( signal_matrices ) );
             deltas = reshape( [ axes_t.delta ], size( signal_matrices ) );
 
-            % ensure nonempty T_ref
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
-                T_ref = varargin{ 1 };
-            else
-                T_ref = ( ubs_q_signal - lbs_q_signal + 1 ) .* deltas;
+            % ensure nonempty Ts_ref
+            if nargin < 2 || isempty( Ts_ref )
+                Ts_ref = ( ubs_q_signal - lbs_q_signal + 1 ) .* deltas;
             end
 
             % ensure class physical_values.time
 % TODO: generalize for arbitrary physical units
 % ensure equal subclasses of class( deltas )
-            if ~isa( T_ref, 'physical_values.time' )
-                errorStruct.message = 'T_ref must be physical_values.time!';
+            if ~isa( Ts_ref, 'physical_values.time' )
+                errorStruct.message = 'Ts_ref must be physical_values.time!';
                 errorStruct.identifier = 'DFT:NoTimes';
                 error( errorStruct );
             end
 
             % ensure nonempty intervals_f
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
-                intervals_f = varargin{ 2 };
-            else
+            if nargin < 3 || isempty( intervals_f )
                 intervals_f = math.interval( physical_values.hertz( zeros( size( deltas ) ) ), 1 ./ ( 2 * deltas ) );
             end
 
@@ -184,9 +180,9 @@ classdef signal_matrix
 % ensure equal subclasses of reciprocal( class( deltas ) )
             auxiliary.mustBeEqualSubclasses( 'physical_values.frequency', intervals_f.lb );
 
-            % multiple signal_matrices / single T_ref
-            if ~isscalar( signal_matrices ) && isscalar( T_ref )
-                T_ref = repmat( T_ref, size( signal_matrices ) );
+            % multiple signal_matrices / single Ts_ref
+            if ~isscalar( signal_matrices ) && isscalar( Ts_ref )
+                Ts_ref = repmat( Ts_ref, size( signal_matrices ) );
             end
 
             % multiple signal_matrices / single intervals_f
@@ -195,7 +191,7 @@ classdef signal_matrix
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_matrices, T_ref, intervals_f );
+            auxiliary.mustBeEqualSize( signal_matrices, Ts_ref, intervals_f );
 
             %--------------------------------------------------------------
             % 2.) compute orthonormal discrete Fourier transforms
@@ -204,10 +200,10 @@ classdef signal_matrix
             N_samples_signal = abs( axes_t );
 
             % compute numbers of points in the DFTs (numbers of intervals)
-            N_dft = round( T_ref ./ deltas );
-            if any( abs( T_ref ./ deltas - N_dft ) > eps( N_dft ) )
-                errorStruct.message = sprintf( 'T_ref must be integer multiples of deltas!' );
-                errorStruct.identifier = 'DFT:InvalidTRef';
+            N_dft = round( Ts_ref ./ deltas );
+            if any( abs( Ts_ref ./ deltas - N_dft ) > eps( N_dft ) )
+                errorStruct.message = sprintf( 'Ts_ref must be integer multiples of deltas!' );
+                errorStruct.identifier = 'DFT:InvalidTsRef';
                 error( errorStruct );
             end
 
@@ -222,7 +218,7 @@ classdef signal_matrix
             end
 
             % compute axes of relevant frequencies
-            axes_f = discretize( intervals_f, 1 ./ T_ref );
+            axes_f = discretize( intervals_f, 1 ./ Ts_ref );
             lbs_q_f = reshape( [ axes_f.q_lb ], size( axes_f ) );
             ubs_q_f = reshape( [ axes_f.q_ub ], size( axes_f ) );
 
@@ -253,7 +249,7 @@ classdef signal_matrix
 
             end % for index_matrix = 1:numel( signal_matrices )
 
-        end % function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, varargin )
+        end % function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, Ts_ref, intervals_f )
 
         %------------------------------------------------------------------
         % Fourier transform (cf. book:Briggs1995, pp. 40, 41)
