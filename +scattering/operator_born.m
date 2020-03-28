@@ -274,6 +274,7 @@ classdef operator_born < scattering.operator
             % 3.) compute mixed voltage signals
             %--------------------------------------------------------------
             if isa( operator_born.options.momentary.gpu, 'scattering.options.gpu_off' )
+%                 u_M = forward_quick_cpu( operator_born.options.momentary.algorithm, operator_born, coefficients );
                 u_M = forward_quick_cpu( operator_born, coefficients );
             else
                 u_M = scattering.combined_quick_gpu( operator_born, 1, coefficients );
@@ -342,6 +343,7 @@ classdef operator_born < scattering.operator
             % 3.) compute adjoint fluctuations
             %--------------------------------------------------------------
             if isa( operator_born.options.momentary.gpu, 'scattering.options.gpu_off' )
+%                 theta_hat = adjoint_quick_cpu( operator_born.options.momentary.algorithm, operator_born, u_M );
                 theta_hat = adjoint_quick_cpu( operator_born, u_M );
             else
                 theta_hat = scattering.combined_quick_gpu( operator_born, 2, u_M );

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-22
-% modified: 2019-08-22
+% modified: 2020-03-25
 %
 classdef setup_grid_symmetric < scattering.sequences.setups.setup
 
@@ -17,7 +17,11 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
 
         % dependent properties
         indices_grid_FOV_shift ( :, : )	% indices of laterally shifted grid points
-% TODO: h_ref and h_ref_grad
+
+        % reference spatial transfer function and gradient
+        h_ref ( :, 1 ) processing.field            % reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
+        h_ref_grad ( :, 1 ) processing.field       % spatial gradient of the reference spatial transfer function w/ anti-aliasing filter (unique frequencies)
+
 	end % properties
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -28,29 +32,20 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setup_grid_symmetric( xdc_arrays, homogeneous_fluids, FOVs, strs_name )
-
+        function objects = setup_grid_symmetric( setups, axes_f )
+% TODO: filter?
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass ensures class pulse_echo_measurements.homogeneous_fluid
+            % ensure class scattering.sequences.setups.setup
+            if ~isa( setups, 'scattering.sequences.setups.setup' )
+                errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
+                errorStruct.identifier = 'setup_grid_symmetric:NoSetup';
+                error( errorStruct );
+            end
 
-            % ensure cell array for structs_elements
-            
-
-            % ensure class math.grid_regular_orthogonal for structs_elements
-            
-
-            % ensure class math.grid_regular_orthogonal for grids_FOV
-
-            %--------------------------------------------------------------
-            % 2.) create symmetric spatial discretizations based on orthogonal regular grids
-            %--------------------------------------------------------------
-            % constructor of superclass
-            objects@scattering.sequences.setups.setup( xdc_arrays, homogeneous_fluids, FOVs, strs_name );
-
-            %
-            [ indicator_symmetry, N_points_per_pitch_axis ] = issymmetric( objects );
+            % is discretized setup symmetric
+            [ indicator_symmetry, N_points_per_pitch_axis ] = issymmetric( setups );
             if any( ~indicator_symmetry( : ) )
                 errorStruct.message = 'setups must be symmetric!';
                 errorStruct.identifier = 'setup_grid_symmetric:NoSetups';
@@ -62,6 +57,22 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
                 N_points_per_pitch_axis = { N_points_per_pitch_axis };
             end
 
+            % ensure class math.sequence_increasing with physical_values.frequency members
+            if ~( isa( axes_f, 'math.sequence_increasing' ) && all( cellfun( @( x ) isa( x, 'physical_values.frequency' ), { axes_f.members } ) ) )
+                errorStruct.message = 'axes_f must be math.sequence_increasing with physical_values.frequency members!';
+                errorStruct.identifier = 'setup_grid_symmetric:InvalidFrequencyAxes';
+                error( errorStruct );
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( setups, axes_f );
+
+            %--------------------------------------------------------------
+            % 2.) create symmetric discretized pulse-echo measurement setups
+            %--------------------------------------------------------------
+            % constructor of superclass
+            objects@scattering.sequences.setups.setup( [ setups.xdc_array ], [ setups.homogeneous_fluid ], [ setups.FOV ], [ setups.str_name ] );            
+
             % iterate symmetric pulse-echo measurement setups based on orthogonal regular grids
             for index_object = 1:numel( objects )
 
@@ -71,9 +82,12 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
                 % lateral shifts of grid points for each array element
                 objects( index_object ).indices_grid_FOV_shift = shift_lateral( objects( index_object ), ( 1:objects( index_object ).xdc_array.N_elements ) );
 
+                % compute reference spatial transfer function (call method of superclass)
+                objects( index_object ).h_ref = transfer_function( objects( index_object ), axes_f( index_object ) );
+
             end % for index_object = 1:numel( objects )
 
-        end % function objects = setup_grid_symmetric( xdc_arrays, homogeneous_fluids, FOVs, strs_name )
+        end % function objects = setup_grid_symmetric( setups, axes_f )
 
         %------------------------------------------------------------------
         % lateral shift (TODO: check for correctness)
@@ -231,8 +245,7 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
         %------------------------------------------------------------------
         % compute spatial transfer functions
         %------------------------------------------------------------------
-% TODO: elegant way for transfer_function: use property h_ref (unique
-% frequencies?)
+% TODO: use unique frequencies?
 %         function h_transfer = transfer_function( setups, axes_f, indices_element, filters )
 %
 %         end
@@ -263,9 +276,62 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
 %             %--------------------------------------------------------------
 %             % resample reference spatial transfer function (global unique frequencies)
 %             h_ref_unique = h_ref_unique;
-%             h_ref_unique = double( h_ref_unique.samples( indices_f_to_unique_act, : ) );
+%             h_ref_unique = double( setup.h_ref.samples( indices_f_to_unique_act, : ) );
 % 
 %         end % function h_samples = transfer_function_scalar( setup, axis_f, index_element )
+
+        %------------------------------------------------------------------
+        % compute incident acoustic pressure field (scalar)
+        %------------------------------------------------------------------
+%         function p_in_samples = compute_p_in_scalar( setup, indices_active, v_d, filter )
+% 
+%             % print status
+%             time_start = tic;
+%             str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+%             fprintf( '\t %s: computing incident acoustic pressure field (kappa)...', str_date_time );
+% 
+%             %--------------------------------------------------------------
+%             % 1.) check arguments
+%             %--------------------------------------------------------------
+%             % calling function ensures class scattering.sequences.setups.setup (scalar) for setup
+%             % calling function ensures nonempty positive integers that do not exceed the number of array elements for indices_active
+%             % calling function ensures class processing.signal_matrix (scalar) for v_d
+%             % calling function ensures class scattering.anti_aliasing_filters.anti_aliasing_filter (scalar) for filter
+% 
+%             %--------------------------------------------------------------
+%             % 2.) compute incident acoustic pressure field (scalar)
+%             %--------------------------------------------------------------
+%             % extract frequency axis
+%             axis_f = v_d.axis;
+%             N_samples_f = abs( axis_f );
+% 
+%             % initialize pressure samples with zeros
+%             p_in_samples = physical_values.pascal( zeros( N_samples_f, setup.FOV.shape.grid.N_points ) );
+% 
+%             % iterate active array elements
+%             for index_active = 1:numel( indices_active )
+% 
+%                 % index of active array element
+%                 index_element = indices_active( index_active );
+% 
+%                 % compute spatial transfer function of the active array element
+%                 h_tx_unique = transfer_function( setup, axis_f, index_element, filter );
+%                 h_tx_unique = double( h_tx_unique.samples );
+% 
+%                 % compute summand for the incident pressure field
+%                 p_in_samples_summand = h_tx_unique .* double( v_d.samples( :, index_active ) );
+% 
+%                 % add summand to the incident pressure field
+% % TODO: correct unit problem
+%                 p_in_samples = p_in_samples + physical_values.pascal( p_in_samples_summand );
+% 
+%             end % for index_active = 1:numel( indices_active )
+% 
+%             % infer and print elapsed time
+%             time_elapsed = toc( time_start );
+%             fprintf( 'done! (%f s)\n', time_elapsed );
+% 
+%         end % function p_in_samples = compute_p_in_scalar( setup, indices_active, v_d, filter )
 
 	end % methods (Access = private, Hidden)
 
