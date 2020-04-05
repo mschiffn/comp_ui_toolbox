@@ -424,18 +424,6 @@ classdef setup
 
             end % for index_setup = 1:numel( setups )
 
-            %--------------------------------------------------------------
-            % 3.) construct spatial discretizations
-            %--------------------------------------------------------------
-% TODO: vectorize
-            try
-                setups = scattering.sequences.setups.setup_grid_symmetric( [ setups.xdc_array ], [ setups.homogeneous_fluid ], [ setups.FOV ], [ setups.str_name ] );
-            catch
-                message = 'The discrete representation of the setup is asymmetric! This significantly increases the computational costs!';
-                identifier = 'discretize:AsymmetricSetup';
-                warning( identifier, message );
-            end
-
         end % function setups = discretize( setups, options_spatial )
 
         %------------------------------------------------------------------
@@ -791,7 +779,9 @@ classdef setup
             % iterate setups of pulse-echo measurements
             for index_setup = 1:numel( setups )
 
-                fields{ index_setup } = compute_p_in_scalar( setups( index_setup ), settings_tx( index_setup ).indices_active, settings_tx.v_d, filters( index_setup ) );
+                % iterate
+                index_tx = 1;
+                fields{ index_setup } = compute_p_in_scalar( setups( index_setup ), settings_tx{ index_setup }( index_tx ).tx.indices_active, settings_tx{ index_setup }( index_tx ).v_d_unique, filters( index_setup ) );
 
             end % for index_setup = 1:numel( setups )
 

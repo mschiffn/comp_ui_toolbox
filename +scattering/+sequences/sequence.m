@@ -507,6 +507,15 @@ classdef sequence
                 % size of the discretization
                 sequences( index_object ).size = [ sum( cellfun( @( x ) sum( x( : ) ), { sequences( index_object ).settings.N_observations } ) ), sequences( index_object ).setup.FOV.shape.grid.N_points ];
 
+                % try to create symmetric setup
+                try
+                    sequences( index_object ).setup = scattering.sequences.setups.setup_grid_symmetric( sequences( index_object ).setup, sequences( index_object ).axis_f_unique );
+                catch
+                    message = sprintf( 'The discrete representation of the sequences( %d ).setup is asymmetric! This significantly increases the computational costs!', index_object );
+                    identifier = 'discretize:AsymmetricSetup';
+                    warning( identifier, message );
+                end
+
             end % for index_object = 1:numel( sequences )
 
         end % function sequences = discretize( sequences, options )

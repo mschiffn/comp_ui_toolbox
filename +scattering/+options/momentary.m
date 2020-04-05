@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-07-09
-% modified: 2020-03-04
+% modified: 2020-04-03
 %
 classdef momentary
 
@@ -16,7 +16,8 @@ classdef momentary
         sequence ( 1, 1 ) scattering.options.sequence { mustBeNonempty } = scattering.options.sequence_full             % sequence options
         anti_aliasing ( 1, 1 ) scattering.options.anti_aliasing { mustBeNonempty } = scattering.options.anti_aliasing	% spatial anti-aliasing options
         gpu ( 1, 1 ) scattering.options.gpu { mustBeNonempty } = scattering.options.gpu_active( 0 )                     % GPU options
-        algorithm ( 1, 1 ) scattering.options.algorithm { mustBeNonempty } = scattering.options.algorithm_direct        % algorithm options
+%         algorithm ( 1, 1 ) scattering.algorithms.algorithm { mustBeNonempty } = scattering.algorithms.born.symmetric	% scattering algorithm
+        algorithm ( 1, 1 ) scattering.options.algorithm { mustBeNonempty } = scattering.options.algorithm_direct        % scattering algorithm
 
 	end % properties
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-01-30
+% modified: 2020-04-03
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% clear workspace
@@ -190,7 +190,7 @@ norms_cols_mean     = mean( norms_cols, 2 );
 %--------------------------------------------------------------------------
 % 0.) parameters
 %--------------------------------------------------------------------------
-N_signals = 128;
+N_signals = 1;
 T_s = physical_values.second( 1 / 40e6 );
 N_samples = 3200;
 N_samples_shift = 78;
@@ -206,7 +206,7 @@ signal_BP_tilde = processing.signal_matrix( axis_t, repmat( samples_BP_tilde, [ 
 %--------------------------------------------------------------------------
 % 2.) create time-dependent variable gain
 %--------------------------------------------------------------------------
-TGC_curve = regularization.tgc.curves.exponential( math.interval_quantized( axis_t.q_lb, axis_t.q_ub + 1, axis_t.delta ), physical_values.hertz( 2e4 ) );
+TGC_curve = regularization.tgc.curves.exponential( math.interval_quantized( axis_t.q_lb, axis_t.q_ub + 1, axis_t.delta ), physical_values.hertz( 6e4 ) );
 
 % sample TGC curve
 samples_gain_tilde = sample_curve( TGC_curve, axis_t );
@@ -226,22 +226,23 @@ signal_gain = fourier_coefficients( signal_gain_tilde );
 
 % Fourier coefficients (analytic)
 TGC_curve_coef = fourier_coefficients( TGC_curve, abs( axis_t ) * T_s, -40 );
-M_kernel = abs( TGC_curve_coef.axis ) - 1;
 
-% error
-rel_RMSE_coef = norm( signal_gain.samples - TGC_curve_coef.samples ) / norm( TGC_curve_coef.samples );
+% error in gain Fourier coefficients
+% rel_RMSE_coef = norm( signal_gain.samples - TGC_curve_coef.samples ) / norm( TGC_curve_coef.samples );
 
 % define convolution
 kernel = [ conj( TGC_curve_coef.samples( end:-1:2 ) ); TGC_curve_coef.samples ];
-LT_convolution = linear_transforms.convolution( kernel, abs( signal_BP.axis ) );
+kernel_analy = [ TGC_curve_coef.samples( 1 ); 2 * TGC_curve_coef.samples( 2:end ) ];
+LT_convolution_dft = linear_transforms.convolutions.fft( kernel, abs( signal_BP.axis ) );
+LT_convolution_mat = linear_transforms.convolutions.matrix( kernel, abs( signal_BP.axis ) );
 
 % apply convolution
-samples_BP_tgc_conv_dft = forward_transform( LT_convolution, signal_BP.samples );
-% [ samples_BP_tgc_conv_dft, samples_BP_tgc_conv_mat ] = forward_transform( LT_convolution, signal_BP.samples );
+samples_BP_tgc_conv_dft = forward_transform( LT_convolution_dft, signal_BP.samples );
+samples_BP_tgc_conv_mat = forward_transform( LT_convolution_mat, signal_BP.samples );
 
 % apply adjoint convolution
-samples_BP_tgc_conv_adj_dft = adjoint_transform( LT_convolution, samples_BP_tgc_conv_dft );
-% [ samples_BP_tgc_conv_adj_dft, samples_BP_tgc_conv_adj_mat ] = adjoint_transform( LT_convolution, samples_BP_tgc_conv_dft );
+samples_BP_tgc_conv_adj_dft = adjoint_transform( LT_convolution_dft, samples_BP_tgc_conv_dft );
+samples_BP_tgc_conv_adj_mat = adjoint_transform( LT_convolution_mat, samples_BP_tgc_conv_dft );
 
 % errors
 rel_RMSE_fwd = norm( samples_BP_tgc_conv_dft( : ) - samples_BP_tgc_conv_mat( : ) ) / norm( samples_BP_tgc_conv_mat( : ) );
@@ -249,23 +250,57 @@ rel_RMSE_adj = norm( samples_BP_tgc_conv_adj_dft( : ) - samples_BP_tgc_conv_adj_
 
 % create signal matrix
 signal_BP_tgc_conv_dft = processing.signal_matrix( signal_BP.axis, samples_BP_tgc_conv_dft );
+signal_BP_tgc_conv_mat = processing.signal_matrix( signal_BP.axis, samples_BP_tgc_conv_mat );
 
 % time-domain signals
 signal_BP_tgc_conv_dft_tilde = signal( signal_BP_tgc_conv_dft, N_samples_shift, T_s );
+signal_BP_tgc_conv_mat_tilde = signal( signal_BP_tgc_conv_mat, N_samples_shift, T_s );
 
 % relative RMSEs
 rel_RMSE_dft = norm( signal_BP_tgc_conv_dft_tilde.samples - signal_BP_tgc_tilde.samples ) / norm( signal_BP_tgc_tilde.samples );
+rel_RMSE_mat = norm( signal_BP_tgc_conv_mat_tilde.samples - signal_BP_tgc_tilde.samples ) / norm( signal_BP_tgc_tilde.samples );
+
+% convolution is similar to overlap add: individual convolutions + overlap
+M_kernel = ( numel( kernel ) - 1 ) / 2;
+
+test_result = conv( signal_BP.samples, kernel );
+q_lb_conv = signal_BP.axis.q_lb - M_kernel;
+q_ub_conv = signal_BP.axis.q_ub + M_kernel;
+index_overlap_start = 1;
+index_overlap_stop = - 2 * signal_BP.axis.q_lb + M_kernel + 1;
+
+% create conjugate even result -> corresponds to real part of analytic signal
+test_result = test_result( ( M_kernel + 1 ):( end - M_kernel ) ) + [ conj( test_result( index_overlap_stop:-1:index_overlap_start ) ); zeros( numel( signal_BP.samples ) - index_overlap_stop, 1 ) ];
+test_result = processing.signal_matrix( signal_BP.axis, test_result );
+test_result_tilde = signal( test_result, N_samples_shift, T_s );
+
+test_result_analy = conv( signal_BP.samples, kernel_analy );
+test_result_analy = test_result_analy(1:end - numel( kernel_analy ) + 1);
+test_result_analy = processing.signal_matrix( signal_BP.axis, test_result_analy );
+test_result_analy_tilde = signal( test_result_analy, N_samples_shift, T_s );
+
+temp = [ conj( signal_BP.samples( end:-1:2 ) ); signal_BP.samples ];
+temp_result = conv( temp, kernel );
+temp_result = temp_result( ( M_kernel + 1 ):( end - M_kernel ) );
+temp_result = temp_result( ( numel( signal_BP.samples ) ):end );
+temp_result = processing.signal_matrix( signal_BP.axis, temp_result );
+temp_result_tilde = signal( temp_result, N_samples_shift, T_s );
+rel_RMSE_temp = norm( temp_result_tilde.samples - signal_BP_tgc_tilde.samples ) / norm( signal_BP_tgc_tilde.samples );
+% TGC_curve_coef.
 
 figure( 1 );
-plot( double( signal_BP_tgc_conv_dft_tilde.axis.members ), signal_BP_tgc_conv_dft_tilde.samples, signal_BP_tgc_tilde.axis.members, signal_BP_tgc_tilde.samples );
+plot( double( signal_BP_tgc_conv_dft_tilde.axis.members ), signal_BP_tgc_conv_dft_tilde.samples, ...
+      double( signal_BP_tgc_conv_mat_tilde.axis.members ), signal_BP_tgc_conv_mat_tilde.samples, ...
+      double( test_result_tilde.axis.members ), test_result_tilde.samples, ...
+      signal_BP_tgc_tilde.axis.members, signal_BP_tgc_tilde.samples );
 title( sprintf( 'rel. RMSE = %.2f %%', rel_RMSE_dft * 1e2 ) );
 
 %--------------------------------------------------------------------------
 % b) test for adjointness
 %--------------------------------------------------------------------------
 % specify test vectors
-test_in = randn( LT_convolution.N_points, 1 ) + 1j * randn( LT_convolution.N_points, 1 );
-test_out = randn( LT_convolution.N_coefficients, 1 ) + 1j * randn( LT_convolution.N_coefficients, 1 );
+test_in = randn( LT_convolution_dft.N_points, 1 ) + 1j * randn( LT_convolution_dft.N_points, 1 );
+test_out = randn( LT_convolution_dft.N_coefficients, 1 ) + 1j * randn( LT_convolution_dft.N_coefficients, 1 );
 
 % adjointness must be close to zero
-adjointness = ( test_out' * forward_transform( LT_convolution, test_in ) - adjoint_transform( LT_convolution, test_out )' * test_in ) / ( test_out' * forward_transform( LT_convolution, test_in ) );
+adjointness = ( test_out' * forward_transform( LT_convolution_dft, test_in ) - adjoint_transform( LT_convolution_dft, test_out )' * test_in ) / ( test_out' * forward_transform( LT_convolution_dft, test_in ) );

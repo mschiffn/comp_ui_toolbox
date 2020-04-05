@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-19
-% modified: 2020-02-17
+% modified: 2020-04-03
 %
 classdef exponential < regularization.tgc.tgc
 
@@ -188,7 +188,7 @@ classdef exponential < regularization.tgc.tgc
             end % for index_mix = 1:numel( signal_matrices )
 
             % create discrete convolution for each mix
-            LTs_conv = num2cell( linear_transforms.convolution( kernels, cat( 1, N_observations_mix{ : } ) ) );
+            LTs_conv = num2cell( linear_transforms.convolutions.fft( kernels, cat( 1, N_observations_mix{ : } ) ) );
 
             %--------------------------------------------------------------
             % d) concatenate discrete convolutions diagonally

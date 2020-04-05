@@ -3,9 +3,8 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-04-06
-% modified: 2020-02-26
+% modified: 2020-04-02
 %
-% TODO: change functionality...
 classdef incident_wave
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -19,58 +18,50 @@ classdef incident_wave
 
 	end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods
 
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = incident_wave( sequence, filter )
+        function objects = incident_wave( p_incident, p_incident_grad )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class scattering.sequences.sequence (scalar)
-            if ~( isa( sequence, 'scattering.sequences.sequence' ) && isscalar( sequence ) )
-                errorStruct.message     = 'sequence must be scattering.sequences.sequence!';
-                errorStruct.identifier	= 'incident_wave:NoSequence';
-                error( errorStruct );
+            % property validation functions ensure class processing.field for p_incident
+
+            % ensure nonempty p_incident_grad
+            if nargin < 2 || isempty( p_incident_grad )
+                p_incident_grad = [];
             end
+
+            % ensure cell array for p_incident_grad
+            if ~iscell( p_incident_grad )
+                p_incident_grad = { p_incident_grad };
+            end
+
+            % ensure equal number of dimensions and sizes
+            auxiliary.mustBeEqualSize( p_incident, p_incident_grad );
 
             %--------------------------------------------------------------
             % 2.) create incident waves
             %--------------------------------------------------------------
             % repeat default incident wave
-            objects = repmat( objects, size( sequence.settings ) );
+            objects = repmat( objects, size( p_incident ) );
 
             % iterate incident waves
             for index_object = 1:numel( sequence.settings )
 
-                %----------------------------------------------------------
-                % a) check type of wave
-                %----------------------------------------------------------
-                if isa( sequence.settings( index_object ).tx_unique, 'scattering.sequences.settings.controls.tx_PW' )
-
-                    objects( index_object ) = compute_p_in_pw( objects( index_object ), sequence.setup, sequence.settings( index_object ).tx_unique, sequence.settings( index_object ).v_d_unique );
-
-                else
-
-                    %------------------------------------------------------
-                    % b) arbitrary wave
-                    %------------------------------------------------------
-                    % determine number of active elements
-%                     N_elements_active = numel( sequence.settings( index_object ).tx_unique.indices_active );
-
-                    % compute incident acoustic pressure field (unique frequencies)
-                    objects( index_object ).p_incident = compute_p_in( sequence, index_object, filter );
-
-                end % if isa( sequence.settings( index_object ).tx_unique, 'scattering.sequences.settings.controls.tx_PW' )
+                % set independent properties
+                objects( index_object ).p_incident = p_incident( index_object );
+                objects( index_object ).p_incident_grad = p_incident_grad{ index_object };
 
             end % for index_object = 1:numel( sequence.settings )
 
-        end % function objects = incident_wave( sequence, filter )
+        end % function objects = incident_wave( p_incident, p_incident_grad )
 
 	end % methods
 
