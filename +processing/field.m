@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2020-01-10
+% modified: 2020-04-10
 %
 classdef field < processing.signal_matrix
 
@@ -40,6 +40,11 @@ classdef field < processing.signal_matrix
                 errorStruct.message = 'grids_FOV must be math.grid!';
                 errorStruct.identifier = 'field:NoGrids';
                 error( errorStruct );
+            end
+
+            % multiple axes / single grids_FOV
+            if ~isscalar( axes ) && isscalar( grids_FOV )
+                grids_FOV = repmat( grids_FOV, size( axes ) );
             end
 
             % ensure equal number of dimensions and sizes

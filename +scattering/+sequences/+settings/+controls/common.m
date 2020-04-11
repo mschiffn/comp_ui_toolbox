@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2020-01-11
+% modified: 2020-04-06
 %
 classdef (Abstract) common
 
@@ -14,7 +14,7 @@ classdef (Abstract) common
 
         % independent properties
         indices_active ( 1, : ) double { mustBePositive, mustBeInteger, mustBeFinite }	% indices of active array elements (1)
-        impulse_responses ( 1, : ) processing.signal_matrix                        % impulse responses of active channels
+        impulse_responses ( 1, : ) processing.signal_matrix                             % impulse responses of active channels
 
     end % properties
 
@@ -102,11 +102,14 @@ classdef (Abstract) common
         %------------------------------------------------------------------
         % spectral discretization
         %------------------------------------------------------------------
-        function settings = discretize( settings, varargin )
+        function settings = discretize( settings, Ts_ref, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % validate number of input arguments
+            narginchk( 1, 3 );
+
             % ensure class scattering.sequences.settings.controls.common
             if ~isa( settings, 'scattering.sequences.settings.controls.common' )
                 errorStruct.message = 'settings must be scattering.sequences.settings.controls.common!';
@@ -115,18 +118,14 @@ classdef (Abstract) common
             end
 
             % ensure existence of Ts_ref
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
-                Ts_ref = varargin{ 1 };
-            else
+            if nargin < 2
                 Ts_ref = [];
             end
 
             % method fourier_transform ensures valid Ts_ref
 
             % ensure existence of intervals_f
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
-                intervals_f = varargin{ 2 };
-            else
+            if nargin < 3
                 intervals_f = [];
             end
 
@@ -159,7 +158,7 @@ classdef (Abstract) common
 
             end % for index_object = 1:numel( settings )
 
-        end % function settings = discretize( settings, varargin )
+        end % function settings = discretize( settings, Ts_ref, intervals_f )
 
         %------------------------------------------------------------------
         % unique indices of active array elements

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2020-03-04
+% modified: 2020-03-09
 %
 classdef sequence
 
@@ -40,35 +40,40 @@ classdef sequence
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = sequence( setups, settings )
+        function objects = sequence( setups, u_tx_tilde, impulse_responses_tx, waves, controls_rx )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure class scattering.sequences.setups.setup
             if ~isa( setups, 'scattering.sequences.setups.setup' )
-                errorStruct.message     = 'setups must be scattering.sequences.setups.setup!';
-                errorStruct.identifier	= 'sequence:NoSetup';
+                errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
+                errorStruct.identifier = 'sequence:NoSetup';
                 error( errorStruct );
             end
 
-            % ensure cell array for settings
-            if ~iscell( settings )
-                settings = { settings };
+            % ensure cell array for u_tx_tilde
+            if ~iscell( u_tx_tilde )
+                u_tx_tilde = { u_tx_tilde };
             end
 
-            % multiple setups / single settings
-            if ~isscalar( setups ) && isscalar( settings )
-                settings = repmat( settings, size( setups ) );
+            % ensure cell array for impulse_responses_tx
+            if ~iscell( impulse_responses_tx )
+                impulse_responses_tx = { impulse_responses_tx };
             end
 
-            % single setups / multiple settings
-            if isscalar( setups ) && ~isscalar( settings )
-                setups = repmat( setups, size( settings ) );
+            % ensure cell array for waves
+            if ~iscell( waves )
+                waves = { waves };
+            end
+
+            % ensure cell array for controls_rx
+            if ~iscell( controls_rx )
+                controls_rx = { controls_rx };
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( setups, settings );
+            [ setups, u_tx_tilde, impulse_responses_tx, waves, controls_rx ] = auxiliary.ensureEqualSize( setups, u_tx_tilde, impulse_responses_tx, waves, controls_rx );
 
             %--------------------------------------------------------------
             % 2.) create sequences of pulse-echo measurements
@@ -79,18 +84,12 @@ classdef sequence
             % iterate sequences of pulse-echo measurements
             for index_object = 1:numel( objects )
 
-                % ensure class scattering.sequences.settings.setting
-                if ~isa( settings{ index_object }, 'scattering.sequences.settings.setting' )
-                    errorStruct.message = 'settings must be scattering.sequences.settings.setting!';
-                    errorStruct.identifier = 'sequence:NoSetting';
-                    error( errorStruct );
-                end
-
-% TODO: ensure that settings are compatible w/ setup
+                % create pulse-echo measurement settings
+                settings_act = scattering.sequences.settings.setting( setups( index_object ), u_tx_tilde{ index_object }, impulse_responses_tx{ index_object }, waves{ index_object }, controls_rx{ index_object } );
 
                 % set independent properties
                 objects( index_object ).setup = setups( index_object );
-                objects( index_object ).settings = settings{ index_object };
+                objects( index_object ).settings = settings_act;
 
                 % set dependent properties
                 [ objects( index_object ).interval_hull_t, objects( index_object ).interval_hull_f ] = hulls( objects( index_object ).settings );

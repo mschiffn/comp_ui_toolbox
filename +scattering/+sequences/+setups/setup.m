@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2020-02-27
+% modified: 2020-04-09
 %
 classdef setup
 
@@ -374,6 +374,253 @@ classdef setup
             end
 
         end % function intervals_tof = times_of_flight( setups, varargin )
+
+        %------------------------------------------------------------------
+        % adjust recording time intervals
+        %------------------------------------------------------------------
+        function settings_rx = adjust_intervals_t( setup, settings_tx, settings_rx )
+% TODO: vectorize for multiple setups!
+            % print status
+            time_start = tic;
+            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+            fprintf( '\t %s: adjusting recording time intervals...', str_date_time );
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.sequences.setups.setup (scalar)
+            if ~( isa( setup, 'scattering.sequences.setups.setup' ) && isscalar( setup ) )
+                errorStruct.message = 'setup must be a single scattering.sequences.setups.setup!';
+                errorStruct.identifier = 'set_intervals_t:NoSetup';
+                error( errorStruct );
+            end
+
+            % ensure class scattering.sequences.settings.controls.tx
+            if ~isa( settings_tx, 'scattering.sequences.settings.controls.tx' )
+                errorStruct.message = 'settings_tx must be scattering.sequences.settings.controls.tx!';
+                errorStruct.identifier = 'set_intervals_t:NoSettingsTx';
+                error( errorStruct );
+            end
+
+            % ensure cell array for settings_rx
+            if ~iscell( settings_rx )
+                settings_rx = { settings_rx };
+            end
+
+            % ensure equal number of dimensions and sizes
+            [ settings_tx, settings_rx ] = auxiliary.ensureEqualSize( settings_tx, settings_rx );
+
+            %--------------------------------------------------------------
+            % 2.) recording time intervals
+            %--------------------------------------------------------------
+            % specify cell array for intervals_t
+            intervals_t = cell( size( settings_tx ) );
+
+            % iterate synthesis settings
+            for index_tx = 1:numel( settings_tx )
+
+                % ensure class scattering.sequences.settings.controls.rx
+                if ~isa( settings_rx{ index_tx }, 'scattering.sequences.settings.controls.rx' )
+                    errorStruct.message = 'settings_rx must be scattering.sequences.settings.controls.rx!';
+                    errorStruct.identifier = 'set_intervals_t:NoSettingsRx';
+                    error( errorStruct );
+                end
+
+                % number of active tx elements
+                N_active_tx = numel( settings_tx( index_tx ).indices_active );
+
+                % initialize lower and upper bounds on the support w/ zeros
+                t_lbs = physical_values.second( zeros( size( settings_rx{ index_tx } ) ) );
+                t_ubs = physical_values.second( zeros( size( settings_rx{ index_tx } ) ) );
+
+                % iterate mixed voltage signals
+                for index_rx = 1:numel( settings_rx{ index_tx } )
+
+                    % number of active rx elements
+                    N_active_rx = numel( settings_rx{ index_tx }( index_rx ).indices_active );
+
+                    % initialize lower and upper bounds on the support
+                    t_lbs_all = physical_values.second( zeros( N_active_tx, N_active_rx ) );
+                    t_ubs_all = physical_values.second( zeros( N_active_tx, N_active_rx ) );
+
+                    % iterate active rx elements
+                    for index_active_rx = 1:N_active_rx
+
+                        % active rx element
+                        index_element_rx = settings_rx{ index_tx }( index_rx ).indices_active( index_active_rx );
+
+                        % support of impulse responses
+                        t_lb_rx_act = settings_rx{ index_tx }( index_rx ).impulse_responses.axis.members( 1 );
+                        t_ub_rx_act = settings_rx{ index_tx }( index_rx ).impulse_responses.axis.members( end );
+
+                        % iterate active tx elements
+                        for index_active_tx = 1:N_active_tx
+
+                            % active tx element
+                            index_element_tx = settings_tx( index_tx ).indices_active( index_active_tx );
+
+                            % support of excitation_voltages
+                            indicator = double( abs( settings_tx( index_tx ).excitation_voltages.samples( :, index_active_tx ) ) ) >= eps;
+                            members = settings_tx( index_tx ).excitation_voltages.axis.members( indicator );
+                            t_lb_tx_act = members( 1 );
+                            t_ub_tx_act = members( end );
+
+                            % support of impulse responses
+                            indicator = double( abs( settings_tx( index_tx ).impulse_responses.samples( :, index_active_tx ) ) ) >= eps;
+                            members = settings_tx( index_tx ).impulse_responses.axis.members( indicator );
+                            t_lb_tx_act = t_lb_tx_act + members( 1 );
+                            t_ub_tx_act = t_ub_tx_act + members( end );
+
+                            % compute lower and upper bounds on the recording time intervals
+                            t_lbs_all( index_active_tx, index_active_rx ) = t_lb_rx_act + t_lb_tx_act + setup.intervals_tof( index_element_tx, index_element_rx ).lb;
+                            t_ubs_all( index_active_tx, index_active_rx ) = t_ub_rx_act + t_ub_tx_act + setup.intervals_tof( index_element_tx, index_element_rx ).ub;
+
+                        end % for index_active_tx = 1:N_active_tx
+
+                    end % for index_active_rx = 1:N_active_rx
+
+                    % extract maximum support
+                    t_lbs( index_rx ) = min( t_lbs_all( : ) );
+                    t_ubs( index_rx ) = max( t_ubs_all( : ) );
+
+                end % for index_rx = 1:numel( settings_rx{ index_tx } )
+
+                % create time intervals for all mixes
+                intervals_t{ index_tx } = math.interval( t_lbs, t_ubs );
+
+                % intersect with recording time intervals
+                settings_rx{ index_tx } = intersect( settings_rx{ index_tx }, intervals_t{ index_tx } );
+
+            end % for index_tx = 1:numel( settings_tx )
+
+            % avoid cell array for single settings_tx
+            if isscalar( settings_tx )
+                settings_rx = settings_rx{ 1 };
+            end
+
+            % infer and print elapsed time
+            time_elapsed = toc( time_start );
+            fprintf( 'done! (%f s)\n', time_elapsed );
+
+        end % function settings_rx = adjust_intervals_t( setup, settings_tx, settings_rx )
+
+        %------------------------------------------------------------------
+        % compute excitation voltages
+        %------------------------------------------------------------------
+        function [ excitation_voltages, indices_active ] = compute_excitation_voltages( setups, u_tx_tilde, waves )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.sequences.setups.setup
+            if ~isa( setups, 'scattering.sequences.setups.setup' )
+                errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
+                errorStruct.identifier = 'compute_excitation_voltages:NoSetups';
+                error( errorStruct );
+            end
+
+            % ensure cell array for u_tx_tilde
+            if ~iscell( u_tx_tilde )
+                u_tx_tilde = { u_tx_tilde };
+            end
+
+            % ensure cell array for waves
+            if ~iscell( waves )
+                waves = { waves };
+            end
+
+            % ensure equal number of dimensions and sizes
+            [ setups, u_tx_tilde, waves ] = auxiliary.ensureEqualSize( setups, u_tx_tilde, waves );
+
+            %--------------------------------------------------------------
+            % 2.) compute excitation voltages
+            %--------------------------------------------------------------
+            % specify cell arrays
+            excitation_voltages = cell( size( setups ) );
+            indices_active = cell( size( setups ) );
+
+            % iterate pulse-echo measurement setups
+            for index_setup = 1:numel( setups )
+
+                %----------------------------------------------------------
+                % a) check arguments
+                %----------------------------------------------------------
+                % ensure class processing.signal_matrix
+                if ~isa( u_tx_tilde{ index_setup }, 'processing.signal_matrix' )
+                    errorStruct.message = 'u_tx_tilde must be processing.signal_matrix!';
+                    errorStruct.identifier = 'compute_excitation_voltages:NoSignalArrays';
+                    error( errorStruct );
+                end
+% TODO: regular axis!!!
+                % ensure class scattering.sequences.syntheses.wave
+                if ~isa( waves{ index_setup }, 'scattering.sequences.syntheses.wave' )
+                    errorStruct.message = 'waves must be scattering.sequences.syntheses.wave!';
+                    errorStruct.identifier = 'compute_excitation_voltages:NoWaves';
+                    error( errorStruct );
+                end
+
+                % ensure equal number of dimensions and sizes
+                [ u_tx_tilde{ index_setup }, waves{ index_setup } ] = auxiliary.ensureEqualSize( u_tx_tilde{ index_setup }, waves{ index_setup } );
+
+                %----------------------------------------------------------
+                % b) compute excitation voltages
+                %----------------------------------------------------------
+                % compute time delays and apodization weights
+                [ time_delays, apodization_weights, indices_active{ index_setup } ] = compute_delays( waves{ index_setup }, setups( index_setup ).xdc_array, setups( index_setup ).homogeneous_fluid.c_avg );
+
+                % ensure cell arrays
+                if ~iscell( time_delays )
+                    time_delays = { time_delays };
+                    apodization_weights = { apodization_weights };
+                end
+
+                % specify cell array for excitation_voltages
+                excitation_voltages{ index_setup } = cell( size( u_tx_tilde{ index_setup } ) );
+
+                % iterate incident waves
+                for index_wave = 1:numel( u_tx_tilde{ index_setup } )
+
+                    % quantize time delays
+                    indices_q = round( time_delays{ index_wave } / setups( index_setup ).T_clk );
+
+                    %------------------------------------------------------
+                    % b) apply time delays to reference voltage signals
+                    %------------------------------------------------------
+% TODO: compute length differently!
+                    % unique deltas
+                    deltas_unique = [ u_tx_tilde{ index_setup }( index_wave ).axis.delta, setups( index_setup ).T_clk ];
+
+                    % largest delta_unique must be integer multiple of smaller deltas_unique
+                    delta_unique_max = max( deltas_unique );
+                    factors_int = round( delta_unique_max ./ deltas_unique );
+                    if any( abs( delta_unique_max ./ deltas_unique - factors_int ) > eps( factors_int ) )
+                        errorStruct.message = 'delta_unique_max must be integer multiple of all deltas_unique!';
+                        errorStruct.identifier = 'compute_excitation_voltages:NoIntegerMultiple';
+                        error( errorStruct );
+                    end
+
+                    % quantize new time duration using largest delta
+                    T_ref = ceil( ( abs( u_tx_tilde{ index_setup }( index_wave ).axis ) * u_tx_tilde{ index_setup }( index_wave ).axis.delta + max( indices_q ) * setups( index_setup ).T_clk ) / delta_unique_max ) * delta_unique_max;
+
+                    % compute Fourier representations
+                    u_tx = fourier_coefficients( u_tx_tilde{ index_setup }( index_wave ), T_ref );
+                    impulse_responses = processing.signal_matrix( u_tx.axis, apodization_weights{ index_wave }( : ).' .* exp( -2j * pi * u_tx.axis.members * setups( index_setup ).T_clk * indices_q( : ).' ) );
+                    excitation_voltages{ index_setup }{ index_wave } = signal( impulse_responses .* u_tx, double( u_tx_tilde{ index_setup }( index_wave ).axis.q_lb ), u_tx_tilde{ index_setup }( index_wave ).axis.delta );
+
+                end % for index_wave = 1:numel( u_tx_tilde{ index_setup } )
+
+                % reshape excitation_voltages
+                excitation_voltages{ index_setup } = reshape( cat( 1, excitation_voltages{ index_setup }{ : } ), size( waves{ index_setup } ) );
+
+            end % for index_setup = 1:numel( setups )
+
+            % avoid cell arrays for single setups
+            if isscalar( setups )
+                excitation_voltages = excitation_voltages{ 1 };
+                indices_active = indices_active{ 1 };
+            end
+
+        end % function [ excitation_voltages, indices_active ] = compute_excitation_voltages( setups, u_tx_tilde, waves )
 
         %------------------------------------------------------------------
         % discretize
@@ -921,6 +1168,10 @@ classdef setup
 	%% methods (private and hidden)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods (Access = private, Hidden)
+
+        %------------------------------------------------------------------
+        % compute excitation voltages (scalar)
+        %------------------------------------------------------------------
 
         %------------------------------------------------------------------
         % compute spatial transfer function (scalar)

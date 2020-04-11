@@ -38,36 +38,70 @@ classdef setting
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setting( settings_tx, settings_rx )
+        function objects = setting( setup, u_tx_tilde, impulse_responses_tx, waves, controls_rx )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure cell array for settings_rx
-            if ~iscell( settings_rx )
-                settings_rx = { settings_rx };
+            % ensure class scattering.sequences.setups.setup (scalar)
+            if ~( isa( setup, 'scattering.sequences.setups.setup' ) && isscalar( setup ) )
+                errorStruct.message = 'setup must be a single scattering.sequences.setups.setup!';
+                errorStruct.identifier = 'setting:NoSetup';
+                error( errorStruct );
+            end
+
+            % method compute_excitation_voltages ensures class scattering.sequences.setups.setup
+            % method compute_excitation_voltages ensures class processing.signal for u_tx_tilde
+
+            % ensure class processing.signal_matrix
+            if ~isa( impulse_responses_tx, 'processing.signal_matrix' )
+                errorStruct.message = 'impulse_responses_tx must be processing.signal_matrix!';
+                errorStruct.identifier = 'setting:NoSignalMatrix';
+                error( errorStruct );
+            end
+
+            % method compute_excitation_voltages ensures class scattering.sequences.syntheses.wave for waves
+
+            % ensure cell array for controls_rx
+            if ~iscell( controls_rx )
+                controls_rx = { controls_rx };
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( settings_tx, settings_rx );
+            [ u_tx_tilde, impulse_responses_tx, waves, controls_rx ] = auxiliary.ensureEqualSize( u_tx_tilde, impulse_responses_tx, waves, controls_rx );
 
             %--------------------------------------------------------------
             % 2.) create pulse-echo measurement settings
             %--------------------------------------------------------------
             % repeat default pulse-echo measurement setting
-            objects = repmat( objects, size( settings_tx ) );
+            objects = repmat( objects, size( u_tx_tilde ) );
+
+            % compute excitation voltages
+            [ excitation_voltages, indices_active ] = compute_excitation_voltages( setup, u_tx_tilde, waves );
+
+            % create tx controls
+% TODO: cut out impulse responses for active elements!
+            controls_tx = scattering.sequences.settings.controls.tx( indices_active, num2cell( impulse_responses_tx ), num2cell( excitation_voltages ) );
+
+            % correct recording time intervals
+            controls_rx = adjust_intervals_t( setup, controls_tx, controls_rx );
+
+            % ensure cell array for controls_rx
+            if ~iscell( controls_rx )
+                controls_rx = { controls_rx };
+            end
 
             % iterate pulse-echo measurement settings
-            for index_object = 1:numel( settings_tx )
+            for index_object = 1:numel( objects )
 
                 % set independent properties
-                objects( index_object ).tx = settings_tx( index_object );
-                objects( index_object ).rx = settings_rx{ index_object };
+                objects( index_object ).tx = controls_tx( index_object );
+                objects( index_object ).rx = controls_rx{ index_object };
 
                 % set dependent properties
                 [ objects( index_object ).interval_hull_t, objects( index_object ).interval_hull_f ] = hulls( objects( index_object ).rx );
 
-            end % for index_object = 1:numel( settings_tx )
+            end % for index_object = 1:numel( objects )
 
         end % function objects = setting( settings_tx, settings_rx )
 

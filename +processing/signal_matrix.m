@@ -218,6 +218,7 @@ classdef signal_matrix
             end
 
             % compute axes of relevant frequencies
+% TODO: error if bounds are infinite!
             axes_f = discretize( intervals_f, 1 ./ Ts_ref );
             lbs_q_f = reshape( [ axes_f.q_lb ], size( axes_f ) );
             ubs_q_f = reshape( [ axes_f.q_ub ], size( axes_f ) );
@@ -777,7 +778,7 @@ classdef signal_matrix
 
                 % ensure identical axes
 % TODO: allow margin of error! eps( 0 )?
-                if any( abs( args_1( index_object ).axis.members - args_2( index_object ).axis.members ) >= 1e-10 * args_1( index_object ).axis.members )
+                if any( abs( args_1( index_object ).axis.members - args_2( index_object ).axis.members ) > 1e-10 * args_1( index_object ).axis.members )
 %                 if ~isequal( args_1( index_object ).axis.members, args_2( index_object ).axis.members )
                     errorStruct.message = sprintf( 'args_1( %d ) and args_2( %d ) must have identical members in their axes!', index_object, index_object );
                     errorStruct.identifier = 'times:DiverseAxes';

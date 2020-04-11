@@ -4,7 +4,7 @@ function mustBeEqualSize( varargin )
 %
 % author: Martin F. Schiffner
 % date: 2019-02-01
-% modified: 2019-05-16
+% modified: 2020-04-09
 %
 
 	%----------------------------------------------------------------------
@@ -12,11 +12,10 @@ function mustBeEqualSize( varargin )
 	%----------------------------------------------------------------------
 	% check number of arguments
 	if nargin < 1
-        errorStruct.message     = 'At least one argument is required!';
-        errorStruct.identifier	= 'mustBeEqualSize:FewArguments';
+        errorStruct.message = 'At least one input argument is required!';
+        errorStruct.identifier = 'mustBeEqualSize:FewArguments';
         error( errorStruct );
     end
-    % assertion: nargin >= 1
 
 	%----------------------------------------------------------------------
 	% 2.) compare number of dimensions and sizes
@@ -30,7 +29,7 @@ function mustBeEqualSize( varargin )
         % ensure equal number of dimensions and sizes
         if ~isequal( size( varargin{ index_arg } ), size_ref )
             errorStruct.message = sprintf( 'Argument %d differs in dimension and/or size from the first argument!', index_arg );
-            errorStruct.identifier	= 'mustBeEqualSize:DimensionOrSizeMismatch';
+            errorStruct.identifier = 'mustBeEqualSize:DimensionOrSizeMismatch';
             error( errorStruct );
         end
 

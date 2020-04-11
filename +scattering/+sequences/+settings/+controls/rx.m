@@ -1,9 +1,9 @@
 %
-% superclass for all transducer control settings in recording mode
+% superclass for all system controls in receive mode (mixer settings)
 %
 % author: Martin F. Schiffner
 % date: 2019-02-03
-% modified: 2020-01-10
+% modified: 2020-04-07
 %
 classdef rx < scattering.sequences.settings.controls.common
 
@@ -16,7 +16,7 @@ classdef rx < scattering.sequences.settings.controls.common
         interval_t ( 1, 1 ) math.interval	% recording time interval
         interval_f ( 1, 1 ) math.interval	% frequency interval
 
-    end % properties
+	end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -31,12 +31,8 @@ classdef rx < scattering.sequences.settings.controls.common
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            if nargin == 0
-                indices_active = 1;
-                impulse_responses = physical_values.impulse_response( discretizations.set_discrete_time_regular( 0, 0, physical_values.time(1) ), physical_values.physical_value(1) );
-                intervals_t = math.interval( physical_values.time( 0 ), physical_values.time( 1 ) );
-                intervals_f = math.interval( physical_values.frequency( 1 ), physical_values.frequency( 2 ) );
-            end
+            % ensure correct number of arguments
+            narginchk( 2, 4 );
 
             % ensure cell array for indices_active
             if ~iscell( indices_active )
@@ -47,12 +43,35 @@ classdef rx < scattering.sequences.settings.controls.common
 
             % superclass ensures class processing.signal_matrix for impulse_responses
 
+            % ensure nonempty intervals_t
+            if nargin < 3 || isempty( intervals_t )
+                intervals_t = math.interval( physical_values.second( -Inf ), physical_values.second( Inf ) );
+            end
+
             % ensure class math.interval for intervals_t
-            if ~( isa( intervals_t, 'math.interval' ) && isa( intervals_f, 'math.interval' ) )
-                errorStruct.message = 'intervals_t and intervals_f must be math.interval!';
-                errorStruct.identifier = 'rx:NoIntervals';
+            if ~isa( intervals_t, 'math.interval' )
+                errorStruct.message = 'intervals_t must be math.interval!';
+                errorStruct.identifier = 'rx:NoTimeIntervals';
                 error( errorStruct );
             end
+
+            % ensure equal subclasses of physical_values.time
+            auxiliary.mustBeEqualSubclasses( 'physical_values.time', intervals_t.lb );
+
+            % ensure nonempty intervals_f
+            if nargin < 4 || isempty( intervals_f )
+                intervals_f = math.interval( physical_values.hertz( 0 ), physical_values.hertz( Inf ) );
+            end
+
+            % ensure class math.interval for intervals_f
+            if ~isa( intervals_f, 'math.interval' )
+                errorStruct.message = 'intervals_f must be math.interval!';
+                errorStruct.identifier = 'rx:NoFrequencyIntervals';
+                error( errorStruct );
+            end
+
+            % ensure equal subclasses of physical_values.frequency
+            auxiliary.mustBeEqualSubclasses( 'physical_values.frequency', intervals_f.lb );
 
             % multiple indices_active / single intervals_t
             if ~isscalar( indices_active ) && isscalar( intervals_t )
@@ -71,27 +90,13 @@ classdef rx < scattering.sequences.settings.controls.common
             auxiliary.mustBeEqualSize( indices_active, intervals_t, intervals_f );
 
             %--------------------------------------------------------------
-            % 2.) create transducer control settings in recording mode
+            % 2.) create mixer settings
             %--------------------------------------------------------------
             % constructor of superclass
             objects@scattering.sequences.settings.controls.common( indices_active, impulse_responses );
 
             % iterate transducer control settings in recording mode
             for index_object = 1:numel( objects )
-
-                % ensure time interval
-                if ~isa( intervals_t( index_object ).lb, 'physical_values.time' )
-                    errorStruct.message = sprintf( 'Bounds of intervals_t( %d ) must be physical_values.time!', index_object );
-                    errorStruct.identifier = 'rx:NoTimeInterval';
-                    error( errorStruct );
-                end
-
-                % ensure frequency interval
-                if ~isa( intervals_f( index_object ).lb, 'physical_values.frequency' )
-                    errorStruct.message = sprintf( 'Bounds of intervals_f( %d ) must be physical_values.frequency!', index_object );
-                    errorStruct.identifier = 'rx:NoFrequencyInterval';
-                    error( errorStruct );
-                end
 
                 % set independent properties
                 objects( index_object ).interval_t = intervals_t( index_object );
@@ -104,15 +109,15 @@ classdef rx < scattering.sequences.settings.controls.common
         %------------------------------------------------------------------
         % spectral discretization (overload discretize method)
         %------------------------------------------------------------------
-        function settings_rx = discretize( settings_rx, varargin )
+        function settings_rx = discretize( settings_rx, Ts_ref, intervals_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure correct number of arguments
             if nargin ~= 1 && nargin ~= 3
-                errorStruct.message     = 'Either one or three arguments are required!';
-                errorStruct.identifier	= 'discretize:Arguments';
+                errorStruct.message = 'Either one or three arguments are required!';
+                errorStruct.identifier = 'discretize:Arguments';
                 error( errorStruct );
             end
 
@@ -123,12 +128,6 @@ classdef rx < scattering.sequences.settings.controls.common
                 Ts_ref = reshape( abs( [ settings_rx.interval_t ] ), size( settings_rx ) );
                 intervals_f = reshape( [ settings_rx.interval_f ], size( settings_rx ) );
 
-            else
-
-                % use external intervals
-                Ts_ref = varargin{ 1 };
-                intervals_f = varargin{ 2 };
-
             end % if nargin == 1
 
             %--------------------------------------------------------------
@@ -136,7 +135,54 @@ classdef rx < scattering.sequences.settings.controls.common
             %--------------------------------------------------------------
             settings_rx = discretize@scattering.sequences.settings.controls.common( settings_rx, Ts_ref, intervals_f );
 
-        end % function settings_rx = discretize( settings_rx, varargin )
+        end % function settings_rx = discretize( settings_rx, Ts_ref, intervals_f )
+
+        %------------------------------------------------------------------
+        % intersect recording time intervals
+        %------------------------------------------------------------------
+        function settings_rx = intersect( settings_rx, intervals_t )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure correct number of input arguments
+            narginchk( 2, 2 );
+
+            % ensure class scattering.sequences.settings.controls.rx
+            if ~isa( settings_rx, 'scattering.sequences.settings.controls.rx' )
+                errorStruct.message = 'settings_rx must be scattering.sequences.settings.controls.rx!';
+                errorStruct.identifier = 'intersect:NoSettingsRx';
+                error( errorStruct );
+            end
+
+            % ensure class math.interval
+            if ~isa( intervals_t, 'math.interval' )
+                errorStruct.message = 'intervals_t must be math.interval!';
+                errorStruct.identifier = 'intersect:NoTimeIntervals';
+                error( errorStruct );
+            end
+
+            % ensure equal subclasses of physical_values.time
+            auxiliary.mustBeEqualSubclasses( 'physical_values.time', intervals_t.lb );
+
+            % ensure equal number of dimensions and sizes
+            [ settings_rx, intervals_t ] = auxiliary.ensureEqualSize( settings_rx, intervals_t );
+
+            %--------------------------------------------------------------
+            % 2.) intersect recording time intervals
+            %--------------------------------------------------------------
+            for index_object = 1:numel( settings_rx )
+
+                % determine intersection
+                t_lb = max( settings_rx( index_object ).interval_t.lb, intervals_t( index_object ).lb );
+                t_ub = min( settings_rx( index_object ).interval_t.ub, intervals_t( index_object ).ub );
+
+                % correct recording time interval
+                settings_rx( index_object ).interval_t = math.interval( t_lb, t_ub );
+
+            end % for index_object = 1:numel( settings_rx )
+
+        end % function settings_rx = intersect( settings_rx, intervals_t )
 
         %------------------------------------------------------------------
         % convex hulls of all intervals
@@ -150,83 +196,6 @@ classdef rx < scattering.sequences.settings.controls.common
             interval_hull_f = hull( [ settings_rx.interval_f ] );
 
         end % function [ interval_hull_t, interval_hull_f ] = hulls( settings_rx )
-
-        %------------------------------------------------------------------
-        % estimate recording time intervals
-        %------------------------------------------------------------------
-        function intervals_t = determine_interval_t( settings_rx, setup, settings_tx )
-
-            %--------------------------------------------------------------
-            % 1.) lower and upper bounds on the times-of-flight
-            %--------------------------------------------------------------
-            intervals_tof = times_of_flight( setup, { settings_tx.indices_active }, { settings_rx.indices_active } );
-
-            %--------------------------------------------------------------
-            % 2.) estimate support of each mix
-            %--------------------------------------------------------------
-            N_incident = numel( object.settings );
-            intervals_t = cell( N_incident, 1 );
-            hulls = repmat( tof( 1, 1 ), [ N_incident, 1 ] );
-
-            for index_incident = 1:N_incident
-
-                % indices of active tx elements
-                indices_tx_act = object.settings( index_incident ).tx.indices_active;
-                N_elements_tx = numel( indices_tx_act );
-
-                % determine support of each mix
-                N_mix = numel( object.settings( index_incident ).mixes );
-
-                % initialize lower and upper bounds on the support
-                t_lbs = physical_values.time( zeros( 1, N_mix ) );
-                t_ubs = physical_values.time( zeros( 1, N_mix ) );
-
-                for index_mix = 1:N_mix
-
-                    % indices of active rx elements
-                    indices_rx_act = object.settings( index_incident ).rx( index_mix ).indices_active;
-                    N_elements_rx = numel( indices_rx_act );
-
-                    % allocate memory
-                    t_lbs_all = physical_values.time( zeros( N_elements_tx, N_elements_rx ) );
-                    t_ubs_all = physical_values.time( zeros( N_elements_tx, N_elements_rx ) );
-
-                    % check all combinations of active tx and rx elements
-                    for index_tx = 1:N_elements_tx
-
-                        % index of tx array element
-                        index_element_tx = indices_tx_act( index_tx );
-
-                        % support of excitation voltage
-                        t_lb_tx_act = object.settings( index_incident ).tx.excitation_voltages( index_tx ).set_t.S( 1 ) + object.settings( index_incident ).tx.time_delays( index_tx );
-                        t_ub_tx_act = object.settings( index_incident ).tx.excitation_voltages( index_tx ).set_t.S( end ) + object.settings( index_incident ).tx.time_delays( index_tx );
-
-                        for index_rx = 1:N_elements_rx
-
-                            % index of rx array element
-                            index_element_rx = indices_rx_act( index_rx );
-
-                            % support of impulse response
-                            t_lb_rx_act = object.settings( index_incident ).rx( index_mix ).impulse_responses( index_rx ).set_t.S( 1 );
-                            t_ub_rx_act = object.settings( index_incident ).rx( index_mix ).impulse_responses( index_rx ).set_t.S( end );
-
-                            t_lbs_all( index_tx, index_rx ) = t_lb_tx_act + tof( index_element_tx, index_element_rx ).bounds( 1 ) + t_lb_rx_act;
-                            t_ubs_all( index_tx, index_rx ) = t_ub_tx_act + tof( index_element_tx, index_element_rx ).bounds( 2 ) + t_ub_rx_act;
-
-                        end % for index_rx = 1:N_elements_rx
-                    end % for index_tx = 1:N_elements_tx
-
-                    t_lbs( index_mix ) = min( t_lbs_all );
-                    t_ubs( index_mix ) = max( t_ubs_all );
-
-                end % for index_mix = 1:N_mix
-
-                % create time intervals for all mixes
-                intervals_t{ index_incident } = math.interval_time( t_lbs, t_ubs );
-
-            end % for index_incident = 1:N_incident
-
-        end % function [ intervals_t, hulls ] = determine_interval_t( object )
 
         %------------------------------------------------------------------
         % compute numbers of observations

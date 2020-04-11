@@ -34,17 +34,17 @@ classdef incident_wave
             % property validation functions ensure class processing.field for p_incident
 
             % ensure nonempty p_incident_grad
-            if nargin < 2 || isempty( p_incident_grad )
-                p_incident_grad = [];
-            end
+%             if nargin < 2 || isempty( p_incident_grad )
+%                 p_incident_grad = [];
+%             end
 
             % ensure cell array for p_incident_grad
-            if ~iscell( p_incident_grad )
-                p_incident_grad = { p_incident_grad };
-            end
+%             if ~iscell( p_incident_grad )
+%                 p_incident_grad = { p_incident_grad };
+%             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( p_incident, p_incident_grad );
+%             auxiliary.mustBeEqualSize( p_incident, p_incident_grad );
 
             %--------------------------------------------------------------
             % 2.) create incident waves
@@ -53,13 +53,13 @@ classdef incident_wave
             objects = repmat( objects, size( p_incident ) );
 
             % iterate incident waves
-            for index_object = 1:numel( sequence.settings )
+            for index_object = 1:numel( objects )
 
                 % set independent properties
                 objects( index_object ).p_incident = p_incident( index_object );
-                objects( index_object ).p_incident_grad = p_incident_grad{ index_object };
+%                 objects( index_object ).p_incident_grad = p_incident_grad{ index_object };
 
-            end % for index_object = 1:numel( sequence.settings )
+            end % for index_object = 1:numel( objects )
 
         end % function objects = incident_wave( p_incident, p_incident_grad )
 

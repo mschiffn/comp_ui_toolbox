@@ -1,9 +1,9 @@
 %
-% superclass for all transducer control settings in synthesis mode
+% superclass for all control settings in synthesis mode
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2020-01-11
+% modified: 2020-04-07
 %
 classdef tx < scattering.sequences.settings.controls.common
 
@@ -112,11 +112,7 @@ classdef tx < scattering.sequences.settings.controls.common
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure correct number of arguments
-            if nargin ~= 3
-                errorStruct.message = 'Three arguments are required!';
-                errorStruct.identifier = 'discretize:InvalidNumberOfArguments';
-                error( errorStruct );
-            end
+            narginchk( 3, 3 );
 
             % multiple settings_tx / single Ts_ref
             if ~isscalar( settings_tx ) && isscalar( Ts_ref )
