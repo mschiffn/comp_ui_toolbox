@@ -547,14 +547,24 @@ classdef setup
                 %----------------------------------------------------------
                 % ensure class processing.signal_matrix
                 if ~isa( u_tx_tilde{ index_setup }, 'processing.signal_matrix' )
-                    errorStruct.message = 'u_tx_tilde must be processing.signal_matrix!';
+                    errorStruct.message = sprintf( 'u_tx_tilde{ %d } must be processing.signal_matrix!', index_setup );
                     errorStruct.identifier = 'compute_excitation_voltages:NoSignalArrays';
                     error( errorStruct );
                 end
-% TODO: regular axis!!!
+
+                % ensure equal subclasses of math.sequence_increasing_regular_quantized
+                auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular_quantized', u_tx_tilde{ index_setup }.axis );
+
+                % ensure single or N_elements voltage signals
+                if any( ( [ u_tx_tilde{ index_setup }.N_signals ] ~= 1 ) & ( [ u_tx_tilde{ index_setup }.N_signals ] ~= setups( index_setup ).xdc_array.N_elements ) )
+                    errorStruct.message = sprintf( 'The numbers of signals in u_tx_tilde{ %d } must equal unity or the number of array elements %d!', index_setup, setups( index_setup ).xdc_array.N_elements );
+                    errorStruct.identifier = 'compute_excitation_voltages:InvalidNumberOfSignals';
+                    error( errorStruct );
+                end
+
                 % ensure class scattering.sequences.syntheses.wave
                 if ~isa( waves{ index_setup }, 'scattering.sequences.syntheses.wave' )
-                    errorStruct.message = 'waves must be scattering.sequences.syntheses.wave!';
+                    errorStruct.message = sprintf( 'waves{ %d } must be scattering.sequences.syntheses.wave!', index_setup );
                     errorStruct.identifier = 'compute_excitation_voltages:NoWaves';
                     error( errorStruct );
                 end
@@ -574,38 +584,34 @@ classdef setup
                     apodization_weights = { apodization_weights };
                 end
 
-                % specify cell array for excitation_voltages
+                % subsample reference excitation voltages
+                if ~isa( u_tx_tilde{ index_setup }, 'processing.signal' )
+                    u_tx_tilde{ index_setup } = subsample( u_tx_tilde{ index_setup }, [], indices_active{ index_setup } );
+                end
+
+                % specify cell array for excitation_voltages{ index_setup }
                 excitation_voltages{ index_setup } = cell( size( u_tx_tilde{ index_setup } ) );
 
                 % iterate incident waves
                 for index_wave = 1:numel( u_tx_tilde{ index_setup } )
 
-                    % quantize time delays
-                    indices_q = round( time_delays{ index_wave } / setups( index_setup ).T_clk );
+                    %------------------------------------------------------
+                    % i.) quantize time delays
+                    %------------------------------------------------------
+                    time_delays_quantized = round( time_delays{ index_wave } / setups( index_setup ).T_clk ) * setups( index_setup ).T_clk;
 
                     %------------------------------------------------------
-                    % b) apply time delays to reference voltage signals
+                    % ii.) apply apodization weights and quantized time delays
                     %------------------------------------------------------
-% TODO: compute length differently!
-                    % unique deltas
-                    deltas_unique = [ u_tx_tilde{ index_setup }( index_wave ).axis.delta, setups( index_setup ).T_clk ];
-
-                    % largest delta_unique must be integer multiple of smaller deltas_unique
-                    delta_unique_max = max( deltas_unique );
-                    factors_int = round( delta_unique_max ./ deltas_unique );
-                    if any( abs( delta_unique_max ./ deltas_unique - factors_int ) > eps( factors_int ) )
-                        errorStruct.message = 'delta_unique_max must be integer multiple of all deltas_unique!';
-                        errorStruct.identifier = 'compute_excitation_voltages:NoIntegerMultiple';
-                        error( errorStruct );
-                    end
-
-                    % quantize new time duration using largest delta
-                    T_ref = ceil( ( abs( u_tx_tilde{ index_setup }( index_wave ).axis ) * u_tx_tilde{ index_setup }( index_wave ).axis.delta + max( indices_q ) * setups( index_setup ).T_clk ) / delta_unique_max ) * delta_unique_max;
+                    % compute maximum duration of excitation voltages
+                    T_ref = ceil( ( abs( u_tx_tilde{ index_setup }( index_wave ).axis ) * u_tx_tilde{ index_setup }( index_wave ).axis.delta + max( time_delays_quantized ) ) / u_tx_tilde{ index_setup }( index_wave ).axis.delta ) * u_tx_tilde{ index_setup }( index_wave ).axis.delta;
 
                     % compute Fourier representations
                     u_tx = fourier_coefficients( u_tx_tilde{ index_setup }( index_wave ), T_ref );
-                    impulse_responses = processing.signal_matrix( u_tx.axis, apodization_weights{ index_wave }( : ).' .* exp( -2j * pi * u_tx.axis.members * setups( index_setup ).T_clk * indices_q( : ).' ) );
-                    excitation_voltages{ index_setup }{ index_wave } = signal( impulse_responses .* u_tx, double( u_tx_tilde{ index_setup }( index_wave ).axis.q_lb ), u_tx_tilde{ index_setup }( index_wave ).axis.delta );
+                    u_tx_delayed = processing.signal_matrix( u_tx.axis, u_tx.samples .* apodization_weights{ index_wave }( : ).' .* exp( -2j * pi * u_tx.axis.members * time_delays_quantized( : ).' ) );
+
+                    % Fourier synthesis
+                    excitation_voltages{ index_setup }{ index_wave } = signal( u_tx_delayed, double( u_tx_tilde{ index_setup }( index_wave ).axis.q_lb ), u_tx_tilde{ index_setup }( index_wave ).axis.delta );
 
                 end % for index_wave = 1:numel( u_tx_tilde{ index_setup } )
 

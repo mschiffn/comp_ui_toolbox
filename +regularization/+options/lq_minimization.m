@@ -43,16 +43,8 @@ classdef lq_minimization < regularization.options.common
                 error( errorStruct );
             end
 
-            % iterate arguments
-            for index_arg = 1:numel( varargin )
-                % multiple options_common / single varargin{ index_arg }
-                if ~isscalar( options_common ) && isscalar( varargin{ index_arg } )
-                    varargin{ index_arg } = repmat( varargin{ index_arg }, size( options_common ) );
-                end
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options_common, varargin{ : } );
+            [ options_common, varargin{ : } ] = auxiliary.ensureEqualSize( options_common, varargin{ : } );
 
             %--------------------------------------------------------------
             % 2.) create lq-minimization options

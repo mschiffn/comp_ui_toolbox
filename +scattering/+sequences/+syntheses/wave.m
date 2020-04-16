@@ -33,9 +33,9 @@ classdef (Abstract) wave
             mustBeNonempty( size );
 
             %--------------------------------------------------------------
-            % 2.) create regularization options
+            % 2.) create incident waves
             %--------------------------------------------------------------
-            % repeat default regularization options
+            % repeat default incident waves
             objects = repmat( objects, size );
 
         end % function objects = wave( size )
@@ -43,7 +43,7 @@ classdef (Abstract) wave
         %------------------------------------------------------------------
         % compute time delays and apodization weights
         %------------------------------------------------------------------
-        function [ time_delays, apodization_weights, indices_active ] = compute_delays( waves, xdc_arrays, c_avg )
+        function [ time_delays, apodization_weights, indices_active, N_active ] = compute_delays( waves, xdc_arrays, c_avg )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -88,6 +88,9 @@ classdef (Abstract) wave
 
             end % for index_object = 1:numel( waves )
 
+            % determine numbers of active elements
+            N_active = cellfun( @numel, indices_active );
+
             % avoid cell arrays for single waves
             if isscalar( waves )
                 time_delays = time_delays{ 1 };
@@ -95,7 +98,7 @@ classdef (Abstract) wave
                 indices_active = indices_active{ 1 };
             end
 
-        end % function [ time_delays, apodization_weights, indices_active ] = compute_delays( waves, xdc_arrays, c_avg )
+        end % function [ time_delays, apodization_weights, indices_active, N_active ] = compute_delays( waves, xdc_arrays, c_avg )
 
 	end % methods
 

@@ -101,7 +101,7 @@ classdef sequence
         %------------------------------------------------------------------
         % apply windows to mixed voltage signals
         %------------------------------------------------------------------
-        function u_M_tilde_window = apply_windows( sequences, u_M_tilde, varargin )
+        function u_M_tilde_window = apply_windows( sequences, u_M_tilde, setting_window, indices_measurement )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -119,16 +119,19 @@ classdef sequence
             end
 
             % ensure nonempty setting_window
-            if nargin >= 3 && isa( varargin{ 1 }, 'auxiliary.setting_window' )
-                setting_window = varargin{ 1 };
-            else
-                setting_window = repmat( auxiliary.setting_window, size( sequences ) );
+            if nargin < 3 || isempty( setting_window )
+                setting_window = auxiliary.setting_window;
+            end
+
+            % ensure class auxiliary.setting_window
+            if ~isa( setting_window, 'auxiliary.setting_window' )
+                errorStruct.message = 'setting_window must be auxiliary.setting_window!';
+                errorStruct.identifier = 'apply_windows:NoWindowSettings';
+                error( errorStruct );
             end
 
             % ensure nonempty indices_measurement
-            if nargin >= 4 && ~isempty( varargin{ 2 } )
-                indices_measurement = varargin{ 2 };
-            else
+            if nargin < 4 || isempty( indices_measurement )
                 indices_measurement = cell( size( sequences ) );
                 for index_sequence = 1:numel( sequences )
                     indices_measurement{ index_sequence } = { ( 1:numel( sequences( index_sequence ).settings ) ) };
@@ -140,20 +143,8 @@ classdef sequence
                 indices_measurement = { indices_measurement };
             end
 
-% TODO: multiple sequences / single u_M_tilde
-
-            % multiple sequences / single setting_window
-            if ~isscalar( sequences ) && isscalar( setting_window )
-                setting_window = repmat( setting_window, size( sequences ) );
-            end
-
-            % multiple sequences / single indices_measurement
-            if ~isscalar( sequences ) && isscalar( indices_measurement )
-                indices_measurement = repmat( indices_measurement, size( sequences ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, u_M_tilde, setting_window, indices_measurement );
+            [ sequences, u_M_tilde, setting_window, indices_measurement ] = auxiliary.ensureEqualSize( sequences, u_M_tilde, setting_window, indices_measurement );
 
             %--------------------------------------------------------------
             % 2.) apply window functions
@@ -308,12 +299,12 @@ classdef sequence
                 u_M_tilde_window = u_M_tilde_window{ 1 };
             end
 
-        end % function u_M_tilde_window = apply_windows( sequences, u_M_tilde, varargin )
+        end % function u_M_tilde_window = apply_windows( sequences, u_M_tilde, setting_window, indices_measurement )
 
         %------------------------------------------------------------------
         % synthesize mixed voltage signals
         %------------------------------------------------------------------
-        function [ u_M_tilde, u_M ] = synthesize_voltage_signals( sequences, u_SA_tilde, varargin )
+        function [ u_M_tilde, u_M ] = synthesize_voltage_signals( sequences, u_SA_tilde )
 
             % print status
             time_start = tic;
@@ -335,13 +326,8 @@ classdef sequence
                 u_SA_tilde = { u_SA_tilde };
             end
 
-            % multiple sequences / single u_SA_tilde
-            if ~isscalar( sequences ) && isscalar( u_SA_tilde )
-                u_SA_tilde = repmat( u_SA_tilde, size( sequences ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, u_SA_tilde );
+            [ sequences, u_SA_tilde ] = auxiliary.ensureEqualSize( sequences, u_SA_tilde );
 
             %--------------------------------------------------------------
             % 2.) synthesize mixed voltage signals
@@ -351,98 +337,104 @@ classdef sequence
             u_M = cell( size( sequences ) );
 
             % iterate sequential pulse-echo measurements
-            for index_object = 1:numel( sequences )
+            for index_sequence = 1:numel( sequences )
 
                 % ensure class processing.signal_matrix
-                if ~isa( u_SA_tilde{ index_object }, 'processing.signal_matrix' )
-                    errorStruct.message = sprintf( 'u_SA_tilde{ %d } must be processing.signal_matrix!', index_object );
+                if ~isa( u_SA_tilde{ index_sequence }, 'processing.signal_matrix' )
+                    errorStruct.message = sprintf( 'u_SA_tilde{ %d } must be processing.signal_matrix!', index_sequence );
                     errorStruct.identifier = 'synthesize_voltage_signals:NoSignalMatrices';
                     error( errorStruct );
                 end
 
-                % ensure suitable number of signals
-                if numel( u_SA_tilde{ index_object } ) ~= sequences( index_object ).setup.xdc_array.N_elements
-                    errorStruct.message = sprintf( 'Number of elements in u_SA_tilde{ %d } must equal the number of array elements!', index_object );
-                    errorStruct.identifier = 'synthesize_voltage_signals:InvalidSignalMatrices';
+                % ensure valid number of signal matrices
+                if numel( u_SA_tilde{ index_sequence } ) ~= sequences( index_sequence ).setup.xdc_array.N_elements
+                    errorStruct.message = sprintf( 'The number of elements in u_SA_tilde{ %d } must equal the number of elements in sequences( %d ).setup.xdc_array!', index_sequence, index_sequence );
+                    errorStruct.identifier = 'synthesize_voltage_signals:InvalidNumberOfSignalMatrices';
                     error( errorStruct );
                 end
 
-% TODO: ensure time axes
-% TODO: mixing
+                % ensure valid numbers of signals
+                if any( [ u_SA_tilde{ index_sequence }.N_signals ] ~= sequences( index_sequence ).setup.xdc_array.N_elements )
+                    errorStruct.message = sprintf( 'The number of signals in each u_SA_tilde{ %d } must equal the number of elements in sequences( %d ).setup.xdc_array!', index_sequence, index_sequence );
+                    errorStruct.identifier = 'synthesize_voltage_signals:InvalidNumberOfSignals';
+                    error( errorStruct );
+                end
+
+                % ensure equal subclasses of math.sequence_increasing_regular_quantized
+                auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular_quantized', u_SA_tilde{ index_sequence }.axis );
+
+                % ensure equal subclasses of class physical_values.volt
+                auxiliary.mustBeEqualSubclasses( 'physical_values.volt', u_SA_tilde{ index_sequence }.samples );
+
+                % extract axes
+                axes = reshape( [ u_SA_tilde{ index_sequence }.axis ], size( u_SA_tilde{ index_sequence } ) );
+
+                % ensure equal subclasses of physical_values.time
+                auxiliary.mustBeEqualSubclasses( 'physical_values.time', axes.delta );
+
+% TODO: time duration of SA?
+                T_SA = abs( axes ) .* reshape( [ axes.delta ], size( axes ) );
 
                 % extract unique deltas from all transducer control settings
-                deltas_unique = unique( [ unique_deltas( sequences( index_object ).settings ), u_SA_tilde{ index_object }( 1 ).axis.delta ] );
-
+                deltas_unique = unique( [ axes.delta ] );
+                
                 % largest delta_unique must be integer multiple of smaller deltas_unique
                 delta_unique_max = max( deltas_unique );
                 mustBeInteger( delta_unique_max ./ deltas_unique );
 
-                % quantize hull of all recording time intervals using delta_unique_max
-%                 interval_hull_t_quantized = quantize( sequences( index_object ).interval_hull_t, delta_unique_max );
-
-                % determine recording time intervals
-                N_samples_t_SA = cellfun( @abs, { u_SA_tilde{ index_object }.axis } );
-                N_samples_t_IR = cellfun( @( x ) abs( x.impulse_responses.axis ), { sequences( index_object ).settings.tx } );
-
-                % quantize hull of all recording time intervals using delta_unique_max
-                interval_t = math.interval_quantized( 0, max( N_samples_t_SA ) + max( N_samples_t_IR ), u_SA_tilde{ index_object }( 1 ).axis.delta );
-%                 interval_t = math.interval_quantized( 0, 3415, u_SA_tilde{ index_object }( 1 ).axis.delta );
-                interval_hull_t_quantized = quantize( interval_t, delta_unique_max );
-
-                % compute Fourier coefficients
-                interval_f = math.interval( physical_values.hertz( 0 ), physical_values.hertz( 19e6 ) );
-%                 u_SA = fourier_coefficients( u_SA_tilde{ index_object }, abs( interval_hull_t_quantized ), sequences( index_object ).interval_hull_f );
-                u_SA = fourier_coefficients( u_SA_tilde{ index_object }, abs( interval_hull_t_quantized ), interval_f );
+                % ensure equal subclasses of scattering.sequences.settings.controls.tx_wave
+                auxiliary.mustBeEqualSubclasses( 'scattering.sequences.settings.controls.tx_wave', sequences( index_sequence ).settings.tx );
 
                 % specify cell array for samples
-                samples = cell( size( sequences( index_object ).settings ) );
+                u_M_tilde{ index_sequence } = cell( size( sequences( index_sequence ).settings ) );
+                u_M{ index_sequence } = cell( size( sequences( index_sequence ).settings ) );
+                samples = cell( size( sequences( index_sequence ).settings ) );
 
                 % iterate sequential pulse-echo measurements
-                for index_measurement = 1:numel( sequences( index_object ).settings )
+                for index_measurement = 1:numel( sequences( index_sequence ).settings )
 
                     % print progress in percent
-                    fprintf( '%5.1f %%', ( index_measurement - 1 ) / numel( sequences( index_object ).settings ) * 1e2 );
+                    fprintf( '%5.1f %%', ( index_measurement - 1 ) / numel( sequences( index_sequence ).settings ) * 1e2 );
 
-                    % ensure class processing.delta_matrix
-                    if ~isa( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, 'processing.delta_matrix' )
-                        errorStruct.message = 'u_SA_tilde must be processing.delta_matrix!';
-                        errorStruct.identifier = 'synthesize_voltage_signals:NoDeltaMatrix';
-                        error( errorStruct );
-                    end
+                    % compute time delays and apodization weights
+                    [ time_delays, apodization_weights, indices_active ] = compute_delays( sequences( index_sequence ).settings( index_measurement ).tx.wave, sequences( index_sequence ).setup.xdc_array, sequences( index_sequence ).setup.homogeneous_fluid.c_avg );
 
-                    % compute fourier transforms
-%                     impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, abs( interval_hull_t_quantized ), sequences( index_object ).interval_hull_f );
-                    impulse_responses = fourier_transform( sequences( index_object ).settings( index_measurement ).tx.impulse_responses, abs( interval_hull_t_quantized ), interval_f );
+                    % quantize time delays
+                    time_delays_quantized = round( time_delays / sequences( index_sequence ).setup.T_clk ) * sequences( index_sequence ).setup.T_clk;
 
-                    % number of active array elements
-                    N_elements_active_tx = numel( sequences( index_object ).settings( index_measurement ).tx.indices_active );
+                    % compute maximum duration of excitation voltages
+                    T_ref = ceil( ( max( T_SA( indices_active ) ) + max( time_delays_quantized ) ) / delta_unique_max ) * delta_unique_max;
+
+                    % compute Fourier coefficients
+                    u_SA = fourier_coefficients( u_SA_tilde{ index_sequence }( indices_active ), T_ref, sequences( index_sequence ).settings( index_measurement ).interval_hull_f );
 
                     % initialize samples
                     samples{ index_measurement } = physical_values.volt( zeros( size( u_SA( 1 ).samples ) ) );
 
                     % iterate active array elements
-                    for index_active_tx = 1:N_elements_active_tx
+                    for index_active = 1:numel( indices_active )
 
-                        % index of active array element
-                        index_element_tx = sequences( index_object ).settings( index_measurement ).tx.indices_active( index_active_tx );
+                        % apply time delay and apodization weight
+                        samples{ index_measurement } = samples{ index_measurement } + apodization_weights( index_active ) * u_SA( index_active ).samples .* exp( -2j * pi * u_SA( 1 ).axis.members * time_delays_quantized( index_active ) );
 
-                        % compute voltage signals
-                        samples{ index_measurement } = samples{ index_measurement } + physical_values.volt( double( u_SA( index_element_tx ).samples .* impulse_responses.samples( :, index_active_tx ) ) );
+                    end % for index_active = 1:numel( indices_active )
 
-                    end % for index_active_tx = 1:N_elements_active_tx
+                    % create signal matrices
+                    u_M{ index_sequence }{ index_measurement } = processing.signal_matrix( u_SA( 1 ).axis, samples{ index_measurement } );
 
                     % erase progress in percent
                     fprintf( '\b\b\b\b\b\b\b' );
 
-                end % for index_measurement = 1:numel( sequences( index_object ).settings )
+                end % for index_measurement = 1:numel( sequences( index_sequence ).settings )
 
-                % create signal matrices
-                u_M{ index_object } = processing.signal_matrix( u_SA( 1 ).axis, samples );
+                % concatenate vertically
+                u_M{ index_sequence } = cat( 1, u_M{ index_sequence }{ : } );
 
                 % compute samples in time domain
-                u_M_tilde{ index_object } = signal( u_M{ index_object }, 0, u_SA_tilde{ index_object }( 1 ).axis.delta );
+                u_M_tilde{ index_sequence } = signal( u_M{ index_sequence }, 0, delta_unique_max );
+% TODO: mixing
 
-            end % for index_object = 1:numel( sequences )
+            end % for index_sequence = 1:numel( sequences )
 
             % avoid cell arrays for single sequences
             if isscalar( sequences )
@@ -454,7 +446,7 @@ classdef sequence
             time_elapsed = toc( time_start );
             fprintf( 'done! (%f s)\n', time_elapsed );
 
-        end % function [ u_M_tilde, u_M ] = synthesize_voltage_signals( sequences, u_SA_tilde, varargin )
+        end % function [ u_M_tilde, u_M ] = synthesize_voltage_signals( sequences, u_SA_tilde )
 
         %------------------------------------------------------------------
         % spatiospectral discretization

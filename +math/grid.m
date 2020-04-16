@@ -274,7 +274,6 @@ classdef grid
         % cut out subgrid
         %------------------------------------------------------------------
         function [ grids_out, indicators ] = cut_out( grids_in, ROIs )
-% TODO: generalize for other ROIs
 % TODO: in place
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -286,44 +285,32 @@ classdef grid
                 error( errorStruct );
             end
 
-            % ensure class math.grid
-
-            % multiple grids_in / single ROIs
-            if ~isscalar( grids_in ) && isscalar( ROIs )
-                ROIs = repmat( ROIs, size( grids_in ) );
-            end
-
-            % single grids_in / multiple ROIs
-            if isscalar( grids_in ) && ~isscalar( ROIs )
-                grids_in = repmat( grids_in, size( ROIs ) );
+            % ensure class scattering.sequences.setups.geometry.shape
+            if ~isa( ROIs, 'scattering.sequences.setups.geometry.shape' )
+                errorStruct.message = 'ROIs must be scattering.sequences.setups.geometry.shape!';
+                errorStruct.identifier = 'cut_out:NoShapes';
+                error( errorStruct );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( grids_in, ROIs );
+            [ grids_in, ROIs ] = auxiliary.ensureEqualSize( grids_in, ROIs );
 
             %--------------------------------------------------------------
             % 2.) extract grid points
             %--------------------------------------------------------------
+            % get indicators for all grid points
+            indicators = iselement( ROIs, { grids_in.positions } );
+
+            % ensure cell array for indicators
+            if ~iscell( indicators )
+                indicators = { indicators };
+            end
+
             % specify cell array for positions_act
             positions_act = cell( size( grids_in ) );
-            indicators = cell( size( grids_in ) );
 
             % iterate grids
             for index_object = 1:numel( grids_in )
-
-                % init
-                indicator = false( size( grids_in( index_object ).positions ) );
-
-                % iterate dimensions
-                for index_dim = 1:grids_in( index_object ).N_dimensions
-
-                    indicator( :, index_dim ) = grids_in( index_object ).positions( :, index_dim ) >= ROIs( index_object ).intervals( index_dim ).lb;
-                    indicator( :, index_dim ) = indicator( :, index_dim ) & ( grids_in( index_object ).positions( :, index_dim ) <= ROIs( index_object ).intervals( index_dim ).ub );
-
-                end % for index_dim = 1:grids_in( index_object ).N_dimensions
-
-                % test whether all inequalities are valid
-                indicators{ index_object } = all( indicator, 2 );
 
                 % extract specified grid points
                 positions_act{ index_object } = grids_in( index_object ).positions( indicators{ index_object }, : );

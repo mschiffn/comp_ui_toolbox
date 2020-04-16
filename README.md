@@ -1,29 +1,29 @@
-# Computational Ultrasound Imaging Toolbox for MATLAB
+# Computational Ultrasound Imaging Toolbox for [MATLAB](mathworks-url)
+
+[mathworks-url]: https://mathworks.com/products/matlab.html
 
 [![GitHub](license-image)](license-url)
 [![GitHub](downloads-image)](downloads-url)
 ![GitHub repo size](https://img.shields.io/github/repo-size/mschiffn/comp_ui_toolbox)
 ![GitHub All Releases](https://img.shields.io/github/downloads/mschiffn/comp_ui_toolbox/total)
 
-[license-image]: https://img.shields.io/github/license/mschiffn/comp-ui-toolbox
-[license-url]: https://github.com/mschiffn/comp-ui-toolbox/COPYING
+[license-image]: https://img.shields.io/github/license/mschiffn/comp_ui_toolbox
+[license-url]: https://github.com/mschiffn/comp_ui_toolbox/COPYING
 [downloads-image]: https://img.shields.io/github/downloads/mschiffn/comp_ui_toolbox/total
 [downloads-url]: https://npmjs.org/package/ieee754
 
-This [MATLAB](https://mathworks.com/products/matlab.html) (The MathWorks, Inc., Natick, MA, USA) toolbox facilitates
-the development and evaluation of
-computational ultrasound imaging (UI) methods for
-freely programmable UI systems.
-
-It solves complex image recovery problems by
-only a few lines of code.
+Develop and
+evaluate computational image recovery methods for
+freely programmable ultrasound imaging systems with
+only a few lines of
+code.
 
 ## Motivation
 
 Advances in
 electronic miniaturization and
 processing power have recently led to
-freely programmable UI systems and
+freely programmable ultrasound imaging (UI) systems and
 software-based "ultrafast" imaging modes, e.g.
 
 - coherent plane-wave compounding,
@@ -43,6 +43,7 @@ these systems.
 ## What Does This Toolbox Accomplish?
 
 Computational UI methods recover
+fluctuations in
 the acoustic material parameters in
 a specified FOV from
 a relatively short sequence of
@@ -76,10 +77,10 @@ iterative image recovery methods and, thus, complements
 popular simulation tools, e.g.
 [Field II](https://field-ii.dk/) and
 [FOCUS](https://www.egr.msu.edu/~fultras-web/).
-Although
-the initialization of
-a scattering operator is relatively costly,
-its evaluation is extremely fast.
+It compensates
+the relatively costly initialization of
+a scattering operator by
+an extremely fast evaluation.
 
 Typical applications include
 
@@ -89,7 +90,8 @@ Typical applications include
 - statistical methods (Bayesian), and
 - machine learning.
 
-Usability and simplicity were crucial design paradigms.
+Usability and simplicity were
+crucial design paradigms.
 The toolbox enables
 the solution of
 complex inverse scattering problems with
@@ -123,7 +125,7 @@ only a few lines of code.
 - pulse-echo mode, i.e. no transmission measurements
 - half-space with rigid (Neumann) boundary
 - symmetric grids (future releases might support the fast multipole method (FMM) and adaptive cross approximation (ACA))
-- developed and tested in MATLAB R2018b, R2019a / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
+- developed and tested in MATLAB R2018b, R2019a, R2020a / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
 
 ## References :notebook:
 

@@ -2,13 +2,13 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-20
-% modified: 2019-10-17
+% modified: 2020-04-14
 %
 classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
@@ -167,5 +167,64 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
         end % function orthotopes_discrete = discretize( orthotopes, methods )
 
     end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % check membership (scalar)
+        %------------------------------------------------------------------
+        function tf = iselement_scalar( orthotope, positions )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class scattering.sequences.setups.geometry.shape (scalar) for orthotope
+            % calling function ensures matching subclasses of class physical_values.length for positions
+            % calling function ensures matching number of dimensions for positions
+
+            %--------------------------------------------------------------
+            % 2.) check membership (scalar)
+            %--------------------------------------------------------------
+            % initialize tf w/ false
+            tf = false( size( positions ) );
+
+            % iterate dimensions
+            for index_dim = 1:size( positions, 2 )
+
+                tf( :, index_dim ) = positions( :, index_dim ) >= orthotope.intervals( index_dim ).lb;
+                tf( :, index_dim ) = tf( :, index_dim ) & ( positions( :, index_dim ) <= orthotope.intervals( index_dim ).ub );
+
+            end % for index_dim = 1:size( positions, 2 )
+
+            % test whether all inequalities are valid
+            tf = all( tf, 2 );
+
+        end % function tf = iselement_scalar( orthotope, positions )
+
+        %------------------------------------------------------------------
+        % draw (scalar)
+        %------------------------------------------------------------------
+        function draw_scalar( orthotope )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class scattering.sequences.setups.geometry.shape (scalar) for orthotope
+
+            %--------------------------------------------------------------
+            % 2.) draw (scalar)
+            %--------------------------------------------------------------
+            phi = 0:pi/100:2*pi;
+            if double( orthotope.interval_r.lb ) > eps( 0 )
+                line( ( orthotope.center( 1 ) + orthotope.interval_r.lb * cos( phi ) ) * 1e3, ( orthotope.center( end ) + orthotope.interval_r.lb * sin( phi ) ) * 1e3 );
+            end
+            line( ( orthotope.center( 1 ) + orthotope.interval_r.ub * cos( phi ) ) * 1e3, ( orthotope.center( end ) + orthotope.interval_r.ub * sin( phi ) ) * 1e3 );
+
+        end % function draw_scalar( orthotope )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope

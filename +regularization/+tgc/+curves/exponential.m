@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-07
-% modified: 2020-02-17
+% modified: 2020-04-13
 %
 classdef exponential < regularization.tgc.curves.curve
 
@@ -138,17 +138,9 @@ classdef exponential < regularization.tgc.curves.curve
         end % function samples = sample_curve( curves, axes )
 
         %------------------------------------------------------------------
-        % Fourier transform
-        %------------------------------------------------------------------
-        function signal_matrices = fourier_transform( curves, varargin )
-
-            
-        end % function signal_matrices = fourier_transform( curves, varargin )
-
-        %------------------------------------------------------------------
         % Fourier coefficients
         %------------------------------------------------------------------
-        function signal_matrices = fourier_coefficients( curves, varargin )
+        function signal_matrices = fourier_coefficients( curves, T_ref, decays_dB )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -161,11 +153,12 @@ classdef exponential < regularization.tgc.curves.curve
             end
 
             % ensure nonempty T_ref
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
-                T_ref = varargin{ 1 };
-            else
+            if nargin < 2 || isempty( T_ref )
                 T_ref = reshape( [ curves.T ], size( curves ) );
             end
+
+            % ensure class physical_values.time
+            
 
             % ensure valid T_ref
             indicator = T_ref < reshape( [ curves.T ], size( curves ) );
@@ -176,27 +169,15 @@ classdef exponential < regularization.tgc.curves.curve
             end
 
             % ensure nonempty decays_dB
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
-                decays_dB = varargin{ 2 };
-            else
-                decays_dB = repmat( -40, size( curves ) );
+            if nargin < 3 || isempty( decays_dB )
+                decays_dB = -40;
             end
 
             % ensure negative decays_dB
             mustBeNegative( decays_dB );
 
-            % multiple curves / single T_ref
-            if ~isscalar( curves ) && isscalar( T_ref )
-                T_ref = repmat( T_ref, size( curves ) );
-            end
-
-            % multiple curves / single decays_dB
-            if ~isscalar( curves ) && isscalar( decays_dB )
-                decays_dB = repmat( decays_dB, size( curves ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( curves, T_ref, decays_dB );
+            [ curves, T_ref, decays_dB ] = auxiliary.ensureEqualSize( curves, T_ref, decays_dB );
 
             %--------------------------------------------------------------
             % 2.) compute Fourier coefficients
@@ -230,7 +211,7 @@ classdef exponential < regularization.tgc.curves.curve
             % create signal matrices
             signal_matrices = processing.signal_matrix( axes_f, samples );
 
-        end % function signal_matrices = fourier_coefficients( curves, varargin )
+        end % function signal_matrices = fourier_coefficients( curves, T_ref, decays_dB )
 
         %------------------------------------------------------------------
         % get axes

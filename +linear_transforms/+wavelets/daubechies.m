@@ -12,7 +12,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-01-28
+% modified: 2020-04-16
 %
 classdef daubechies < linear_transforms.wavelets.type
 
@@ -58,42 +58,6 @@ classdef daubechies < linear_transforms.wavelets.type
         end % function objects = daubechies( lengths )
 
         %------------------------------------------------------------------
-        % generate orthonormal quadrature mirror filters (QMFs)
-        %------------------------------------------------------------------
-        function QMFs = MakeONFilter( daubechies )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.wavelets.daubechies
-            if ~isa( daubechies, 'linear_transforms.wavelets.daubechies' )
-                errorStruct.message = 'daubechies must be linear_transforms.wavelets.daubechies!';
-                errorStruct.identifier = 'MakeONFilter:NoDaubechiesWavelets';
-                error( errorStruct );
-            end
-
-            %--------------------------------------------------------------
-            % 2.) generate orthonormal QMF
-            %--------------------------------------------------------------
-            % specify cell array for QMFs
-            QMFs = cell( size( daubechies ) );
-
-            % iterate Daubechies wavelet parameters
-            for index_object = 1:numel( daubechies )
-
-                % call MakeONFilter of WaveLab
-                QMFs{ index_object } = MakeONFilter( 'Daubechies', daubechies( index_object ).length );
-
-            end % for index_object = 1:numel( daubechies )
-
-            % avoid cell array for single daubechies
-            if isscalar( daubechies )
-                QMFs = QMFs{ 1 };
-            end
-
-        end % function QMFs = MakeONFilter( daubechies )
-
-        %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
         function strs_out = string( daubechies )
@@ -124,5 +88,37 @@ classdef daubechies < linear_transforms.wavelets.type
         end % function strs_out = string( daubechies )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % generate orthonormal QMF (scalar)
+        %------------------------------------------------------------------
+        function QMF = MakeONFilter_scalar( daubechies )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.wavelets.type (scalar) for daubechies
+
+            % ensure class linear_transforms.wavelets.daubechies
+            if ~isa( daubechies, 'linear_transforms.wavelets.daubechies' )
+                errorStruct.message = 'daubechies must be linear_transforms.wavelets.daubechies!';
+                errorStruct.identifier = 'MakeONFilter_scalar:NoDaubechiesWavelet';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) generate orthonormal QMF (scalar)
+            %--------------------------------------------------------------
+            % call MakeONFilter of WaveLab
+            QMF = MakeONFilter( 'Daubechies', daubechies.length );
+
+        end % function QMF = MakeONFilter_scalar( daubechies )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef daubechies < linear_transforms.wavelets.type

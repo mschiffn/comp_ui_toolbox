@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-08
-% modified: 2020-04-03
+% modified: 2020-04-16
 %
 classdef (Abstract) convolution < linear_transforms.linear_transform_matrix
 
@@ -13,12 +13,11 @@ classdef (Abstract) convolution < linear_transforms.linear_transform_matrix
 	properties ( SetAccess = private )
 
         % independent properties
-        kernel ( :, 1 )
-        q_lb ( 1, 1 ) double { mustBeNonnegative, mustBeNonempty } = 0      % lower bound on the indices of admissible frequencies
-        cut_off ( 1, 1 ) logical { mustBeNonempty } = true                  % cut off results to ensure square matrix
+        kernel ( :, 1 )                                     % convolution kernel
+        cut_off ( 1, 1 ) logical { mustBeNonempty } = true	% cut off results to ensure square matrix
 
         % dependent properties
-        M_kernel ( 1, 1 ) double { mustBePositive, mustBeNonempty } = 1     % symmetric length of kernel
+        M_kernel ( 1, 1 ) double { mustBePositive, mustBeNonempty } = 1	% symmetric length of kernel
 
 	end % properties
 
@@ -30,13 +29,13 @@ classdef (Abstract) convolution < linear_transforms.linear_transform_matrix
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = convolution( kernels, N_points, q_lb, cut_off )
+        function objects = convolution( kernels, N_points, cut_off )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure correct number of input arguments
-            narginchk( 2, 4 );
+            % ensure valid number of input arguments
+            narginchk( 2, 3 );
 
             % ensure cell array for kernels
             if ~iscell( kernels )
@@ -54,70 +53,51 @@ classdef (Abstract) convolution < linear_transforms.linear_transform_matrix
             % superclass ensures nonempty positive integers for N_points
 
             % ensure nonempty cut_off
-            if nargin < 4 || isempty( cut_off )
-                cut_off = true;
-            end
-
-            % ensure nonempty cut_off
-            if nargin < 4 || isempty( cut_off )
+            if nargin < 3 || isempty( cut_off )
                 cut_off = true;
             end
 
             % property validation function ensures logical for cut_off
 
-            % multiple kernels / single N_points
-            if ~isscalar( kernels ) && isscalar( N_points )
-                N_points = repmat( N_points, size( kernels ) );
-            end
-
-            % multiple kernels / single cut_off
-            if ~isscalar( kernels ) && isscalar( cut_off )
-                cut_off = repmat( cut_off, size( kernels ) );
-            end
-
-            % multiple N_points / single kernels
-            if ~isscalar( N_points ) && isscalar( kernels )
-                kernels = repmat( kernels, size( N_points ) );
-            end
-
-            % multiple N_points / single cut_off
-            if ~isscalar( N_points ) && isscalar( cut_off )
-                cut_off = repmat( cut_off, size( N_points ) );
-            end
-
-            % multiple cut_off / single kernels
-            if ~isscalar( cut_off ) && isscalar( kernels )
-                kernels = repmat( kernels, size( cut_off ) );
-            end
-
-            % multiple cut_off / single N_points
-            if ~isscalar( cut_off ) && isscalar( N_points )
-                N_points = repmat( N_points, size( cut_off ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( kernels, N_points, cut_off );
+            [ kernels, N_points, cut_off ] = auxiliary.ensureEqualSize( kernels, N_points, cut_off );
 
             %--------------------------------------------------------------
             % 2.) create discrete convolutions
             %--------------------------------------------------------------
             % symmetric lengths of kernels
-            M_kernel = ( cellfun( @numel, kernels ) - 1 ) / 2;
+            N_kernel = cellfun( @numel, kernels );
+            M_kernel = ( N_kernel - 1 ) / 2;
 
             % ensure integers if cut_off are true
-            mustBeInteger( cut_off .* M_kernel );
+            mustBeInteger( M_kernel( cut_off ) );
 
-            % number of coefficients
-            N_coefficients = ~cut_off .* ( cellfun( @numel, kernels ) - 1 ) + N_points;
+            % numbers of coefficients
+            N_coefficients = N_points + N_kernel - 1;
+            N_coefficients( cut_off ) = N_points;
 
             % constructor of superclass
             objects@linear_transforms.linear_transform_matrix( N_coefficients, N_points );
+
+            % truncate kernel
+            indicator_cut_kernel = cut_off & ( ( M_kernel + 1 ) > N_points );
 
             % iterate discrete convolutions
             for index_object = 1:numel( objects )
 
                 % set independent properties
-                objects( index_object ).kernel = kernels{ index_object };
+                if indicator_cut_kernel( index_object )
+                    % truncate kernel
+                    M_cut = M_kernel( index_object ) - N_points( index_object ) + 1;
+                    kernels{ index_object } = kernels{ index_object }( ( M_cut + 1 ):(end - M_cut) );
+                    M_kernel( index_object ) = N_points( index_object ) - 1;
+
+                    objects( index_object ).kernel = kernels{ index_object };
+
+                else
+                    % original kernel
+                    objects( index_object ).kernel = kernels{ index_object };
+                end
                 objects( index_object ).cut_off = cut_off( index_object );
 
                 % set dependent properties

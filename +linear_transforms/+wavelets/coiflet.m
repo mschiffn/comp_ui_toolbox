@@ -10,7 +10,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-02-04
+% modified: 2020-04-16
 %
 classdef coiflet < linear_transforms.wavelets.type
 
@@ -56,42 +56,6 @@ classdef coiflet < linear_transforms.wavelets.type
         end % function objects = coiflet( parameters )
 
         %------------------------------------------------------------------
-        % generate orthonormal quadrature mirror filters (QMFs)
-        %------------------------------------------------------------------
-        function QMFs = MakeONFilter( coiflets )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.wavelets.coiflet
-            if ~isa( coiflets, 'linear_transforms.wavelets.coiflet' )
-                errorStruct.message = 'coiflets must be linear_transforms.wavelets.coiflet!';
-                errorStruct.identifier = 'MakeONFilter:NoCoifletWavelets';
-                error( errorStruct );
-            end
-
-            %--------------------------------------------------------------
-            % 2.) generate orthonormal QMF
-            %--------------------------------------------------------------
-            % specify cell array for QMFs
-            QMFs = cell( size( coiflets ) );
-
-            % iterate Coiflet wavelet parameters
-            for index_object = 1:numel( coiflets )
-
-                % call MakeONFilter of WaveLab
-                QMFs{ index_object } = MakeONFilter( 'Coiflet', coiflets( index_object ).parameter );
-
-            end % for index_object = 1:numel( coiflets )
-
-            % avoid cell array for single coiflets
-            if isscalar( coiflets )
-                QMFs = QMFs{ 1 };
-            end
-
-        end % function QMFs = MakeONFilter( coiflets )
-
-        %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
         function strs_out = string( coiflets )
@@ -122,5 +86,37 @@ classdef coiflet < linear_transforms.wavelets.type
         end % function strs_out = string( coiflets )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % generate orthonormal QMF (scalar)
+        %------------------------------------------------------------------
+        function QMF = MakeONFilter_scalar( coiflet )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.wavelets.type (scalar) for coiflet
+
+            % ensure class linear_transforms.wavelets.coiflet
+            if ~isa( coiflet, 'linear_transforms.wavelets.coiflet' )
+                errorStruct.message = 'coiflet must be linear_transforms.wavelets.coiflet!';
+                errorStruct.identifier = 'MakeONFilter_scalar:NoCoifletWavelet';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) generate orthonormal QMF (scalar)
+            %--------------------------------------------------------------
+            % call MakeONFilter of WaveLab
+            QMF = MakeONFilter( 'Coiflet', coiflet.parameter );
+
+        end % function QMF = MakeONFilter_scalar( coiflet )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef coiflet < linear_transforms.wavelets.type

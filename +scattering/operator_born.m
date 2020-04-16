@@ -766,7 +766,7 @@ classdef operator_born < scattering.operator
 
                 % display intermediate results
                 figure( 999 );
-                imagesc( illustration.dB( squeeze( reshape( E_M, operator_born.sequence.setup.FOV.shape.grid.N_points_axis ) )', 10 ), [ -60, 0 ] );
+                display_coefficients( LT_dict, E_M );
 
                 % erase progress in percent
                 fprintf( repmat( '\b', [ 1, N_bytes ] ) );

@@ -757,18 +757,8 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % multiple args_1 / single args_2
-            if ~isscalar( args_1 ) && isscalar( args_2 )
-                args_2 = repmat( args_2, size( args_1 ) );
-            end
-
-            % single args_1 / multiple args_2
-            if isscalar( args_1 ) && ~isscalar( args_2 )
-                args_1 = repmat( args_1, size( args_2 ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( args_1, args_2 );
+            [ args_1, args_2 ] = auxiliary.ensureEqualSize( args_1, args_2 );
 
             %--------------------------------------------------------------
             % 2.) element-wise multiplications
@@ -931,7 +921,7 @@ classdef signal_matrix
         %------------------------------------------------------------------
         % subsample
         %------------------------------------------------------------------
-        function signal_matrices = subsample( signal_matrices, varargin )
+        function signal_matrices = subsample( signal_matrices, indices_axes, indices_signals )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -950,9 +940,7 @@ classdef signal_matrix
             end
 
             % ensure nonempty indices_axes
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
-                indices_axes = varargin{ 1 };
-            else
+            if nargin < 2 || isempty( indices_axes )
                 indices_axes = cell( size( signal_matrices ) );
                 for index_object = 1:numel( signal_matrices )
                     indices_axes{ index_object } = ( 1:abs( signal_matrices( index_object ).axis ) );
@@ -965,9 +953,7 @@ classdef signal_matrix
             end
 
             % ensure nonempty indices_signals
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
-                indices_signals = varargin{ 2 };
-            else
+            if nargin < 3 || isempty( indices_signals )
                 indices_signals = cell( size( signal_matrices ) );
                 for index_object = 1:numel( signal_matrices )
                     indices_signals{ index_object } = ( 1:signal_matrices( index_object ).N_signals );
@@ -979,23 +965,8 @@ classdef signal_matrix
                 indices_signals = { indices_signals };
             end
 
-            % multiple signal_matrices / single indices_axes
-            if ~isscalar( signal_matrices ) && isscalar( indices_axes )
-                indices_axes = repmat( indices_axes, size( signal_matrices ) );
-            end
-
-            % single signal_matrices / multiple indices_axes
-            if isscalar( signal_matrices ) && ~isscalar( indices_axes )
-                signal_matrices = repmat( signal_matrices, size( indices_axes ) );
-            end
-
-            % multiple signal_matrices / single indices_signals
-            if ~isscalar( signal_matrices ) && isscalar( indices_signals )
-                indices_signals = repmat( indices_signals, size( signal_matrices ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_matrices, indices_axes, indices_signals );
+            [ signal_matrices, indices_axes, indices_signals ] = auxiliary.ensureEqualSize( signal_matrices, indices_axes, indices_signals );
 
             %--------------------------------------------------------------
             % 2.) perform subsampling
@@ -1019,7 +990,7 @@ classdef signal_matrix
 
             end % for index_object = 1:numel( signal_matrices )
 
-        end % function signal_matrices = subsample( signal_matrices, varargin )
+        end % function signal_matrices = subsample( signal_matrices, indices_axes, indices_signals )
 
         %------------------------------------------------------------------
         % cut out submatrix

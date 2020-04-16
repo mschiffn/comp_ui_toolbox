@@ -85,8 +85,8 @@ classdef fourier < linear_transforms.linear_transform_vector
                 error( errorStruct );
             end
 
-            % superclass ensures numeric column vector for x
-            % superclass ensures equal numbers of points for x
+            % calling function ensures numeric column vector for x
+            % calling function ensures equal numbers of points
 
             %--------------------------------------------------------------
             % 2.) compute forward Fourier transform (single vector)
@@ -119,8 +119,8 @@ classdef fourier < linear_transforms.linear_transform_vector
                 error( errorStruct );
             end
 
-            % superclass ensures numeric column vector for x
-            % superclass ensures equal numbers of coefficients
+            % calling function ensures numeric column vector for x
+            % calling function ensures equal numbers of coefficients
 
             %--------------------------------------------------------------
             % 2.) compute adjoint Fourier transform (single vector)
@@ -137,6 +137,45 @@ classdef fourier < linear_transforms.linear_transform_vector
             y = y_act( : );
 
         end % function y = adjoint_transform_vector( LT, x )
+
+        %------------------------------------------------------------------
+        % display coefficients (single vector)
+        %------------------------------------------------------------------
+        function display_coefficients_vector( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.linear_transform_vector (scalar) for LT
+            % calling function ensures numeric column vector for x
+            % calling function ensures equal numbers of coefficients
+
+            % ensure class linear_transforms.fourier (scalar)
+            if ~( isa( LT, 'linear_transforms.fourier' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.fourier!';
+                errorStruct.identifier = 'display_coefficients_vector:NoSingleFourierTransform';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display coefficients (single vector)
+            %--------------------------------------------------------------
+            % prepare shape of vector
+            if LT.N_dimensions >= 2
+                x = reshape( x, LT.N_points_axis );
+            end
+
+            % logarithmic compression
+            x_dB = fftshift( illustration.dB( x, 10 )', 2 );
+
+            % display vector
+            if LT.N_dimensions == 2
+                imagesc( x_dB, [ -60, 0 ] );
+                title( 'Fourier coefficients' );
+                colorbar;
+            end
+
+        end % function display_coefficients_vector( LT, x )
 
 	end % methods (Access = protected, Hidden)
 

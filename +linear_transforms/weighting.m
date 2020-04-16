@@ -216,6 +216,15 @@ classdef weighting < linear_transforms.linear_transform_matrix
 
         end % function y = inverse_transform_matrix( LT, x )
 
+        %------------------------------------------------------------------
+        % display coefficients (single matrix)
+        %------------------------------------------------------------------
+        function display_coefficients_matrix( LT, x )
+
+            % TODO: plot weights
+
+        end % function display_coefficients_matrix( LT, x )
+
 	end % methods (Access = protected, Hidden)
 
 end % classdef weighting < linear_transforms.linear_transform_matrix

@@ -9,7 +9,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-01-28
+% modified: 2020-04-16
 %
 classdef beylkin < linear_transforms.wavelets.type
 
@@ -45,42 +45,6 @@ classdef beylkin < linear_transforms.wavelets.type
         end % function objects = beylkin( varargin )
 
         %------------------------------------------------------------------
-        % generate orthonormal quadrature mirror filters (QMFs)
-        %------------------------------------------------------------------
-        function QMFs = MakeONFilter( beylkins )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.wavelets.beylkin
-            if ~isa( beylkins, 'linear_transforms.wavelets.beylkin' )
-                errorStruct.message = 'beylkins must be linear_transforms.wavelets.beylkin!';
-                errorStruct.identifier = 'MakeONFilter:NoBeylkinWavelets';
-                error( errorStruct );
-            end
-
-            %--------------------------------------------------------------
-            % 2.) generate orthonormal QMF
-            %--------------------------------------------------------------
-            % specify cell array for QMFs
-            QMFs = cell( size( beylkins ) );
-
-            % iterate Daubechies wavelet parameters
-            for index_object = 1:numel( beylkins )
-
-                % call MakeONFilter of WaveLab
-                QMFs{ index_object } = MakeONFilter( 'Beylkin' );
-
-            end % for index_object = 1:numel( beylkins )
-
-            % avoid cell array for single beylkins
-            if isscalar( beylkins )
-                QMFs = QMFs{ 1 };
-            end
-
-        end % function QMFs = MakeONFilter( beylkins )
-
-        %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
         function strs_out = string( beylkins )
@@ -104,5 +68,37 @@ classdef beylkin < linear_transforms.wavelets.type
         end % function strs_out = string( beylkins )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % generate orthonormal QMF (scalar)
+        %------------------------------------------------------------------
+        function QMF = MakeONFilter_scalar( beylkin )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.wavelets.type (scalar) for beylkin
+
+            % ensure class linear_transforms.wavelets.beylkin
+            if ~isa( beylkin, 'linear_transforms.wavelets.beylkin' )
+                errorStruct.message = 'beylkin must be linear_transforms.wavelets.beylkin!';
+                errorStruct.identifier = 'MakeONFilter_scalar:NoBeylkinWavelet';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) generate orthonormal QMF (scalar)
+            %--------------------------------------------------------------
+            % call MakeONFilter of WaveLab
+            QMF = MakeONFilter( 'Beylkin' );
+
+        end % function QMF = MakeONFilter_scalar( beylkin )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef beylkin < linear_transforms.wavelets.type

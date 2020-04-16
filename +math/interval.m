@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-21
-% modified: 2020-01-11
+% modified: 2020-04-13
 %
 classdef interval
 
@@ -160,7 +160,7 @@ classdef interval
         %------------------------------------------------------------------
         % quantization
         %------------------------------------------------------------------
-        function objects_out = quantize( intervals, deltas )
+        function objects_out = quantize( intervals, deltas, expand )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -168,25 +168,27 @@ classdef interval
             % ensure class math.interval
             if ~isa( intervals, 'math.interval' )
                 errorStruct.message = 'intervals must be math.interval!';
-                errorStruct.identifier = 'quantize:NoInterval';
+                errorStruct.identifier = 'quantize:NoIntervals';
                 error( errorStruct );
             end
 
             % ensure equal subclasses of physical_values.physical_quantity
             auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', intervals.lb, deltas );
 
-            % multiple intervals / single deltas
-            if ~isscalar( intervals ) && isscalar( deltas )
-                deltas = repmat( deltas, size( intervals ) );
+            % ensure nonempty expand
+            if nargin < 3 || isempty( expand )
+                expand = false;
             end
 
-            % single intervals / multiple deltas
-            if isscalar( intervals ) && ~isscalar( deltas )
-                intervals = repmat( intervals, size( deltas ) );
+            % ensure logical for expand
+            if ~islogical( expand )
+                errorStruct.message = 'expand must be logical!';
+                errorStruct.identifier = 'quantize:NoLogicals';
+                error( errorStruct );
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( intervals, deltas );
+            [ intervals, deltas, expand ] = auxiliary.ensureEqualSize( intervals, deltas, expand );
 
             %--------------------------------------------------------------
             % 2.) compute boundary indices
@@ -198,9 +200,11 @@ classdef interval
             % compute lower and upper boundary indices
             lbs_exact = lbs ./ deltas;
             lbs_q = ceil( lbs_exact );
+            lbs_q( expand ) = floor( lbs_exact( expand ) );
 
             ubs_exact = ubs ./ deltas;
             ubs_q = floor( ubs_exact );
+            ubs_q( expand ) = ceil( ubs_exact( expand ) );
 
             % correct rounding errors
             lbs_rnd = round( lbs_exact );
@@ -216,7 +220,7 @@ classdef interval
             %--------------------------------------------------------------
             objects_out = math.interval_quantized( lbs_q, ubs_q, deltas );
 
-        end % function objects_out = quantize( intervals, deltas )
+        end % function objects_out = quantize( intervals, deltas, expand )
 
         %------------------------------------------------------------------
         % discretize

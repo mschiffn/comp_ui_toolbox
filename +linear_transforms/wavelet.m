@@ -219,6 +219,43 @@ classdef wavelet < linear_transforms.linear_transform_vector
 
         end % function y = adjoint_transform_vector( LT, x )
 
+        %------------------------------------------------------------------
+        % display coefficients (single vector)
+        %------------------------------------------------------------------
+        function display_coefficients_vector( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.linear_transform_vector (scalar) for LT
+            % calling function ensures numeric column vector for x
+            % calling function ensures equal numbers of coefficients
+
+            % ensure class linear_transforms.wavelet (scalar)
+            if ~( isa( LT, 'linear_transforms.wavelet' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.wavelet!';
+                errorStruct.identifier = 'display_coefficients_vector:NoSingleFourierTransform';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display coefficients (single vector)
+            %--------------------------------------------------------------
+            % prepare shape of vector
+            if LT.N_dimensions >= 2
+                x = reshape( x, LT.N_points_axis );
+            end
+
+            % logarithmic compression
+            x_dB = fftshift( illustration.dB( x, 10 )', 2 );
+
+            % display vector
+            if LT.N_dimensions == 2
+                imagesc( x_dB, [ -60, 0 ] );
+            end
+
+        end % function display_coefficients_vector( LT, x )
+
 	end % methods (Access = private, Hidden)
 
 end % classdef wavelet < linear_transforms.linear_transform_vector

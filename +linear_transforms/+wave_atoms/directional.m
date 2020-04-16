@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-30
-% modified: 2020-02-04
+% modified: 2020-04-15
 %
 classdef directional < linear_transforms.wave_atoms.type
 
@@ -17,34 +17,28 @@ classdef directional < linear_transforms.wave_atoms.type
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = directional( size )
+        function objects = directional( pat )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure nonempty size
-            if nargin < 1 || isempty( size )
-                size = 1;
+            % ensure valid number of input arguments
+            narginchk( 0, 1 );
+
+            % ensure nonempty pat
+            if nargin < 1 || isempty( pat )
+                pat = 'p';
             end
 
-            % ensure row vector for size
-            if ~isrow( size )
-                errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'orthogonal:InvalidSize';
-                error( errorStruct );
-            end
-
-            % ensure positive integers for size
-            mustBePositive( size );
-            mustBeInteger( size );
+            % superclass ensures valid pat
 
             %--------------------------------------------------------------
-            % 2.) create discrete wave atom transforms
+            % 2.) create directional discrete wave atoms
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@linear_transforms.wave_atoms.type( repmat( 2, size ) );
+            objects@linear_transforms.wave_atoms.type( pat, 2 * ones( size( pat ) ) );
 
-        end % function objects = directional( size )
+        end % function objects = directional( pat )
 
         %------------------------------------------------------------------
         % string array (overload string method)

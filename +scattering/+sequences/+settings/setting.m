@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2020-01-10
+% modified: 2020-04-12
 %
 classdef setting
 
@@ -59,7 +59,7 @@ classdef setting
                 errorStruct.identifier = 'setting:NoSignalMatrix';
                 error( errorStruct );
             end
-
+% TODO: check number of signals!
             % method compute_excitation_voltages ensures class scattering.sequences.syntheses.wave for waves
 
             % ensure cell array for controls_rx
@@ -76,12 +76,8 @@ classdef setting
             % repeat default pulse-echo measurement setting
             objects = repmat( objects, size( u_tx_tilde ) );
 
-            % compute excitation voltages
-            [ excitation_voltages, indices_active ] = compute_excitation_voltages( setup, u_tx_tilde, waves );
-
             % create tx controls
-% TODO: cut out impulse responses for active elements!
-            controls_tx = scattering.sequences.settings.controls.tx( indices_active, num2cell( impulse_responses_tx ), num2cell( excitation_voltages ) );
+            controls_tx = scattering.sequences.settings.controls.tx_wave( setup, u_tx_tilde, impulse_responses_tx, waves );
 
             % correct recording time intervals
             controls_rx = adjust_intervals_t( setup, controls_tx, controls_rx );
@@ -176,7 +172,7 @@ classdef setting
                     end
 
                     % quantize hull of all recording time intervals using largest delta
-                    interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_unique_max );
+                    interval_hull_t_quantized = quantize( settings( index_object ).interval_hull_t, delta_unique_max, true );
 
                     % discretize rx and tx settings
                     settings_rx{ index_object } = discretize( settings( index_object ).rx, abs( interval_hull_t_quantized ), settings( index_object ).interval_hull_f );
@@ -219,7 +215,7 @@ classdef setting
                 end % if isa( options_spectral, 'scattering.sequences.settings.discretizations.sequence_custom' )
 
                 % quantize hull of all recording time intervals using delta_unique_max
-                interval_hull_t_quantized = quantize( interval_hull_t, delta_unique_max );
+                interval_hull_t_quantized = quantize( interval_hull_t, delta_unique_max, true );
 
                 % iterate pulse-echo measurement settings
                 for index_object = 1:numel( settings )

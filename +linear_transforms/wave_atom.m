@@ -1,11 +1,14 @@
 %
-% superclass for all discrete wave atom transforms
+% one-, two-, or three-dimensional
+% discrete symmetric wave atom transforms for
+% various options
 %
-% requires: WaveAtoms (http://www-stat.stanford.edu/~wavelab)
+% requires: WaveAtom toolbox in Matlab v.1.1.1 (April 2008)
+%           (http://www.waveatom.org/software.html)
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-01-30
+% modified: 2020-04-16
 %
 classdef wave_atom < linear_transforms.linear_transform_vector
 
@@ -51,7 +54,7 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             % property validation function ensures nonempty positive integers for scales_finest
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( types, N_dimensions, scales_finest );
+            [ types, N_dimensions, scales_finest ] = auxiliary.ensureEqualSize( types, N_dimensions, scales_finest );
 
             %--------------------------------------------------------------
             % 2.) create discrete wave atom transforms
@@ -117,7 +120,7 @@ classdef wave_atom < linear_transforms.linear_transform_vector
                         % iv.) invalid number of dimensions
                         %--------------------------------------------------
                         errorStruct.message = sprintf( 'objects( %d ).N_dimensions must equal 1 or 2!', index_object );
-                        errorStruct.identifier = 'wavelet:InvalidNumberDimensions';
+                        errorStruct.identifier = 'wave_atom:InvalidNumberDimensions';
                         error( errorStruct );
 
                 end % switch objects( index_object ).N_dimensions
@@ -141,15 +144,16 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class linear_transforms.wave_atom
+            % calling function ensures class linear_transforms.linear_transform_vector (scalar) for LT
+            % calling function ensures numeric column vector for x
+            % calling function ensures equal numbers of points
+
+            % ensure class linear_transforms.wave_atom (scalar)
             if ~( isa( LT, 'linear_transforms.wave_atom' ) && isscalar( LT ) )
                 errorStruct.message = 'LT must be linear_transforms.wave_atom!';
-                errorStruct.identifier = 'forward_transform_single:NoSingleWaveAtomTransform';
+                errorStruct.identifier = 'forward_transform_vector:NoSingleWaveAtomTransform';
                 error( errorStruct );
             end
-
-            % superclass ensures numeric column vector for x
-            % superclass ensures equal numbers of points for x
 
             %--------------------------------------------------------------
             % 2.) compute forward wave atom transform (single vector)
@@ -160,7 +164,14 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             end
 
             % apply forward transform
-            y_act = LT.handle_fwd( x, 'p', 'ortho' );
+            switch class( LT.type )
+                case 'linear_transforms.wave_atoms.orthogonal'
+                    y_act = LT.handle_fwd( x, LT.type.pat, 'ortho' );
+                case 'linear_transforms.wave_atoms.directional'
+                    y_act = LT.handle_fwd( x, LT.type.pat, 'directional' );
+                case 'linear_transforms.wave_atoms.complex'
+                    y_act = LT.handle_fwd( x, LT.type.pat, 'complex' );
+            end
 
             % return result as column vector
             y = y_act( : );
@@ -175,15 +186,16 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class linear_transforms.wave_atom
+            % calling function ensures class linear_transforms.linear_transform_vector (scalar) for LT
+            % calling function ensures numeric column vector for x
+            % calling function ensures equal numbers of coefficients
+
+            % ensure class linear_transforms.wave_atom (scalar)
             if ~( isa( LT, 'linear_transforms.wave_atom' ) && isscalar( LT ) )
                 errorStruct.message = 'LT must be linear_transforms.wave_atom!';
-                errorStruct.identifier = 'adjoint_transform_single:NoSingleWaveAtomTransform';
+                errorStruct.identifier = 'adjoint_transform_vector:NoSingleWaveAtomTransform';
                 error( errorStruct );
             end
-
-            % superclass ensures numeric column vector for x
-            % superclass ensures equal numbers of coefficients
 
             %--------------------------------------------------------------
             % 2.) compute adjoint wave atom transform (single vector)
@@ -192,12 +204,79 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             x_act = reshape( x, [ LT.N_points_axis, LT.type.N_layers ] );
 
             % apply adjoint transform
-            y_act = LT.handle_inv( x_act, 'p', 'ortho' );
+            switch class( LT.type )
+                case 'linear_transforms.wave_atoms.orthogonal'
+                    y_act = LT.handle_inv( x_act, LT.type.pat, 'ortho' );
+                case 'linear_transforms.wave_atoms.directional'
+                    y_act = LT.handle_inv( x_act, LT.type.pat, 'directional' );
+                case 'linear_transforms.wave_atoms.complex'
+                    y_act = LT.handle_inv( x_act, LT.type.pat, 'complex' );
+            end
 
             % return result as column vector
             y = y_act( : );
 
         end % function y = adjoint_transform_vector( LT, x )
+
+        %------------------------------------------------------------------
+        % display coefficients (single vector)
+        %------------------------------------------------------------------
+        function display_coefficients_vector( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.linear_transform_vector (scalar) for LT
+            % calling function ensures numeric column vector for x
+            % calling function ensures equal numbers of coefficients
+
+            % ensure class linear_transforms.wave_atom (scalar)
+            if ~( isa( LT, 'linear_transforms.wave_atom' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.wave_atom!';
+                errorStruct.identifier = 'display_coefficients_vector:NoSingleWaveAtomTransform';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display coefficients (single vector)
+            %--------------------------------------------------------------
+            % prepare shape of vector
+            x_act = reshape( x, [ LT.N_points_axis, LT.type.N_layers ] );
+
+            % logarithmic compression
+            x_act_dB = illustration.dB( x_act, 10 );
+
+            % display vector
+            switch LT.type.N_layers
+                case 1
+                    if LT.N_dimensions == 2
+                        imagesc( x_act_dB, [ -60, 0 ] );
+                    end
+                case 2
+                    if LT.N_dimensions == 2
+                        subplot( 1, 2, 1 );
+                        imagesc( x_act_dB( :, :, 1 )', [ -60, 0 ] );
+                        subplot( 1, 2, 2 );
+                        imagesc( x_act_dB( :, :, 2 )', [ -60, 0 ] );
+                    end
+                case 4
+                    if LT.N_dimensions == 2
+                        subplot( 2, 2, 1 );
+                        imagesc( x_act_dB( :, :, 1 )', [ -60, 0 ] );
+                        title('Layer 1');
+                        subplot( 2, 2, 2 );
+                        imagesc( x_act_dB( :, :, 2 )', [ -60, 0 ] );
+                        title('Layer 2');
+                        subplot( 2, 2, 3 );
+                        imagesc( x_act_dB( :, :, 3 )', [ -60, 0 ] );
+                        title('Layer 3');
+                        subplot( 2, 2, 4 );
+                        imagesc( x_act_dB( :, :, 4 )', [ -60, 0 ] );
+                        title('Layer 4');
+                    end
+            end
+
+        end % function display_coefficients_vector( LT, x )
 
 	end % methods (Access = protected, Hidden)
 

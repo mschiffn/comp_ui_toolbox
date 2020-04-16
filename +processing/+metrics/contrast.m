@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-29
-% modified: 2020-03-13
+% modified: 2020-03-14
 %
 classdef (Abstract) contrast < processing.metrics.metric
 
@@ -13,8 +13,8 @@ classdef (Abstract) contrast < processing.metrics.metric
 	properties (SetAccess = private)
 
         % independent properties
-        ROI_1 ( 1, 1 ) math.orthotope { mustBeNonempty } = math.orthotope           % reference region of interest
-        ROI_2 ( 1, 1 ) math.orthotope { mustBeNonempty } = math.orthotope           % noisy region of interest
+        ROI_1 ( 1, 1 ) scattering.sequences.setups.geometry.shape { mustBeNonempty } = scattering.sequences.setups.geometry.orthotope	% reference region of interest
+        ROI_2 ( 1, 1 ) scattering.sequences.setups.geometry.shape { mustBeNonempty } = scattering.sequences.setups.geometry.orthotope	% noisy region of interest
         dynamic_range_dB ( 1, 1 ) double { mustBePositive, mustBeNonempty } = 70	% limit for dynamic range (dB)
 
 	end % properties
@@ -32,10 +32,7 @@ classdef (Abstract) contrast < processing.metrics.metric
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % property validation functions ensure class math.orthotope for ROIs_1 and ROIs_2
-
-            % ensure equal subclasses of physical_values.length
-%             auxiliary.mustBeEqualSubclasses( 'physical_values.length', ROIs_1.intervals.lb );
+            % property validation functions ensure class scattering.sequences.setups.geometry.shape for ROIs_1 and ROIs_2
 
             % ensure nonempty dynamic_ranges_dB
             if nargin < 3 || isempty( dynamic_ranges_dB )
@@ -44,23 +41,8 @@ classdef (Abstract) contrast < processing.metrics.metric
 
             % property validation functions ensure nonempty positive doubles for dynamic_ranges_dB
 
-            % multiple ROIs_1 / single ROIs_2
-            if ~isscalar( ROIs_1 ) && isscalar( ROIs_2 )
-                ROIs_2 = repmat( ROIs_2, size( ROIs_1 ) );
-            end
-
-            % single ROIs_1 / multiple ROIs_2
-            if isscalar( ROIs_1 ) && ~isscalar( ROIs_2 )
-                ROIs_1 = repmat( ROIs_1, size( ROIs_2 ) );
-            end
-
-            % multiple ROIs_1 / single dynamic_ranges_dB
-            if ~isscalar( ROIs_1 ) && isscalar( dynamic_ranges_dB )
-                dynamic_ranges_dB = repmat( dynamic_ranges_dB, size( ROIs_1 ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( ROIs_1, ROIs_2, dynamic_ranges_dB );
+            [ ROIs_1, ROIs_2, dynamic_ranges_dB ] = auxiliary.ensureEqualSize( ROIs_1, ROIs_2, dynamic_ranges_dB );
 
             %--------------------------------------------------------------
             % 2.) create contrast metrics
@@ -105,8 +87,8 @@ classdef (Abstract) contrast < processing.metrics.metric
             results = zeros( 1, image.N_images );
 
             % detect valid grid points in ROIs
-            [ ~, indicator_roi_ref ] = cut_out( image.grid, contrast.ROI_1 );
-            [ ~, indicator_roi_noise ] = cut_out( image.grid, contrast.ROI_2 );
+            indicator_roi_ref = iselement( contrast.ROI_1, image.grid.positions );
+            indicator_roi_noise = iselement( contrast.ROI_2, image.grid.positions );
 
             % iterate images
             for index_image = 1:image.N_images

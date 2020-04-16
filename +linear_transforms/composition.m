@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-01-30
+% modified: 2020-04-16
 %
 classdef composition < linear_transforms.linear_transform_matrix
 
@@ -33,6 +33,9 @@ classdef composition < linear_transforms.linear_transform_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure valid number of input arguments
+            narginchk( 2, inf );
+
             % ensure classes linear_transforms.linear_transform
             indicator = cellfun( @( x ) ~isa( x, 'linear_transforms.linear_transform' ), varargin );
             if any( indicator( : ) )
@@ -41,25 +44,14 @@ classdef composition < linear_transforms.linear_transform_matrix
                 error( errorStruct );
             end
 
-            % ensure sufficient number of arguments
-            if nargin < 2
-                errorStruct.message = 'A composition requires at least two linear transforms!';
-                errorStruct.identifier = 'composition:InsufficientNumberOfLinearTransforms';
-                error( errorStruct );
-            end
-
-            % multiple varargin{ 1 } / single varargin{ index_arg }
-            for index_arg = 2:nargin
-                if ~isscalar( varargin{ 1 } ) && isscalar( varargin{ index_arg } )
-                    varargin{ index_arg } = repmat( varargin{ index_arg }, size( varargin{ 1 } ) );
-                end
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( varargin{ : } );
+            [ varargin{ : } ] = auxiliary.ensureEqualSize( varargin{ : } );
 
             % detect identity transforms
             indicator_identity = cellfun( @( x ) isa( x, 'linear_transforms.identity' ), varargin );
+
+%             % detect compositions of linear transforms
+%             indicator_composition = cellfun( @( x ) isa( x, 'linear_transforms.composition' ), varargin );
 
             % check individual transforms for validity and size
             N_coefficients = cell( size( varargin ) );
@@ -67,13 +59,6 @@ classdef composition < linear_transforms.linear_transform_matrix
 
             % iterate arguments
             for index_arg = 1:nargin
-
-                % ensure class linear_transforms.linear_transform
-                if ~isa( varargin{ index_arg }, 'linear_transforms.linear_transform' )
-                    errorStruct.message = sprintf( 'varargin{ %d } must be linear_transforms.linear_transform!', index_arg );
-                    errorStruct.identifier = 'composition:NoLinearTransforms';
-                    error( errorStruct );
-                end
 
                 % get sizes of linear transforms
                 N_coefficients{ index_arg } = reshape( [ varargin{ index_arg }.N_coefficients ], size( varargin{ index_arg } ) );
@@ -87,7 +72,7 @@ classdef composition < linear_transforms.linear_transform_matrix
 
                         if N_points{ index_arg - 1 }( index_transform ) ~= N_coefficients{ index_arg }( index_transform )
                             errorStruct.message = sprintf( 'N_points{ %d }( %d ) must equal N_coefficients{ %d }( %d )!', index_arg - 1, index_transform, index_arg, index_transform );
-                            errorStruct.identifier = 'composition:IncompatibleSize';
+                            errorStruct.identifier = 'composition:SizeMismatch';
                             error( errorStruct );
                         end
 
@@ -111,6 +96,10 @@ classdef composition < linear_transforms.linear_transform_matrix
                 for index_transform = 1:nargin
                     objects( index_object ).transforms{ index_transform } = varargin{ index_transform }( index_object );
                 end
+
+                % decompose compositions
+
+                % remove identities from composition
                 objects( index_object ).transforms( indicator_identity ) = [];
 
                 % set dependent properties
@@ -199,6 +188,13 @@ classdef composition < linear_transforms.linear_transform_matrix
             y = adjoint_transform( LT.transforms{ end }, y_temp );
 
         end % function y = adjoint_transform_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % display coefficients (single matrix)
+        %------------------------------------------------------------------
+        function display_coefficients_matrix( LT, x )
+
+        end % function display_coefficients_matrix( LT, x )
 
 	end % methods (Access = protected, Hidden)
 

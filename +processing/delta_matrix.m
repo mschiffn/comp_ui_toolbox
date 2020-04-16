@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-21
-% modified: 2020-01-11
+% modified: 2020-04-11
 %
 classdef delta_matrix < processing.signal_matrix
 
@@ -15,7 +15,7 @@ classdef delta_matrix < processing.signal_matrix
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = delta_matrix( indices_q, deltas, varargin )
+        function objects = delta_matrix( indices_q, deltas, weights )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -28,9 +28,7 @@ classdef delta_matrix < processing.signal_matrix
             % class math.sequence_increasing_regular_quantized ensures class physical_values.physical_quantity for deltas
 
             % ensure nonempty weights
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                weights = varargin{ 1 };
-            else
+            if nargin < 3 || isempty( weights )
                 weights = cell( size( indices_q ) );
                 for index_object = 1:numel( indices_q )
                     weights{ index_object } = ones( size( indices_q{ index_object } ) );

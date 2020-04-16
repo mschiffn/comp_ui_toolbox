@@ -10,7 +10,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-01-28
+% modified: 2020-04-16
 %
 classdef battle < linear_transforms.wavelets.type
 
@@ -56,42 +56,6 @@ classdef battle < linear_transforms.wavelets.type
         end % function objects = battle( degrees )
 
         %------------------------------------------------------------------
-        % generate orthonormal quadrature mirror filters (QMFs)
-        %------------------------------------------------------------------
-        function QMFs = MakeONFilter( battles )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.wavelets.battle
-            if ~isa( battles, 'linear_transforms.wavelets.battle' )
-                errorStruct.message = 'battles must be linear_transforms.wavelets.battle!';
-                errorStruct.identifier = 'MakeONFilter:NoBattleLemarieWavelets';
-                error( errorStruct );
-            end
-
-            %--------------------------------------------------------------
-            % 2.) generate orthonormal QMF
-            %--------------------------------------------------------------
-            % specify cell array for QMFs
-            QMFs = cell( size( battles ) );
-
-            % iterate Battle-Lemarie wavelet parameters
-            for index_object = 1:numel( battles )
-
-                % call MakeONFilter of WaveLab
-                QMFs{ index_object } = MakeONFilter( 'Battle', battles( index_object ).degree );
-
-            end % for index_object = 1:numel( battles )
-
-            % avoid cell array for single battles
-            if isscalar( battles )
-                QMFs = QMFs{ 1 };
-            end
-
-        end % function QMFs = MakeONFilter( battles )
-
-        %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
         function strs_out = string( battles )
@@ -122,5 +86,37 @@ classdef battle < linear_transforms.wavelets.type
         end % function strs_out = string( battles )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % generate orthonormal QMF (scalar)
+        %------------------------------------------------------------------
+        function QMF = MakeONFilter_scalar( battle )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.wavelets.type (scalar) for battle
+
+            % ensure class linear_transforms.wavelets.battle
+            if ~isa( battle, 'linear_transforms.wavelets.battle' )
+                errorStruct.message = 'battle must be linear_transforms.wavelets.battle!';
+                errorStruct.identifier = 'MakeONFilter_scalar:NoBattleLemarieWavelet';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) generate orthonormal QMF (scalar)
+            %--------------------------------------------------------------
+            % call MakeONFilter of WaveLab
+            QMF = MakeONFilter( 'Battle', battle.degree );
+
+        end % function QMF = MakeONFilter_scalar( battle )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef battle < linear_transforms.wavelets.type

@@ -13,7 +13,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-01-28
+% modified: 2020-04-16
 %
 classdef symmlet < linear_transforms.wavelets.type
 
@@ -59,42 +59,6 @@ classdef symmlet < linear_transforms.wavelets.type
         end % function objects = symmlet( parameters )
 
         %------------------------------------------------------------------
-        % generate orthonormal quadrature mirror filters (QMFs)
-        %------------------------------------------------------------------
-        function QMFs = MakeONFilter( symmlets )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.wavelets.symmlet
-            if ~isa( symmlets, 'linear_transforms.wavelets.symmlet' )
-                errorStruct.message = 'symmlets must be linear_transforms.wavelets.symmlet!';
-                errorStruct.identifier = 'MakeONFilter:NoSymmletWavelets';
-                error( errorStruct );
-            end
-
-            %--------------------------------------------------------------
-            % 2.) generate orthonormal QMF
-            %--------------------------------------------------------------
-            % specify cell array for QMFs
-            QMFs = cell( size( symmlets ) );
-
-            % iterate Symmlet wavelet parameters
-            for index_object = 1:numel( symmlets )
-
-                % call MakeONFilter of WaveLab
-                QMFs{ index_object } = MakeONFilter( 'Symmlet', symmlets( index_object ).parameter );
-
-            end % for index_object = 1:numel( symmlets )
-
-            % avoid cell array for single symmlets
-            if isscalar( symmlets )
-                QMFs = QMFs{ 1 };
-            end
-
-        end % function QMFs = MakeONFilter( symmlets )
-
-        %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
         function strs_out = string( symmlets )
@@ -125,5 +89,37 @@ classdef symmlet < linear_transforms.wavelets.type
         end % function strs_out = string( symmlets )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % generate orthonormal QMF (scalar)
+        %------------------------------------------------------------------
+        function QMF = MakeONFilter_scalar( symmlet )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.wavelets.type (scalar) for symmlet
+
+            % ensure class linear_transforms.wavelets.symmlet
+            if ~isa( symmlet, 'linear_transforms.wavelets.symmlet' )
+                errorStruct.message = 'symmlet must be linear_transforms.wavelets.symmlet!';
+                errorStruct.identifier = 'MakeONFilter_scalar:NoSymmletWavelets';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) generate orthonormal QMF (scalar)
+            %--------------------------------------------------------------
+            % call MakeONFilter of WaveLab
+            QMF = MakeONFilter( 'Symmlet', symmlet.parameter );
+
+        end % function QMF = MakeONFilter_scalar( symmlet )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef symmlet < linear_transforms.wavelets.type

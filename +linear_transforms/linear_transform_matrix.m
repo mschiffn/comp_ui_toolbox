@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-29
-% modified: 2020-02-06
+% modified: 2020-04-16
 %
 classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
 
@@ -182,6 +182,58 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
 
         end % function y = adjoint_transform( LTs, x )
 
+        %------------------------------------------------------------------
+        % display coefficients
+        %------------------------------------------------------------------
+        function display_coefficients( LTs, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.linear_transform_matrix
+            if ~isa( LTs, 'linear_transforms.linear_transform_matrix' )
+                errorStruct.message = 'LTs must be linear_transforms.linear_transform_matrix!';
+                errorStruct.identifier = 'display_coefficients:NoLinearTransforms';
+                error( errorStruct );
+            end
+
+            % ensure cell array for x
+            if ~iscell( x )
+                x = { x };
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display coefficients
+            %--------------------------------------------------------------
+            % iterate linear transforms
+            for index_object = 1:numel( LTs )
+
+                %----------------------------------------------------------
+                % a) check arguments
+                %----------------------------------------------------------
+                % ensure numeric matrix
+                if ~( isnumeric( x{ index_object } ) && ismatrix( x{ index_object } ) )
+                    errorStruct.message = sprintf( 'x{ %d } must be a numeric matrix!', index_object );
+                    errorStruct.identifier = 'display_coefficients:NoNumericMatrix';
+                    error( errorStruct );
+                end
+
+                % ensure equal numbers of coefficients
+                if size( x{ index_object }, 1 ) ~= LTs( index_object ).N_coefficients
+                    errorStruct.message = sprintf( 'x{ %d } must have %d rows!', index_object, LTs( index_object ).N_coefficients );
+                    errorStruct.identifier = 'display_coefficients:InvalidNumberOfRows';
+                    error( errorStruct );
+                end
+
+                %----------------------------------------------------------
+                % b) display coefficients (single matrix)
+                %----------------------------------------------------------
+                display_coefficients_matrix( LTs( index_object ), x{ index_object } );
+
+            end % for index_object = 1:numel( LTs )
+
+        end % function display_coefficients( LTs, x )
+
     end % methods
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -198,6 +250,11 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
         % adjoint transform (single matrix)
         %------------------------------------------------------------------
         y = adjoint_transform_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % display coefficients (single matrix)
+        %------------------------------------------------------------------
+        display_coefficients_matrix( LT, x )
 
 	end % methods (Abstract, Access = protected, Hidden)
 

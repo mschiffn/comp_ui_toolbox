@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-02-04
+% modified: 2020-04-15
 %
 classdef orthogonal < linear_transforms.wave_atoms.type
 
@@ -17,34 +17,28 @@ classdef orthogonal < linear_transforms.wave_atoms.type
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = orthogonal( size )
+        function objects = orthogonal( pat )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure nonempty size
-            if nargin < 1 || isempty( size )
-                size = 1;
+            % ensure valid number of input arguments
+            narginchk( 0, 1 );
+
+            % ensure nonempty pat
+            if nargin < 1 || isempty( pat )
+                pat = 'p';
             end
 
-            % ensure row vector for size
-            if ~isrow( size )
-                errorStruct.message = 'size must be a row vector!';
-                errorStruct.identifier = 'orthogonal:InvalidSize';
-                error( errorStruct );
-            end
-
-            % ensure positive integers for size
-            mustBePositive( size );
-            mustBeInteger( size );
+            % superclass ensures valid pat
 
             %--------------------------------------------------------------
-            % 2.) create discrete wave atom transforms
+            % 2.) create orthogonal discrete wave atoms
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@linear_transforms.wave_atoms.type( ones( size ) );
+            objects@linear_transforms.wave_atoms.type( pat, ones( size( pat ) ) );
 
-        end % function objects = orthogonal( size )
+        end % function objects = orthogonal( pat )
 
         %------------------------------------------------------------------
         % string array (overload string method)

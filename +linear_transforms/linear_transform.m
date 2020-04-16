@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2020-01-30
+% modified: 2020-04-16
 %
 classdef (Abstract) linear_transform
 
@@ -137,6 +137,11 @@ classdef (Abstract) linear_transform
         % adjoint transform
         %------------------------------------------------------------------
         y = adjoint_transform( LTs, x )
+
+        %------------------------------------------------------------------
+        % display coefficients
+        %------------------------------------------------------------------
+        display_coefficients( LTs, x )
 
 	end % methods (Abstract)
 

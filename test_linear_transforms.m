@@ -195,7 +195,8 @@ T_s = physical_values.second( 1 / 40e6 );
 N_samples = 3200;
 N_samples_shift = 78;
 axis_t = math.sequence_increasing_regular_quantized( N_samples_shift, N_samples_shift + N_samples - 1, T_s );
-f_0 = physical_values.hertz( 3e6 );
+f_0 = physical_values.hertz( 4e6 );
+interval_f = math.interval( physical_values.hertz( 2.25e6 ), physical_values.hertz( 6.75e6 ) );
 
 %--------------------------------------------------------------------------
 % 1.) create bandpass signal
@@ -217,15 +218,18 @@ signal_gain_tilde = processing.signal( axis_t, samples_gain_tilde );
 %--------------------------------------------------------------------------
 signal_BP_tgc_tilde = signal_BP_tilde .* signal_gain_tilde;
 
+signal_BP_tgc = fourier_coefficients( signal_BP_tgc_tilde, [], interval_f );
+signal_BP_tgc_tilde_bp = signal( signal_BP_tgc, N_samples_shift, T_s );
+
 %--------------------------------------------------------------------------
 % 4.) apply TGC in the frequency domain (convolution)
 %--------------------------------------------------------------------------
 % Fourier coefficients (numeric)
-signal_BP = fourier_coefficients( signal_BP_tilde );
-signal_gain = fourier_coefficients( signal_gain_tilde );
+signal_BP = fourier_coefficients( signal_BP_tilde, [], interval_f );
+signal_gain = fourier_coefficients( signal_gain_tilde, [], interval_f );
 
 % Fourier coefficients (analytic)
-TGC_curve_coef = fourier_coefficients( TGC_curve, abs( axis_t ) * T_s, -40 );
+TGC_curve_coef = fourier_coefficients( TGC_curve, abs( axis_t ) * T_s, -50 );
 
 % error in gain Fourier coefficients
 % rel_RMSE_coef = norm( signal_gain.samples - TGC_curve_coef.samples ) / norm( TGC_curve_coef.samples );
@@ -257,42 +261,41 @@ signal_BP_tgc_conv_dft_tilde = signal( signal_BP_tgc_conv_dft, N_samples_shift, 
 signal_BP_tgc_conv_mat_tilde = signal( signal_BP_tgc_conv_mat, N_samples_shift, T_s );
 
 % relative RMSEs
-rel_RMSE_dft = norm( signal_BP_tgc_conv_dft_tilde.samples - signal_BP_tgc_tilde.samples ) / norm( signal_BP_tgc_tilde.samples );
-rel_RMSE_mat = norm( signal_BP_tgc_conv_mat_tilde.samples - signal_BP_tgc_tilde.samples ) / norm( signal_BP_tgc_tilde.samples );
+rel_RMSE_dft = norm( signal_BP_tgc_conv_dft_tilde.samples - signal_BP_tgc_tilde_bp.samples ) / norm( signal_BP_tgc_tilde_bp.samples );
+rel_RMSE_mat = norm( signal_BP_tgc_conv_mat_tilde.samples - signal_BP_tgc_tilde_bp.samples ) / norm( signal_BP_tgc_tilde_bp.samples );
 
 % convolution is similar to overlap add: individual convolutions + overlap
-M_kernel = ( numel( kernel ) - 1 ) / 2;
-
-test_result = conv( signal_BP.samples, kernel );
-q_lb_conv = signal_BP.axis.q_lb - M_kernel;
-q_ub_conv = signal_BP.axis.q_ub + M_kernel;
-index_overlap_start = 1;
-index_overlap_stop = - 2 * signal_BP.axis.q_lb + M_kernel + 1;
-
-% create conjugate even result -> corresponds to real part of analytic signal
-test_result = test_result( ( M_kernel + 1 ):( end - M_kernel ) ) + [ conj( test_result( index_overlap_stop:-1:index_overlap_start ) ); zeros( numel( signal_BP.samples ) - index_overlap_stop, 1 ) ];
-test_result = processing.signal_matrix( signal_BP.axis, test_result );
-test_result_tilde = signal( test_result, N_samples_shift, T_s );
-
-test_result_analy = conv( signal_BP.samples, kernel_analy );
-test_result_analy = test_result_analy(1:end - numel( kernel_analy ) + 1);
-test_result_analy = processing.signal_matrix( signal_BP.axis, test_result_analy );
-test_result_analy_tilde = signal( test_result_analy, N_samples_shift, T_s );
-
-temp = [ conj( signal_BP.samples( end:-1:2 ) ); signal_BP.samples ];
-temp_result = conv( temp, kernel );
-temp_result = temp_result( ( M_kernel + 1 ):( end - M_kernel ) );
-temp_result = temp_result( ( numel( signal_BP.samples ) ):end );
-temp_result = processing.signal_matrix( signal_BP.axis, temp_result );
-temp_result_tilde = signal( temp_result, N_samples_shift, T_s );
-rel_RMSE_temp = norm( temp_result_tilde.samples - signal_BP_tgc_tilde.samples ) / norm( signal_BP_tgc_tilde.samples );
+% M_kernel = ( numel( kernel ) - 1 ) / 2;
+% 
+% test_result = conv( signal_BP.samples, kernel );
+% q_lb_conv = signal_BP.axis.q_lb - M_kernel;
+% q_ub_conv = signal_BP.axis.q_ub + M_kernel;
+% index_overlap_start = 1;
+% index_overlap_stop = - 2 * signal_BP.axis.q_lb + M_kernel + 1;
+% 
+% % create conjugate even result -> corresponds to real part of analytic signal
+% test_result = test_result( ( M_kernel + 1 ):( end - M_kernel ) ) + [ conj( test_result( index_overlap_stop:-1:index_overlap_start ) ); zeros( numel( signal_BP.samples ) - index_overlap_stop, 1 ) ];
+% test_result = processing.signal_matrix( signal_BP.axis, test_result );
+% test_result_tilde = signal( test_result, N_samples_shift, T_s );
+% 
+% test_result_analy = conv( signal_BP.samples, kernel_analy );
+% test_result_analy = test_result_analy(1:end - numel( kernel_analy ) + 1);
+% test_result_analy = processing.signal_matrix( signal_BP.axis, test_result_analy );
+% test_result_analy_tilde = signal( test_result_analy, N_samples_shift, T_s );
+% 
+% temp = [ conj( signal_BP.samples( end:-1:2 ) ); signal_BP.samples ];
+% temp_result = conv( temp, kernel );
+% temp_result = temp_result( ( M_kernel + 1 ):( end - M_kernel ) );
+% temp_result = temp_result( ( numel( signal_BP.samples ) ):end );
+% temp_result = processing.signal_matrix( signal_BP.axis, temp_result );
+% temp_result_tilde = signal( temp_result, N_samples_shift, T_s );
+% rel_RMSE_temp = norm( temp_result_tilde.samples - signal_BP_tgc_tilde.samples ) / norm( signal_BP_tgc_tilde.samples );
 % TGC_curve_coef.
 
 figure( 1 );
 plot( double( signal_BP_tgc_conv_dft_tilde.axis.members ), signal_BP_tgc_conv_dft_tilde.samples, ...
       double( signal_BP_tgc_conv_mat_tilde.axis.members ), signal_BP_tgc_conv_mat_tilde.samples, ...
-      double( test_result_tilde.axis.members ), test_result_tilde.samples, ...
-      signal_BP_tgc_tilde.axis.members, signal_BP_tgc_tilde.samples );
+      signal_BP_tgc_tilde_bp.axis.members, signal_BP_tgc_tilde_bp.samples );
 title( sprintf( 'rel. RMSE = %.2f %%', rel_RMSE_dft * 1e2 ) );
 
 %--------------------------------------------------------------------------

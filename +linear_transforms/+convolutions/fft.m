@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-02
-% modified: 2020-04-03
+% modified: 2020-04-16
 %
 classdef fft < linear_transforms.convolutions.convolution
 
@@ -32,16 +32,19 @@ classdef fft < linear_transforms.convolutions.convolution
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure valid number of input arguments
+            narginchk( 2, 3 );
+
             % superclass ensures cell array for kernels
             % superclass ensures column vectors for kernels
             % superclass ensures nonempty positive integers for N_points
 
-            % ensure nonempty cut_off
-            if nargin < 3 || isempty( cut_off )
-                cut_off = true;
+            % ensure existence of cut_off
+            if nargin < 3
+                cut_off = [];
             end
 
-            % property validation function ensures logical for cut_off
+            % superclass ensures logical for cut_off
 
             %--------------------------------------------------------------
             % 2.) create fft-based discrete convolutions
@@ -127,6 +130,12 @@ classdef fft < linear_transforms.convolutions.convolution
 
         end % function y = adjoint_transform_matrix( LT, x )
 
+        %------------------------------------------------------------------
+        % display coefficients (single matrix)
+        %------------------------------------------------------------------
+        function display_coefficients_matrix( LT, x )
+        end % function display_coefficients_matrix( LT, x )
+
 	end % methods (Access = protected, Hidden)
 
-end % classdef matrix < linear_transforms.convolutions.convolution
+end % classdef fft < linear_transforms.convolutions.convolution

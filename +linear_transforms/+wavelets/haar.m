@@ -10,7 +10,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-01-28
+% modified: 2020-04-16
 %
 classdef haar < linear_transforms.wavelets.type
 
@@ -46,42 +46,6 @@ classdef haar < linear_transforms.wavelets.type
         end % function objects = haar( varargin )
 
         %------------------------------------------------------------------
-        % generate orthonormal quadrature mirror filters (QMFs)
-        %------------------------------------------------------------------
-        function QMFs = MakeONFilter( haars )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class linear_transforms.wavelets.haar
-            if ~isa( haars, 'linear_transforms.wavelets.haar' )
-                errorStruct.message = 'haars must be linear_transforms.wavelets.haar!';
-                errorStruct.identifier = 'MakeONFilter:NoHaarWavelets';
-                error( errorStruct );
-            end
-
-            %--------------------------------------------------------------
-            % 2.) generate orthonormal QMF
-            %--------------------------------------------------------------
-            % specify cell array for QMFs
-            QMFs = cell( size( haars ) );
-
-            % iterate Daubechies wavelet parameters
-            for index_object = 1:numel( haars )
-
-                % call MakeONFilter of WaveLab
-                QMFs{ index_object } = MakeONFilter( 'Haar' );
-
-            end % for index_object = 1:numel( haars )
-
-            % avoid cell array for single haars
-            if isscalar( haars )
-                QMFs = QMFs{ 1 };
-            end
-
-        end % function QMFs = MakeONFilter( haars )
-
-        %------------------------------------------------------------------
         % string array (overload string method)
         %------------------------------------------------------------------
         function strs_out = string( haars )
@@ -105,5 +69,37 @@ classdef haar < linear_transforms.wavelets.type
         end % function strs_out = string( haars )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % generate orthonormal QMF (scalar)
+        %------------------------------------------------------------------
+        function QMF = MakeONFilter_scalar( haar )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.wavelets.type (scalar) for haar
+
+            % ensure class linear_transforms.wavelets.haar
+            if ~isa( haar, 'linear_transforms.wavelets.haar' )
+                errorStruct.message = 'haar must be linear_transforms.wavelets.haar!';
+                errorStruct.identifier = 'MakeONFilter_scalar:NoHaarWavelet';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) generate orthonormal QMF (scalar)
+            %--------------------------------------------------------------
+            % call MakeONFilter of WaveLab
+            QMF = MakeONFilter( 'Haar' );
+
+        end % function QMF = MakeONFilter_scalar( haar )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef haar < linear_transforms.wavelets.type

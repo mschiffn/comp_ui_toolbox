@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-29
-% modified: 2020-02-29
+% modified: 2020-04-13
 %
 classdef (Abstract) metric
 
@@ -62,44 +62,27 @@ classdef (Abstract) metric
                 error( errorStruct );
             end
 
-            % multiple metrics / single images
-            if ~isscalar( metrics ) && isscalar( images )
-                images = repmat( images, size( metrics ) );
-            end
-
-            % single metrics / multiple images
-            if isscalar( metrics ) && ~isscalar( images )
-                metrics = repmat( metrics, size( images ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( metrics, images );
+            [ metrics, images ] = auxiliary.ensureEqualSize( metrics, images );
 
             %--------------------------------------------------------------
             % 2.) evaluate metrics
             %--------------------------------------------------------------
             % specify cell array for results
-            results = cell( size( images ) );
+            results = cell( size( metrics ) );
 
             % iterate image quality metrics
             for index_metric = 1:numel( metrics )
 
-                %----------------------------------------------------------
-                % b) evaluate metric (scalar)
-                %----------------------------------------------------------
+                % evaluate metric (scalar)
                 results{ index_metric } = evaluate_scalar( metrics( index_metric ), images( index_metric ) );
 
             end % for index_metric = 1:numel( metrics )
 
-            % TODO: merge metrics into array
+            % merge metrics into array
             N_results = cellfun( @numel, results );
             if all( N_results( : ) == N_results( 1 ) )
-                results = reshape( cat( 1, results{ : } ), [ size( images ), N_results( 1 ) ] );
-            end
-
-            % avoid cell array for single images
-            if isscalar( images )
-                results = results{ 1 };
+                results = reshape( cat( 1, results{ : } ), [ size( metrics ), N_results( 1 ) ] );
             end
 
         end % function results = evaluate( metrics, images )

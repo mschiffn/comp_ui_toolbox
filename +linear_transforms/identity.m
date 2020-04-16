@@ -82,6 +82,12 @@ classdef identity < linear_transforms.linear_transform_matrix
 
         end % function y = inverse_transform_matrix( LT, x )
 
+        %------------------------------------------------------------------
+        % display coefficients (single matrix)
+        %------------------------------------------------------------------
+        function display_coefficients_matrix( LT, x )
+        end % function display_coefficients_matrix( LT, x )
+
 	end % methods (Access = protected, Hidden)
 
 end % classdef identity < linear_transforms.linear_transform_matrix

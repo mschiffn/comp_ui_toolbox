@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-01-30
+% modified: 2020-04-16
 %
 % TODO: < linear_transforms.concatenations.concatenation
 classdef diagonal < linear_transforms.linear_transform_matrix
@@ -35,12 +35,8 @@ classdef diagonal < linear_transforms.linear_transform_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure sufficient number of arguments
-            if nargin < 2
-                errorStruct.message = 'A diagonal concatenation requires at least two linear transforms!';
-                errorStruct.identifier = 'diagonal:InsufficientNumberOfLinearTransforms';
-                error( errorStruct );
-            end
+            % ensure valid number of input arguments
+            narginchk( 2, inf );
 
             % ensure classes linear_transforms.linear_transform
             indicator = cellfun( @( x ) ~isa( x, 'linear_transforms.linear_transform' ), varargin );
@@ -51,14 +47,14 @@ classdef diagonal < linear_transforms.linear_transform_matrix
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( varargin{ : } );
+            [ varargin{ : } ] = auxiliary.ensureEqualSize( varargin{ : } );
 
             %--------------------------------------------------------------
             % 2.) create diagonal concatenations
             %--------------------------------------------------------------
 % TODO: detect weightings and identities
             % detect diagonal concatenations
-            indicator_diagonal = cellfun( @( x ) isa( x, 'linear_transforms.diagonal' ), varargin );
+            indicator_diagonal = cellfun( @( x ) isa( x, 'linear_transforms.concatenations.diagonal' ), varargin );
 
             % numbers of concatenated linear transforms
             N_transforms = ones( 1, numel( varargin{ 1 } ), nargin );
@@ -201,6 +197,13 @@ classdef diagonal < linear_transforms.linear_transform_matrix
             y = cat( 1, y{ : } );
 
         end % function y = adjoint_transform_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % display coefficients (single matrix)
+        %------------------------------------------------------------------
+        function display_coefficients_matrix( LT, x )
+
+        end % function display_coefficients_matrix( LT, x )
 
 	end % methods (Access = protected, Hidden)
 

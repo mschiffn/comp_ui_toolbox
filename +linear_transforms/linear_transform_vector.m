@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-29
-% modified: 2020-01-30
+% modified: 2020-04-16
 %
 classdef (Abstract) linear_transform_vector < linear_transforms.linear_transform_matrix
 
@@ -49,15 +49,16 @@ classdef (Abstract) linear_transform_vector < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.linear_transform_matrix (scalar) for LT
+            % calling function ensures numeric matrix for x
+            % calling function ensures equal numbers of points
+
             % ensure class linear_transforms.linear_transform_vector (scalar)
             if ~( isa( LT, 'linear_transforms.linear_transform_vector' ) && isscalar( LT ) )
                 errorStruct.message = 'LT must be linear_transforms.linear_transform_vector!';
                 errorStruct.identifier = 'forward_transform_matrix:NoSingleVectorTransform';
                 error( errorStruct );
             end
-
-            % superclass ensures numeric matrix for x
-            % superclass ensures equal numbers of points for x
 
             %--------------------------------------------------------------
             % 2.) compute forward transform (single matrix)
@@ -86,15 +87,16 @@ classdef (Abstract) linear_transform_vector < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.linear_transform_matrix (scalar) for LT
+            % calling function ensures numeric matrix for x
+            % calling function ensures equal numbers of coefficients
+
             % ensure class linear_transforms.linear_transform_vector (scalar)
             if ~( isa( LT, 'linear_transforms.linear_transform_vector' ) && isscalar( LT ) )
                 errorStruct.message = 'LT must be linear_transforms.linear_transform_vector!';
                 errorStruct.identifier = 'adjoint_transform_matrix:NoSingleVectorTransform';
                 error( errorStruct );
             end
-
-            % superclass ensures numeric matrix for x
-            % superclass ensures equal numbers of coefficients
 
             %--------------------------------------------------------------
             % 2.) compute adjoint transform (single matrix)
@@ -115,6 +117,41 @@ classdef (Abstract) linear_transform_vector < linear_transforms.linear_transform
 
         end % function y = adjoint_transform_matrix( LT, x )
 
+        %------------------------------------------------------------------
+        % display coefficients (single matrix)
+        %------------------------------------------------------------------
+        function display_coefficients_matrix( LT, x )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.linear_transform_matrix (scalar) for LT
+            % calling function ensures numeric matrix for x
+            % calling function ensures equal numbers of coefficients
+
+            % ensure class linear_transforms.linear_transform_vector (scalar)
+            if ~( isa( LT, 'linear_transforms.linear_transform_vector' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.linear_transform_vector!';
+                errorStruct.identifier = 'display_coefficients_matrix:NoSingleVectorTransform';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) display coefficients (single matrix)
+            %--------------------------------------------------------------
+            % number of vectors to transform
+            N_vectors = size( x, 2 );
+
+            % iterate vectors
+            for index_vector = 1:N_vectors
+
+                % call display coefficients for single vector
+                display_coefficients_vector( LT, x( :, index_vector ) );
+
+            end % for index_vector = 1:N_vectors
+
+        end % function display_coefficients_matrix( LT, x )
+
     end % methods (Access = protected, Hidden)
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,6 +168,11 @@ classdef (Abstract) linear_transform_vector < linear_transforms.linear_transform
         % adjoint transform (single vector)
         %------------------------------------------------------------------
         y = adjoint_transform_vector( LT, x )
+
+        %------------------------------------------------------------------
+        % display coefficients (single vector)
+        %------------------------------------------------------------------
+        display_coefficients_vector( LT, x )
 
 	end % methods (Abstract, Access = protected, Hidden)
 

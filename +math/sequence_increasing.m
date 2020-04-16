@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2020-02-03
+% modified: 2020-04-11
 %
 classdef sequence_increasing
 
@@ -174,18 +174,8 @@ classdef sequence_increasing
                 indices = { indices };
             end
 
-            % multiple sequences / single indices
-            if ~isscalar( sequences ) && isscalar( indices )
-                indices = repmat( indices, size( sequences ) );
-            end
-
-            % single sequences / multiple indices
-            if isscalar( sequences ) && ~isscalar( indices )
-                sequences = repmat( sequences, size( indices ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, indices );
+            [ sequences, indices ] = auxiliary.ensureEqualSize( sequences, indices );
 
             %--------------------------------------------------------------
             % 2.) perform subsampling
@@ -217,6 +207,12 @@ classdef sequence_increasing
                     error( errorStruct );
                 end
 
+                % subsampling is not required
+                if numel( indices{ index_object } ) == N_members( index_object )
+                    sequences_out{ index_object } = sequences( index_object );
+                    continue;
+                end
+
                 % subsample members
                 sequences( index_object ).members = sequences( index_object ).members( indices{ index_object } );
 
@@ -237,7 +233,7 @@ classdef sequence_increasing
 
             end % for index_object = 1:numel( sequences )
 
-            %
+            % create arrays for identical class members
             if all( cellfun( @( x ) strcmp( class( x( : ) ), 'math.sequence_increasing' ), sequences_out ) ) || all( cellfun( @( x ) strcmp( class( x( : ) ), 'math.sequence_increasing_regular_quantized' ), sequences_out ) )
                 sequences_out = reshape( [ sequences_out{ : } ], size( sequences ) );
             end
@@ -361,6 +357,29 @@ classdef sequence_increasing
 
         end % function [ sequences, N_remove ] = remove_last( sequences, varargin )
 
+        %------------------------------------------------------------------
+        % is approximately equal
+        %------------------------------------------------------------------
+        function tf = isapproxequal( sequences )
+% TODO: finish
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.sequence_increasing
+            if ~isa( sequences, 'math.sequence_increasing' )
+                errorStruct.message = 'sequences must be math.sequence_increasing!';
+                errorStruct.identifier = 'isapproxequal:NoIncreasingSequences';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) check for approximate equality
+            %--------------------------------------------------------------
+            tf = false;
+            
+
+        end % function tf = isapproxequal( varargin )
+        
         %------------------------------------------------------------------
         % cardinality (overload abs function)
         %------------------------------------------------------------------
