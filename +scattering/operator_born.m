@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-16
-% modified: 2020-03-04
+% modified: 2020-04-17
 %
 classdef operator_born < scattering.operator
 
@@ -367,21 +367,17 @@ classdef operator_born < scattering.operator
                 % apply forward linear transform
                 theta_hat = forward_transform( LT_dict, theta_hat );
 
+                figure(999);
+                display_coefficients( LT_dict, theta_hat );
+
             end % if nargin >= 3 && ~isempty( LT_dict )
 
             % illustrate
-%             temp_2 = squeeze( reshape( abs( theta_hat( :, 1 ) ), operator_born.sequence.setup.FOV.shape.grid.N_points_axis ) );
-            figure(999);
+            figure(998);
             if ismatrix( temp_1 )
-                subplot( 1, 2, 1 );
                 imagesc( illustration.dB( temp_1, 20 )', [ -60, 0 ] );
-                subplot( 1, 2, 2 );
-%                 imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
             else
-                subplot( 1, 2, 1 );
                 imagesc( illustration.dB( squeeze( temp_1( :, 5, : ) ), 20 )', [ -60, 0 ] );
-                subplot( 1, 2, 2 );
-%                 imagesc( illustration.dB( squeeze( temp_2( :, 5, : ) ), 20 )', [ -60, 0 ] );
             end
 
         end % function theta_hat = adjoint_scalar( operator_born, u_M, LT_dict, LT_tgc )

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-16
+% modified: 2020-04-17
 %
 classdef (Abstract) type
 
@@ -13,8 +13,7 @@ classdef (Abstract) type
 	properties (SetAccess = private)
 
         % independent properties
-        pat ( 1, 1 ) char { mustBeMember( pat, { 'p', 'q', 'u' } ), mustBeNonempty } = 'p'      % type of frequency partition which satsifies parabolic scaling relationship
-        N_layers ( 1, 1 ) double { mustBeMember( N_layers, [ 1, 2, 4 ] ), mustBeNonempty } = 1	% number of layers in wave atom decomposition
+        pat ( 1, 1 ) char { mustBeMember( pat, { 'p', 'q', 'u' } ), mustBeNonempty } = 'p'	% type of frequency partition which satsifies parabolic scaling relationship
 
 	end % properties
 
@@ -26,19 +25,20 @@ classdef (Abstract) type
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = type( pat, N_layers )
+        function objects = type( pat )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
             % ensure valid number of input arguments
-            narginchk( 2, 2 );
+            narginchk( 0, 1 );
+
+            % ensure nonempty pat
+            if nargin < 1 || isempty( pat )
+                pat = 'p';
+            end
 
             % property validation function ensures valid pat
-            % property validation function ensures valid N_layers
-
-            % ensure equal number of dimensions and sizes
-            [ pat, N_layers ] = auxiliary.ensureEqualSize( pat, N_layers );
 
             %--------------------------------------------------------------
             % 2.) create wave atom types
@@ -51,11 +51,10 @@ classdef (Abstract) type
 
                 % set independent properties
                 objects( index_object ).pat = pat( index_object );
-                objects( index_object ).N_layers = N_layers( index_object );
 
             end % for index_object = 1:numel( objects )
 
-        end % function objects = type( pat, N_layers )
+        end % function objects = type( pat )
 
 	end % methods
 
@@ -63,6 +62,11 @@ classdef (Abstract) type
 	%% methods (Abstract)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods (Abstract)
+
+        %------------------------------------------------------------------
+        % numbers of layers
+        %------------------------------------------------------------------
+        N_layers = get_N_layers( types, N_dimensions )
 
         %------------------------------------------------------------------
         % string array (overload string method)

@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-30
-% modified: 2020-04-15
+% modified: 2020-04-17
 %
 classdef complex < linear_transforms.wave_atoms.type
 
@@ -25,9 +25,9 @@ classdef complex < linear_transforms.wave_atoms.type
             % ensure valid number of input arguments
             narginchk( 0, 1 );
 
-            % ensure nonempty pat
-            if nargin < 1 || isempty( pat )
-                pat = 'p';
+            % ensure existence of pat
+            if nargin < 1
+                pat = [];
             end
 
             % superclass ensures valid pat
@@ -36,9 +36,37 @@ classdef complex < linear_transforms.wave_atoms.type
             % 2.) create complex discrete wave atoms
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@linear_transforms.wave_atoms.type( pat, 4 * ones( size( pat ) ) );
+            objects@linear_transforms.wave_atoms.type( pat );
 
         end % function objects = complex( pat )
+
+        %------------------------------------------------------------------
+        % numbers of layers
+        %------------------------------------------------------------------
+        function N_layers = get_N_layers( complexes, N_dimensions )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.wave_atoms.complex
+            if ~isa( complexes, 'linear_transforms.wave_atoms.complex' )
+                errorStruct.message = 'complexes must be linear_transforms.wave_atoms.complex!';
+                errorStruct.identifier = 'get_N_layers:NoComplexWaveAtoms';
+                error( errorStruct );
+            end
+
+            % ensure nonempty positive integers
+            mustBePositive( N_dimensions );
+            mustBeInteger( N_dimensions );
+            mustBeNonempty( N_dimensions );
+
+            %--------------------------------------------------------------
+            % 2.) numbers of layers
+            %--------------------------------------------------------------
+            % compute numbers of layers
+            N_layers = 2.^N_dimensions;
+
+        end % function N_layers = get_N_layers( complexes, N_dimensions )
 
         %------------------------------------------------------------------
         % string array (overload string method)

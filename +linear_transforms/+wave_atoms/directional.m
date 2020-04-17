@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-30
-% modified: 2020-04-15
+% modified: 2020-04-17
 %
 classdef directional < linear_transforms.wave_atoms.type
 
@@ -25,9 +25,9 @@ classdef directional < linear_transforms.wave_atoms.type
             % ensure valid number of input arguments
             narginchk( 0, 1 );
 
-            % ensure nonempty pat
-            if nargin < 1 || isempty( pat )
-                pat = 'p';
+            % ensure existence of pat
+            if nargin < 1
+                pat = [];
             end
 
             % superclass ensures valid pat
@@ -36,9 +36,40 @@ classdef directional < linear_transforms.wave_atoms.type
             % 2.) create directional discrete wave atoms
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@linear_transforms.wave_atoms.type( pat, 2 * ones( size( pat ) ) );
+            objects@linear_transforms.wave_atoms.type( pat );
 
         end % function objects = directional( pat )
+
+        %------------------------------------------------------------------
+        % numbers of layers
+        %------------------------------------------------------------------
+        function N_layers = get_N_layers( directionals, N_dimensions )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.wave_atoms.directional
+            if ~isa( directionals, 'linear_transforms.wave_atoms.directional' )
+                errorStruct.message = 'directionals must be linear_transforms.wave_atoms.directional!';
+                errorStruct.identifier = 'get_N_layers:NoDirectionalWaveAtoms';
+                error( errorStruct );
+            end
+
+            % ensure nonempty positive integers greater than 1
+            mustBeGreaterThan( N_dimensions, 1 );
+            mustBeInteger( N_dimensions );
+            mustBeNonempty( N_dimensions );
+
+            % ensure equal number of dimensions and sizes
+            [ ~, N_dimensions ] = auxiliary.ensureEqualSize( directionals, N_dimensions );
+
+            %--------------------------------------------------------------
+            % 2.) numbers of layers
+            %--------------------------------------------------------------
+            % compute numbers of layers
+            N_layers = 2.^( N_dimensions - 1 );
+
+        end % function N_layers = get_N_layers( directionals, N_dimensions )
 
         %------------------------------------------------------------------
         % string array (overload string method)

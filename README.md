@@ -35,14 +35,24 @@ rates in the kilohertz range.
 
 Established image recovery methods, e.g.
 delay-and-sum (DAS) or
-Fourier methods, however, do not support
-complex imaging sequences and, thus, seriously limit
-the unprecedented flexibility of
+Fourier methods, however, gradually trade
+the image quality for
+the frame rate.
+They rely on
+relatively simple physical models that
+do not support
+complex imaging sequences and, thus, significantly reduce
+the flexibility of
 these systems.
 
 ## What Does This Toolbox Accomplish?
 
-Computational UI methods recover
+Computational UI methods leverage
+the available processing power for
+realistic physical models that reflect
+the abilities of
+freely programmable UI systems.
+They recover
 fluctuations in
 the acoustic material parameters in
 a specified FOV from
@@ -87,7 +97,7 @@ Typical applications include
 - regularized structured insonification,
 - coded excitation,
 - compressed sensing / sparse recovery,
-- statistical methods (Bayesian), and
+- statistical (Bayesian) methods, and
 - machine learning.
 
 Usability and simplicity were
@@ -101,6 +111,7 @@ only a few lines of code.
 
 - d-dimensional Euclidean space (d = 2, 3)
 - two types of heterogeneous acoustic material parameters: compressibility and mass density
+- modular object-oriented design
 - arbitrary dispersion relations describing
   the combination of
   frequency-dependent absorption and
@@ -124,7 +135,7 @@ only a few lines of code.
 - linear systems (wave propagation, scattering, transducer behavior)
 - pulse-echo mode, i.e. no transmission measurements
 - half-space with rigid (Neumann) boundary
-- symmetric grids (future releases might support the fast multipole method (FMM) and adaptive cross approximation (ACA))
+- symmetric grids (future releases might support the fast multipole method and adaptive cross approximation)
 - developed and tested in MATLAB R2018b, R2019a, R2020a / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
 
 ## References :notebook:

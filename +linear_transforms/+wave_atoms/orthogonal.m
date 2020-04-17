@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-15
+% modified: 2020-04-17
 %
 classdef orthogonal < linear_transforms.wave_atoms.type
 
@@ -25,9 +25,9 @@ classdef orthogonal < linear_transforms.wave_atoms.type
             % ensure valid number of input arguments
             narginchk( 0, 1 );
 
-            % ensure nonempty pat
-            if nargin < 1 || isempty( pat )
-                pat = 'p';
+            % ensure existence of pat
+            if nargin < 1
+                pat = [];
             end
 
             % superclass ensures valid pat
@@ -36,9 +36,40 @@ classdef orthogonal < linear_transforms.wave_atoms.type
             % 2.) create orthogonal discrete wave atoms
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@linear_transforms.wave_atoms.type( pat, ones( size( pat ) ) );
+            objects@linear_transforms.wave_atoms.type( pat );
 
         end % function objects = orthogonal( pat )
+
+        %------------------------------------------------------------------
+        % numbers of layers
+        %------------------------------------------------------------------
+        function N_layers = get_N_layers( orthogonals, N_dimensions )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.wave_atoms.orthogonal
+            if ~isa( orthogonals, 'linear_transforms.wave_atoms.orthogonal' )
+                errorStruct.message = 'orthogonals must be linear_transforms.wave_atoms.orthogonal!';
+                errorStruct.identifier = 'get_N_layers:NoOrthogonalWaveAtoms';
+                error( errorStruct );
+            end
+
+            % ensure nonempty positive integers
+            mustBePositive( N_dimensions );
+            mustBeInteger( N_dimensions );
+            mustBeNonempty( N_dimensions );
+
+            % ensure equal number of dimensions and sizes
+            [ ~, N_dimensions ] = auxiliary.ensureEqualSize( orthogonals, N_dimensions );
+
+            %--------------------------------------------------------------
+            % 2.) numbers of layers
+            %--------------------------------------------------------------
+            % compute numbers of layers
+            N_layers = ones( size( N_dimensions ) );
+
+        end % function N_layers = get_N_layers( orthogonals, N_dimensions )
 
         %------------------------------------------------------------------
         % string array (overload string method)

@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-04-16
+% modified: 2020-04-17
 %
 classdef wave_atom < linear_transforms.linear_transform_vector
 
@@ -24,8 +24,9 @@ classdef wave_atom < linear_transforms.linear_transform_vector
 
         % dependent properties
         N_points_axis ( 1, : ) double { mustBePositive, mustBeInteger, mustBeNonempty } = [ 512, 512 ]
-        handle_fwd ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) x	% function handle to forward transform
-        handle_inv ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) x	% function handle to inverse transform
+        N_layers ( 1, 1 ) double { mustBeMember( N_layers, [ 1, 2, 4, 8 ] ), mustBeNonempty } = 1
+        handle_fwd ( 1, 1 ) function_handle { mustBeNonempty } = @fwa2sym	% function handle to forward transform
+        handle_inv ( 1, 1 ) function_handle { mustBeNonempty } = @iwa2sym	% function handle to inverse transform
 
 	end % properties
 
@@ -62,8 +63,8 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             % compute numbers of grid points
             N_points = ( 2.^scales_finest ).^N_dimensions;
 
-            % extract numbers of layers
-            N_layers = reshape( [ types.N_layers ], size( types ) );
+            % get numbers of layers
+            N_layers = get_N_layers( types, N_dimensions );
 
             % compute numbers of transform coefficients
             N_coefficients = N_layers .* N_points;
@@ -86,6 +87,7 @@ classdef wave_atom < linear_transforms.linear_transform_vector
                 %----------------------------------------------------------
                 % number of points along each axis
                 objects( index_object ).N_points_axis = repmat( 2.^objects( index_object ).scale_finest, [ 1, objects( index_object ).N_dimensions ] );
+                objects( index_object ).N_layers = N_layers( index_object );
 
                 % specify transform functions
                 switch objects( index_object ).N_dimensions
@@ -119,7 +121,7 @@ classdef wave_atom < linear_transforms.linear_transform_vector
                         %--------------------------------------------------
                         % iv.) invalid number of dimensions
                         %--------------------------------------------------
-                        errorStruct.message = sprintf( 'objects( %d ).N_dimensions must equal 1 or 2!', index_object );
+                        errorStruct.message = sprintf( 'objects( %d ).N_dimensions must equal 1, 2, or 3!', index_object );
                         errorStruct.identifier = 'wave_atom:InvalidNumberDimensions';
                         error( errorStruct );
 
@@ -201,7 +203,7 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             % 2.) compute adjoint wave atom transform (single vector)
             %--------------------------------------------------------------
             % prepare shape of vector
-            x_act = reshape( x, [ LT.N_points_axis, LT.type.N_layers ] );
+            x_act = reshape( x, [ LT.N_points_axis, LT.N_layers ] );
 
             % apply adjoint transform
             switch class( LT.type )
@@ -241,13 +243,13 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             % 2.) display coefficients (single vector)
             %--------------------------------------------------------------
             % prepare shape of vector
-            x_act = reshape( x, [ LT.N_points_axis, LT.type.N_layers ] );
+            x_act = reshape( x, [ LT.N_points_axis, LT.N_layers ] );
 
             % logarithmic compression
             x_act_dB = illustration.dB( x_act, 10 );
 
             % display vector
-            switch LT.type.N_layers
+            switch LT.N_layers
                 case 1
                     if LT.N_dimensions == 2
                         imagesc( x_act_dB, [ -60, 0 ] );
