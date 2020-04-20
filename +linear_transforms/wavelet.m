@@ -6,7 +6,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-01-30
+% modified: 2020-04-19
 %
 classdef wavelet < linear_transforms.linear_transform_vector
 
@@ -24,10 +24,10 @@ classdef wavelet < linear_transforms.linear_transform_vector
         % dependent properties
         N_points_axis ( 1, : ) { mustBePositive, mustBeInteger, mustBeNonempty } = [ 512, 512 ]	% number of points along each axis ( dyadic )
         qmf ( 1, : ) double                                         % quadrature mirror filter
-        handle_fwd ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) x	% function handle to forward transform
-        handle_inv ( 1, 1 ) function_handle { mustBeNonempty } = @( x ) x	% function handle to inverse transform
+        handle_fwd ( 1, 1 ) function_handle { mustBeNonempty } = @FWT2_PO	% function handle to forward transform
+        handle_inv ( 1, 1 ) function_handle { mustBeNonempty } = @IWT2_PO	% function handle to inverse transform
 
-    end % properties
+	end % properties
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
@@ -247,11 +247,12 @@ classdef wavelet < linear_transforms.linear_transform_vector
             end
 
             % logarithmic compression
-            x_dB = fftshift( illustration.dB( x, 10 )', 2 );
+            x_dB = illustration.dB( x, 10 )';
 
             % display vector
             if LT.N_dimensions == 2
                 imagesc( x_dB, [ -60, 0 ] );
+                colorbar;
             end
 
         end % function display_coefficients_vector( LT, x )
