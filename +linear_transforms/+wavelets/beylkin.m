@@ -9,7 +9,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-16
+% modified: 2020-07-14
 %
 classdef beylkin < linear_transforms.wavelets.type
 
@@ -21,15 +21,16 @@ classdef beylkin < linear_transforms.wavelets.type
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = beylkin( varargin )
+        function objects = beylkin( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at most one argument
+            narginchk( 0, 1 );
+
             % ensure nonempty size
-            if nargin >= 1 && ~isempty( varargin{ 1 } )
-                size = varargin{ 1 };
-            else
+            if nargin < 1 || isempty( size )
                 size = 1;
             end
 
@@ -52,6 +53,9 @@ classdef beylkin < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure class linear_transforms.wavelets.beylkin
             if ~isa( beylkins, 'linear_transforms.wavelets.beylkin' )
                 errorStruct.message = 'beylkins must be linear_transforms.wavelets.beylkin!';

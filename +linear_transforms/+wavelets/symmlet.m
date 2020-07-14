@@ -13,7 +13,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-16
+% modified: 2020-07-14
 %
 classdef symmlet < linear_transforms.wavelets.type
 
@@ -40,6 +40,14 @@ classdef symmlet < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at most one argument
+            narginchk( 0, 1 );
+
+            % ensure nonempty size
+            if nargin < 1 || isempty( parameters )
+                parameters = 10;
+            end
+
             % property validation function ensures valid parameters
 
             %--------------------------------------------------------------
@@ -66,6 +74,9 @@ classdef symmlet < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure class linear_transforms.wavelets.symmlet
             if ~isa( symmlets, 'linear_transforms.wavelets.symmlet' )
                 errorStruct.message = 'symmlets must be linear_transforms.wavelets.symmlet!';

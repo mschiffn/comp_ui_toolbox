@@ -10,7 +10,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-16
+% modified: 2020-07-14
 %
 classdef haar < linear_transforms.wavelets.type
 
@@ -22,15 +22,16 @@ classdef haar < linear_transforms.wavelets.type
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = haar( varargin )
+        function objects = haar( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at most one argument
+            narginchk( 0, 1 );
+
             % ensure nonempty size
-            if nargin >= 1 && ~isempty( varargin{ 1 } )
-                size = varargin{ 1 };
-            else
+            if nargin < 1 || isempty( size )
                 size = 1;
             end
 
@@ -43,7 +44,7 @@ classdef haar < linear_transforms.wavelets.type
             % constructor of superclass
             objects@linear_transforms.wavelets.type( size );
 
-        end % function objects = haar( varargin )
+        end % function objects = haar( size )
 
         %------------------------------------------------------------------
         % string array (overload string method)
@@ -53,6 +54,9 @@ classdef haar < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure class linear_transforms.wavelets.haar
             if ~isa( haars, 'linear_transforms.wavelets.haar' )
                 errorStruct.message = 'haars must be linear_transforms.wavelets.haar!';

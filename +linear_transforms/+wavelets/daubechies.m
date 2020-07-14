@@ -12,7 +12,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-16
+% modified: 2020-07-14
 %
 classdef daubechies < linear_transforms.wavelets.type
 
@@ -39,6 +39,14 @@ classdef daubechies < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at most one argument
+            narginchk( 0, 1 );
+
+            % ensure nonempty size
+            if nargin < 1 || isempty( lengths )
+                lengths = 20;
+            end
+
             % property validation function ensures valid lengths
 
             %--------------------------------------------------------------
@@ -65,6 +73,9 @@ classdef daubechies < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure class linear_transforms.wavelets.daubechies
             if ~isa( daubechies, 'linear_transforms.wavelets.daubechies' )
                 errorStruct.message = 'daubechies must be linear_transforms.wavelets.daubechies!';

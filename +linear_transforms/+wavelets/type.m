@@ -1,9 +1,9 @@
 %
-% abstract superclass for all wavelet types
+% abstract superclass for all wavelet types and their parameters
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-16
+% modified: 2020-07-14
 %
 classdef (Abstract) type
 
@@ -20,6 +20,9 @@ classdef (Abstract) type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure row vector for size
             if ~isrow( size )
                 errorStruct.message = 'size must be a row vector!';
@@ -48,6 +51,9 @@ classdef (Abstract) type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure class linear_transforms.wavelets.type
             if ~isa( types, 'linear_transforms.wavelets.type' )
                 errorStruct.message = 'types must be linear_transforms.wavelets.type!';

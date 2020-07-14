@@ -10,7 +10,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-16
+% modified: 2020-07-14
 %
 classdef vaidyanathan < linear_transforms.wavelets.type
 
@@ -22,15 +22,16 @@ classdef vaidyanathan < linear_transforms.wavelets.type
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = vaidyanathan( varargin )
+        function objects = vaidyanathan( size )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at most one argument
+            narginchk( 0, 1 );
+
             % ensure nonempty size
-            if nargin >= 1 && ~isempty( varargin{ 1 } )
-                size = varargin{ 1 };
-            else
+            if nargin < 1 || isempty( size )
                 size = 1;
             end
 
@@ -53,6 +54,9 @@ classdef vaidyanathan < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure class linear_transforms.wavelets.vaidyanathan
             if ~isa( vaidyanathans, 'linear_transforms.wavelets.vaidyanathan' )
                 errorStruct.message = 'vaidyanathans must be linear_transforms.wavelets.vaidyanathan!';

@@ -10,7 +10,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-16
+% modified: 2020-07-14
 %
 classdef coiflet < linear_transforms.wavelets.type
 
@@ -37,6 +37,14 @@ classdef coiflet < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at most one argument
+            narginchk( 0, 1 );
+
+            % ensure nonempty size
+            if nargin < 1 || isempty( parameters )
+                parameters = 5;
+            end
+
             % property validation function ensures valid parameters
 
             %--------------------------------------------------------------
@@ -63,6 +71,9 @@ classdef coiflet < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure class linear_transforms.wavelets.coiflet
             if ~isa( coiflets, 'linear_transforms.wavelets.coiflet' )
                 errorStruct.message = 'coiflets must be linear_transforms.wavelets.coiflet!';
