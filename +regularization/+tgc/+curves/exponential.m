@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-07
-% modified: 2020-04-13
+% modified: 2020-06-30
 %
 classdef exponential < regularization.tgc.curves.curve
 
@@ -35,18 +35,11 @@ classdef exponential < regularization.tgc.curves.curve
 
             % property validation functions ensure nonempty positive frequencies for exponents
 
-            % multiple intervals_t / single exponents
-            if ~isscalar( intervals_t ) && isscalar( exponents )
-                exponents = repmat( exponents, size( intervals_t ) );
-            end
-
-            % single intervals_t / multiple exponents
-            if isscalar( intervals_t ) && ~isscalar( exponents )
-                intervals_t = repmat( intervals_t, size( exponents ) );
-            end
+            % ensure two arguments
+            narginchk( 2, 2 );
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( intervals_t, exponents );
+            [ intervals_t, exponents ] = auxiliary.ensureEqualSize( intervals_t, exponents );
 
             %--------------------------------------------------------------
             % 2.) create exponential time gain compensation curves
@@ -72,6 +65,9 @@ classdef exponential < regularization.tgc.curves.curve
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class regularization.tgc.curves.exponential
             if ~isa( curves, 'regularization.tgc.curves.exponential' )
                 errorStruct.message = 'tgcs must be regularization.tgc.curves.exponential!';
@@ -86,18 +82,8 @@ classdef exponential < regularization.tgc.curves.curve
                 error( errorStruct );
             end
 
-            % multiple curves / single axes
-            if ~isscalar( curves ) && isscalar( axes )
-                axes = repmat( axes, size( curves ) );
-            end
-
-            % single curves / multiple axes
-            if isscalar( curves ) && ~isscalar( axes )
-                curves = repmat( curves, size( axes ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( curves, axes );
+            [ curves, axes ] = auxiliary.ensureEqualSize( curves, axes );
 
             %--------------------------------------------------------------
             % 2.) sample exponential time gain compensation curves

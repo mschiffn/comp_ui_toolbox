@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-08
-% modified: 2020-03-13
+% modified: 2020-07-06
 %
 classdef (Abstract) region < processing.metrics.metric
 
@@ -13,7 +13,7 @@ classdef (Abstract) region < processing.metrics.metric
 	properties (SetAccess = private)
 
         % independent properties
-        ROI ( 1, 1 ) math.orthotope { mustBeNonempty } = math.orthotope         % ROI to be inspected
+        ROI ( 1, 1 ) scattering.sequences.setups.geometry.shape { mustBeNonempty } = scattering.sequences.setups.geometry.orthotope	% ROI to be inspected
         boundary_dB ( 1, 1 ) double { mustBeNegative, mustBeNonempty } = -6     % boundary value in dB
 
 	end % properties
@@ -31,33 +31,26 @@ classdef (Abstract) region < processing.metrics.metric
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class math.orthotope
-            if ~isa( ROIs, 'math.orthotope' )
-                errorStruct.message = 'ROIs must be math.orthotope!';
-                errorStruct.identifier = 'region:NoOrthotopes';
-                error( errorStruct );
+            % ensure one or two arguments
+            narginchk( 1, 2 );
+
+            % property validation functions ensure class scattering.sequences.setups.geometry.shape for ROIs
+
+            % ensure nonempty boundaries_dB
+            if nargin < 2 || isempty( boundaries_dB )
+                boundaries_dB = -6;
             end
 
-            % property validation functions ensure valid boundaries_dB
-
-            % multiple ROIs / single boundaries_dB
-            if ~isscalar( ROIs ) && isscalar( boundaries_dB )
-                boundaries_dB = repmat( boundaries_dB, size( ROIs ) );
-            end
-
-            % single ROIs / multiple boundaries_dB
-            if isscalar( ROIs ) && ~isscalar( boundaries_dB )
-                ROIs = repmat( ROIs, size( boundaries_dB ) );
-            end
+            % property validation functions ensure nonempty negative double for boundaries_dB
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( ROIs, boundaries_dB );
+            [ ROIs, boundaries_dB ] = auxiliary.ensureEqualSize( ROIs, boundaries_dB );
 
             %--------------------------------------------------------------
             % 2.) create regions
             %--------------------------------------------------------------
-            % repeat default region
-            objects@processing.metrics.metric( size( boundaries_dB ) );
+            % constructor of superclass
+            objects@processing.metrics.metric( size( ROIs ) );
 
             % iterate regions
             for index_object = 1:numel( objects )
@@ -88,10 +81,10 @@ classdef (Abstract) region < processing.metrics.metric
             % calling function ensures class processing.metrics.metric (scalar) for region
             % calling function ensures class processing.image (scalar) for image
 
-            % ensure class math.grid_regular_orthogonal
-            if ~isa( image.grid, 'math.grid_regular_orthogonal' )
-                errorStruct.message = 'image.grid must be math.grid_regular_orthogonal!';
-                errorStruct.identifier = 'evaluate_scalar:NoOrthogonalRegularGrid';
+            % ensure class math.grid_regular
+            if ~isa( image.grid, 'math.grid_regular' )
+                errorStruct.message = 'image.grid must be math.grid_regular!';
+                errorStruct.identifier = 'evaluate_scalar:NoRegularGrid';
                 error( errorStruct );
             end
 
@@ -105,14 +98,11 @@ classdef (Abstract) region < processing.metrics.metric
             %--------------------------------------------------------------
             % 2.) compute region metric (scalar)
             %--------------------------------------------------------------
-            % extract axes
-            axes = get_axes( image.grid );
-
-            % cut out axes
-            [ ~, indicators ] = cut_out( axes, cat( 2, region.ROI.intervals.lb ), cat( 2, region.ROI.intervals.ub ) );
-
             % specify cell array for results
             results = cell( 1, image.N_images );
+
+            % detect valid grid points in ROIs
+            indicator_roi = iselement( region.ROI, image.grid.positions );
 
             % iterate images
             for index_image = 1:image.N_images
@@ -120,25 +110,24 @@ classdef (Abstract) region < processing.metrics.metric
                 %----------------------------------------------------------
                 % a) subsampling, logarithmic compression, and thresholding
                 %----------------------------------------------------------
-                % extract relevant samples
-                samples_act = reshape( image.samples( :, index_image ), image.grid.N_points_axis );
-                samples_act = samples_act( indicators{ : } );
+                % subsampling
+                samples_act = image.samples( indicator_roi, index_image );
 
                 % logarithmic compression and hard thresholding
                 samples_act_dB = illustration.dB( samples_act, 20 );
-                indicator = ( samples_act_dB >= options( index_options ).boundary_dB );
+                indicator = ( samples_act_dB >= region.boundary_dB );
 
                 %----------------------------------------------------------
                 % b) compute region metric (samples)
                 %----------------------------------------------------------
-                results{ index_image } = evaluate_samples( region, indicator );
+                results{ index_image } = evaluate_samples( region, image.grid.cell_ref.volume, indicator );
 
             end % for index_image = 1:image.N_images
 
             % concatenate horizontally
             results = cat( 2, results{ : } );
 
-        end % function results = evaluate_scalar( contrast, image )
+        end % function results = evaluate_scalar( region, image )
 
 	end % methods (Access = protected, Hidden)
 
@@ -150,7 +139,7 @@ classdef (Abstract) region < processing.metrics.metric
         %------------------------------------------------------------------
         % evaluate metric (samples)
         %------------------------------------------------------------------
-        result = evaluate_samples( contrast, samples_act_dB_ref, samples_act_dB_noise )
+        result = evaluate_samples( region, delta_V, indicator )
 
 	end % methods (Abstract, Access = protected, Hidden)
 

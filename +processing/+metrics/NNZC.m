@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-03-10
-% modified: 2020-03-13
+% modified: 2020-07-06
 %
 classdef NNZC < processing.metrics.region
 
@@ -20,8 +20,17 @@ classdef NNZC < processing.metrics.region
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass ensures class math.orthotope for ROIs
-            % superclass ensures valid boundaries_dB
+            % ensure one or two arguments
+            narginchk( 1, 2 );
+
+            % superclass ensures class scattering.sequences.setups.geometry.shape for ROIs
+
+            % ensure definition of boundaries_dB
+            if nargin < 2
+                boundaries_dB = [];
+            end
+
+            % superclass ensures nonempty negative double for boundaries_dB
 
             %--------------------------------------------------------------
             % 2.) create numbers of nonzero components
@@ -39,18 +48,19 @@ classdef NNZC < processing.metrics.region
 	methods (Access = protected, Hidden)
 
         %------------------------------------------------------------------
-        % evaluate samples (scalar)
+        % evaluate metric (samples)
         %------------------------------------------------------------------
         function result = evaluate_samples( ~, ~, indicator )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.metrics.volume (scalar) for volume
-            % calling function ensures class math.grid_regular_orthogonal (scalar) for grid
+            % calling function ensures class processing.metrics.region (scalar) for region
+            % calling function ensures volume element for delta_V
+            % calling function ensures logical for indicator
 
             %--------------------------------------------------------------
-            % 2.) compute volume
+            % 2.) compute numbers of nonzero components
             %--------------------------------------------------------------
             result = sum( indicator( : ) );
 

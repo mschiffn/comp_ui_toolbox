@@ -194,6 +194,25 @@ classdef composition < linear_transforms.linear_transform_matrix
         %------------------------------------------------------------------
         function display_coefficients_matrix( LT, x )
 
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class linear_transforms.composition (scalar)
+            if ~( isa( LT, 'linear_transforms.composition' ) && isscalar( LT ) )
+                errorStruct.message = 'LT must be linear_transforms.composition!';
+                errorStruct.identifier = 'display_coefficients_matrix:NoSingleComposition';
+                error( errorStruct );
+            end
+
+            % superclass ensures numeric matrix for x
+            % superclass ensures equal numbers of coefficients
+
+            %--------------------------------------------------------------
+            % 2.) display coefficients (single matrix)
+            %--------------------------------------------------------------
+            % display coefficients of last forward transform
+            display_coefficients( LT.transforms{ end }, x );
+
         end % function display_coefficients_matrix( LT, x )
 
 	end % methods (Access = protected, Hidden)

@@ -4,12 +4,15 @@ function varargout = compute_or_load_hash( str_format, hdl_function, indices_arg
 %
 % author: Martin F. Schiffner
 % date: 2019-05-16
-% modified: 2019-08-23
+% modified: 2020-07-15
 %
 
-    %----------------------------------------------------------------------
+	%----------------------------------------------------------------------
 	% 1.) check arguments
 	%----------------------------------------------------------------------
+	% ensure at least five arguments
+	narginchk( 4, Inf );
+
     % ensure format string
     if ~ischar( str_format )
         errorStruct.message = 'str_format must be characters!';

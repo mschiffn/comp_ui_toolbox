@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2019-04-01
+% modified: 2020-06-29
 %
 classdef grid_regular_orthogonal < math.grid_regular
 
@@ -65,6 +65,53 @@ classdef grid_regular_orthogonal < math.grid_regular
 
         end % function axes = get_axes( grids_regular_orthogonal )
 
-    end % methods
+        %------------------------------------------------------------------
+        % compute discrete spatial frequencies along each axis
+        %------------------------------------------------------------------
+        function axes = get_frequency_axes( grids_regular_orthogonal )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class math.grid_regular_orthogonal
+            if ~isa( grids_regular_orthogonal, 'math.grid_regular_orthogonal' )
+                errorStruct.message = 'grids_regular_orthogonal must be math.grid_regular_orthogonal!';
+                errorStruct.identifier = 'get_frequency_axes:NoOrthogonalRegularGrids';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) compute discrete spatial frequencies
+            %--------------------------------------------------------------
+            % specify cell array for axes
+            axes = cell( size( grids_regular_orthogonal ) );
+
+            % iterate regular grids
+            for index_object = 1:numel( grids_regular_orthogonal )
+
+                % shift indices
+                indices_shift = ceil( grids_regular_orthogonal( index_object ).N_points_axis / 2 );
+                indices_shift( end ) = grids_regular_orthogonal( index_object ).N_points_axis( end );
+
+                % lower and upper bounds
+                lbs_q = indices_shift - grids_regular_orthogonal( index_object ).N_points_axis;
+                ubs_q = lbs_q + grids_regular_orthogonal( index_object ).N_points_axis;
+
+                % regular spacings
+                deltas = 1 ./ ( grids_regular_orthogonal( index_object ).N_points_axis .* grids_regular_orthogonal( index_object ).cell_ref.edge_lengths );
+
+                % create increasing sequences w/ regular spacing and quantized bounds
+                axes{ index_object } = math.sequence_increasing_regular_quantized( lbs_q, ubs_q, deltas );
+
+            end % for index_object = 1:numel( grids_regular_orthogonal )
+
+            % avoid cell array for single grids_regular_orthogonal
+            if isscalar( grids_regular_orthogonal )
+                axes = axes{ 1 };
+            end
+
+        end % function axes = get_frequency_axes( grids_regular_orthogonal )
+
+	end % methods
 
 end % classdef grid_regular_orthogonal < math.grid_regular

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2020-02-17
+% modified: 2020-07-27
 %
 classdef signal_matrix
 
@@ -51,18 +51,8 @@ classdef signal_matrix
                 samples = { samples };
             end
 
-            % multiple axes / single samples
-            if ~isscalar( axes ) && isscalar( samples )
-                samples = repmat( samples, size( axes ) );
-            end
-
-            % single axes / multiple samples
-            if isscalar( axes ) && ~isscalar( samples )
-                axes = repmat( axes, size( samples ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( axes, samples );
+            [ axes, samples ] = auxiliary.ensureEqualSize( axes, samples );
 
             %--------------------------------------------------------------
             % 2.) create signal matrices
@@ -112,6 +102,7 @@ classdef signal_matrix
         % orthonormal discrete Fourier transform (DFT)
         %------------------------------------------------------------------
         function [ signal_matrices, N_dft, deltas ] = DFT( signal_matrices, Ts_ref, intervals_f )
+            % DFT Compute discrete Fourier transform from sampled time-domain signal
 % TODO: generalize for complex-valued samples
 % TODO: circshift not suitable for Fourier transform?!
 
@@ -299,12 +290,15 @@ classdef signal_matrix
         %------------------------------------------------------------------
         % time-domain signal
         %------------------------------------------------------------------
-        function [ signal_matrices, N_samples_t ] = signal( signal_matrices, varargin )
-% TODO: transform in place!
+        function [ signal_matrices, N_samples_t ] = signal( signal_matrices, lbs_q, delta )
+            % SIGNAL Compute time-domain signal from Fourier coefficients
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least one and at most three arguments
+            narginchk( 1, 3 );
+
             % ensure class processing.signal_matrix
             if ~isa( signal_matrices, 'processing.signal_matrix' )
                 errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
@@ -327,9 +321,7 @@ classdef signal_matrix
             deltas = reshape( [ axes_f.delta ], size( signal_matrices ) );
 
             % ensure nonempty lbs_q
-            if nargin >= 2 && ~isempty( varargin{ 1 } )
-                lbs_q = varargin{ 1 };
-            else
+            if nargin < 2 || isempty( lbs_q )
                 lbs_q = zeros( size( signal_matrices ) );
             end
 
@@ -337,9 +329,7 @@ classdef signal_matrix
             mustBeInteger( lbs_q );
 
             % ensure nonempty delta
-            if nargin >= 3 && ~isempty( varargin{ 2 } )
-                delta = varargin{ 2 };
-            else
+            if nargin < 3 || isempty( delta )
                 delta = 1 ./ ( 2 * ubs_q_signal .* deltas );
             end
 
@@ -350,18 +340,8 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % multiple signal_matrices / single lbs_q
-            if ~isscalar( signal_matrices ) && isscalar( lbs_q )
-                lbs_q = repmat( lbs_q, size( signal_matrices ) );
-            end
-
-            % multiple signal_matrices / single delta
-            if ~isscalar( signal_matrices ) && isscalar( delta )
-                delta = repmat( delta, size( signal_matrices ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_matrices, lbs_q, delta );
+            [ signal_matrices, lbs_q, delta ] = auxiliary.ensureEqualSize( signal_matrices, lbs_q, delta );
 
             %--------------------------------------------------------------
             % 2.) compute time-domain signals
@@ -369,12 +349,20 @@ classdef signal_matrix
             % numbers of spectral samples
             N_samples_f = abs( axes_f );
 
-            % compute time axes
-% TODO: noninteger?
 % TODO: bandwidth? index_shift >= N_samples_f => ceil( T_rec ./ ( 2 delta ) ) >= N_samples_f => 1 ./ ( 2 * deltas * N_samples_f ) >= delta
 % % 1 ./ ( 2 * deltas * ( N_samples_f - 1 ) ) >= delta
-            T_rec = 1 ./ deltas;
-            N_samples_t = floor( T_rec ./ delta );
+            % lengths of time intervals
+            Ts_rec = 1 ./ deltas;
+
+            % numbers of samples in the time intervals
+            N_samples_t = round( Ts_rec ./ delta );
+            if any( abs( Ts_rec ./ delta - N_samples_t ) > eps( N_samples_t ) )
+                errorStruct.message = sprintf( 'Ts_rec must be integer multiples of delta!' );
+                errorStruct.identifier = 'signal:InvalidTs_rec';
+                error( errorStruct );
+            end
+
+            % specify time axes
             axes_t = math.sequence_increasing_regular_quantized( lbs_q, lbs_q + N_samples_t - 1, delta );
             N_samples_f_max = floor( N_samples_t / 2 ) + 1;
 
@@ -388,9 +376,6 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % specify cell array for samples_td
-            samples_td = cell( size( signal_matrices ) );
-
             % iterate signal matrices
             for index_object = 1:numel( signal_matrices )
 
@@ -399,19 +384,17 @@ classdef signal_matrix
                 samples_act = circshift( samples_act, lbs_q_signal( index_object ), 1 );
 
                 % compute signal samples
-                samples_td{ index_object } = N_samples_t( index_object ) * ifft( samples_act, N_samples_t( index_object ), 1, 'symmetric' );
+                samples_td_act = N_samples_t( index_object ) * ifft( samples_act, N_samples_t( index_object ), 1, 'symmetric' );
 
                 % shift samples
-                samples_td{ index_object } = circshift( samples_td{ index_object }, - lbs_q( index_object ), 1 );
+                signal_matrices( index_object ).samples = circshift( samples_td_act, - lbs_q( index_object ), 1 );
+
+                % update axis
+                signal_matrices( index_object ).axis = axes_t( index_object );
 
             end % for index_object = 1:numel( signal_matrices )
 
-            %--------------------------------------------------------------
-            % 3.) create signal matrices
-            %--------------------------------------------------------------
-            signal_matrices = processing.signal_matrix( axes_t, samples_td );
-
-        end % function [ signal_matrices, N_samples_t ] = signal( signal_matrices, varargin )
+        end % function [ signal_matrices, N_samples_t ] = signal( signal_matrices, lbs_q, delta )
 
         %------------------------------------------------------------------
         % inverse Fourier transform
@@ -498,6 +481,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class processing.signal_matrix for signal_matrices
             if ~isa( signal_matrices, 'processing.signal_matrix' )
                 errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
@@ -512,18 +498,8 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
-            % multiple signal_matrices / single TGCs
-            if ~isscalar( signal_matrices ) && isscalar( TGCs )
-                TGCs = repmat( TGCs, size( signal_matrices ) );
-            end
-
-            % single signal_matrices / multiple TGCs
-            if isscalar( signal_matrices ) && ~isscalar( TGCs )
-                signal_matrices = repmat( signal_matrices, size( TGCs ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_matrices, TGCs );
+            [ signal_matrices, TGCs ] = auxiliary.ensureEqualSize( signal_matrices, TGCs );
 
             %--------------------------------------------------------------
             % 2.) apply time gain compensation curves
@@ -605,6 +581,7 @@ classdef signal_matrix
         %------------------------------------------------------------------
         % find widths of peaks
         %------------------------------------------------------------------
+% TODO: move to metrics!
         function widths_out = widths( signal_matrices, thresholds_dB )
 
             %--------------------------------------------------------------

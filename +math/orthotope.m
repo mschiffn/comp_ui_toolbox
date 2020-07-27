@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-11
-% modified: 2019-08-20
+% modified: 2020-07-02
 %
 classdef orthotope
 
@@ -161,10 +161,13 @@ classdef orthotope
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class math.orthotope
             if ~isa( orthotopes, 'math.orthotope' )
                 errorStruct.message = 'orthotopes must be math.orthotope!';
-                errorStruct.identifier = 'replicate:NoOrthotopes';
+                errorStruct.identifier = 'move:NoOrthotopes';
                 error( errorStruct );
             end
 
@@ -174,7 +177,7 @@ classdef orthotope
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( orthotopes, centers );
+            [ orthotopes, centers ] = auxiliary.ensureEqualSize( orthotopes, centers );
 
             %--------------------------------------------------------------
             % 2.) move orthotopes

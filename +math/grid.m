@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-21
-% modified: 2020-01-09
+% modified: 2020-06-29
 %
 classdef grid
 
@@ -48,14 +48,15 @@ classdef grid
             %--------------------------------------------------------------
             % 2.) create grids
             %--------------------------------------------------------------
+            % repeat default grid
             objects = repmat( objects, size( positions ) );
 
-            % set independent and dependent properties
+            % iterate grids
             for index_object = 1:numel( objects )
 
                 % set independent properties
                 objects( index_object ).positions = positions{ index_object };
-
+% TODO: ensure matrix for positions
                 % set dependent properties
                 objects( index_object ).N_dimensions = size( objects( index_object ).positions, 2 );
                 objects( index_object ).N_points = size( objects( index_object ).positions, 1 );

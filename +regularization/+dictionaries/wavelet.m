@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-12
-% modified: 2020-02-17
+% modified: 2020-07-13
 %
 classdef wavelet < regularization.dictionaries.dictionary
 
@@ -31,6 +31,9 @@ classdef wavelet < regularization.dictionaries.dictionary
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class linear_transforms.wavelets.type
             if ~isa( types, 'linear_transforms.wavelets.type' )
                 errorStruct.message = 'types must be linear_transforms.wavelets.type!';
@@ -44,7 +47,7 @@ classdef wavelet < regularization.dictionaries.dictionary
             mustBeNonempty( levels );
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( types, levels );
+            [ types, levels ] = auxiliary.ensureEqualSize( types, levels );
 
             %--------------------------------------------------------------
             % 2.) create wavelet dictionaries

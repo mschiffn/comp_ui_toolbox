@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-10
-% modified: 2020-01-29
+% modified: 2020-07-22
 %
 % TODO: < linear_transforms.concatenations.concatenation
 classdef vertical < linear_transforms.linear_transform_matrix
@@ -171,6 +171,15 @@ classdef vertical < linear_transforms.linear_transform_matrix
             end % for index_transform = 1:LT.N_transforms
 
         end % function y = adjoint_transform_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % display coefficients (single matrix)
+        %------------------------------------------------------------------
+        function display_coefficients_matrix( LT, x )
+
+            % TODO: plot coefficients of individual transforms
+
+        end % function display_coefficients_matrix( LT, x )
 
 	end % methods (Access = protected, Hidden)
 

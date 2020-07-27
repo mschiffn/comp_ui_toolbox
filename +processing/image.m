@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-10
-% modified: 2020-02-21
+% modified: 2020-06-29
 %
 % TODO: make subclass of field
 %
@@ -37,6 +37,9 @@ classdef image
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class math.grid
             if ~isa( grids, 'math.grid' )
                 errorStruct.message = 'grids must be math.grid!';
@@ -49,13 +52,8 @@ classdef image
                 samples = { samples };
             end
 
-            % single grids / multiple samples
-            if isscalar( grids ) && ~isscalar( samples )
-                grids = repmat( grids, size( samples ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( grids, samples );
+            [ grids, samples ] = auxiliary.ensureEqualSize( grids, samples );
 
             %--------------------------------------------------------------
             % 2.) create images

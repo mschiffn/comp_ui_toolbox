@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-19
-% modified: 2020-04-03
+% modified: 2020-07-14
 %
 classdef exponential < regularization.tgc.tgc
 
@@ -14,7 +14,7 @@ classdef exponential < regularization.tgc.tgc
 
         % independent properties
         exponents ( :, 1 ) physical_values.frequency { mustBePositive, mustBeNonempty } = physical_values.hertz( 1 )
-        decays_dB ( :, 1 ) double { mustBeNegative, mustBeNonempty } = -40
+        decays_dB ( :, 1 ) double { mustBeNegative, mustBeNonempty } = -60
 
 	end % properties
 
@@ -31,9 +31,17 @@ classdef exponential < regularization.tgc.tgc
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least one and at most two arguments
+            narginchk( 1, 2 );
+
             % ensure cell array for exponents
             if ~iscell( exponents )
                 exponents = { exponents };
+            end
+
+            % ensure nonempty decays_dB
+            if nargin < 2 || isempty( decays_dB )
+                decays_dB = -60;
             end
 
             % ensure cell array for exponents
@@ -42,7 +50,7 @@ classdef exponential < regularization.tgc.tgc
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( exponents, decays_dB );
+            [ exponents, decays_dB ] = auxiliary.ensureEqualSize( exponents, decays_dB );
 
             %--------------------------------------------------------------
             % 2.) create exponential TGC options
@@ -56,13 +64,8 @@ classdef exponential < regularization.tgc.tgc
                 % property validation function ensures class physical_values.frequency for exponents{ index_object }
                 % property validation function ensures nonempty negative doubles for decays_dB{ index_object }
 
-                % multiple exponents{ index_object } / single decays_dB{ index_object }
-                if ~isscalar( exponents{ index_object } ) && isscalar( decays_dB{ index_object } )
-                    decays_dB{ index_object } = repmat( decays_dB{ index_object }, size( exponents{ index_object } ) );
-                end
-
                 % ensure equal number of dimensions and sizes
-                auxiliary.mustBeEqualSize( exponents{ index_object }, decays_dB{ index_object } );
+                [ exponents{ index_object }, decays_dB{ index_object } ] = auxiliary.ensureEqualSize( exponents{ index_object }, decays_dB{ index_object } );
 
                 % set independent properties
                 objects( index_object ).exponents = exponents{ index_object }( : );
@@ -80,6 +83,9 @@ classdef exponential < regularization.tgc.tgc
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure class regularization.tgc.exponential
             if ~isa( tgcs_exponential, 'regularization.tgc.exponential' )
                 errorStruct.message = 'tgcs_exponential must be regularization.tgc.exponential!';

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-29
-% modified: 2020-03-14
+% modified: 2020-07-06
 %
 classdef (Abstract) contrast < processing.metrics.metric
 
@@ -83,7 +83,7 @@ classdef (Abstract) contrast < processing.metrics.metric
             %--------------------------------------------------------------
             % 2.) compute contrast metric
             %--------------------------------------------------------------
-            % specify cell arrays
+            % initialize results w/ zeros
             results = zeros( 1, image.N_images );
 
             % detect valid grid points in ROIs

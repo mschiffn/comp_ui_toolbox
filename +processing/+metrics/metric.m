@@ -48,6 +48,9 @@ classdef (Abstract) metric
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class processing.metrics.metric
             if ~isa( metrics, 'processing.metrics.metric' )
                 errorStruct.message = 'metrics must be processing.metrics.metric!';
@@ -82,7 +85,7 @@ classdef (Abstract) metric
             % merge metrics into array
             N_results = cellfun( @numel, results );
             if all( N_results( : ) == N_results( 1 ) )
-                results = reshape( cat( 1, results{ : } ), [ size( metrics ), N_results( 1 ) ] );
+                results = squeeze( reshape( cat( 1, results{ : } ), [ size( metrics ), N_results( 1 ) ] ) );
             end
 
         end % function results = evaluate( metrics, images )

@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2020-01-12
+% modified: 2020-06-29
 %
 classdef grid_regular < math.grid
 
@@ -57,15 +57,22 @@ classdef grid_regular < math.grid
             %--------------------------------------------------------------
             % 2.) compute positions of the grid points
             %--------------------------------------------------------------
+            % specify cell array for positions
             positions = cell( size( offset_axis ) );
 
+            % iterate regular grids
             for index_object = 1:numel( positions )
+
+                % ensure nonempty positive integers
+                mustBePositive( N_points_axis{ index_object } );
+                mustBeInteger( N_points_axis{ index_object } );
 
                 N_dimensions = size( offset_axis{ index_object }, 2 );
                 N_points = prod( N_points_axis{ index_object }, 2 );
 
                 positions{ index_object } = physical_values.meter( zeros( N_points, N_dimensions ) );
-            end
+
+            end % for index_object = 1:numel( positions )
 
             %--------------------------------------------------------------
             % 3.) constructor of superclass
@@ -98,29 +105,6 @@ classdef grid_regular < math.grid
             end % for index_object = 1:numel( offset_axis )
 
         end % function objects = grid_regular( offset_axis, cells_ref, N_points_axis )
-
-        %------------------------------------------------------------------
-        % compute discrete spatial frequencies along each axis
-        %------------------------------------------------------------------
-        function frequencies_axis = compute_frequencies_axis( grids_regular )
-
-            indices_shift = ceil( grids_regular.N_points_axis / 2 );
-
-            frequencies_axis = cell( 1, grids_regular.N_dimensions );
-
-            for index_dim = 1:grids_regular.N_dimensions
-
-                if index_dim < grids_regular.N_dimensions
-                    % create FFTshifted axis
-                    indices_axis = ( ( indices_shift( index_dim ) - grids_regular.N_points_axis( index_dim ) ):( indices_shift( index_dim ) - 1 ) )';
-                else
-                    % create normal axis
-                    indices_axis = ( 0:( grids_regular.N_points_axis( end ) - 1 ) )';
-                end
-                frequencies_axis{ index_dim } = indices_axis * grids_regular.lattice_vectors( index_dim, : ) / ( grids_regular.N_points_axis( index_dim ) * grids_regular.delta_axis( index_dim ) );
-            end
-
-        end % function frequencies_axis = compute_frequencies_axis( grids_regular )
 
         %------------------------------------------------------------------
         % compute discrete positions of the grid points
@@ -240,6 +224,6 @@ classdef grid_regular < math.grid
 
         end % function indices_axis = inverse_index_transform( grids_regular, indices_linear )
 
-    end % methods
+	end % methods
 
 end % classdef grid_regular < math.grid

@@ -37,9 +37,6 @@ classdef coiflet < linear_transforms.wavelets.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure at most one argument
-            narginchk( 0, 1 );
-
             % ensure nonempty size
             if nargin < 1 || isempty( parameters )
                 parameters = 5;
