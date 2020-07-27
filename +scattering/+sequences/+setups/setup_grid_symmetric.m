@@ -71,7 +71,7 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
             % 2.) create symmetric discretized pulse-echo measurement setups
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@scattering.sequences.setups.setup( [ setups.xdc_array ], [ setups.homogeneous_fluid ], [ setups.FOV ], [ setups.str_name ] );            
+            objects@scattering.sequences.setups.setup( [ setups.xdc_array ], [ setups.homogeneous_fluid ], [ setups.FOV ], [ setups.str_name ], { setups.intervals_tof } );
 
             % iterate symmetric pulse-echo measurement setups based on orthogonal regular grids
             for index_object = 1:numel( objects )

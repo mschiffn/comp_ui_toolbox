@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-08
-% modified: 2020-04-08
+% modified: 2020-07-14
 %
 classdef (Abstract) deterministic < scattering.sequences.syntheses.wave
 
@@ -20,6 +20,9 @@ classdef (Abstract) deterministic < scattering.sequences.syntheses.wave
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % superclass ensures row vector for size
             % superclass ensures nonempty positive integers for size
 

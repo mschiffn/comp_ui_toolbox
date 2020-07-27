@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2020-04-09
+% modified: 2020-07-21
 %
 classdef setup
 
@@ -16,7 +16,7 @@ classdef setup
         xdc_array ( 1, 1 ) scattering.sequences.setups.transducers.array = scattering.sequences.setups.transducers.L14_5_38	% transducer array
         homogeneous_fluid ( 1, 1 ) scattering.sequences.setups.materials.homogeneous_fluid	% properties of the lossy homogeneous fluid
         FOV ( 1, 1 ) scattering.sequences.setups.fields_of_view.field_of_view               % field of view
-        str_name = 'default'                                                                % name
+        str_name = 'default'                                                % name (used for saving data)
 
 % TODO: move to different class!
         T_clk = physical_values.second( 1 / 80e6 );                   % time period of the clock signal
@@ -36,18 +36,35 @@ classdef setup
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = setup( xdc_arrays, homogeneous_fluids, FOVs, strs_name )
+        function objects = setup( xdc_arrays, homogeneous_fluids, FOVs, strs_name, intervals_tof )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least four arguments
+            narginchk( 4, 5 );
+
+            % property validation function ensures class scattering.sequences.setups.transducers.array for xdc_arrays
+            % property validation function ensures class scattering.sequences.setups.materials.homogeneous_fluid for homogeneous_fluids
+            % property validation function ensures class scattering.sequences.setups.fields_of_view.field_of_view for FOVs
+
             % ensure cell array for strs_name
             if ~iscell( strs_name )
                 strs_name = { strs_name };
             end
 
+            % ensure existence of intervals_tof
+            if nargin < 5
+                intervals_tof = [];
+            end
+
+            % ensure cell array for intervals_tof
+            if ~iscell( intervals_tof )
+                intervals_tof = { intervals_tof };
+            end
+
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( xdc_arrays, homogeneous_fluids, FOVs, strs_name );
+            auxiliary.mustBeEqualSize( xdc_arrays, homogeneous_fluids, FOVs, strs_name, intervals_tof );
 
             %--------------------------------------------------------------
             % 2.) create pulse-echo measurement setups
@@ -76,7 +93,11 @@ classdef setup
                 %----------------------------------------------------------
                 % b) set dependent properties
                 %----------------------------------------------------------
-                objects( index_object ).intervals_tof = times_of_flight( objects( index_object ) );
+                if isempty( intervals_tof{ index_object } )
+                    objects( index_object ).intervals_tof = times_of_flight( objects( index_object ) );
+                else
+                    objects( index_object ).intervals_tof = intervals_tof{ index_object };
+                end
 
             end % for index_object = 1:numel( objects )
 
@@ -751,6 +772,9 @@ classdef setup
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least two and at most four arguments
+            narginchk( 2, 4 );
+
             % ensure class scattering.sequences.setups.setup
             if ~isa( setups, 'scattering.sequences.setups.setup' )
                 errorStruct.message = 'setups must be scattering.sequences.setups.setup!';

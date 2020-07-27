@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-05
-% modified: 2020-04-12
+% modified: 2020-07-14
 %
 classdef setting
 
@@ -43,6 +43,9 @@ classdef setting
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure five arguments
+            narginchk( 5, 5 );
+
             % ensure class scattering.sequences.setups.setup (scalar)
             if ~( isa( setup, 'scattering.sequences.setups.setup' ) && isscalar( setup ) )
                 errorStruct.message = 'setup must be a single scattering.sequences.setups.setup!';

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-18
-% modified: 2020-01-18
+% modified: 2020-07-22
 %
 classdef (Abstract) template
 
@@ -20,6 +20,9 @@ classdef (Abstract) template
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure row vector for size
             if ~isrow( size )
                 errorStruct.message = 'size must be a row vector!';
@@ -33,7 +36,7 @@ classdef (Abstract) template
             mustBeNonempty( size );
 
             %--------------------------------------------------------------
-            % 2.) create regularization options
+            % 2.) create scattering options
             %--------------------------------------------------------------
             % repeat default regularization options
             objects = repmat( objects, size );

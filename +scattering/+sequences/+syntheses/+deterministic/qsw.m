@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-08
-% modified: 2020-04-08
+% modified: 2020-07-14
 %
 classdef qsw < scattering.sequences.syntheses.deterministic.deterministic
 
@@ -32,6 +32,9 @@ classdef qsw < scattering.sequences.syntheses.deterministic.deterministic
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % property validation functions ensure class physical_values.length for positions_src
             % property validation functions ensure double for angles
 
@@ -72,25 +75,33 @@ classdef qsw < scattering.sequences.syntheses.deterministic.deterministic
             % calling function ensures class physical_values.meter_per_second (scalar) for c_avg
 
             %--------------------------------------------------------------
-            % 2.) compute time delays and apodization weights (scalar)
+            % 2.) determine active array elements
             %--------------------------------------------------------------
-            %----------------------------------------------------------
-            % a) determine active array elements
-            %----------------------------------------------------------
-            vectors_src_ctr = [ xdc_array.positions_ctr, zeros( xdc_array.N_elements, 1 ) ] - repmat( QSW.position_src, [ xdc_array.N_elements, 1 ] );
+            % a) compute distances from virtual source to physical sources
+            vectors_src_ctr = [ xdc_array.positions_ctr, zeros( xdc_array.N_elements, 1 ) ] - QSW.position_src;
             distances_src_ctr = vecnorm( vectors_src_ctr, 2, 2 );
             indicator_distance = double( distances_src_ctr ) >= eps;
 
+            % b) determine active array elements
             indicator_active = false( size( xdc_array.aperture ) );
             indicator_active( ~indicator_distance ) = true;
             indicator_active( indicator_distance ) = all( asin( abs( vectors_src_ctr( indicator_distance, 1:xdc_array.N_dimensions ) ./ distances_src_ctr( indicator_distance ) ) ) <= QSW.angles / 2, 2 );
             indices_active = find( indicator_active );
-% catch error if no element is active!
 
-            % apodization weights
+            % ensure at least one active element
+            if ~( numel( indices_active ) > 0 )
+                errorStruct.message = 'QSW requires at least one active array element!';
+                errorStruct.identifier = 'compute_delays_scalar:NoActiveElement';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 3.) compute time delays and apodization weights
+            %--------------------------------------------------------------
+            % a) unity apodization weights
             apodization_weights = ones( size( indices_active ) );
 
-            % compute time delays for each virtual source
+            % b) time delays
             time_delays = distances_src_ctr( indicator_active ) / c_avg;
             time_delays = time_delays - min( time_delays );
 

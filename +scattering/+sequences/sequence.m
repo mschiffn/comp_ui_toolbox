@@ -3,13 +3,13 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2020-03-09
+% modified: 2020-07-14
 %
 classdef sequence
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% properties
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% properties
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties ( SetAccess = private )
 
         % independent properties
@@ -35,7 +35,7 @@ classdef sequence
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods ( Access = public )
+	methods
 
         %------------------------------------------------------------------
         % constructor
@@ -45,6 +45,9 @@ classdef sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure five arguments
+            narginchk( 5, 5 );
+
             % ensure class scattering.sequences.setups.setup
             if ~isa( setups, 'scattering.sequences.setups.setup' )
                 errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
@@ -629,6 +632,9 @@ classdef sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least one and at most three arguments
+            narginchk( 1, 3 );
+
             % ensure class scattering.sequences.sequence
             if ~isa( sequences, 'scattering.sequences.sequence' )
                 errorStruct.message = 'sequences must be scattering.sequences.sequence!';
@@ -661,23 +667,8 @@ classdef sequence
                 error( errorStruct );
             end
 
-            % multiple sequences / single indices_incident
-            if ~isscalar( sequences ) && isscalar( indices_incident )
-                indices_incident = repmat( indices_incident, size( sequences ) );
-            end
-
-            % single sequences / multiple indices_incident
-            if isscalar( sequences ) && ~isscalar( indices_incident )
-                sequences = repmat( sequences, size( indices_incident ) );
-            end
-
-            % multiple sequences / single filters
-            if ~isscalar( sequences ) && isscalar( filters )
-                filters = repmat( filters, size( sequences ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, indices_incident, filters );
+            [ sequences, indices_incident, filters ] = auxiliary.ensureEqualSize( sequences, indices_incident, filters );
 
             %--------------------------------------------------------------
             % 2.) compute incident acoustic pressure fields
@@ -723,6 +714,12 @@ classdef sequence
 
                     % create format string for filename
                     str_format = sprintf( 'data/%s/setup_%%s/p_in_indices_active_%%s_v_d_unique_%%s_aliasing_%%s.mat', sequences( index_sequence ).setup.str_name );
+
+                    % field of a steered PW does not require saving
+                    if isa( sequences( index_sequence ).settings( index_incident ).tx, 'scattering.sequences.settings.controls.tx_wave' ) && isa( sequences( index_sequence ).settings( index_incident ).tx.wave, 'scattering.sequences.syntheses.deterministic.pw' )
+                        fields{ index_sequence }{ index_incident_sel } = compute_p_in_pw_scalar( sequences( index_sequence ), index_incident );
+                        continue;
+                    end
 
                     % load or compute incident acoustic pressure field (scalar)
 % TODO: loading and saving optional
@@ -853,6 +850,51 @@ classdef sequence
             fprintf( 'done! (%f s)\n', time_elapsed );
 
         end % function p_in_samples = compute_p_in_scalar( sequence, index_incident, filter )
+
+        %------------------------------------------------------------------
+        % compute incident acoustic pressure field for steered plane wave (scalar)
+        %------------------------------------------------------------------
+        function p_in_samples = compute_p_in_pw_scalar( sequence, index_incident )
+
+            % print status
+            time_start = tic;
+            str_date_time = sprintf( '%04d-%02d-%02d: %02d:%02d:%02d', fix( clock ) );
+            fprintf( '\t %s: computing incident acoustic pressure field (kappa)...', str_date_time );
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure class scattering.sequences.syntheses.incident_wave
+
+            %--------------------------------------------------------------
+            % 2.) compute acoustic pressure
+            %--------------------------------------------------------------
+            % extract normal velocities (unique frequencies of selected pulse-echo measurement)
+            v_d_unique = sequence.settings( index_incident ).v_d_unique;
+
+            % compute current complex-valued wavenumbers
+            axis_k_tilde = compute_wavenumbers( sequence.setup.homogeneous_fluid.absorption_model, v_d_unique.axis );
+            settings_tx = sequence.settings( index_incident ).tx;
+
+            % specify reference position
+            indicator = settings_tx.wave.e_theta.components( 1:( end - 1 ) ) >= 0;
+            indices_axis_ref = indicator( : ) .* ones( sequence.setup.xdc_array.N_dimensions, 1 ) + ~indicator(:) .* sequence.setup.xdc_array.N_elements_axis;
+            position_ref = [ sequence.setup.xdc_array.positions_ctr( forward_index_transform( sequence.setup.xdc_array, indices_axis_ref' ), : ), 0 ];
+
+            % compute quantized time delays and waveform
+            time_delays = compute_delays( settings_tx.wave, sequence.setup.xdc_array, sequence.setup.homogeneous_fluid.c_avg );
+            time_delays_quantized = round( time_delays / sequence.setup.T_clk ) * sequence.setup.T_clk;
+            v_d = mean( v_d_unique.samples .* exp( 2j * pi * v_d_unique.axis.members * time_delays_quantized.' ), 2 );
+
+            % compute incident acoustic pressure
+            p_in_samples = double( v_d ) .* exp( -1j * axis_k_tilde.members * ( settings_tx.wave.e_theta.components * ( sequence.setup.FOV.shape.grid.positions - position_ref )' ) );
+            p_in_samples = physical_values.pascal( p_in_samples );
+
+            % infer and print elapsed time
+            time_elapsed = toc( time_start );
+            fprintf( 'done! (%f s)\n', time_elapsed );
+
+        end % function p_in_samples = compute_p_in_pw_scalar( sequence, index_incident )
 
 	end % methods (Access = private, Hidden)
 

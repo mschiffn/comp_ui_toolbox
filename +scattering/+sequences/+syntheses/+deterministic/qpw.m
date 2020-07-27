@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-07
-% modified: 2020-04-12
+% modified: 2020-07-14
 %
 classdef qpw < scattering.sequences.syntheses.deterministic.deterministic
 
@@ -81,7 +81,13 @@ classdef qpw < scattering.sequences.syntheses.deterministic.deterministic
             end
 
             %--------------------------------------------------------------
-            % 2.) compute time delays and apodization weights (scalar)
+            % 2.) determine active array elements
+            %--------------------------------------------------------------
+            % a) all array elements are active
+            indices_active = (1:xdc_array.N_elements).';
+
+            %--------------------------------------------------------------
+            % 3.) compute time delays and apodization weights
             %--------------------------------------------------------------
             % a) unity apodization weights
             apodization_weights = ones( xdc_array.N_elements, 1 );
@@ -89,9 +95,6 @@ classdef qpw < scattering.sequences.syntheses.deterministic.deterministic
             % b) time delays
             time_delays = xdc_array.positions_ctr * QPW.e_theta.components( 1:(end - 1) ).' / c_avg;
             time_delays = time_delays - min( time_delays );
-
-            % c) all array elements are active
-            indices_active = (1:xdc_array.N_elements).';
 
         end % function [ time_delays, apodization_weights, indices_active ] = compute_delays_scalar( QPW, xdc_array, c_avg )
 

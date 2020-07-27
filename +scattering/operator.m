@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2020-04-10
+% modified: 2020-07-21
 %
 classdef (Abstract) operator
 
@@ -35,6 +35,9 @@ classdef (Abstract) operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class scattering.sequences.sequence
             if ~isa( sequences, 'scattering.sequences.sequence' )
                 errorStruct.message = 'sequences must be scattering.sequences.sequence!';
@@ -49,18 +52,8 @@ classdef (Abstract) operator
                 error( errorStruct );
             end
 
-            % multiple sequences / single options
-            if ~isscalar( sequences ) && isscalar( options )
-                options = repmat( options, size( sequences ) );
-            end
-
-            % single sequences / multiple options
-            if isscalar( sequences ) && ~isscalar( options )
-                sequences = repmat( sequences, size( options ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, options );
+            [ sequences, options ] = auxiliary.ensureEqualSize( sequences, options );
 
             %--------------------------------------------------------------
             % 2.) create scattering operators
@@ -118,6 +111,9 @@ classdef (Abstract) operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least two arguments
+            narginchk( 2, 3 );
+
             % ensure class scattering.operator
             if ~isa( operators, 'scattering.operator' )
                 errorStruct.message = 'operators must be scattering.operator!';
@@ -394,6 +390,9 @@ classdef (Abstract) operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least one argument
+            narginchk( 1, 2 );
+
             % ensure class scattering.operator
             if ~isa( operators, 'scattering.operator' )
                 errorStruct.message = 'operators must be scattering.operator!';
@@ -411,18 +410,8 @@ classdef (Abstract) operator
                 options = { options };
             end
 
-            % multiple operators / single options
-            if ~isscalar( operators ) && isscalar( options )
-                options = repmat( options, size( operators ) );
-            end
-
-            % single operators / multiple options
-            if isscalar( operators ) && ~isscalar( options )
-                operators = repmat( operators, size( options ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators, options );
+            [ operators, options ] = auxiliary.ensureEqualSize( operators, options );
 
             %--------------------------------------------------------------
             % 2.) compute received energies
@@ -494,6 +483,9 @@ classdef (Abstract) operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least one argument
+            narginchk( 1, 2 );
+
             % ensure class scattering.operator_born
             if ~isa( operators, 'scattering.operator_born' )
                 errorStruct.message = 'operators must be scattering.operator_born!';
@@ -511,18 +503,8 @@ classdef (Abstract) operator
                 options = { options };
             end
 
-            % multiple operators / single options
-            if ~isscalar( operators ) && isscalar( options )
-                options = repmat( options, size( operators ) );
-            end
-
-            % single operators / multiple options
-            if isscalar( operators ) && ~isscalar( options )
-                operators = repmat( operators, size( options ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators, options );
+            [ operators, options ] = auxiliary.ensureEqualSize( operators, options );
 
             %--------------------------------------------------------------
             % 2.) compute transform point spread functions (TPSFs)
@@ -637,6 +619,9 @@ classdef (Abstract) operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least two arguments
+            narginchk( 2, 3 );
+
             % ensure class scattering.operator
             if ~isa( operators, 'scattering.operator' )
                 errorStruct.message = 'operators must be scattering.operator!';
@@ -780,12 +765,10 @@ classdef (Abstract) operator
                     if options{ index_operator }( index_options ).display
 
                         figure( index_options );
-% TODO: reshape is invalid for transform coefficients! method format_coefficients in linear transform?
-%                         temp_1 = squeeze( reshape( theta_recon_normed{ index_operator }{ index_options }( :, end ), operators( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
                         temp_2 = squeeze( reshape( gamma_recon{ index_operator }{ index_options }( :, end ), operators( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
                         if ismatrix( temp_2 )
                             subplot( 1, 2, 1 );
-%                             imagesc( illustration.dB( temp_1, 20 )', [ -60, 0 ] );
+                            display_coefficients( LT_dict_act, theta_recon_normed{ index_operator }{ index_options }( :, end ) );
                             subplot( 1, 2, 2 );
                             imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
                         else
@@ -941,6 +924,9 @@ classdef (Abstract) operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class scattering.operator
             if ~isa( operators, 'scattering.operator' )
                 errorStruct.message = 'operators must be scattering.operator!';
@@ -953,18 +939,8 @@ classdef (Abstract) operator
                 u_M = { u_M };
             end
 
-            % multiple operators / single u_M
-            if ~isscalar( operators ) && isscalar( u_M )
-                u_M = repmat( u_M, size( operators ) );
-            end
-
-            % single operators / multiple u_M
-            if isscalar( operators ) && ~isscalar( u_M )
-                operators = repmat( operators, size( u_M ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators, u_M );
+            [ operators, u_M ] = auxiliary.ensureEqualSize( operators, u_M );
 
             %--------------------------------------------------------------
             % 2.) format voltages

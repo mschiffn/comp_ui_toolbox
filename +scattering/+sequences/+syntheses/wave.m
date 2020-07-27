@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-08
-% modified: 2020-04-08
+% modified: 2020-07-14
 %
 classdef (Abstract) wave
 
@@ -20,6 +20,9 @@ classdef (Abstract) wave
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
             % ensure row vector for size
             if ~isrow( size )
                 errorStruct.message = 'size must be a row vector!';
@@ -48,6 +51,9 @@ classdef (Abstract) wave
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % ensure class scattering.sequences.syntheses.wave
             if ~isa( waves, 'scattering.sequences.syntheses.wave' )
                 errorStruct.message = 'waves must be scattering.sequences.syntheses.wave!';
@@ -84,7 +90,8 @@ classdef (Abstract) wave
             for index_object = 1:numel( waves )
 
                 % compute time delays and apodization weights (scalar)
-                [ time_delays{ index_object }, apodization_weights{ index_object }, indices_active{ index_object } ] = compute_delays_scalar( waves( index_object ), xdc_arrays( index_object ), c_avg( index_object ) );
+                [ time_delays{ index_object }, apodization_weights{ index_object }, indices_active{ index_object } ] = ...
+                    compute_delays_scalar( waves( index_object ), xdc_arrays( index_object ), c_avg( index_object ) );
 
             end % for index_object = 1:numel( waves )
 

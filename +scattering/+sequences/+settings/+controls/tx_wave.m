@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-12
-% modified: 2020-04-12
+% modified: 2020-07-14
 %
 classdef tx_wave < scattering.sequences.settings.controls.tx
 
@@ -31,6 +31,9 @@ classdef tx_wave < scattering.sequences.settings.controls.tx
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure four arguments
+            narginchk( 4, 4 );
+
             % method compute_excitation_voltages ensures class scattering.sequences.setups.setup for setup
             % method compute_excitation_voltages ensures class processing.signal for u_tx_tilde
             % method compute_excitation_voltages ensures class scattering.sequences.syntheses.wave for waves

@@ -215,7 +215,9 @@ void mexFunction( int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[] )
 		// number of observations
 		// N_observations_sel = mxGetM( prhs[ 2 ] );
 		N_observations_sel = (int) size[ 0 ];
-		if( DEBUG_MODE ) mexPrintf( "N_observations_sel = %d\n", N_observations_sel );
+		#if DEBUG_MODE > 0
+			mexPrintf( "N_observations_sel = %d\n", N_observations_sel );
+		#endif
 
 		// number of grid points
 		// N_points = (int) mxGetScalar( mxGetProperty( mxGetProperty( mxGetProperty( sequence, 0, "setup" ), 0, "grid_FOV" ), 0, "N_points" ) );

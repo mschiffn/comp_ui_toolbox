@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-25
-% modified: 2020-04-06
+% modified: 2020-07-14
 %
 classdef (Abstract) common
 
@@ -31,10 +31,8 @@ classdef (Abstract) common
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % return if no argument
-            if nargin == 0
-                return;
-            end
+            % validate number of input arguments
+            narginchk( 2, 2 );
 
             % ensure cell array for indices_active
             if ~iscell( indices_active )
