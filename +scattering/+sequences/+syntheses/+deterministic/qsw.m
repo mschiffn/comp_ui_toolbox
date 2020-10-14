@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-08
-% modified: 2020-07-14
+% modified: 2020-08-01
 %
 classdef qsw < scattering.sequences.syntheses.deterministic.deterministic
 
@@ -83,7 +83,7 @@ classdef qsw < scattering.sequences.syntheses.deterministic.deterministic
             indicator_distance = double( distances_src_ctr ) >= eps;
 
             % b) determine active array elements
-            indicator_active = false( size( xdc_array.aperture ) );
+            indicator_active = false( xdc_array.N_elements, 1 );
             indicator_active( ~indicator_distance ) = true;
             indicator_active( indicator_distance ) = all( asin( abs( vectors_src_ctr( indicator_distance, 1:xdc_array.N_dimensions ) ./ distances_src_ctr( indicator_distance ) ) ) <= QSW.angles / 2, 2 );
             indices_active = find( indicator_active );
@@ -99,7 +99,7 @@ classdef qsw < scattering.sequences.syntheses.deterministic.deterministic
             % 3.) compute time delays and apodization weights
             %--------------------------------------------------------------
             % a) unity apodization weights
-            apodization_weights = ones( size( indices_active ) );
+            apodization_weights = ones( numel( indices_active ), 1 );
 
             % b) time delays
             time_delays = distances_src_ctr( indicator_active ) / c_avg;

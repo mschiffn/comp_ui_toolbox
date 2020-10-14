@@ -217,11 +217,14 @@ classdef orthotope < scattering.sequences.setups.geometry.shape & math.orthotope
             %--------------------------------------------------------------
             % 2.) draw (scalar)
             %--------------------------------------------------------------
-            phi = 0:pi/100:2*pi;
-            if double( orthotope.interval_r.lb ) > eps( 0 )
-                line( ( orthotope.center( 1 ) + orthotope.interval_r.lb * cos( phi ) ) * 1e3, ( orthotope.center( end ) + orthotope.interval_r.lb * sin( phi ) ) * 1e3 );
-            end
-            line( ( orthotope.center( 1 ) + orthotope.interval_r.ub * cos( phi ) ) * 1e3, ( orthotope.center( end ) + orthotope.interval_r.ub * sin( phi ) ) * 1e3 );
+            % lateral bottom
+            line( [ orthotope.intervals( 1 ).lb, orthotope.intervals( 1 ).ub ] * 1e3, orthotope.intervals( 3 ).lb * ones( 1, 2 ) * 1e3 );
+            % lateral top
+            line( [ orthotope.intervals( 1 ).lb, orthotope.intervals( 1 ).ub ] * 1e3, orthotope.intervals( 3 ).ub * ones( 1, 2 ) * 1e3 );
+            % axial left
+            line( orthotope.intervals( 1 ).lb * ones( 1, 2 ) * 1e3, [ orthotope.intervals( 3 ).lb, orthotope.intervals( 3 ).ub ] * 1e3 );
+            % axial right
+            line( orthotope.intervals( 1 ).ub * ones( 1, 2 ) * 1e3, [ orthotope.intervals( 3 ).lb, orthotope.intervals( 3 ).ub ] * 1e3 );
 
         end % function draw_scalar( orthotope )
 

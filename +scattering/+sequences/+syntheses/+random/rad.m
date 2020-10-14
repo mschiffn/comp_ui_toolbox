@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-08
-% modified: 2020-04-08
+% modified: 2020-08-01
 %
 classdef rad < scattering.sequences.syntheses.random.random
 
@@ -92,7 +92,7 @@ classdef rad < scattering.sequences.syntheses.random.random
             rng( RAD.setting_rng_apo.seed, RAD.setting_rng_apo.str_name );
 
             % sample Bernoulli distribution
-            apodization_weights = rand( 1, xdc_array.N_elements );
+            apodization_weights = rand( xdc_array.N_elements, 1 );
             indicator = ( apodization_weights >= 0.5 );
             apodization_weights( indicator ) = 1;
             apodization_weights( ~indicator ) = -1;
@@ -109,10 +109,10 @@ classdef rad < scattering.sequences.syntheses.random.random
             T_inc = t_shift_max / ( xdc_array.N_elements - 1 );
 
             % compute random time delays
-            time_delays = ( randperm( xdc_array.N_elements ) - 1 ) * T_inc;
+            time_delays = ( randperm( xdc_array.N_elements ).' - 1 ) * T_inc;
 
             % c) all array elements are active
-            indices_active = (1:xdc_array.N_elements);
+            indices_active = (1:xdc_array.N_elements).';
 
         end % function [ time_delays, apodization_weights, indices_active ] = compute_delays_scalar( RAD, xdc_array, c_avg )
 

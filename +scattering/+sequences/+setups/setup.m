@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2020-07-21
+% modified: 2020-08-01
 %
 classdef setup
 
@@ -533,6 +533,9 @@ classdef setup
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % ensure class scattering.sequences.setups.setup
             if ~isa( setups, 'scattering.sequences.setups.setup' )
                 errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
@@ -625,11 +628,11 @@ classdef setup
                     % ii.) apply apodization weights and quantized time delays
                     %------------------------------------------------------
                     % compute maximum duration of excitation voltages
-                    T_ref = ceil( ( abs( u_tx_tilde{ index_setup }( index_wave ).axis ) * u_tx_tilde{ index_setup }( index_wave ).axis.delta + max( time_delays_quantized ) ) / u_tx_tilde{ index_setup }( index_wave ).axis.delta ) * u_tx_tilde{ index_setup }( index_wave ).axis.delta;
+                    T_ref = ceil( ( abs( u_tx_tilde{ index_setup }( index_wave ).axis ) * u_tx_tilde{ index_setup }( index_wave ).axis.delta + max( time_delays_quantized( : ) ) ) / u_tx_tilde{ index_setup }( index_wave ).axis.delta ) * u_tx_tilde{ index_setup }( index_wave ).axis.delta;
 
                     % compute Fourier representations
                     u_tx = fourier_coefficients( u_tx_tilde{ index_setup }( index_wave ), T_ref );
-                    u_tx_delayed = processing.signal_matrix( u_tx.axis, u_tx.samples .* apodization_weights{ index_wave }( : ).' .* exp( -2j * pi * u_tx.axis.members * time_delays_quantized( : ).' ) );
+                    u_tx_delayed = processing.signal_matrix( u_tx.axis, sum( u_tx.samples .* shiftdim( apodization_weights{ index_wave }, -1 ) .* exp( -2j * pi * u_tx.axis.members .* shiftdim( time_delays_quantized, -1 ) ), 3 ) );
 
                     % Fourier synthesis
                     excitation_voltages{ index_setup }{ index_wave } = signal( u_tx_delayed, double( u_tx_tilde{ index_setup }( index_wave ).axis.q_lb ), u_tx_tilde{ index_setup }( index_wave ).axis.delta );

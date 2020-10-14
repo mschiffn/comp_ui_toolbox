@@ -767,9 +767,9 @@ classdef (Abstract) operator
                         figure( index_options );
                         temp_2 = squeeze( reshape( gamma_recon{ index_operator }{ index_options }( :, end ), operators( index_operator ).sequence.setup.FOV.shape.grid.N_points_axis ) );
                         if ismatrix( temp_2 )
-                            subplot( 1, 2, 1 );
+                            subplot( 2, 2, 1 );
                             display_coefficients( LT_dict_act, theta_recon_normed{ index_operator }{ index_options }( :, end ) );
-                            subplot( 1, 2, 2 );
+                            subplot( 3, 1, 3 );
                             imagesc( illustration.dB( temp_2, 20 )', [ -60, 0 ] );
                         else
                             subplot( 1, 2, 1 );

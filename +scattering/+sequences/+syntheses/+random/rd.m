@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-08
-% modified: 2020-04-08
+% modified: 2020-08-01
 %
 classdef rd < scattering.sequences.syntheses.random.random
 
@@ -86,7 +86,7 @@ classdef rd < scattering.sequences.syntheses.random.random
             % 2.) compute time delays and apodization weights (scalar)
             %--------------------------------------------------------------
             % a) unity apodization weights
-            apodization_weights = ones( 1, xdc_array.N_elements );
+            apodization_weights = ones( xdc_array.N_elements, 1 );
 
             % seed random number generator
             rng( RD.setting_rng.seed, RD.setting_rng.str_name );
@@ -100,10 +100,10 @@ classdef rd < scattering.sequences.syntheses.random.random
             T_inc = t_shift_max / ( xdc_array.N_elements - 1 );
 
             % compute random time delays
-            time_delays = ( randperm( xdc_array.N_elements ) - 1 ) * T_inc;
+            time_delays = ( randperm( xdc_array.N_elements ).' - 1 ) * T_inc;
 
             % c) all array elements are active
-            indices_active = (1:xdc_array.N_elements);
+            indices_active = (1:xdc_array.N_elements).';
 
         end % function [ time_delays, apodization_weights, indices_active ] = compute_delays_scalar( RD, xdc_array, c_avg )
 

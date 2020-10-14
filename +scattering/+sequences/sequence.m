@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-14
-% modified: 2020-07-14
+% modified: 2020-07-28
 %
 classdef sequence
 
@@ -109,6 +109,9 @@ classdef sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least two and at most four arguments
+            narginchk( 2, 4 );
+
             % ensure class scattering.sequences.sequence
             if ~isa( sequences, 'scattering.sequences.sequence' )
                 errorStruct.message = 'sequences must be scattering.sequences.sequence!';
@@ -317,6 +320,9 @@ classdef sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class scattering.sequences.sequence
             if ~isa( sequences, 'scattering.sequences.sequence' )
                 errorStruct.message = 'sequences must be scattering.sequences.sequence!';
@@ -406,7 +412,7 @@ classdef sequence
                     time_delays_quantized = round( time_delays / sequences( index_sequence ).setup.T_clk ) * sequences( index_sequence ).setup.T_clk;
 
                     % compute maximum duration of excitation voltages
-                    T_ref = ceil( ( max( T_SA( indices_active ) ) + max( time_delays_quantized ) ) / delta_unique_max ) * delta_unique_max;
+                    T_ref = ceil( ( max( T_SA( indices_active ) ) + max( time_delays_quantized( : ) ) ) / delta_unique_max ) * delta_unique_max;
 
                     % compute Fourier coefficients
                     u_SA = fourier_coefficients( u_SA_tilde{ index_sequence }( indices_active ), T_ref, sequences( index_sequence ).settings( index_measurement ).interval_hull_f );
@@ -418,7 +424,7 @@ classdef sequence
                     for index_active = 1:numel( indices_active )
 
                         % apply time delay and apodization weight
-                        samples{ index_measurement } = samples{ index_measurement } + apodization_weights( index_active ) * u_SA( index_active ).samples .* exp( -2j * pi * u_SA( 1 ).axis.members * time_delays_quantized( index_active ) );
+                        samples{ index_measurement } = samples{ index_measurement } + sum( shiftdim( apodization_weights( index_active, : ), -1 ) .* u_SA( index_active ).samples .* exp( -2j * pi * u_SA( 1 ).axis.members .* shiftdim( time_delays_quantized( index_active, : ), -1 ) ), 3 );
 
                     end % for index_active = 1:numel( indices_active )
 
@@ -459,6 +465,9 @@ classdef sequence
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class scattering.sequences.sequence
             if ~isa( sequences, 'scattering.sequences.sequence' )
                 errorStruct.message = 'sequences must be scattering.sequences.sequence!';
@@ -474,7 +483,7 @@ classdef sequence
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, options );
+            [ sequences, options ] = auxiliary.ensureEqualSize( sequences, options );
 
             %--------------------------------------------------------------
             % 2.) spatiospectral discretizations

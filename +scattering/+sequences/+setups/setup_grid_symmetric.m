@@ -92,7 +92,7 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
         %------------------------------------------------------------------
         % lateral shift (TODO: check for correctness)
         %------------------------------------------------------------------
-        function indices_grids_shift = shift_lateral( setups_grid_symmetric, indices_element, varargin )
+        function indices_grids_shift = shift_lateral( setups_grid_symmetric, indices_element, indices_grids )
 
             %--------------------------------------------------------------
             % 1.) check arguments
@@ -110,9 +110,7 @@ classdef setup_grid_symmetric < scattering.sequences.setups.setup
             end
 
             % ensure nonempty indices_grids
-            if nargin >= 3 && ~isempty( varargin{ 1 } )
-                indices_grids = varargin{ 1 };
-            else
+            if nargin < 3 || isempty( indices_grids )
                 indices_grids = cell( size( setups_grid_symmetric ) );
                 for index_object = 1:numel( setups_grid_symmetric )
                     indices_grids{ index_object } = ( 1:setups_grid_symmetric( index_object ).FOV.shape.grid.N_points );
