@@ -1,6 +1,23 @@
 %
 % superclass for all contrast-to-noise ratios (CNRs)
 %
+%   "The contrast-to-noise ratio (CNR) is
+%    an object size-independent measure of the signal level in the presence of noise.
+%    Take the example of a disk as the object (Fig. 4-33).
+%    The contrast in this example is the difference between
+%    [1.)] the average gray scale of a region of interest (ROI) in the disk ( \bar{x}_{ \text{S} } ) and
+%    [2.)] that in an ROI in the background ( \bar{x}_{ \text{BG} } ), and
+%    the noise can be calculated from the background ROI as well.
+%    Thus, the CNR is given by
+%    [ CNR = ( \bar{x}_{ \text{S} } - \bar{x}_{ \text{bg} } ) / \sigma_{ \text{bg} } ] (4-22)" (see [1, p. 91]
+%
+%   "Intuitively, we assume that higher CNR leads to higher probability of lesion detection, and this is indeed the case for DAS" (see [2])
+%
+% REFERENCES:
+%	[1] J. T. Bushberg, J. A. Seibert, E. M. Leidholdt, and J. M. Boone, "The Essential Physics of Medical Imaging", Sect. 4.8
+%	[2] A. Rodriguez-Molares, O. M. H. Rindal, J. D’hooge, S.-E. Måsøy, A. Austeng, and H. Torp, "The Generalized Contrast-to-Noise Ratio",
+%       2018 IEEE Int. Ultrasonics Symp. (IUS), 2018, DOI: 10.1109/ULTSYM.2018.8580101
+%
 % author: Martin F. Schiffner
 % date: 2020-02-29
 % modified: 2020-03-14

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2020-07-27
+% modified: 2020-10-13
 %
 classdef signal_matrix
 
@@ -330,7 +330,7 @@ classdef signal_matrix
 
             % ensure nonempty delta
             if nargin < 3 || isempty( delta )
-                delta = 1 ./ ( 2 * ubs_q_signal .* deltas );
+                delta = 1 ./ ( 2 * double( ubs_q_signal ) .* deltas );
             end
 
             % ensure class physical_values.time
@@ -581,12 +581,15 @@ classdef signal_matrix
         %------------------------------------------------------------------
         % find widths of peaks
         %------------------------------------------------------------------
-% TODO: move to metrics!
-        function widths_out = widths( signal_matrices, thresholds_dB )
+% TODO: move to metrics! make image a signal_matrix!
+        function [ widths_out, PSL, ISLR ] = widths( signal_matrices, thresholds_dB, display )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least one and at most three arguments
+            narginchk( 1, 3 );
+
             % ensure class processing.signal_matrix for signal_matrices
             if ~isa( signal_matrices, 'processing.signal_matrix' )
                 errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
@@ -594,41 +597,55 @@ classdef signal_matrix
                 error( errorStruct );
             end
 
+            % ensure equal subclasses of math.sequence_increasing_regular
+            auxiliary.mustBeEqualSubclasses( 'math.sequence_increasing_regular', signal_matrices.axis );
+
+            % ensure nonempty thresholds_dB
+            if nargin < 2 || isempty( thresholds_dB )
+                thresholds_dB = -6;
+            end
+            dynamic_range_dB = 70;
             % ensure nonempty negative thresholds_dB
             mustBeNegative( thresholds_dB );
             mustBeNonempty( thresholds_dB );
 
-            % multiple signal_matrices / single thresholds_dB
-            if ~isscalar( signal_matrices ) && isscalar( thresholds_dB )
-                thresholds_dB = repmat( thresholds_dB, size( signal_matrices ) );
-            end
-
-            % single signal_matrices / multiple thresholds_dB
-            if isscalar( signal_matrices ) && ~isscalar( thresholds_dB )
-                signal_matrices = repmat( signal_matrices, size( thresholds_dB ) );
+            % ensure nonempty display
+            if nargin < 3 || isempty( display )
+                display = false;
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_matrices, thresholds_dB );
+            [ signal_matrices, thresholds_dB, display ] = auxiliary.ensureEqualSize( signal_matrices, thresholds_dB, display );
 
             %--------------------------------------------------------------
             % 2.) compute widths
             %--------------------------------------------------------------
-            % specify cell array for widths_out
+            % specify cell arrays
             widths_out = cell( size( signal_matrices ) );
+            PSL = cell( size( signal_matrices ) );
+            ISLR = cell( size( signal_matrices ) );
 
             % iterate signal matrices
             for index_object = 1:numel( signal_matrices )
 
-                % specify cell array for widths_out{ index_object }
+                % specify cell arrays
                 widths_out{ index_object } = cell( 1, signal_matrices( index_object ).N_signals );
+                PSL{ index_object } = cell( 1, signal_matrices( index_object ).N_signals );
+                ISLR{ index_object } = cell( 1, signal_matrices( index_object ).N_signals );
 
                 % iterate signals
                 for index_signal = 1:signal_matrices( index_object ).N_signals
 
-                    %
+                    %------------------------------------------------------
+                    % a) logarithmic compression
+                    %------------------------------------------------------
                     samples_dB = illustration.dB( signal_matrices( index_object ).samples( :, index_signal ), 20 );
-                    [ peaks, peaks_indices ] = findpeaks( samples_dB, 'MINPEAKHEIGHT', - eps( 0 ) );
+
+                    %------------------------------------------------------
+                    % b) peak detection
+                    %------------------------------------------------------
+                    % find local maxima
+                    [ peaks, peaks_indices ] = findpeaks( samples_dB, 'MinPeakHeight', - eps( 0 ) );
                     N_peaks = numel( peaks_indices );
 
                     % ensure single peak
@@ -638,13 +655,16 @@ classdef signal_matrix
                         error( errorStruct );
                     end
 
+                    %------------------------------------------------------
+                    % c) compute width of the main lobe
+                    %------------------------------------------------------
                     % initialize peak widths w/ zeros
-                    delta = signal_matrices( index_object ).axis.members( 2 ) - signal_matrices( index_object ).axis.members( 1 );
-                    widths_out{ index_object }{ index_signal } = repmat( delta, size( peaks ) );
+                    widths_out{ index_object }{ index_signal } = repmat( signal_matrices( index_object ).axis.delta, size( peaks ) );
 
                     % find width of peaks
                     for index_peak = 1:N_peaks
 
+                        % start indices
                         index_lb = peaks_indices( index_peak );
                         index_ub = peaks_indices( index_peak );
 
@@ -663,23 +683,68 @@ classdef signal_matrix
                         index_ub = index_ub - 1;
 
                         % compute extent of peak
-                        widths_out{ index_object }{ index_signal }( index_peak ) = ( index_ub - index_lb + 1 ) * delta;
+                        widths_out{ index_object }{ index_signal }( index_peak ) = ( index_ub - index_lb + 1 ) * signal_matrices( index_object ).axis.delta;
 
                     end % for index_peak = 1:N_peaks
+
+                    if display
+                        figure( index_object );
+                        plot( samples_dB );
+                        hold on;
+                        plot( peaks_indices( index_peak ), peaks( index_peak ), '+r' );
+                        line( [ index_lb, index_ub ], repmat( thresholds_dB( index_object ), [ 1, 2 ] ), 'Color', 'r' );
+                        hold off;
+                        ylim( [-60,0] );
+                        title( sprintf( 'width = %d', index_ub - index_lb + 1 ) );
+                    end
+
+                    %------------------------------------------------------
+                    % d) compute integral sidelobe ratio
+                    %------------------------------------------------------
+                    indices_mainlobe = (index_lb:index_ub);
+                    indices_sidelobes = [ 1:( index_lb - 1 ), ( index_ub + 1 ):abs( signal_matrices( index_object ).axis ) ];
+%                     ISLR{ index_object }{ index_signal } = 20 * log10( norm( signal_matrices( index_object ).samples( indices_sidelobes, index_signal ) ) / norm( signal_matrices( index_object ).samples( indices_mainlobe, index_signal ) ) );
+                    ISLR{ index_object }{ index_signal } = mean( samples_dB( indices_sidelobes ) );
+
+                    %------------------------------------------------------
+                    % d) determine peak sidelobe level (PSL)
+                    %------------------------------------------------------
+                    if nargout > 1
+
+                        % 
+                        [ peaks_lower, peaks_index_lower ] = findpeaks( samples_dB( 1:( index_lb - 1 ) ), 'SortStr', 'descend', 'NPeaks', 1 );
+                        [ peaks_upper, peaks_index_upper ] = findpeaks( samples_dB( ( index_ub + 1 ):end ), 'SortStr', 'descend', 'NPeaks', 1 );
+
+                        % peak sidelobe level (PSL)
+                        PSL{ index_object }{ index_signal } = max( peaks_lower, peaks_upper );
+
+                        if display
+                            figure( index_object );
+                            hold on;
+                            plot( peaks_index_lower, peaks_lower, '+r', index_ub + peaks_index_upper, peaks_upper, '+g' );
+                            hold off;
+                            pause;
+                        end
+
+                    end % if nargout > 1
 
                 end % for index_signal = 1:signal_matrices( index_object ).N_signals
 
                 % concatenate horizontally
                 widths_out{ index_object } = cat( 2, widths_out{ index_object }{ : } );
+                PSL{ index_object } = cat( 2, PSL{ index_object }{ : } );
+                ISLR{ index_object } = cat( 2, ISLR{ index_object }{ : } );
 
             end % for index_object = 1:numel( signal_matrices )
 
             % avoid cell array for single signal_matrices
             if isscalar( signal_matrices )
                 widths_out = widths_out{ 1 };
+                PSL = PSL{ 1 };
+                ISLR = ISLR{ 1 };
             end
 
-        end % function widths_out = widths( signal_matrices, thresholds_dB )
+        end % function [ widths_out, PSL, ISLR ] = widths( signal_matrices, thresholds_dB, display )
 
         %------------------------------------------------------------------
         % merge compatible signal matrices

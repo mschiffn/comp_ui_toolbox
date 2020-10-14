@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-29
-% modified: 2020-07-06
+% modified: 2020-10-12
 %
 classdef (Abstract) contrast < processing.metrics.metric
 
@@ -32,6 +32,9 @@ classdef (Abstract) contrast < processing.metrics.metric
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two or three arguments
+            narginchk( 2, 3 );
+
             % property validation functions ensure class scattering.sequences.setups.geometry.shape for ROIs_1 and ROIs_2
 
             % ensure nonempty dynamic_ranges_dB
@@ -87,8 +90,8 @@ classdef (Abstract) contrast < processing.metrics.metric
             results = zeros( 1, image.N_images );
 
             % detect valid grid points in ROIs
-            indicator_roi_ref = iselement( contrast.ROI_1, image.grid.positions );
-            indicator_roi_noise = iselement( contrast.ROI_2, image.grid.positions );
+            indicator_roi_1 = iselement( contrast.ROI_1, image.grid.positions );
+            indicator_roi_2 = iselement( contrast.ROI_2, image.grid.positions );
 
             % iterate images
             for index_image = 1:image.N_images
@@ -104,13 +107,13 @@ classdef (Abstract) contrast < processing.metrics.metric
                 samples_act_dB( indicator_dynamic_range ) = - contrast.dynamic_range_dB;
 
                 % subsampling
-                samples_act_dB_ref = samples_act_dB( indicator_roi_ref );
-                samples_act_dB_noise = samples_act_dB( indicator_roi_noise );
+                samples_act_dB_1 = samples_act_dB( indicator_roi_1 );
+                samples_act_dB_2 = samples_act_dB( indicator_roi_2 );
 
                 %----------------------------------------------------------
                 % b) compute contrast metric (samples)
                 %----------------------------------------------------------
-                results( index_image ) = evaluate_samples( contrast, samples_act_dB_ref, samples_act_dB_noise );
+                results( index_image ) = evaluate_samples( contrast, samples_act_dB_1, samples_act_dB_2 );
 
             end % for index_image = 1:image.N_images
 
@@ -126,7 +129,7 @@ classdef (Abstract) contrast < processing.metrics.metric
         %------------------------------------------------------------------
         % evaluate metric (scalar)
         %------------------------------------------------------------------
-        result = evaluate_samples( contrast, samples_act_dB_ref, samples_act_dB_noise )
+        result = evaluate_samples( contrast, samples_act_dB_1, samples_act_dB_2 )
 
 	end % methods (Abstract, Access = protected, Hidden)
 
