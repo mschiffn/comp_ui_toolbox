@@ -165,6 +165,9 @@ classdef interval
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least two and at most three arguments
+            narginchk( 2, 3 );
+
             % ensure class math.interval
             if ~isa( intervals, 'math.interval' )
                 errorStruct.message = 'intervals must be math.interval!';
