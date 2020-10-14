@@ -18,11 +18,14 @@ function alpha = absorption_water( T )
 %
 % author: Martin F. Schiffner
 % data: 2020-01-13
-% modified: 2020-03-21
+% modified: 2020-09-10
 
     %----------------------------------------------------------------------
     % 1.) check arguments
     %----------------------------------------------------------------------
+	% ensure one argument
+	narginchk( 1, 1 );
+
     % ensure class physical_values.degree_celsius
 %     if ~isa( T, 'physical_values.degree_celsius' )
 %         errorStruct.message = 'T must be physical_values.degree_celsius!';

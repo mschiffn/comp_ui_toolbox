@@ -25,11 +25,14 @@ function T = speed_of_sound_water_inv( c_water )
 %
 % author: Martin F. Schiffner
 % data: 2020-01-13
-% modified: 2020-01-14
+% modified: 2020-09-10
 
     %----------------------------------------------------------------------
     % 1.) check arguments
     %----------------------------------------------------------------------
+    % ensure one argument
+    narginchk( 1, 1 );
+
 	% ensure class physical_values.meter_per_second
 	if ~isa( c_water, 'physical_values.meter_per_second' )
         errorStruct.message = 'c_water must be physical_values.meter_per_second!';
