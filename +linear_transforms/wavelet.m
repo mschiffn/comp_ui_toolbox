@@ -241,19 +241,35 @@ classdef wavelet < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 2.) display coefficients (single vector)
             %--------------------------------------------------------------
-            % prepare shape of vector
-            if LT.N_dimensions >= 2
-                x = reshape( x, LT.N_points_axis );
-            end
-
             % logarithmic compression
-            x_dB = illustration.dB( x, 10 )';
+            x_dB = illustration.dB( x, 20 );
 
-            % display vector
-            if LT.N_dimensions == 2
-                imagesc( x_dB, [ -60, 0 ] );
-                colorbar;
-            end
+            % check dimensionality of the discrete wavelet transform
+            if LT.N_dimensions == 1
+
+                % direct display of column vector for one-dimensional discrete wavelet transform
+                plot( ( 0:( LT.N_points_axis - 1 ) ), x_dB );
+
+            else
+
+                % reshape column vector into array and remove dimensions of length 1
+                x_dB = squeeze( reshape( x_dB, LT.N_points_axis ) );
+
+                % display method depends on number of array dimensions
+                if ismatrix( x_dB )
+                    imagesc( x_dB.', [ -60, 0 ] );
+                    colorbar;
+                else
+
+                    %
+                    warning( 'display_coefficients_vector:NotImplemented', 'Method display_coefficients_vector must be implemented!' );
+
+                end % if ismatrix( x_dB )
+
+            end % if LT.N_dimensions == 1
+
+            % create title
+            title( 'wavelet coefficients' );
 
         end % function display_coefficients_vector( LT, x )
 

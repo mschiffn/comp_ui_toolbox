@@ -211,7 +211,7 @@ classdef composition < linear_transforms.linear_transform_matrix
             % 2.) display coefficients (single matrix)
             %--------------------------------------------------------------
             % display coefficients of last forward transform
-            display_coefficients( LT.transforms{ end }, x );
+            display_coefficients_matrix( LT.transforms{ end }, x );
 
         end % function display_coefficients_matrix( LT, x )
 

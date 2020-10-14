@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2020-04-16
+% modified: 2020-10-08
 %
 classdef (Abstract) linear_transform
 
@@ -33,11 +33,14 @@ classdef (Abstract) linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % property validation functions ensure nonempty positive integers for N_coefficients
             % property validation functions ensure nonempty positive integers for N_points
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( N_coefficients, N_points );
+            [ N_coefficients, N_points ] = auxiliary.ensureEqualSize( N_coefficients, N_points );
 
             %--------------------------------------------------------------
             % 2.) create linear transforms

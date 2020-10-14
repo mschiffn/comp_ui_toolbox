@@ -18,6 +18,7 @@ classdef fourier_block < linear_transforms.linear_transform_vector
         % dependent properties
         N_dimensions ( 1, 1 ) double { mustBePositive, mustBeInteger, mustBeNonempty } = 2  % number of dimensions
         N_blocks_axis           % number of blocks along each axis
+        N_blocks
         N_points_block
         N_points_block_sqrt
         indices_start
@@ -40,6 +41,9 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure cell array for N_points_axis
             if ~iscell( N_points_axis )
                 N_points_axis = { N_points_axis };
@@ -51,7 +55,7 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( N_points_axis, N_points_block_axis );
+            [ N_points_axis, N_points_block_axis ] = auxiliary.ensureEqualSize( N_points_axis, N_points_block_axis );
 
             %--------------------------------------------------------------
             % 2.) create d-dimensional discrete block fourier transforms
@@ -83,38 +87,29 @@ classdef fourier_block < linear_transforms.linear_transform_vector
                 end
 
                 %----------------------------------------------------------
-                % a) set independent properties
+                % b) set independent properties
                 %----------------------------------------------------------
                 % number of points along each axis
                 objects( index_object ).N_points_axis = N_points_axis{ index_object };
 
                 %----------------------------------------------------------
-                % b) set dependent properties
+                % c) set dependent properties
                 %----------------------------------------------------------
                 % number of dimensions
                 objects( index_object ).N_dimensions = numel( objects( index_object ).N_points_axis );
 
                 % number of blocks along each axis
                 objects( index_object ).N_blocks_axis = ceil( objects( index_object ).N_points_axis ./ N_points_block_axis{ index_object } );
+                objects( index_object ).N_blocks = prod( objects( index_object ).N_blocks_axis );
 
                 % number of grid points per block
                 objects( index_object ).N_points_block = N_points_block( index_object );
 
-                % compute start and stop indices for each block
-                objects( index_object ).indices_start = cell( 1, N_dim );
-                objects( index_object ).indices_stop = cell( 1, N_dim );
-                for index_axis = 1:N_dim
-
-%                     objects( index_object ).indices_start{ index_axis } = ()
-                    objects( index_object ).indices_start{ index_axis } = ( ( 1:N_blocks( index_axis ) ) - 1 ) * N_points_block_axis( index_axis ) + 1;
-                    objects( index_object ).indices_stop{ index_axis } = objects( index_object ).indices_start{ index_axis } + N_points_block_axis( index_axis ) - 1;
-
-                    % check validity of indices
-                    if idx_stop{ index_axis }(end) > N_points_axis( index_axis )
-                        idx_stop{ index_axis }(end) = N_points_axis( index_axis );
-                    end
-
-                end % for index_axis = 1:N_dim
+                % compute partitioning
+                objects( index_object ).partitioning = cell( 1, objects( index_object ).N_dimensions );
+                for index_axis = 1:objects( index_object ).N_dimensions
+                    objects( index_object ).partitioning{ index_axis } = repmat( N_points_block_axis{ index_object }( index_axis ), [ 1, objects( index_object ).N_blocks_axis( index_axis ) ] );
+                end % for index_axis = 1:objects( index_object ).N_dimensions
 
                 %
                 objects( index_object ).N_points_block_sqrt = N_points_block_sqrt( index_object );
@@ -171,7 +166,7 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             end % for index_block = 1:LT.N_blocks
 
             % avoid cell array for y
-            y = cell2mat( y );
+            y = reshape( cell2mat( y ), [ LT.N_points, 1 ] );
 
         end % function y = forward_transform_vector( LT, x )
 
@@ -216,9 +211,18 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             end % for index_block = 1:LT.N_blocks
 
             % avoid cell array for y
-            y = cell2mat( y );
+            y = reshape( cell2mat( y ), [ LT.N_points, 1 ] );
 
         end % function y = adjoint_transform_vector( LT, x )
+
+        %------------------------------------------------------------------
+        % display coefficients (single vector)
+        %------------------------------------------------------------------
+        function display_coefficients_vector( LT, x, dynamic_range_dB, factor_dB )
+
+            
+
+        end % function display_coefficients_vector( LT, x, dynamic_range_dB, factor_dB )
 
 	end % methods (Access = protected, Hidden)
 

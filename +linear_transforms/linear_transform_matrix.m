@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-29
-% modified: 2020-04-16
+% modified: 2020-10-08
 %
 classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
 
@@ -42,6 +42,9 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class linear_transforms.linear_transform_matrix
             if ~isa( LTs, 'linear_transforms.linear_transform_matrix' )
                 errorStruct.message = 'LTs must be linear_transforms.linear_transform_matrix!';
@@ -54,18 +57,8 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
                 x = { x };
             end
 
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                LTs = repmat( LTs, size( x ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
+            [ LTs, x ] = auxiliary.ensureEqualSize( LTs, x );
 
             %--------------------------------------------------------------
             % 2.) compute forward transforms
@@ -116,6 +109,9 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class linear_transforms.linear_transform_matrix
             if ~isa( LTs, 'linear_transforms.linear_transform_matrix' )
                 errorStruct.message = 'LTs must be linear_transforms.linear_transform_matrix!';
@@ -128,18 +124,8 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
                 x = { x };
             end
 
-            % multiple LTs / single x
-            if ~isscalar( LTs ) && isscalar( x )
-                x = repmat( x, size( LTs ) );
-            end
-
-            % single LTs / multiple x
-            if isscalar( LTs ) && ~isscalar( x )
-                LTs = repmat( LTs, size( x ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, x );
+            [ LTs, x ] = auxiliary.ensureEqualSize( LTs, x );
 
             %--------------------------------------------------------------
             % 2.) compute adjoint transforms
@@ -190,6 +176,9 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class linear_transforms.linear_transform_matrix
             if ~isa( LTs, 'linear_transforms.linear_transform_matrix' )
                 errorStruct.message = 'LTs must be linear_transforms.linear_transform_matrix!';
@@ -201,6 +190,9 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
             if ~iscell( x )
                 x = { x };
             end
+
+            % ensure equal number of dimensions and sizes
+            [ LTs, x ] = auxiliary.ensureEqualSize( LTs, x );
 
             %--------------------------------------------------------------
             % 2.) display coefficients

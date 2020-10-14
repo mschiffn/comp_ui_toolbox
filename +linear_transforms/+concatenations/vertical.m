@@ -177,7 +177,18 @@ classdef vertical < linear_transforms.linear_transform_matrix
         %------------------------------------------------------------------
         function display_coefficients_matrix( LT, x )
 
-            % TODO: plot coefficients of individual transforms
+            % partition input
+            N_coefficients = cellfun( @( x ) x.N_coefficients, LT.transforms );
+            x = mat2cell( x, N_coefficients, size( x, 2 ) );
+
+            % iterate linear transforms
+            for index_transform = 1:LT.N_transforms
+
+                % display coefficients of individual transforms
+                subplot( LT.N_transforms, 1, index_transform );
+                display_coefficients_matrix( LT.transforms{ index_transform }, x{ index_transform } );
+
+            end % for index_transform = 1:LT.N_transforms
 
         end % function display_coefficients_matrix( LT, x )
 
