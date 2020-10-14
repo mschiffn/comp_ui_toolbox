@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-12-28
-% modified: 2020-03-12
+% modified: 2020-08-07
 %
 classdef common < regularization.options.energy_rx
 
@@ -141,6 +141,9 @@ classdef common < regularization.options.energy_rx
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class regularization.options.common
             if ~isa( options, 'regularization.options.common' )
                 errorStruct.message = 'options must be regularization.options.common!';
@@ -155,18 +158,8 @@ classdef common < regularization.options.energy_rx
                 error( errorStruct );
             end
 
-            % multiple options / single operators
-            if ~isscalar( options ) && isscalar( operators )
-                operators = repmat( operators, size( options ) );
-            end
-
-            % single options / multiple operators
-            if isscalar( options ) && ~isscalar( operators )
-                options = repmat( options, size( operators ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options, operators );
+            [ options, operators ] = auxiliary.ensureEqualSize( options, operators );
 
             %--------------------------------------------------------------
             % 2.) create configurations

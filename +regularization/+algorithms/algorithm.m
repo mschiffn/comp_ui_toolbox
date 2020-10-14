@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-02-15
+% modified: 2020-10-11
 %
 classdef (Abstract) algorithm
 
@@ -31,6 +31,9 @@ classdef (Abstract) algorithm
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure cell array for rel_RMSEs
             if ~iscell( rel_RMSEs )
                 rel_RMSEs = { rel_RMSEs };
@@ -39,18 +42,8 @@ classdef (Abstract) algorithm
             % property validation functions ensure valid rel_RMSEs
             % property validation functions ensure valid N_iterations_max
 
-            % multiple rel_RMSEs / single N_iterations_max
-            if ~isscalar( rel_RMSEs ) && isscalar( N_iterations_max )
-                N_iterations_max = repmat( N_iterations_max, size( rel_RMSEs ) );
-            end
-
-            % single rel_RMSEs / multiple N_iterations_max
-            if isscalar( rel_RMSEs ) && ~isscalar( N_iterations_max )
-                rel_RMSEs = repmat( rel_RMSEs, size( N_iterations_max ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( rel_RMSEs, N_iterations_max );
+            [ rel_RMSEs, N_iterations_max ] = auxiliary.ensureEqualSize( rel_RMSEs, N_iterations_max );
 
             %--------------------------------------------------------------
             % 2.) create regularization algorithms
@@ -91,6 +84,9 @@ classdef (Abstract) algorithm
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 3, 3 );
+
             % ensure class regularization.algorithms.algorithm
             if ~isa( algorithms, 'regularization.algorithms.algorithm' )
                 errorStruct.message = 'algorithms must be regularization.algorithms.algorithm!';
@@ -103,7 +99,7 @@ classdef (Abstract) algorithm
                 ops_A = { ops_A };
             end
 
-            % ensure function_handle or numeric matrices for ops_A
+            % ensure numeric matrices or function_handle for ops_A
             indicator = cellfun( @( x ) ~( isnumeric( x ) && ismatrix( x ) ) && ~isa( x, 'function_handle' ), ops_A );
             if any( indicator( : ) )
                 errorStruct.message = 'ops_A must either be function_handle or numeric matrices!';
@@ -116,10 +112,10 @@ classdef (Abstract) algorithm
                 y_m = { y_m };
             end
 
-% TODO: ensure compatiblity of y_m with ops_A
+% TODO: ensure compatibility of y_m with ops_A
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( algorithms, ops_A, y_m );
+            [ algorithms, ops_A, y_m ] = auxiliary.ensureEqualSize( algorithms, ops_A, y_m );
 
             %--------------------------------------------------------------
             % 2.) execute algorithms

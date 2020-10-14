@@ -199,10 +199,10 @@ classdef omp < regularization.algorithms.greedy.greedy
                     %----------------------------------------------------------
                     % graphical illustration
                     %----------------------------------------------------------
-                    axis = math.sequence_increasing_regular_quantized( 165, 493, physical_values.hertz( 12165.45012165443040430545806884765625 ) );
-                    y_m_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 329, 384 ] ) ) ), 21, physical_values.second( 1/20e6 ) );
-                    y_approx_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 329, 384 ] ) ) ), 21, physical_values.second( 1/20e6 ) );
-                    y_m_res_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 329, 384 ] ) ) ), 21, physical_values.second( 1/20e6 ) );
+                    axis = math.sequence_increasing_regular_quantized( 192, 573, physical_values.hertz( 11778.5630153119564056396484375 ) );
+                    y_m_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
+                    y_approx_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
+                    y_m_res_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
                     y_m_tilde_max = max( abs( y_m_tilde.samples(:) ) );
 
                     figure( k_iter );

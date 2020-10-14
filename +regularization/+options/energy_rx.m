@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-21
-% modified: 2020-02-21
+% modified: 2020-08-07
 %
 classdef energy_rx
 
@@ -134,6 +134,9 @@ classdef energy_rx
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class regularization.options.energy_rx
             if ~isa( options, 'regularization.options.energy_rx' )
                 errorStruct.message = 'options must be regularization.options.energy_rx!';
@@ -148,18 +151,8 @@ classdef energy_rx
                 error( errorStruct );
             end
 
-            % multiple options / single operators
-            if ~isscalar( options ) && isscalar( operators )
-                operators = repmat( operators, size( options ) );
-            end
-
-            % single options / multiple operators
-            if isscalar( options ) && ~isscalar( operators )
-                options = repmat( options, size( operators ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options, operators );
+            [ options, operators ] = auxiliary.ensureEqualSize( options, operators );
 
             %--------------------------------------------------------------
             % 2.) create configurations

@@ -145,7 +145,7 @@ classdef spgl1 < regularization.algorithms.convex.convex
             %--------------------------------------------------------------
             % superclass ensures class regularization.algorithms.algorithm (scalar) for algorithm_spgl1
             % superclass ensures numeric matrix or function_handle for op_A
-            % superclass ensures compatibility of y_m
+            % superclass ensures compatibility of y_m with op_A
 
             %--------------------------------------------------------------
             % 2.) execute SPGL1

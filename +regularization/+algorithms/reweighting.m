@@ -7,7 +7,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-13
-% modified: 2020-02-18
+% modified: 2020-10-10
 %
 classdef reweighting < regularization.algorithms.algorithm
 
@@ -39,6 +39,9 @@ classdef reweighting < regularization.algorithms.algorithm
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % ensure class regularization.algorithms.algorithm
             if ~isa( algorithms, 'regularization.algorithms.algorithm' )
                 errorStruct.message = 'algorithms must be regularization.algorithms.algorithm!';
