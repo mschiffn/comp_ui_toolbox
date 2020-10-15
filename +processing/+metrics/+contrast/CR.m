@@ -1,11 +1,11 @@
 %
-% superclass for all numbers of nonzero components
+% superclass for all contrast ratios (CRs)
 %
 % author: Martin F. Schiffner
-% date: 2020-03-10
-% modified: 2020-07-06
+% date: 2020-03-14
+% modified: 2020-10-14
 %
-classdef NNZC < processing.metrics.region
+classdef CR < processing.metrics.contrast.contrast
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,30 +15,23 @@ classdef NNZC < processing.metrics.region
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = NNZC( ROIs, boundaries_dB )
+        function objects = CR( ROIs_1, ROIs_2, dynamic_ranges_dB )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure one or two arguments
-            narginchk( 1, 2 );
+            % superclass validation functions ensure class math.orthotope for ROIs_ref and ROIs_noise
 
-            % superclass ensures class scattering.sequences.setups.geometry.shape for ROIs
-
-            % ensure definition of boundaries_dB
-            if nargin < 2
-                boundaries_dB = [];
-            end
-
-            % superclass ensures nonempty negative double for boundaries_dB
+            % ensure equal subclasses of physical_values.length
+%             auxiliary.mustBeEqualSubclasses( 'physical_values.length', ROIs_ref.intervals.lb );
 
             %--------------------------------------------------------------
-            % 2.) create numbers of nonzero components
+            % 2.) create contrast ratios (CRs)
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@processing.metrics.region( ROIs, boundaries_dB );
+            objects@processing.metrics.contrast.contrast( ROIs_1, ROIs_2, dynamic_ranges_dB );
 
-        end % function objects = NNZC( ROIs, boundaries_dB )
+        end % function objects = CR( ROIs_1, ROIs_2, dynamic_ranges_dB )
 
 	end % methods
 
@@ -48,24 +41,27 @@ classdef NNZC < processing.metrics.region
 	methods (Access = protected, Hidden)
 
         %------------------------------------------------------------------
-        % evaluate metric (samples)
+        % evaluate samples (scalar)
         %------------------------------------------------------------------
-        function result = evaluate_samples( ~, ~, indicator )
+        function result = evaluate_samples( ~, samples_1, samples_2 )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.metrics.region (scalar) for region
-            % calling function ensures volume element for delta_V
-            % calling function ensures logical for indicator
+            % calling function ensures class processing.metrics.CR (scalar) for CR
 
             %--------------------------------------------------------------
-            % 2.) compute numbers of nonzero components
+            % 2.) compute contrast ratio (CR)
             %--------------------------------------------------------------
-            result = sum( indicator( : ) );
+            % means
+            samples_1_mean = mean( samples_1 );
+            samples_2_mean = mean( samples_2 );
 
-        end % function result = evaluate_samples( ~, ~, indicator )
+            % contrast-to-noise ratio (CNR)
+            result = abs( samples_1_mean - samples_2_mean );
+
+        end % function result = evaluate_samples( ~, samples_1, samples_2 )
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef NNZC < processing.metrics.region
+end % classdef CR < processing.metrics.contrast.contrast

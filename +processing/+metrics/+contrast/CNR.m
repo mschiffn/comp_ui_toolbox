@@ -2,7 +2,8 @@
 % superclass for all contrast-to-noise ratios (CNRs)
 %
 %   "The contrast-to-noise ratio (CNR) is
-%    an object size-independent measure of the signal level in the presence of noise.
+%    an object size-independent measure of
+%    the signal level in the presence of noise.
 %    Take the example of a disk as the object (Fig. 4-33).
 %    The contrast in this example is the difference between
 %    [1.)] the average gray scale of a region of interest (ROI) in the disk ( \bar{x}_{ \text{S} } ) and
@@ -20,9 +21,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-02-29
-% modified: 2020-03-14
+% modified: 2020-10-14
 %
-classdef CNR < processing.metrics.contrast
+classdef CNR < processing.metrics.contrast.contrast
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -46,7 +47,7 @@ classdef CNR < processing.metrics.contrast
             % 2.) create contrast-to-noise ratios (CNRs)
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@processing.metrics.contrast( ROIs_1, ROIs_2, dynamic_ranges_dB );
+            objects@processing.metrics.contrast.contrast( ROIs_1, ROIs_2, dynamic_ranges_dB );
 
         end % function objects = CNR( ROIs_1, ROIs_2, dynamic_ranges_dB )
 
@@ -83,4 +84,4 @@ classdef CNR < processing.metrics.contrast
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef CNR < processing.metrics.contrast
+end % classdef CNR < processing.metrics.contrast.contrast

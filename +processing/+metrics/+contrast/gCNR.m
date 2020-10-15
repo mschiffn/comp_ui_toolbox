@@ -1,11 +1,11 @@
 %
-% superclass for all contrast ratios (CRs)
+% superclass for all generalized contrast-to-noise ratios (gCNRs)
 %
 % author: Martin F. Schiffner
-% date: 2020-03-14
-% modified: 2020-03-14
+% date: 2020-02-29
+% modified: 2020-10-14
 %
-classdef CR < processing.metrics.contrast
+classdef gCNR < processing.metrics.contrast.contrast
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,23 +15,23 @@ classdef CR < processing.metrics.contrast
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = CR( ROIs_1, ROIs_2, dynamic_ranges_dB )
+        function objects = gCNR( ROIs_1, ROIs_2, dynamic_ranges_dB )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass validation functions ensure class math.orthotope for ROIs_ref and ROIs_noise
+            % superclass validation functions ensure class math.orthotope for ROIs_1 and ROIs_2
 
             % ensure equal subclasses of physical_values.length
-%             auxiliary.mustBeEqualSubclasses( 'physical_values.length', ROIs_ref.intervals.lb );
+%             auxiliary.mustBeEqualSubclasses( 'physical_values.length', ROIs_1.intervals.lb );
 
             %--------------------------------------------------------------
-            % 2.) create contrast ratios (CRs)
+            % 2.) create generalized contrast-to-noise ratios (gCNRs)
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@processing.metrics.contrast( ROIs_1, ROIs_2, dynamic_ranges_dB );
+            objects@processing.metrics.contrast.contrast( ROIs_1, ROIs_2, dynamic_ranges_dB );
 
-        end % function objects = CR( ROIs_1, ROIs_2, dynamic_ranges_dB )
+        end % function objects = gCNR( ROIs_1, ROIs_2, dynamic_ranges_dB )
 
 	end % methods
 
@@ -43,25 +43,26 @@ classdef CR < processing.metrics.contrast
         %------------------------------------------------------------------
         % evaluate samples (scalar)
         %------------------------------------------------------------------
-        function result = evaluate_samples( ~, samples_1, samples_2 )
+        function result = evaluate_samples( gCNR, samples_1, samples_2 )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.metrics.CR (scalar) for CR
+            % calling function ensures class processing.metrics.gCNR (scalar) for gCNR
 
             %--------------------------------------------------------------
-            % 2.) compute contrast ratio (CR)
+            % 2.) compute generalized contrast-to-noise ratio (gCNR)
             %--------------------------------------------------------------
-            % means
-            samples_1_mean = mean( samples_1 );
-            samples_2_mean = mean( samples_2 );
+            % estimate PDFs of samples_1 and samples_2
+            samples_1_pdf = histcounts( samples_1, (-gCNR.dynamic_range_dB:0), 'Normalization', 'pdf' );
+            samples_2_pdf = histcounts( samples_2, (-gCNR.dynamic_range_dB:0), 'Normalization', 'pdf' );
 
-            % contrast-to-noise ratio (CNR)
-            result = abs( samples_1_mean - samples_2_mean );
+            % overlap of PDFs and gCNR
+            overlap = sum( min( samples_1_pdf, samples_2_pdf ) );
+            result = 1 - overlap;
 
-        end % function result = evaluate_samples( ~, samples_1, samples_2 )
+        end % function result = evaluate_samples( gCNR, samples_1, samples_2 )
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef CR < processing.metrics.contrast
+end % classdef gCNR < processing.metrics.contrast.contrast

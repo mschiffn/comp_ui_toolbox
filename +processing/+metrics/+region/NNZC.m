@@ -1,11 +1,11 @@
 %
-% superclass for all peak signal-to-noise ratios (PSNRs)
+% superclass for all numbers of nonzero components
 %
 % author: Martin F. Schiffner
-% date: 2020-10-13
-% modified: 2020-10-13
+% date: 2020-03-10
+% modified: 2020-10-14
 %
-classdef PSNR < processing.metrics.contrast
+classdef NNZC < processing.metrics.region.region
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,23 +15,30 @@ classdef PSNR < processing.metrics.contrast
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = PSNR( ROIs_1, ROIs_2, dynamic_ranges_dB )
+        function objects = NNZC( ROIs, boundaries_dB )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass validation functions ensure class math.orthotope for ROIs_1 and ROIs_2
+            % ensure one or two arguments
+            narginchk( 1, 2 );
 
-            % ensure equal subclasses of physical_values.length
-%             auxiliary.mustBeEqualSubclasses( 'physical_values.length', ROIs_1.intervals.lb );
+            % superclass ensures class scattering.sequences.setups.geometry.shape for ROIs
+
+            % ensure definition of boundaries_dB
+            if nargin < 2
+                boundaries_dB = [];
+            end
+
+            % superclass ensures nonempty negative double for boundaries_dB
 
             %--------------------------------------------------------------
-            % 2.) create peak signal-to-noise ratios (PSNRs)
+            % 2.) create numbers of nonzero components
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@processing.metrics.contrast( ROIs_1, ROIs_2, dynamic_ranges_dB );
+            objects@processing.metrics.region.region( ROIs, boundaries_dB );
 
-        end % function objects = PSNR( ROIs_1, ROIs_2, dynamic_ranges_dB )
+        end % function objects = NNZC( ROIs, boundaries_dB )
 
 	end % methods
 
@@ -41,22 +48,24 @@ classdef PSNR < processing.metrics.contrast
 	methods (Access = protected, Hidden)
 
         %------------------------------------------------------------------
-        % evaluate samples (scalar)
+        % evaluate metric (samples)
         %------------------------------------------------------------------
-        function result = evaluate_samples( PSNR, samples_1, samples_2 )
+        function result = evaluate_samples( ~, ~, indicator )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.metrics.PSNR (scalar) for PSNR
+            % calling function ensures class processing.metrics.region.region (scalar) for region
+            % calling function ensures volume element for delta_V
+            % calling function ensures logical for indicator
 
             %--------------------------------------------------------------
-            % 2.) compute peak signal-to-noise ratio (PSNR)
+            % 2.) compute numbers of nonzero components
             %--------------------------------------------------------------
-            result = ( max( samples_1 ) - mean( samples_2 ) ) / PSNR.dynamic_range_dB;
+            result = sum( indicator( : ) );
 
-        end % function result = evaluate_samples( PSNR, samples_1, samples_2 )
+        end % function result = evaluate_samples( ~, ~, indicator )
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef PSNR < processing.metrics.contrast
+end % classdef NNZC < processing.metrics.region.region

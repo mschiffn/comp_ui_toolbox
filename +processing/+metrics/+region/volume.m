@@ -3,9 +3,9 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-03-13
-% modified: 2020-07-06
+% modified: 2020-10-14
 %
-classdef volume < processing.metrics.region
+classdef volume < processing.metrics.region.region
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -36,7 +36,7 @@ classdef volume < processing.metrics.region
             % 2.) create numbers of nonzero components
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@processing.metrics.region( ROIs, boundaries_dB );
+            objects@processing.metrics.region.region( ROIs, boundaries_dB );
 
         end % function objects = volume( ROIs, boundaries_dB )
 
@@ -55,7 +55,7 @@ classdef volume < processing.metrics.region
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.metrics.region (scalar) for region
+            % calling function ensures class processing.metrics.region.region (scalar) for region
             % calling function ensures volume element for delta_V
             % calling function ensures logical for indicator
 
@@ -68,4 +68,4 @@ classdef volume < processing.metrics.region
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef volume < processing.metrics.region
+end % classdef volume < processing.metrics.region.region

@@ -1,11 +1,11 @@
 %
-% superclass for all generalized contrast-to-noise ratios (gCNRs)
+% superclass for all integrated sidelobe ratios (ISRs)
 %
 % author: Martin F. Schiffner
-% date: 2020-02-29
-% modified: 2020-03-14
+% date: 2020-10-14
+% modified: 2020-10-14
 %
-classdef gCNR < processing.metrics.contrast
+classdef ISR < processing.metrics.contrast.contrast
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods
@@ -15,23 +15,23 @@ classdef gCNR < processing.metrics.contrast
         %------------------------------------------------------------------
         % constructor
         %------------------------------------------------------------------
-        function objects = gCNR( ROIs_1, ROIs_2, dynamic_ranges_dB )
+        function objects = ISR( ROIs_main, ROIs_both, dynamic_ranges_dB )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % superclass validation functions ensure class math.orthotope for ROIs_1 and ROIs_2
+            % superclass validation functions ensure class math.orthotope for ROIs_main and ROIs_both
 
             % ensure equal subclasses of physical_values.length
-%             auxiliary.mustBeEqualSubclasses( 'physical_values.length', ROIs_1.intervals.lb );
+%             auxiliary.mustBeEqualSubclasses( 'physical_values.length', ROIs_main.intervals.lb );
 
             %--------------------------------------------------------------
-            % 2.) create generalized contrast-to-noise ratios (gCNRs)
+            % 2.) create integrated sidelobe ratios (ISRs)
             %--------------------------------------------------------------
             % constructor of superclass
-            objects@processing.metrics.contrast( ROIs_1, ROIs_2, dynamic_ranges_dB );
+            objects@processing.metrics.contrast.contrast( ROIs_main, ROIs_both, dynamic_ranges_dB );
 
-        end % function objects = gCNR( ROIs_1, ROIs_2, dynamic_ranges_dB )
+        end % function objects = ISR( ROIs_main, ROIs_both, dynamic_ranges_dB )
 
 	end % methods
 
@@ -43,26 +43,28 @@ classdef gCNR < processing.metrics.contrast
         %------------------------------------------------------------------
         % evaluate samples (scalar)
         %------------------------------------------------------------------
-        function result = evaluate_samples( gCNR, samples_1, samples_2 )
+        function result = evaluate_samples( ISR, samples_1, samples_2 )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % calling function ensures class processing.metrics.gCNR (scalar) for gCNR
+            % calling function ensures class processing.metrics.contrast.ISR (scalar) for ISR
 
             %--------------------------------------------------------------
-            % 2.) compute generalized contrast-to-noise ratio (gCNR)
+            % 2.) compute integrated sidelobe ratio (ISR)
             %--------------------------------------------------------------
-            % estimate PDFs of samples_1 and samples_2
-            samples_1_pdf = histcounts( samples_1, (-gCNR.dynamic_range_dB:0), 'Normalization', 'pdf' );
-            samples_2_pdf = histcounts( samples_2, (-gCNR.dynamic_range_dB:0), 'Normalization', 'pdf' );
+            % compute histograms of samples_1 and samples_2
+            samples_1_hist = histcounts( samples_1, (-ISR.dynamic_range_dB:0) );
+            samples_2_hist = histcounts( samples_2, (-ISR.dynamic_range_dB:0) );
 
-            % overlap of PDFs and gCNR
-            overlap = sum( min( samples_1_pdf, samples_2_pdf ) );
-            result = 1 - overlap;
+            % remove first histogram from second histogram
+            samples_hist = samples_2_hist - samples_1_hist;
 
-        end % function result = evaluate_samples( gCNR, samples_1, samples_2 )
+            % compute expectations
+            result = 1 - ( max( samples_1 ) - samples_hist * ( 0.5 + (-ISR.dynamic_range_dB + 1:0) )' / sum( samples_hist ) ) / ISR.dynamic_range_dB;
+
+        end % function result = evaluate_samples( ISR, samples_1, samples_2 )
 
 	end % methods (Access = protected, Hidden)
 
-end % classdef gCNR < processing.metrics.contrast
+end % classdef ISR < processing.metrics.contrast.contrast
