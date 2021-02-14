@@ -13,7 +13,7 @@
 [downloads-url]: https://npmjs.org/package/ieee754
 
 Develop and
-evaluate computational image recovery methods for
+evaluate computational image formation methods for
 freely programmable ultrasound imaging systems with
 only a few lines of
 code.
@@ -33,28 +33,27 @@ software-based "ultrafast" imaging modes, e.g.
 capture large fields of view (FOVs) at
 rates in the kilohertz range.
 
-Established image recovery methods, e.g.
+Standard image formation algorithms, e.g.
 delay-and-sum (DAS) or
 Fourier methods, however, gradually trade
-the image quality for
+the image quality off against
 the frame rate.
 They rely on
 relatively simple physical models that
 do not support
-complex imaging sequences and, thus, significantly reduce
-the flexibility of
+complex imaging sequences and, thus, neglect
+the special abilities of
 these systems.
 
 ## What Does This Toolbox Accomplish?
 
 Computational UI methods leverage
 the available processing power for
-realistic physical models that reflect
+realistic physical models that include
 the abilities of
 freely programmable UI systems.
 They recover
-fluctuations in
-the acoustic material parameters in
+acoustic material parameter fluctuations in
 a specified FOV from
 a relatively short sequence of
 arbitrarily complex pulse-echo scattering experiments.
@@ -69,9 +68,10 @@ a fully-sampled transducer array, and
 3. their optional mixing into
 compound signals.
 
-Considering soft tissue structures as
-lossy heterogeneous fluids,
-the toolbox provides numerical solutions to
+The toolbox, considering
+soft tissue structures as
+lossy heterogeneous fluids, provides
+numerical solutions to
 these inverse problems based on
 discretized scattering operators and
 their adjoints.
@@ -80,10 +80,10 @@ the relative spatial fluctuations in
 compressibility and/or mass density to
 the mixed radio frequency voltage signals.
 
-The toolbox excels in
+It excels in
 the *repetitive* application of
 identical scattering operators in
-iterative image recovery methods and, thus, complements
+iterative image formation methods and, thus, complements
 popular simulation tools, e.g.
 [Field II](https://field-ii.dk/) and
 [FOCUS](https://www.egr.msu.edu/~fultras-web/).
@@ -100,12 +100,14 @@ Typical applications include
 - statistical (Bayesian) methods, and
 - machine learning.
 
-Usability and simplicity were
+Usability and
+simplicity were
 crucial design paradigms.
 The toolbox enables
 the solution of
 complex inverse scattering problems with
-only a few lines of code.
+only a few lines of
+code.
 
 ## Main Features
 

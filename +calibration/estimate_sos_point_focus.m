@@ -45,6 +45,9 @@ function [ states, rel_RMSE ] = estimate_sos_point_focus( u_rx_tilde_qsw, xdc_ar
     %----------------------------------------------------------------------
 	% 1.) check arguments
 	%----------------------------------------------------------------------
+	% ensure four arguments
+	narginchk( 4, 4 );
+
 	% ensure cell array for u_rx_tilde_qsw
 	if ~iscell( u_rx_tilde_qsw )
         u_rx_tilde_qsw = { u_rx_tilde_qsw };
@@ -253,9 +256,11 @@ function [ states, rel_RMSE ] = estimate_sos_point_focus( u_rx_tilde_qsw, xdc_ar
             % compute flag reflecting the local angular spatial frequencies
             axis_k_tilde = 2 * pi * axis_f.members / states{ index_data }( index_target ).c_avg;
             flag = real( axis_k_tilde ) .* e_r0_minus_r( index_target, :, : ) .* reshape( xdc_array( index_data ).cell_ref.edge_lengths( indicator_dimensions ), [ 1, 1, N_dimensions_lateral_relevant ] );
+            flag = processing.field( axis_f, math.grid( states{ index_data }( index_target ).position_target ), mat2cell( flag, abs( axis_f ), ones( 1, xdc_array( index_data ).N_elements ) ) );
 
             % detect valid grid points
-            filter = compute_samples( options{ index_data }( index_target ).anti_aliasing, flag );
+            filter = compute_samples( options{ index_data }( index_target ).anti_aliasing.tx, flag );
+            filter = cat( 2, filter.samples );
 
             %--------------------------------------------------------------
             % v.) select active elements according to bandwidth
