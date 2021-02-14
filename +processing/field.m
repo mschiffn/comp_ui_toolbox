@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-01-22
-% modified: 2020-04-10
+% modified: 2021-02-11
 %
 classdef field < processing.signal_matrix
 
@@ -33,6 +33,9 @@ classdef field < processing.signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % superclass ensures class math.sequence_increasing for axes
 
             % ensure class math.grid
@@ -42,19 +45,16 @@ classdef field < processing.signal_matrix
                 error( errorStruct );
             end
 
-            % multiple axes / single grids_FOV
-            if ~isscalar( axes ) && isscalar( grids_FOV )
-                grids_FOV = repmat( grids_FOV, size( axes ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( axes, grids_FOV );
+            % superclass ensures valid samples
 
             %--------------------------------------------------------------
             % 2.) create fields
             %--------------------------------------------------------------
             % constructor of superclass
             objects@processing.signal_matrix( axes, samples );
+
+            % ensure equal number of dimensions and sizes
+            [ objects, grids_FOV ] = auxiliary.ensureEqualSize( objects, grids_FOV );
 
             % iterate fields
             for index_object = 1:numel( objects )

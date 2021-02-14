@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-27
-% modified: 2020-10-13
+% modified: 2020-11-08
 %
 classdef signal_matrix
 
@@ -1037,11 +1037,14 @@ classdef signal_matrix
         %------------------------------------------------------------------
         % cut out submatrix
         %------------------------------------------------------------------
-        function signal_matrices = cut_out( signal_matrices, lbs, ubs, varargin )
+        function signal_matrices = cut_out( signal_matrices, lbs, ubs, indices_signals, settings_window )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least three and at most five arguments
+            narginchk( 3, 5 );
+
             % ensure class processing.signal_matrix
             if ~isa( signal_matrices, 'processing.signal_matrix' )
                 errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
@@ -1051,10 +1054,8 @@ classdef signal_matrix
 
             % method cut_out in math.sequence_increasing ensures correct lbs and ubs
 
-            % ensure nonempty indices_signals
-            if nargin >= 4 && ~isempty( varargin{ 1 } )
-                indices_signals = varargin{ 1 };
-            else
+            % ensure existence of nonempty indices_signals
+            if nargin < 4 || isempty( indices_signals )
                 indices_signals = cell( size( signal_matrices ) );
                 for index_object = 1:numel( signal_matrices )
                     indices_signals{ index_object } = ( 1:signal_matrices( index_object ).N_signals );
@@ -1066,30 +1067,13 @@ classdef signal_matrix
                 indices_signals = { indices_signals };
             end
 
-            % ensure nonempty settings_window
-            if nargin >= 5 && ~isempty( varargin{ 2 } )
-                settings_window = varargin{ 2 };
-            else
+            % ensure existence of nonempty settings_window
+            if nargin < 5 || isempty( indices_signals )
                 settings_window = auxiliary.setting_window( @tukeywin, 0 );
             end
 
-            % multiple signal_matrices / single indices_signals
-            if ~isscalar( signal_matrices ) && isscalar( indices_signals )
-                indices_signals = repmat( indices_signals, size( signal_matrices ) );
-            end
-
-            % single signal_matrices / multiple indices_signals
-            if isscalar( signal_matrices ) && ~isscalar( indices_signals )
-                signal_matrices = repmat( signal_matrices, size( indices_signals ) );
-            end
-
-            % multiple signal_matrices / single settings_window
-            if ~isscalar( signal_matrices ) && isscalar( settings_window )
-                settings_window = repmat( settings_window, size( signal_matrices ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_matrices, indices_signals, settings_window );
+            [ signal_matrices, indices_signals, settings_window ] = auxiliary.ensureEqualSize( signal_matrices, indices_signals, settings_window );
 
             %--------------------------------------------------------------
             % 2.) perform cut out
@@ -1118,7 +1102,7 @@ classdef signal_matrix
 
             end % for index_object = 1:numel( signal_matrices )
 
-        end % function signal_matrices = cut_out( signal_matrices, lbs, ubs, varargin )
+        end % function signal_matrices = cut_out( signal_matrices, lbs, ubs, indices_signals, settings_window )
 
         %------------------------------------------------------------------
         % return vector
