@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-02-14
-% modified: 2020-07-21
+% modified: 2020-11-20
 %
 classdef (Abstract) operator
 
@@ -139,18 +139,8 @@ classdef (Abstract) operator
                 options = { options };
             end
 
-            % multiple operators / single options
-            if ~isscalar( operators ) && isscalar( options )
-                options = repmat( options, size( operators ) );
-            end
-
-            % single operators / multiple options
-            if isscalar( operators ) && ~isscalar( options )
-                operators = repmat( operators, size( options ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators, coefficients, options );
+            [ operators, coefficients, options ] = auxiliary.ensureEqualSize( operators, coefficients, options );
 
             %--------------------------------------------------------------
             % 2.) compute mixed voltage signals
@@ -164,17 +154,17 @@ classdef (Abstract) operator
                 %----------------------------------------------------------
                 % a) check arguments
                 %----------------------------------------------------------
-                % ensure class regularization.options.common
-                if ~isa( options{ index_operator }, 'regularization.options.common' )
-                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
-                    errorStruct.identifier = 'forward:NoCommonRegularizationOptions';
-                    error( errorStruct );
-                end
-
                 % ensure numeric matrix
                 if ~( isnumeric( coefficients{ index_operator } ) && ismatrix( coefficients{ index_operator } ) )
                     errorStruct.message = sprintf( 'coefficients{ %d } must be a numeric matrix!', index_operator );
                     errorStruct.identifier = 'forward:NoNumericMatrix';
+                    error( errorStruct );
+                end
+
+                % ensure class regularization.options.common
+                if ~isa( options{ index_operator }, 'regularization.options.common' )
+                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
+                    errorStruct.identifier = 'forward:NoCommonRegularizationOptions';
                     error( errorStruct );
                 end
 
@@ -236,6 +226,9 @@ classdef (Abstract) operator
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least two arguments
+            narginchk( 2, 3 );
+
             % ensure class scattering.operator
             if ~isa( operators, 'scattering.operator' )
                 errorStruct.message = 'operators must be scattering.operator!';
@@ -258,20 +251,8 @@ classdef (Abstract) operator
                 options = { options };
             end
 
-            % method get_configs ensures class regularization.options.common for options
-
-            % multiple operators / single options
-            if ~isscalar( operators ) && isscalar( options )
-                options = repmat( options, size( operators ) );
-            end
-
-            % single operators / multiple options
-            if isscalar( operators ) && ~isscalar( options )
-                operators = repmat( operators, size( options ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators, u_M, options );
+            [ operators, u_M, options ] = auxiliary.ensureEqualSize( operators, u_M, options );
 
             %--------------------------------------------------------------
             % 2.) compute adjoint scattering
@@ -291,6 +272,13 @@ classdef (Abstract) operator
                 if ~isa( u_M{ index_operator }, 'processing.signal_matrix' )
                     errorStruct.message = sprintf( 'u_M{ %d } must be processing.signal_matrix!', index_operator );
                     errorStruct.identifier = 'adjoint:NoSignalMatrices';
+                    error( errorStruct );
+                end
+
+                % ensure class regularization.options.common
+                if ~isa( options{ index_operator }, 'regularization.options.common' )
+                    errorStruct.message = sprintf( 'options{ %d } must be regularization.options.common!', index_operator );
+                    errorStruct.identifier = 'adjoint:NoCommonRegularizationOptions';
                     error( errorStruct );
                 end
 
@@ -646,18 +634,8 @@ classdef (Abstract) operator
 
             % method get_configs ensures class regularization.options.common for options
 
-            % multiple operators / single options
-            if ~isscalar( operators ) && isscalar( options )
-                options = repmat( options, size( operators ) );
-            end
-
-            % single operators / multiple options
-            if isscalar( operators ) && ~isscalar( options )
-                operators = repmat( operators, size( options ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( operators, u_M, options );
+            [ operators, u_M, options ] = auxiliary.ensureEqualSize( operators, u_M, options );
 
             %--------------------------------------------------------------
             % 2.) process scattering operators
@@ -736,7 +714,7 @@ classdef (Abstract) operator
                     %------------------------------------------------------
                     % iii.) define anonymous function for sensing matrix
                     %------------------------------------------------------
-                    op_A_bar = @( x, mode ) combined_quick( operator_act, mode, x, LT_dict_act, LT_tgc_act );
+                    op_A_bar = @( x, mode ) combined_scalar( operator_act, mode, x, LT_dict_act, LT_tgc_act );
 
                     %------------------------------------------------------
                     % iv.) recover transform coefficients and material fluctuations
@@ -1029,6 +1007,71 @@ classdef (Abstract) operator
         end % function u_M = format_voltages( operators, u_M )
 
     end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % combined scattering (scalar)
+        %------------------------------------------------------------------
+        function y = combined_scalar( operator, mode, varargin )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling method ensures class scattering.operator (scalar) for operator
+
+            % ensure nonempty nonnegative integer for mode
+            mustBeNonnegative( mode );
+            mustBeInteger( mode );
+
+            % methods forward_scalar or adjoint_scalar ensure numeric matrix for x
+
+            %--------------------------------------------------------------
+            % 2.) combined scattering (scalar)
+            %--------------------------------------------------------------
+            switch mode
+
+                case 0
+
+                    %------------------------------------------------------
+                    % a) return size of forward transform
+                    %------------------------------------------------------
+                    N_observations = cellfun( @( x ) sum( x( : ) ), { operator.sequence.settings( operator.indices_measurement_sel ).N_observations } );
+                    N_observations = sum( N_observations( : ) );
+% TODO: wrong! number of coefficients in 2nd entry
+                    y = [ N_observations, operator.sequence.size( 2 ) ];
+
+                case 1
+
+                    %------------------------------------------------------
+                    % b) forward scattering (scalar)
+                    %------------------------------------------------------
+                    y = forward_scalar( operator, varargin{ : } );
+
+                case 2
+
+                    %------------------------------------------------------
+                    % c) adjoint scattering (scalar)
+                    %------------------------------------------------------
+                    y = adjoint_scalar( operator, varargin{ : } );
+
+                otherwise
+
+                    %------------------------------------------------------
+                    % d) unknown operation
+                    %------------------------------------------------------
+                    errorStruct.message = 'Unknown mode of operation!';
+                    errorStruct.identifier = 'combined_scalar:InvalidMode';
+                    error( errorStruct );
+
+            end % switch mode
+
+        end % function y = combined_scalar( operator, mode, varargin )
+
+	end % methods (Access = protected, Hidden)
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods (abstract and hidden)

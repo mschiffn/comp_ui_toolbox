@@ -32,69 +32,6 @@ classdef operator_born < scattering.operator
         end % function object = operator_born( sequences, options )
 
         %------------------------------------------------------------------
-        % quick combined scattering
-        %------------------------------------------------------------------
-        function y = combined_quick( operator_born, mode, varargin )
-
-            %--------------------------------------------------------------
-            % 1.) check arguments
-            %--------------------------------------------------------------
-            % ensure class scattering.operator_born (scalar)
-            if ~( isa( operator_born, 'scattering.operator_born' ) && isscalar( operator_born ) )
-                errorStruct.message = 'operator_born must be a single scattering.operator_born!';
-                errorStruct.identifier = 'combined_quick:NoSingleOperatorBorn';
-                error( errorStruct );
-            end
-
-            % ensure nonempty nonnegative integer for mode
-            mustBeNonnegative( mode );
-            mustBeInteger( mode );
-
-            % functions forward_scalar or adjoint_quick ensure numeric matrix for x
-
-            %--------------------------------------------------------------
-            % 2.) quick combined scattering
-            %--------------------------------------------------------------
-            switch mode
-
-                case 0
-
-                    %------------------------------------------------------
-                    % a) return size of forward transform
-                    %------------------------------------------------------
-                    N_observations = cellfun( @( x ) sum( x( : ) ), { operator_born.sequence.settings( operator_born.indices_measurement_sel ).N_observations } );
-                    N_observations = sum( N_observations( : ) );
-% TODO: wrong! number of coefficients in 2nd entry
-                    y = [ N_observations, operator_born.sequence.size( 2 ) ];
-
-                case 1
-
-                    %------------------------------------------------------
-                    % b) quick forward scattering (wrapper)
-                    %------------------------------------------------------
-                    y = forward_scalar( operator_born, varargin{ : } );
-
-                case 2
-
-                    %------------------------------------------------------
-                    % c) quick adjoint scattering (wrapper)
-                    %------------------------------------------------------
-                    y = adjoint_scalar( operator_born, varargin{ : } );
-
-                otherwise
-
-                    %------------------------------------------------------
-                    % d) unknown operation
-                    %------------------------------------------------------
-                    errorStruct.message = 'Unknown mode of operation!';
-                    errorStruct.identifier = 'combined_quick:InvalidMode';
-                    error( errorStruct );
-
-            end % switch mode
-
-        end % function y = combined_quick( operator_born, mode, varargin )
-
-        %------------------------------------------------------------------
         % matrix multiplication (overload mtimes method)
         %------------------------------------------------------------------
         function u_M = mtimes( operator_born, fluctuations )

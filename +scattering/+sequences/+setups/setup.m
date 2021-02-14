@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-03-12
-% modified: 2020-08-01
+% modified: 2021-02-11
 %
 classdef setup
 
@@ -918,6 +918,9 @@ classdef setup
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure at least two arguments
+            narginchk( 2, 3 );
+
             % ensure class scattering.sequences.setups.setup
             if ~isa( setups, 'scattering.sequences.setups.setup' )
                 errorStruct.message = 'setups must be scattering.sequences.setups.setup!';
@@ -942,6 +945,7 @@ classdef setup
                 indices_element = { indices_element };
             end
 
+% TODO: use auxiliary.ensureEqualSize
             % multiple setups / single axes_f
             if ~isscalar( setups ) && isscalar( axes_f )
                 axes_f = repmat( axes_f, size( setups ) );
