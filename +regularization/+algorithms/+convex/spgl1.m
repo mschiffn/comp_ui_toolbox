@@ -40,6 +40,9 @@ classdef spgl1 < regularization.algorithms.convex.convex
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % ensure cell array for rel_RMSEs
             if ~iscell( rel_RMSEs )
                 rel_RMSEs = { rel_RMSEs };
@@ -49,23 +52,8 @@ classdef spgl1 < regularization.algorithms.convex.convex
             % superclass ensures valid N_iterations_max
             % property validation functions ensure valid q
 
-            % multiple rel_RMSEs / single q
-            if ~isscalar( rel_RMSEs ) && isscalar( q )
-                q = repmat( q, size( rel_RMSEs ) );
-            end
-
-            % single rel_RMSEs / multiple q
-            if isscalar( rel_RMSEs ) && ~isscalar( q )
-                rel_RMSEs = repmat( rel_RMSEs, size( q ) );
-            end
-
-            % multiple N_iterations_max / single q
-            if ~isscalar( N_iterations_max ) && isscalar( q )
-                q = repmat( q, size( N_iterations_max ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( rel_RMSEs, q );
+            [ rel_RMSEs, N_iterations_max, q ] = auxiliary.ensureEqualSize( rel_RMSEs, N_iterations_max, q );
 
             %--------------------------------------------------------------
             % 2.) create SPGL1 algorithms

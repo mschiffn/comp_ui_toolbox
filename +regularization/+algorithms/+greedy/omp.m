@@ -199,32 +199,32 @@ classdef omp < regularization.algorithms.greedy.greedy
                     %----------------------------------------------------------
                     % graphical illustration
                     %----------------------------------------------------------
-                    axis = math.sequence_increasing_regular_quantized( 192, 573, physical_values.hertz( 11778.5630153119564056396484375 ) );
-                    y_m_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
-                    y_approx_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
-                    y_m_res_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
-                    y_m_tilde_max = max( abs( y_m_tilde.samples(:) ) );
-
-                    figure( k_iter );
-                    subplot( 2, 3, 1 );
-                    imagesc( 20*log10( abs( y_m_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
-                    subplot( 2, 3, 2 );
-                    imagesc( 20*log10( abs( y_approx_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
-                    subplot( 2, 3, 3 );
-                    imagesc( 20*log10( abs( y_m_res_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
-                    subplot( 2, 3, 4 );
-                    plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 32 ), 'b', ...
-                          (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 32 ), 'g', ...
-                          (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 32 ), 'r:' );
-                    subplot( 2, 3, 5 );
-                    plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 64 ), 'b', ...
-                          (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 64 ), 'g', ...
-                          (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 64 ), 'r:' );
-                    subplot( 2, 3, 6 );
-                    plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 96 ), 'b', ...
-                          (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 96 ), 'g', ...
-                          (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 96 ), 'r:' );
-                    colormap parula;
+%                     axis = math.sequence_increasing_regular_quantized( 192, 573, physical_values.hertz( 11778.5630153119564056396484375 ) );
+%                     y_m_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
+%                     y_approx_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_approx, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
+%                     y_m_res_tilde = signal( processing.signal_matrix( axis, physical_values.volt( reshape( y_m_res, [ 382, numel( y_m ) / 382 ] ) ) ), 200 );
+%                     y_m_tilde_max = max( abs( y_m_tilde.samples(:) ) );
+% 
+%                     figure( k_iter );
+%                     subplot( 2, 3, 1 );
+%                     imagesc( 20*log10( abs( y_m_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+%                     subplot( 2, 3, 2 );
+%                     imagesc( 20*log10( abs( y_approx_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+%                     subplot( 2, 3, 3 );
+%                     imagesc( 20*log10( abs( y_m_res_tilde.samples ) / y_m_tilde_max ), [ -50, 0 ] );
+%                     subplot( 2, 3, 4 );
+%                     plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 32 ), 'b', ...
+%                           (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 32 ), 'g', ...
+%                           (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 32 ), 'r:' );
+%                     subplot( 2, 3, 5 );
+%                     plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 64 ), 'b', ...
+%                           (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 64 ), 'g', ...
+%                           (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 64 ), 'r:' );
+%                     subplot( 2, 3, 6 );
+%                     plot( (y_m_tilde.axis.q_lb:y_m_tilde.axis.q_ub), y_m_tilde.samples( :, 96 ), 'b', ...
+%                           (y_approx_tilde.axis.q_lb:y_approx_tilde.axis.q_ub), y_approx_tilde.samples( :, 96 ), 'g', ...
+%                           (y_m_res_tilde.axis.q_lb:y_m_res_tilde.axis.q_ub), y_m_res_tilde.samples( :, 96 ), 'r:' );
+%                     colormap parula;
 
                     % print status
                     fprintf( ' %10d %10.4f\n', k_iter, y_m_res_norm_rel( k_iter ) );

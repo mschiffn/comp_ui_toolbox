@@ -55,18 +55,8 @@ classdef common < regularization.options.energy_rx
                 error( errorStruct );
             end
 
-            % multiple options_energy / single normalizations
-            if ~isscalar( options_energy ) && isscalar( normalizations )
-                normalizations = repmat( normalizations, size( options_energy ) );
-            end
-
-            % single options_energy / multiple normalizations
-            if isscalar( options_energy ) && ~isscalar( normalizations )
-                options_energy = repmat( options_energy, size( normalizations ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( options_energy, normalizations );
+            [ options_energy, normalizations ] = auxiliary.ensureEqualSize( options_energy, normalizations );
 
             %--------------------------------------------------------------
             % 2.) create options
@@ -186,6 +176,7 @@ classdef common < regularization.options.energy_rx
                     E_M = energy_rx_scalar( operators( index_options ), LTs_dict{ index_options }, LTs_tgc_measurement{ index_options } );
 
                     % create inverse weighting matrix
+% TODO: normalization for concatenated transforms?
                     LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) );
 %                     LT_weighting_inv = linear_transforms.weighting( 1 ./ sqrt( double( E_M ) ) .* 1 ./ ( 1 + 1e12 ./ double( E_M ).^2 ) );
 

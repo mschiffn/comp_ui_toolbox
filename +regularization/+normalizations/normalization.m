@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-10
-% modified: 2020-02-20
+% modified: 2020-11-01
 %
 classdef (Abstract) normalization < regularization.options.template
 
@@ -87,10 +87,13 @@ classdef (Abstract) normalization < regularization.options.template
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % ensure class regularization.normalizations.normalization
             if ~isa( normalizations, 'regularization.normalizations.normalization' )
                 errorStruct.message = 'normalizations must be regularization.normalizations.normalization!';
-                errorStruct.identifier = 'get_LTs:NoDictionaries';
+                errorStruct.identifier = 'get_LTs:NoNormalizations';
                 error( errorStruct );
             end
 
@@ -101,18 +104,8 @@ classdef (Abstract) normalization < regularization.options.template
                 error( errorStruct );
             end
 
-            % multiple normalizations / single operators_born
-            if ~isscalar( normalizations ) && isscalar( operators_born )
-                operators_born = repmat( operators_born, size( normalizations ) );
-            end
-
-            % single normalizations / multiple operators_born
-            if isscalar( normalizations ) && ~isscalar( operators_born )
-                normalizations = repmat( normalizations, size( operators_born ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( normalizations, operators_born );
+            [ normalizations, operators_born ] = auxiliary.ensureEqualSize( normalizations, operators_born );
 
             %--------------------------------------------------------------
             % 2.) create linear transforms

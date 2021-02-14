@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-09-17
-% modified: 2020-10-11
+% modified: 2021-02-11
 %
 classdef (Abstract) algorithm
 
@@ -84,7 +84,7 @@ classdef (Abstract) algorithm
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure two arguments
+            % ensure three arguments
             narginchk( 3, 3 );
 
             % ensure class regularization.algorithms.algorithm
