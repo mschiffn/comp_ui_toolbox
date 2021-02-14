@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2020-10-08
+% modified: 2020-10-20
 %
 classdef (Abstract) linear_transform
 
@@ -145,6 +145,11 @@ classdef (Abstract) linear_transform
         % display coefficients
         %------------------------------------------------------------------
         display_coefficients( LTs, x )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of the s largest expansion coefficients
+        %------------------------------------------------------------------
+        rel_RMSEs = rel_RMSE( LTs, x, N_points_s )
 
 	end % methods (Abstract)
 

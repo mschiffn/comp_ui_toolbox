@@ -8,7 +8,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-04-17
+% modified: 2020-11-01
 %
 classdef wave_atom < linear_transforms.linear_transform_vector
 
@@ -43,6 +43,9 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % ensure string array for types
             if ~isa( types, 'linear_transforms.wave_atoms.type' )
                 errorStruct.message = 'types must be linear_transforms.wave_atoms.type!';
@@ -60,8 +63,11 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             %--------------------------------------------------------------
             % 2.) create discrete wave atom transforms
             %--------------------------------------------------------------
+            % compute numbers of grid points per axis
+            N_points_per_axis = 2.^scales_finest;
+
             % compute numbers of grid points
-            N_points = ( 2.^scales_finest ).^N_dimensions;
+            N_points = N_points_per_axis.^N_dimensions;
 
             % get numbers of layers
             N_layers = get_N_layers( types, N_dimensions );
@@ -86,7 +92,7 @@ classdef wave_atom < linear_transforms.linear_transform_vector
                 % b) set dependent properties
                 %----------------------------------------------------------
                 % number of points along each axis
-                objects( index_object ).N_points_axis = repmat( 2.^objects( index_object ).scale_finest, [ 1, objects( index_object ).N_dimensions ] );
+                objects( index_object ).N_points_axis = repmat( N_points_per_axis( index_object ), [ 1, objects( index_object ).N_dimensions ] );
                 objects( index_object ).N_layers = N_layers( index_object );
 
                 % specify transform functions
@@ -105,8 +111,10 @@ classdef wave_atom < linear_transforms.linear_transform_vector
                         %--------------------------------------------------
                         % ii.) two-dimensional transform
                         %--------------------------------------------------
-                        objects( index_object ).handle_fwd = @fwa2sym;
-                        objects( index_object ).handle_inv = @iwa2sym;
+%                         objects( index_object ).handle_fwd = @fwa2sym;
+%                         objects( index_object ).handle_inv = @iwa2sym;
+                        objects( index_object ).handle_fwd = @fatom2sym;
+                        objects( index_object ).handle_inv = @iatom2sym;
 
                     case 3
 
@@ -165,15 +173,12 @@ classdef wave_atom < linear_transforms.linear_transform_vector
                 x = reshape( x, LT.N_points_axis );
             end
 
+            % get parameters for function call
+            str_params = get_parameters( LT.type );
+
             % apply forward transform
-            switch class( LT.type )
-                case 'linear_transforms.wave_atoms.orthogonal'
-                    y_act = LT.handle_fwd( x, LT.type.pat, 'ortho' );
-                case 'linear_transforms.wave_atoms.directional'
-                    y_act = LT.handle_fwd( x, LT.type.pat, 'directional' );
-                case 'linear_transforms.wave_atoms.complex'
-                    y_act = LT.handle_fwd( x, LT.type.pat, 'complex' );
-            end
+%             y_act = LT.handle_fwd( x, LT.type.pat, str_params{ 2 } );
+            y_act = LT.handle_fwd( x, LT.type.pat, [ 1, 1 ] );
 
             % return result as column vector
             y = y_act( : );
@@ -205,15 +210,12 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             % prepare shape of vector
             x_act = reshape( x, [ LT.N_points_axis, LT.N_layers ] );
 
+            % get parameters for function call
+            str_params = get_parameters( LT.type );
+
             % apply adjoint transform
-            switch class( LT.type )
-                case 'linear_transforms.wave_atoms.orthogonal'
-                    y_act = LT.handle_inv( x_act, LT.type.pat, 'ortho' );
-                case 'linear_transforms.wave_atoms.directional'
-                    y_act = LT.handle_inv( x_act, LT.type.pat, 'directional' );
-                case 'linear_transforms.wave_atoms.complex'
-                    y_act = LT.handle_inv( x_act, LT.type.pat, 'complex' );
-            end
+%             y_act = LT.handle_inv( x_act, LT.type.pat, str_params{ 2 } );
+            y_act = LT.handle_inv( x_act, LT.type.pat, [ 1, 1 ] );
 
             % return result as column vector
             y = y_act( : );
@@ -252,7 +254,11 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             switch LT.N_layers
                 case 1
                     if LT.N_dimensions == 2
-                        imagesc( x_act_dB, [ -60, 0 ] );
+
+                        imagesc( x_act_dB', [ -60, 0 ] );
+
+                        % create title
+                        title( 'Wave atom coefficients' );
                     end
                 case 2
                     if LT.N_dimensions == 2
@@ -279,6 +285,31 @@ classdef wave_atom < linear_transforms.linear_transform_vector
             end
 
         end % function display_coefficients_vector( LT, x )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of best s-sparse approximations (single vector)
+        %------------------------------------------------------------------
+        function [ rel_RMSEs, axis_s ] = rel_RMSE_vector( LT, y )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
+            %--------------------------------------------------------------
+            % 2.) compute relative RMSEs of best s-sparse approximations (single vector)
+            %--------------------------------------------------------------
+            % sort absolute values of transform coefficients (ascending order)
+            y_abs_sorted = sort( abs( y ), 1, 'ascend' );
+
+            % determine relative root mean-squared approximation error
+            rel_RMSEs = flip( sqrt( cumsum( y_abs_sorted.^2 ) ) / norm( y, 2 ) );
+
+            % number of coefficients corresponding to relative RMSE
+            axis_s = ( 0:( LT.N_coefficients - 1 ) );
+
+        end % function [ rel_RMSEs, axis_s ] = rel_RMSE_vector( LT, y )
 
 	end % methods (Access = protected, Hidden)
 

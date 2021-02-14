@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-29
-% modified: 2020-04-16
+% modified: 2020-11-05
 %
 classdef (Abstract) linear_transform_vector < linear_transforms.linear_transform_matrix
 
@@ -151,6 +151,81 @@ classdef (Abstract) linear_transform_vector < linear_transforms.linear_transform
             end % for index_vector = 1:N_vectors
 
         end % function display_coefficients_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of s largest expansion coefficients (single matrix)
+        %------------------------------------------------------------------
+        function [ rel_RMSEs, axis_s ] = rel_RMSE_matrix( LT, x, y, N_points_s )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.linear_transform_matrix (scalar) for LT
+            % calling function ensures numeric matrix for x
+            % calling function ensures equal numbers of points in x
+            % calling function ensures valid number of evaluation points N_points_s
+
+            %--------------------------------------------------------------
+            % 2.) compute relative RMSEs of s largest expansion coefficients (single matrix)
+            %--------------------------------------------------------------
+            % number of vectors
+            N_vectors = size( x, 2 );
+
+            % create current sparsity axis
+            axis_s = round( logspace( 0, log10( LT.N_coefficients ), N_points_s ) );
+
+            % initialize results w/ zeros
+            rel_RMSEs = zeros( N_points_s, N_vectors );
+
+            % iterate vectors
+            for index_vector = 1:N_vectors
+
+                % call forward transform for single vector
+                rel_RMSEs( :, index_vector ) = rel_RMSE_vector( LT, x( :, index_vector ), y( :, index_vector ), axis_s );
+
+            end % for index_vector = 1:N_vectors
+
+        end % function [ rel_RMSEs, axis_s ] = rel_RMSE_matrix( LT, x, y, N_points_s )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of s largest expansion coefficients (single vector)
+        %------------------------------------------------------------------
+        function rel_RMSEs = rel_RMSE_vector( LT, x, y, axis_s )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures
+
+            %--------------------------------------------------------------
+            % 2.) compute relative RMSEs of s largest expansion coefficients (single vector)
+            %--------------------------------------------------------------
+            % energy of samples
+            x_energy = norm( x );
+
+            % sort absolute values of transform coefficients (descending order)
+            [ ~, indices_sorted ] = sort( abs( y ), 1, 'descend' );
+
+            % allocate memory
+            y_act = zeros( LT.N_coefficients, 1 );
+            rel_RMSEs = zeros( 1, numel( axis_s ) );
+
+            % create sparse coefficient vector, compute approx. image
+            for index_s_act = 1:numel( axis_s )
+
+                % copy desired transform coefficients
+                indices_act = indices_sorted( 1:axis_s( index_s_act ) );
+                y_act( indices_act ) = y( indices_act );
+
+                % apply adjoint transform and compute approximated image
+                x_act = adjoint_transform_vector( LT, y_act );
+
+                % compute relative RMSE
+                rel_RMSEs( index_s_act ) = norm( x - x_act ) / x_energy;
+
+            end % for index_s_act = 1:numel( axis_s )
+
+        end % function rel_RMSEs = rel_RMSE_vector( LT, x, y, axis_s )
 
     end % methods (Access = protected, Hidden)
 

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-04-16
+% modified: 2020-10-26
 %
 % TODO: < linear_transforms.concatenations.concatenation
 classdef diagonal < linear_transforms.linear_transform_matrix
@@ -116,9 +116,9 @@ classdef diagonal < linear_transforms.linear_transform_matrix
     end % methods
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%% methods (protected, hidden)
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	methods (Access = protected, Hidden)
+    %% methods (protected, hidden)
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    methods (Access = protected, Hidden)
 
         %------------------------------------------------------------------
         % forward transform (single matrix)
@@ -202,8 +202,13 @@ classdef diagonal < linear_transforms.linear_transform_matrix
         % display coefficients (single matrix)
         %------------------------------------------------------------------
         function display_coefficients_matrix( LT, x )
-
         end % function display_coefficients_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of best s-sparse approximations (single matrix)
+        %------------------------------------------------------------------
+        function [ rel_RMSEs, axes_s ] = rel_RMSE_matrix( LT, y )
+        end
 
 	end % methods (Access = protected, Hidden)
 

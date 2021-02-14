@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-02
-% modified: 2020-04-16
+% modified: 2020-10-26
 %
 classdef fft < linear_transforms.convolutions.convolution
 
@@ -129,12 +129,6 @@ classdef fft < linear_transforms.convolutions.convolution
             y = y( 1:LT.N_points, : );
 
         end % function y = adjoint_transform_matrix( LT, x )
-
-        %------------------------------------------------------------------
-        % display coefficients (single matrix)
-        %------------------------------------------------------------------
-        function display_coefficients_matrix( LT, x )
-        end % function display_coefficients_matrix( LT, x )
 
 	end % methods (Access = protected, Hidden)
 

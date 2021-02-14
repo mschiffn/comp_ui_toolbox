@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-17
+% modified: 2020-10-31
 %
 classdef orthogonal < linear_transforms.wave_atoms.type
 
@@ -48,6 +48,9 @@ classdef orthogonal < linear_transforms.wave_atoms.type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class linear_transforms.wave_atoms.orthogonal
             if ~isa( orthogonals, 'linear_transforms.wave_atoms.orthogonal' )
                 errorStruct.message = 'orthogonals must be linear_transforms.wave_atoms.orthogonal!';
@@ -102,5 +105,37 @@ classdef orthogonal < linear_transforms.wave_atoms.type
         end % function strs_out = string( orthogonals )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % parameters for function call (scalar)
+        %------------------------------------------------------------------
+        function params = get_parameters_scalar( orthogonal )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.wave_atoms.type (scalar) for orthogonal
+
+            % ensure class linear_transforms.wave_atoms.orthogonal
+            if ~isa( orthogonal, 'linear_transforms.wave_atoms.orthogonal' )
+                errorStruct.message = 'orthogonal must be linear_transforms.wave_atoms.orthogonal!';
+                errorStruct.identifier = 'get_parameters:NoOrthogonalWaveAtoms';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) return parameters for function call
+            %--------------------------------------------------------------
+            % create cell array w/ parameters for function call
+            params = { orthogonal.pat, 'ortho' };
+
+        end % function params = get_parameters_scalar( orthogonal )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef orthogonal < linear_transforms.wave_atoms.type

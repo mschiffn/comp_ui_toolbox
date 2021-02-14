@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-01-30
+% modified: 2020-10-20
 %
 classdef identity < linear_transforms.linear_transform_matrix
 
@@ -86,7 +86,35 @@ classdef identity < linear_transforms.linear_transform_matrix
         % display coefficients (single matrix)
         %------------------------------------------------------------------
         function display_coefficients_matrix( LT, x )
+
+			% number of vectors to display
+			%N_vectors = size( x, 2 );
+
+			% iterate vectors
+			%for index_vector = 1:N_vectors
+
+                % call display coefficients for single vector
+                %display_coefficients_vector( LT, x( :, index_vector ) );
+
+            %end % for index_vector = 1:N_vectors
+
         end % function display_coefficients_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of best s-sparse approximations (single matrix)
+        %------------------------------------------------------------------
+        function [ rel_RMSEs, axes_s ] = rel_RMSE_matrix( LT, y )
+
+            % sort absolute values of transform coefficients (ascending order)
+            y_abs_sorted = sort( abs( y ), 1, 'ascend' );
+
+            % determine relative root mean-squared approximation error
+            rel_RMSEs = flip( sqrt( cumsum( y_abs_sorted.^2 ) ) ./ vecnorm( y, 2, 1 ) );
+
+            % number of coefficients corresponding to relative RMSE
+            axes_s = ( 0:( LT.N_coefficients - 1 ) );
+
+        end % function [ rel_RMSEs, axes_s ] = rel_RMSE_matrix( LT, y )
 
 	end % methods (Access = protected, Hidden)
 

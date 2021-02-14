@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-30
-% modified: 2020-04-17
+% modified: 2020-10-31
 %
 classdef complex < linear_transforms.wave_atoms.type
 
@@ -99,5 +99,37 @@ classdef complex < linear_transforms.wave_atoms.type
         end % function strs_out = string( complexes )
 
 	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % parameters for function call (scalar)
+        %------------------------------------------------------------------
+        function params = get_parameters_scalar( complex )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % calling function ensures class linear_transforms.wave_atoms.type (scalar) for complex
+
+            % ensure class linear_transforms.wave_atoms.complex
+            if ~isa( complex, 'linear_transforms.wave_atoms.complex' )
+                errorStruct.message = 'complex must be linear_transforms.wave_atoms.complex!';
+                errorStruct.identifier = 'get_parameters:NoComplexWaveAtoms';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) return parameters for function call
+            %--------------------------------------------------------------
+            % create cell array w/ parameters for function call
+            params = { complex.pat, 'ortho' };
+
+        end % function params = get_parameters_scalar( complex )
+
+	end % methods (Access = protected, Hidden)
 
 end % classdef complex < linear_transforms.wave_atoms.type

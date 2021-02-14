@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-04-02
-% modified: 2020-04-16
+% modified: 2020-10-26
 %
 classdef matrix < linear_transforms.convolutions.convolution
 
@@ -123,12 +123,6 @@ classdef matrix < linear_transforms.convolutions.convolution
             y = LT.mat_adj * x;
 
         end % function y = adjoint_transform_matrix( LT, x )
-
-        %------------------------------------------------------------------
-        % display coefficients (single matrix)
-        %------------------------------------------------------------------
-        function display_coefficients_matrix( LT, x )
-        end % function display_coefficients_matrix( LT, x )
 
 	end % methods (Access = protected, Hidden)
 

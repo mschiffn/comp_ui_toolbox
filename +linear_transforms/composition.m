@@ -215,6 +215,12 @@ classdef composition < linear_transforms.linear_transform_matrix
 
         end % function display_coefficients_matrix( LT, x )
 
+        %------------------------------------------------------------------
+        % relative RMSEs of best s-sparse approximations (single matrix)
+        %------------------------------------------------------------------
+        function [ rel_RMSEs, axes_s ] = rel_RMSE_matrix( LT, y )
+        end
+
 	end % methods (Access = protected, Hidden)
 
 end % classdef composition < linear_transforms.linear_transform_matrix

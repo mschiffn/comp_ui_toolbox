@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-12
-% modified: 2020-02-17
+% modified: 2020-10-20
 %
 classdef fourier_block < linear_transforms.linear_transform_vector
 
@@ -223,6 +223,31 @@ classdef fourier_block < linear_transforms.linear_transform_vector
             
 
         end % function display_coefficients_vector( LT, x, dynamic_range_dB, factor_dB )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of best s-sparse approximations (single vector)
+        %------------------------------------------------------------------
+        function [ rel_RMSEs, axis_s ] = rel_RMSE_vector( LT, y )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
+            %--------------------------------------------------------------
+            % 2.) compute relative RMSEs of best s-sparse approximations (single vector)
+            %--------------------------------------------------------------
+            % sort absolute values of transform coefficients (ascending order)
+            y_abs_sorted = sort( abs( y ), 1, 'ascend' );
+
+            % determine relative root mean-squared approximation error
+            rel_RMSEs = flip( sqrt( cumsum( y_abs_sorted.^2 ) ) / norm( y, 2 ) );
+
+            % number of coefficients corresponding to relative RMSE
+            axis_s = ( 0:( LT.N_coefficients - 1 ) );
+
+        end % function [ rel_RMSEs, axis_s ] = rel_RMSE_vector( LT, y )
 
 	end % methods (Access = protected, Hidden)
 

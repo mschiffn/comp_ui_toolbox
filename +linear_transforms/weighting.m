@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-13
-% modified: 2020-02-18
+% modified: 2020-11-01
 %
 classdef weighting < linear_transforms.linear_transform_matrix
 
@@ -82,6 +82,9 @@ classdef weighting < linear_transforms.linear_transform_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class linear_transforms.weighting
             if ~isa( LTs, 'linear_transforms.weighting' )
                 errorStruct.message = 'LTs must be linear_transforms.weighting!';
@@ -93,18 +96,8 @@ classdef weighting < linear_transforms.linear_transform_matrix
             mustBePositive( xis );
             mustBeLessThanOrEqual( xis, 1 );
 
-            % multiple LTs / single xis
-            if ~isscalar( LTs ) && isscalar( xis )
-                xis = repmat( xis, size( LTs ) );
-            end
-
-            % single LTs / multiple xis
-            if isscalar( LTs ) && ~isscalar( xis )
-                LTs = repmat( LTs, size( xis ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( LTs, xis );
+            [ LTs, xis ] = auxiliary.ensureEqualSize( LTs, xis );
 
             %--------------------------------------------------------------
             % 2.) apply thresholds to diagonal weighting matrices
@@ -224,6 +217,13 @@ classdef weighting < linear_transforms.linear_transform_matrix
             % TODO: plot weights
 
         end % function display_coefficients_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of best s-sparse approximations (single matrix)
+        %------------------------------------------------------------------
+        function [ rel_RMSEs, axis_s ] = rel_RMSE_matrix( LT, y )
+
+        end % function [ rel_RMSEs, axis_s ] = rel_RMSE_matrix( LT, y )
 
 	end % methods (Access = protected, Hidden)
 

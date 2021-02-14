@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-29
-% modified: 2020-10-08
+% modified: 2020-11-05
 %
 classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
 
@@ -226,7 +226,77 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
 
         end % function display_coefficients( LTs, x )
 
-    end % methods
+        %------------------------------------------------------------------
+        % relative RMSEs of the s largest expansion coefficients
+        %------------------------------------------------------------------
+        function rel_RMSEs = rel_RMSE( LTs, x, N_points_s )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure two or three arguments
+            narginchk( 2, 3 );
+
+            % method forward_transform ensures class linear_transforms.linear_transform_matrix
+
+            % ensure cell array for x
+            if ~iscell( x )
+                x = { x };
+            end
+
+            % ensure existence of nonempty N_points_s
+            if nargin < 3 || isempty( N_points_s )
+                N_points_s = 1500;
+            end
+
+            % ensure equal number of dimensions and sizes
+            [ LTs, x, N_points_s ] = auxiliary.ensureEqualSize( LTs, x, N_points_s );
+
+            %--------------------------------------------------------------
+            % 2.) compute relative RMSEs of the s largest expansion coefficients
+            %--------------------------------------------------------------
+            % compute forward transforms
+            y = forward_transform( LTs, x );
+
+            % ensure cell array for y
+            if ~iscell( y )
+                y = { y };
+            end
+
+            % specify cell arrays
+            rel_RMSEs = cell( size( LTs ) );
+            axes_s = cell( size( LTs ) );
+
+            % iterate linear transforms
+            for index_object = 1:numel( LTs )
+
+                %----------------------------------------------------------
+                % a) check arguments
+                %----------------------------------------------------------
+                % method forward_transform ensures numeric matrix for x{ index_object }
+                % method forward_transform ensures equal numbers of points in x{ index_object }
+
+                % ensure valid number of evaluation points N_points_s( index_object )
+                if N_points_s( index_object ) > LTs( index_object ).N_coefficients
+                    errorStruct.message = sprintf( 'N_points_s( %d ) must be smaller or equal to number of coefficients %d!', index_object, LTs( index_object ).N_coefficients );
+                    errorStruct.identifier = 'rel_RMSE:InvalidNumberOfRows';
+                    error( errorStruct );
+                end
+
+                %----------------------------------------------------------
+                % b) compute relative RMSEs of the s largest expansion coefficients
+                %----------------------------------------------------------
+                % call rel_RMSE for single matrix
+                [ rel_RMSEs{ index_object }, axes_s{ index_object } ] = rel_RMSE_matrix( LTs( index_object ), x{ index_object }, y{ index_object }, N_points_s( index_object ) );
+
+            end % for index_object = 1:numel( LTs )
+
+            % create signal matrices
+%             rel_RMSEs = processing.signal_matrix( math.sequence_increasing( axes_s ), rel_RMSEs );
+
+        end % function rel_RMSEs = rel_RMSE( LTs, x, N_points_s )
+
+	end % methods
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% methods (Abstract, protected, hidden)
@@ -247,6 +317,11 @@ classdef (Abstract) linear_transform_matrix < linear_transforms.linear_transform
         % display coefficients (single matrix)
         %------------------------------------------------------------------
         display_coefficients_matrix( LT, x )
+
+        %------------------------------------------------------------------
+        % relative RMSEs of the s largest expansion coefficients (single matrix)
+        %------------------------------------------------------------------
+        [ rel_RMSEs, axis_s ] = rel_RMSE_matrix( LT, x, y, N_points_s )
 
 	end % methods (Abstract, Access = protected, Hidden)
 

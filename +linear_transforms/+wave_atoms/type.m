@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-27
-% modified: 2020-04-17
+% modified: 2020-10-31
 %
 classdef (Abstract) type
 
@@ -13,7 +13,7 @@ classdef (Abstract) type
 	properties (SetAccess = private)
 
         % independent properties
-        pat ( 1, 1 ) char { mustBeMember( pat, { 'p', 'q', 'u' } ), mustBeNonempty } = 'p'	% type of frequency partition which satsifies parabolic scaling relationship
+        pat ( 1, 1 ) char { mustBeMember( pat, { 'p', 'q', 'u' } ), mustBeNonempty } = 'p' % type of frequency partition which satsifies parabolic scaling relationship
 
 	end % properties
 
@@ -30,9 +30,6 @@ classdef (Abstract) type
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure valid number of input arguments
-            narginchk( 0, 1 );
-
             % ensure nonempty pat
             if nargin < 1 || isempty( pat )
                 pat = 'p';
@@ -56,6 +53,45 @@ classdef (Abstract) type
 
         end % function objects = type( pat )
 
+        %------------------------------------------------------------------
+        % parameters for function call
+        %------------------------------------------------------------------
+        function params = get_parameters( types )
+
+            %--------------------------------------------------------------
+            % 1.) check arguments
+            %--------------------------------------------------------------
+            % ensure one argument
+            narginchk( 1, 1 );
+
+            % ensure class linear_transforms.wave_atoms.type
+            if ~isa( types, 'linear_transforms.wave_atoms.type' )
+                errorStruct.message = 'types must be linear_transforms.wave_atoms.type!';
+                errorStruct.identifier = 'get_parameters:NoWaveAtomTypes';
+                error( errorStruct );
+            end
+
+            %--------------------------------------------------------------
+            % 2.) return parameters for function call
+            %--------------------------------------------------------------
+            % specify cell array
+            params = cell( size( types ) );
+
+            % iterate wave atom types
+            for index_object = 1:numel( types )
+
+                % create cell array w/ parameters for function call
+                params{ index_object } = get_parameters_scalar( types( index_object ) );
+
+            end % for index_object = 1:numel( types )
+
+            % avoid cell array for single types
+            if isscalar( types )
+                params = params{ 1 };
+            end
+
+        end % function params = get_parameters( types )
+
 	end % methods
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -74,5 +110,17 @@ classdef (Abstract) type
         strs_out = string( types )
 
 	end % methods (Abstract)
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (Abstract, protected, hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Abstract, Access = protected, Hidden)
+
+        %------------------------------------------------------------------
+        % parameters for function call (scalar)
+        %------------------------------------------------------------------
+        params = get_parameters_scalar( type )
+
+	end % methods (Abstract, Access = protected, Hidden)
 
 end % classdef (Abstract) type
