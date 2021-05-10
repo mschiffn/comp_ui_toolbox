@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2020-01-11
-% modified: 2020-02-03
+% modified: 2021-05-10
 %
 classdef sequence_increasing_regular < math.sequence_increasing
 
@@ -32,13 +32,16 @@ classdef sequence_increasing_regular < math.sequence_increasing
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % ensure equal subclasses of physical_values.physical_quantity
             auxiliary.mustBeEqualSubclasses( 'physical_values.physical_quantity', offsets, deltas );
 
             % property validation function ensures positive integers for N_members
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( offsets, deltas, N_members );
+            [ offsets, deltas, N_members ] = auxiliary.ensureEqualSize( offsets, deltas, N_members );
 
             %--------------------------------------------------------------
             % 2.) create strictly monotonically increasing sequences (regular spacing)
@@ -76,6 +79,9 @@ classdef sequence_increasing_regular < math.sequence_increasing
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class math.sequence_increasing_regular
             if ~isa( sequences, 'math.sequence_increasing_regular' )
                 errorStruct.message = 'sequences must be math.sequence_increasing_regular!';
@@ -90,18 +96,8 @@ classdef sequence_increasing_regular < math.sequence_increasing
             mustBePositive( factors_interp );
             mustBeInteger( factors_interp );
 
-            % multiple sequences / single factors_interp
-            if ~isscalar( sequences ) && isscalar( factors_interp )
-                factors_interp = repmat( factors_interp, size( sequences ) );
-            end
-
-            % single sequences / multiple factors_interp
-            if isscalar( sequences ) && ~isscalar( factors_interp )
-                sequences = repmat( sequences, size( factors_interp ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, factors_interp );
+            [ sequences, factors_interp ] = auxiliary.ensureEqualSize( sequences, factors_interp );
 
             %--------------------------------------------------------------
             % 2.) interpolate sequences

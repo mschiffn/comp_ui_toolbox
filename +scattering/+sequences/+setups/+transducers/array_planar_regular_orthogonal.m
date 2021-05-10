@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-08-17
-% modified: 2019-10-17
+% modified: 2021-04-24
 %
 classdef array_planar_regular_orthogonal < scattering.sequences.setups.transducers.array_planar_regular
 
@@ -20,6 +20,9 @@ classdef array_planar_regular_orthogonal < scattering.sequences.setups.transduce
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure three arguments
+            narginchk( 3, 3 );
+
             % ensure class scattering.sequences.setups.transducers.face_planar_orthotope
             if ~isa( faces_ref, 'scattering.sequences.setups.transducers.face_planar_orthotope' )
                 errorStruct.message = 'faces_ref must be scattering.sequences.setups.transducers.face_planar_orthotope!';

@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-03-29
-% modified: 2020-02-03
+% modified: 2021-05-10
 %
 classdef sequence_increasing_regular_quantized < math.sequence_increasing_regular
 
@@ -32,6 +32,9 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing_regula
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 3, 3 );
+
             % ensure integers for lbs_q and ubs_q
             mustBeInteger( lbs_q );
             mustBeInteger( ubs_q );
@@ -40,13 +43,8 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing_regula
             % (superclass ensures class physical_values.physical_quantity)
             mustBePositive( deltas );
 
-            % multiple lbs_q / single deltas
-            if ~isscalar( lbs_q ) && isscalar( deltas )
-                deltas = repmat( deltas, size( lbs_q ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( lbs_q, ubs_q, deltas );
+            [ lbs_q, ubs_q, deltas ] = auxiliary.ensureEqualSize( lbs_q, ubs_q, deltas );
 
             %--------------------------------------------------------------
             % 2.) compute strictly monotonically increasing members
@@ -79,6 +77,9 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing_regula
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class math.sequence_increasing_regular_quantized
             if ~isa( sequences, 'math.sequence_increasing_regular_quantized' )
                 errorStruct.message = 'sequences must be math.sequence_increasing_regular_quantized!';
@@ -93,18 +94,8 @@ classdef sequence_increasing_regular_quantized < math.sequence_increasing_regula
             mustBePositive( factors_interp );
             mustBeInteger( factors_interp );
 
-            % multiple sequences / single factors_interp
-            if ~isscalar( sequences ) && isscalar( factors_interp )
-                factors_interp = repmat( factors_interp, size( sequences ) );
-            end
-
-            % single sequences / multiple factors_interp
-            if isscalar( sequences ) && ~isscalar( factors_interp )
-                sequences = repmat( sequences, size( factors_interp ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( sequences, factors_interp );
+            [ sequences, factors_interp ] = auxiliary.ensureEqualSize( sequences, factors_interp );
 
             %--------------------------------------------------------------
             % 2.) interpolate sequences
