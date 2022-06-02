@@ -1,16 +1,23 @@
-# Computational Ultrasound Imaging Toolbox for [MATLAB](mathworks-url)
+# Computational Ultrasound Imaging Toolbox for [MATLAB][mathworks-url]
 
 [mathworks-url]: https://mathworks.com/products/matlab.html
 
-[![GitHub](license-image)](license-url)
-[![GitHub](downloads-image)](downloads-url)
-![GitHub repo size](https://img.shields.io/github/repo-size/mschiffn/comp_ui_toolbox)
-![GitHub All Releases](https://img.shields.io/github/downloads/mschiffn/comp_ui_toolbox/total)
+<!-- shields -->
+[![GitHub][license-shield]][license-url]
+![GitHub repository size][size-shield]
+![GitHub language count][languages-shield]
+![GitHub stargazers][stars-shield]
+![GitHub forks][forks-shield]
+[![ko-fi][ko-fi-shield]][ko-fi-url]
 
-[license-image]: https://img.shields.io/github/license/mschiffn/comp_ui_toolbox
-[license-url]: https://github.com/mschiffn/comp_ui_toolbox/COPYING
-[downloads-image]: https://img.shields.io/github/downloads/mschiffn/comp_ui_toolbox/total
-[downloads-url]: https://npmjs.org/package/ieee754
+[license-shield]: https://img.shields.io/badge/license-citationware-blue
+[license-url]: https://github.com/mschiffn/comp_ui_toolbox/blob/main/LICENSE
+[size-shield]: https://img.shields.io/github/repo-size/mschiffn/comp_ui_toolbox
+[languages-shield]: https://img.shields.io/github/languages/count/mschiffn/comp_ui_toolbox
+[stars-shield]: https://img.shields.io/github/stars/mschiffn/comp_ui_toolbox.svg
+[forks-shield]: https://img.shields.io/github/forks/mschiffn/comp_ui_toolbox.svg
+[ko-fi-shield]: https://img.shields.io/badge/ko--fi-Donate%20a%20coffee-yellowgreen
+[ko-fi-url]: https://ko-fi.com/L4L7CCWYS
 
 Develop and
 evaluate computational image formation methods for
@@ -24,20 +31,22 @@ Advances in
 electronic miniaturization and
 processing power have recently led to
 freely programmable ultrasound imaging (UI) systems and
-software-based "ultrafast" imaging modes, e.g.
+software-based "ultrafast" imaging modes, such as
 
 - coherent plane-wave compounding,
 - synthetic aperture imaging, or
-- limited-diffraction beam imaging, that
+- limited-diffraction beam imaging.
 
-capture large fields of view (FOVs) at
+These imaging modes capture
+large fields of view (FOVs) at
 rates in the kilohertz range.
 
-Standard image formation algorithms, e.g.
+Standard image formation algorithms, such as
 delay-and-sum (DAS) or
-Fourier methods, however, gradually trade
-the image quality off against
-the frame rate.
+Fourier methods, however, increase
+the frame rate at
+the expense of
+the image quality.
 They rely on
 relatively simple physical models that
 do not support
@@ -49,7 +58,7 @@ these systems.
 
 Computational UI methods leverage
 the available processing power for
-realistic physical models that include
+realistic physical models that reflect
 the abilities of
 freely programmable UI systems.
 They recover
@@ -65,7 +74,7 @@ an arbitrary incident wave,
 2. the subsequent recording of
 the resulting echoes via
 a fully-sampled transducer array, and
-3. their optional mixing into
+3. the optional mixing of the recorded echoes into
 compound signals.
 
 The toolbox, considering
@@ -76,11 +85,10 @@ these inverse problems based on
 discretized scattering operators and
 their adjoints.
 These operators map
-the relative spatial fluctuations in
-compressibility and/or mass density to
+the material parameter fluctuations to
 the mixed radio frequency voltage signals.
 
-It excels in
+The toolbox excels in
 the *repetitive* application of
 identical scattering operators in
 iterative image formation methods and, thus, complements
@@ -90,7 +98,7 @@ popular simulation tools, e.g.
 It compensates
 the relatively costly initialization of
 a scattering operator by
-an extremely fast evaluation.
+a fast evaluation.
 
 Typical applications include
 
@@ -102,7 +110,7 @@ Typical applications include
 
 Usability and
 simplicity were
-crucial design paradigms.
+design paradigms.
 The toolbox enables
 the solution of
 complex inverse scattering problems with
@@ -112,12 +120,12 @@ code.
 ## Main Features
 
 - d-dimensional Euclidean space (d = 2, 3)
-- two types of heterogeneous acoustic material parameters: compressibility and mass density
+- one type of heterogeneous acoustic material parameter: compressibility
 - modular object-oriented design
 - arbitrary dispersion relations describing
   the combination of
   frequency-dependent absorption and
-  dispersion, e.g.
+  dispersion, such as
   the time-causal model
 - arbitrary types of incident waves, including
   - steered quasi-plane waves,
@@ -129,15 +137,15 @@ code.
   lq-minimization (convex and nonconvex)
 - efficient implementations using
   hierarchical matrix factorizations
-- multi GPU support via mex / CUDA API
+- GPU support via mex / CUDA API
 
 ## Current Limitations
 
-- Born approximation (future releases might support Rytov, WKB, Padé, and full wave solutions)
+- Born approximation
 - linear systems (wave propagation, scattering, transducer behavior)
-- pulse-echo mode, i.e. no transmission measurements
+- pulse-echo mode (i.e., no transmission measurements)
 - half-space with rigid (Neumann) boundary
-- symmetric grids (future releases might support the fast multipole method and adaptive cross approximation)
+- symmetric grids
 - developed and tested in MATLAB R2018b, R2019a, R2020a / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
 
 ## References :notebook:
