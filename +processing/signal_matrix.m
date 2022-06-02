@@ -427,6 +427,9 @@ classdef signal_matrix
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
+            % ensure two arguments
+            narginchk( 2, 2 );
+
             % ensure class processing.signal_matrix
             if ~isa( signal_matrices, 'processing.signal_matrix' )
                 errorStruct.message = 'signal_matrices must be processing.signal_matrix!';
@@ -441,18 +444,8 @@ classdef signal_matrix
             mustBePositive( factors_interp );
             mustBeInteger( factors_interp );
 
-            % multiple signal_matrices / single factors_interp
-            if ~isscalar( signal_matrices ) && isscalar( factors_interp )
-                factors_interp = repmat( factors_interp, size( signal_matrices ) );
-            end
-
-            % single signal_matrices / multiple factors_interp
-            if isscalar( signal_matrices ) && ~isscalar( factors_interp )
-                signal_matrices = repmat( signal_matrices, size( factors_interp ) );
-            end
-
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( signal_matrices, factors_interp );
+            [ signal_matrices, factors_interp ] = auxiliary.ensureEqualSize( signal_matrices, factors_interp );
 
             %--------------------------------------------------------------
             % 2.) interpolate signal matrices
@@ -604,7 +597,7 @@ classdef signal_matrix
             if nargin < 2 || isempty( thresholds_dB )
                 thresholds_dB = -6;
             end
-            dynamic_range_dB = 70;
+
             % ensure nonempty negative thresholds_dB
             mustBeNegative( thresholds_dB );
             mustBeNonempty( thresholds_dB );

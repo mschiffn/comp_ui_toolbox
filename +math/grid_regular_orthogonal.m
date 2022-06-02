@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2020-06-29
+% modified: 2022-04-07
 %
 classdef grid_regular_orthogonal < math.grid_regular
 
@@ -95,7 +95,7 @@ classdef grid_regular_orthogonal < math.grid_regular
 
                 % lower and upper bounds
                 lbs_q = indices_shift - grids_regular_orthogonal( index_object ).N_points_axis;
-                ubs_q = lbs_q + grids_regular_orthogonal( index_object ).N_points_axis;
+                ubs_q = lbs_q + grids_regular_orthogonal( index_object ).N_points_axis - 1;
 
                 % regular spacings
                 deltas = 1 ./ ( grids_regular_orthogonal( index_object ).N_points_axis .* grids_regular_orthogonal( index_object ).cell_ref.edge_lengths );

@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2019-05-21
-% modified: 2020-04-11
+% modified: 2021-05-21
 %
 classdef delta_matrix < processing.signal_matrix
 
@@ -41,7 +41,7 @@ classdef delta_matrix < processing.signal_matrix
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( indices_q, deltas, weights );
+            [ indices_q, deltas, weights ] = auxiliary.ensureEqualSize( indices_q, deltas, weights );
 
             %--------------------------------------------------------------
             % 2.) specify axes and samples

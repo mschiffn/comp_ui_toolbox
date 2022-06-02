@@ -61,6 +61,9 @@ classdef gCNR < processing.metrics.contrast.contrast
             overlap = sum( min( samples_1_pdf, samples_2_pdf ) );
             result = 1 - overlap;
 
+%             figure( 1001 );
+%             plot( (-gCNR.dynamic_range_dB:-1), samples_1_pdf, (-gCNR.dynamic_range_dB:-1), samples_2_pdf, (-gCNR.dynamic_range_dB:-1), min( samples_1_pdf, samples_2_pdf ) )
+
         end % function result = evaluate_samples( gCNR, samples_1, samples_2 )
 
 	end % methods (Access = protected, Hidden)

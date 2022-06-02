@@ -57,7 +57,7 @@ classdef CR < processing.metrics.contrast.contrast
             samples_1_mean = mean( samples_1 );
             samples_2_mean = mean( samples_2 );
 
-            % contrast-to-noise ratio (CNR)
+            % contrast ratio (CR)
             result = abs( samples_1_mean - samples_2_mean );
 
         end % function result = evaluate_samples( ~, samples_1, samples_2 )

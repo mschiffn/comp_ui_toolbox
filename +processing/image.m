@@ -94,8 +94,14 @@ classdef image
         %------------------------------------------------------------------
         function show( images, dynamic_ranges_dB )
 
-            samples_act = reshape( images.samples, images.grid.N_points_axis );
-            imagesc( illustration.dB( samples_act, 20 ), [ -dynamic_ranges_dB, 0 ] );
+            for index_image = 1:images.N_images
+
+                samples_act = squeeze( reshape( images.samples( :, index_image ), images.grid.N_points_axis ) ).';
+
+                figure( index_image );
+                imagesc( illustration.dB( samples_act, 20 ), [ -dynamic_ranges_dB, 0 ] );
+
+            end
 
         end
 

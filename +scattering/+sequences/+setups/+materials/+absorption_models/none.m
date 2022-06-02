@@ -3,7 +3,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-25
-% modified: 2019-10-17
+% modified: 2021-05-21
 %
 classdef none < scattering.sequences.setups.materials.absorption_models.absorption_model
 
@@ -15,11 +15,11 @@ classdef none < scattering.sequences.setups.materials.absorption_models.absorpti
         % independent properties
         c_0 ( 1, 1 ) physical_values.velocity	% constant phase and group velocity
 
-    end % properties
+	end % properties
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	methods
 
         %------------------------------------------------------------------
@@ -51,54 +51,39 @@ classdef none < scattering.sequences.setups.materials.absorption_models.absorpti
 
         end % function objects = none( c_0 )
 
+	end % methods
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%% methods (protected and hidden)
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	methods (Access = protected, Hidden)
+
         %------------------------------------------------------------------
-        % compute complex-valued wavenumbers (implement abstract compute_wavenumbers method)
+        % compute complex-valued wavenumbers (scalar)
         %------------------------------------------------------------------
-        function axes_k_tilde = compute_wavenumbers( nones, axes_f )
+        function samples_k_tilde = compute_wavenumbers_scalar( none, axis_f )
 
             %--------------------------------------------------------------
             % 1.) check arguments
             %--------------------------------------------------------------
-            % ensure class math.sequence_increasing
-% TODO: ensure physical_values.frequency
-            if ~isa( axes_f, 'math.sequence_increasing' )
-                axes_f = math.sequence_increasing( axes_f );
+            % calling function ensures class scattering.sequences.setups.materials.absorption_models.absorption_model for none
+            % calling function ensures class math.sequence_increasing for axis_f
+
+            % ensure class scattering.sequences.setups.materials.absorption_models.none
+            if ~isa( none, 'scattering.sequences.setups.materials.absorption_models.none' )
+                errorStruct.message = 'none must be scattering.sequences.setups.materials.absorption_models.none!';
+                errorStruct.identifier = 'compute_wavenumbers_scalar:NoNoneModel';
+                error( errorStruct );
             end
 
-            % multiple nones / single axes_f
-            if ~isscalar( nones ) && isscalar( axes_f )
-                axes_f = repmat( axes_f, size( nones ) );
-            end
-
-            % single nones / multiple axes_f
-            if isscalar( nones ) && ~isscalar( axes_f )
-                nones = repmat( nones, size( axes_f ) );
-            end
-
-            % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( nones, axes_f );
-
             %--------------------------------------------------------------
-            % 2.) compute complex-valued wavenumbers
+            % 2.) compute complex-valued wavenumbers (scalar)
             %--------------------------------------------------------------
-            % specify cell array for axes_k_tilde
-            axes_k_tilde = cell( size( nones ) );
+            % compose complex-valued wavenumbers
+            samples_k_tilde = 2 * pi * axis_f.members / none.c_0;
 
-            % iterate time causal absorption models
-            for index_object = 1:numel( nones )
+        end % function samples_k_tilde = compute_wavenumbers_scalar( none, axis_f )
 
-                % compose complex-valued wavenumbers
-                axes_k_tilde{ index_object } = 2 * pi * axes_f( index_object ).members / nones( index_object ).c_0;
-
-            end % for index_object = 1:numel( nones )
-
-            %--------------------------------------------------------------
-            % 3.) create increasing sequences
-            %--------------------------------------------------------------
-            axes_k_tilde = math.sequence_increasing( axes_k_tilde );
-
-        end % function axes_k_tilde = compute_wavenumbers( nones, axes_f )
-
-    end % methods
+	end % methods (Access = protected, Hidden)
 
 end % classdef none < scattering.sequences.setups.materials.absorption_models.absorption_model

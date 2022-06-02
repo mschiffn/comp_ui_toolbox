@@ -4,7 +4,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2016-08-25
-% modified: 2021-05-10
+% modified: 2021-05-21
 %
 classdef time_causal < scattering.sequences.setups.materials.absorption_models.absorption_model
 
@@ -112,7 +112,7 @@ classdef time_causal < scattering.sequences.setups.materials.absorption_models.a
             end
 
             %--------------------------------------------------------------
-            % 2.) compute complex-valued wavenumbers
+            % 2.) compute complex-valued wavenumbers (scalar)
             %--------------------------------------------------------------
             % compute real-valued wavenumbers using reference phase velocity
             samples_k_ref = 2 * pi * axis_f.members / time_causal.c_ref;
@@ -154,6 +154,6 @@ classdef time_causal < scattering.sequences.setups.materials.absorption_models.a
 
         end % function samples_k_tilde = compute_wavenumbers_scalar( time_causal, axis_f )
 
-    end % methods (Access = private, Hidden)
+	end % methods (Access = protected, Hidden)
 
 end % classdef time_causal < scattering.sequences.setups.materials.absorption_models.absorption_model
