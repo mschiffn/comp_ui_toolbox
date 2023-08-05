@@ -5,7 +5,7 @@
 %
 % author: Martin F. Schiffner
 % date: 2018-01-23
-% modified: 2020-06-29
+% modified: 2023-08-05
 %
 classdef grid_regular < math.grid
 
@@ -52,7 +52,7 @@ classdef grid_regular < math.grid
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( offset_axis, cells_ref, N_points_axis );
+            [ offset_axis, cells_ref, N_points_axis ] = auxiliary.ensureEqualSize( offset_axis, cells_ref, N_points_axis );
 
             %--------------------------------------------------------------
             % 2.) compute positions of the grid points
@@ -155,7 +155,7 @@ classdef grid_regular < math.grid
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( grids_regular, indices_axis );
+            [ grids_regular, indices_axis ] = auxiliary.ensureEqualSize( grids_regular, indices_axis );
 
             %--------------------------------------------------------------
             % 2.) convert array indices into linear indices
@@ -165,7 +165,28 @@ classdef grid_regular < math.grid
 
             % iterate regular grids
             for index_object = 1:numel( grids_regular )
-% TODO: ensure numeric matrix
+
+                % ensure numeric and real-valued matrix for indices_axis{ index_object }
+                if ~( isnumeric( indices_axis{ index_object } ) && isreal( indices_axis{ index_object } ) && ismatrix( indices_axis{ index_object } ) )
+                    errorStruct.message = sprintf( 'indices_axis{ %d } must be a numeric and real-valued matrix!', index_object );
+                    errorStruct.identifier = 'forward_index_transform:NoNumericAndRealMatrix';
+                    error( errorStruct );
+                end
+
+                % ensure correct dimensionality
+                if size( indices_axis{ index_object }, 2 ) ~= grids_regular( index_object ).N_dimensions
+                    errorStruct.message = sprintf( 'indices_axis{ %d } must have %d columns!', index_object, grids_regular( index_object ).N_dimensions );
+                    errorStruct.identifier = 'forward_index_transform:InvalidDimensionality';
+                    error( errorStruct );
+                end
+
+                % ensure valid integers for indices_axis{ index_object }
+                if ~( all( indices_axis{ index_object } == floor( indices_axis{ index_object } ), 'all' ) && all( indices_axis{ index_object } > 0, 'all' ) && all( indices_axis{ index_object } <= grids_regular( index_object ).N_points_axis, 'all' ) )
+                    errorStruct.message = sprintf( 'indices_axis{ %d } must contain integers in the correct range!', index_object );
+                    errorStruct.identifier = 'forward_index_transform:NoValidIntegers';
+                    error( errorStruct );
+                end
+
                 temp = mat2cell( indices_axis{ index_object }, size( indices_axis{ index_object }, 1 ), ones( 1, grids_regular( index_object ).N_dimensions ) );
                 indices_linear{ index_object } = sub2ind( grids_regular( index_object ).N_points_axis, temp{ : } );
 
@@ -199,7 +220,7 @@ classdef grid_regular < math.grid
             end
 
             % ensure equal number of dimensions and sizes
-            auxiliary.mustBeEqualSize( grids_regular, indices_linear );
+            [ grids_regular, indices_linear ] = auxiliary.ensureEqualSize( grids_regular, indices_linear );
 
             %--------------------------------------------------------------
             % 2.) convert linear indices into subscripts
@@ -209,6 +230,20 @@ classdef grid_regular < math.grid
 
             % iterate regular grids
             for index_object = 1:numel( grids_regular )
+
+                % ensure numeric and real-valued array for indices_linear{ index_object }
+                if ~( isnumeric( indices_linear{ index_object } ) && isreal( indices_linear{ index_object } ) )
+                    errorStruct.message = sprintf( 'indices_linear{ %d } must be a numeric and real-valued array!', index_object );
+                    errorStruct.identifier = 'inverse_index_transform:NoNumericAndRealArray';
+                    error( errorStruct );
+                end
+
+                % ensure valid integers for indices_axis{ index_object }
+                if ~( all( indices_linear{ index_object } == floor( indices_linear{ index_object } ), 'all' ) && all( indices_linear{ index_object } > 0, 'all' ) && all( indices_linear{ index_object } <= grids_regular( index_object ).N_points, 'all' ) )
+                    errorStruct.message = sprintf( 'indices_linear{ %d } must contain integers in the correct range!', index_object );
+                    errorStruct.identifier = 'inverse_index_transform:NoValidIntegers';
+                    error( errorStruct );
+                end
 
                 % convert linear indices into subscripts
                 temp = cell( 1, grids_regular( index_object ).N_dimensions );

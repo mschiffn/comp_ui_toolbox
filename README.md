@@ -8,6 +8,7 @@
 ![GitHub language count][languages-shield]
 ![GitHub stargazers][stars-shield]
 ![GitHub forks][forks-shield]
+[![View on File Exchange][fex-shield]][fex-url]
 [![ko-fi][ko-fi-shield]][ko-fi-url]
 
 [license-shield]: https://img.shields.io/badge/license-citationware-blue
@@ -16,6 +17,8 @@
 [languages-shield]: https://img.shields.io/github/languages/count/mschiffn/comp_ui_toolbox
 [stars-shield]: https://img.shields.io/github/stars/mschiffn/comp_ui_toolbox.svg
 [forks-shield]: https://img.shields.io/github/forks/mschiffn/comp_ui_toolbox.svg
+[fex-shield]: https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg
+[fex-url]: https://www.mathworks.com/matlabcentral/fileexchange/125285-computational-ultrasound-imaging-toolbox
 [ko-fi-shield]: https://img.shields.io/badge/ko--fi-Donate%20a%20coffee-yellowgreen
 [ko-fi-url]: https://ko-fi.com/L4L7CCWYS
 
@@ -54,7 +57,7 @@ complex imaging sequences and, thus, neglect
 the special abilities of
 these systems.
 
-## What Does This Toolbox Accomplish?
+## :mag: What Does This Toolbox Accomplish?
 
 Computational UI methods leverage
 the available processing power for
@@ -105,8 +108,9 @@ Typical applications include
 - regularized structured insonification,
 - coded excitation,
 - compressed sensing / sparse recovery,
-- statistical (Bayesian) methods, and
-- machine learning.
+- statistical (Bayesian) methods,
+- machine learning, and
+- physical model in plug-and-play methods.
 
 Usability and
 simplicity were
@@ -117,7 +121,7 @@ complex inverse scattering problems with
 only a few lines of
 code.
 
-## Main Features
+## :star: Main Features
 
 - d-dimensional Euclidean space (d = 2, 3)
 - one type of heterogeneous acoustic material parameter: compressibility
@@ -148,7 +152,9 @@ code.
 - symmetric grids
 - developed and tested in MATLAB R2018b, R2019a, R2020a / CUDA Toolkit v10.1.168 on Ubuntu 12.04/16.04/18.04
 
-## References :notebook:
+## :gear: Installation
+
+## :notebook: References
 
 The physical models underlying this toolbox and exemplary images were published in:
 

@@ -71,7 +71,7 @@ classdef lens
                 end
 
                 % set independent properties
-%                 objects( index_object ).thickness = thickness_hdl;
+                objects( index_object ).axial_focus_axis = axial_focus_axis{ index_object };
                 objects( index_object ).absorption_model = absorption_models( index_object );
 
             end % for index_object = 1:numel( objects )
